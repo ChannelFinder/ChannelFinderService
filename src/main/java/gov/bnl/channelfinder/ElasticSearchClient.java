@@ -26,10 +26,7 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.springframework.boot.web.servlet.ServletComponentScan;
-import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.context.ServletContextAware;
 
 /**
  * @author Kunal Shroff {@literal <shroffk@bnl.gov>}
@@ -62,8 +59,7 @@ public class ElasticSearchClient implements ServletContextListener{
     @SuppressWarnings("resource")
     public static TransportClient getNewClient() {
         String host = settings.get("network.host");
-//        int port = Integer.valueOf(settings.get("transport.tcp.port"));
-    	int port = 0;
+        int port = Integer.valueOf(settings.get("transport.tcp.port"));
         try {
             return new TransportClient().addTransportAddress(new InetSocketTransportAddress(host, port));
         } catch (ElasticsearchException e) {
@@ -80,7 +76,6 @@ public class ElasticSearchClient implements ServletContextListener{
     public void contextInitialized(ServletContextEvent sce) {
         log.info("Initializing a new Transport clients.");
         client();
-     	sce.getServletContext().setAttribute("servlet-context-attr", "test");
     }
 
     @Bean
@@ -89,16 +84,13 @@ public class ElasticSearchClient implements ServletContextListener{
         indexClient = new TransportClient();
         settings = searchClient.settings();
         String host = settings.get("network.host");
-        System.out.println(searchClient.settings().get("notthere"));
-        System.out.println(settings.get("http.port"));
-        System.out.println(settings);
-        System.out.println((settings.get("transport.tcp.port")));
         int port = Integer.valueOf(settings.get("transport.tcp.port"));
         searchClient.addTransportAddress(new InetSocketTransportAddress(host, port));
         indexClient.addTransportAddress(new InetSocketTransportAddress(host, port));
 
         return indexClient;
 }
+    
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
         log.info("Closeing the default Transport clients.");
