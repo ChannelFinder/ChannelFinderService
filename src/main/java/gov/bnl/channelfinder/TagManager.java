@@ -12,6 +12,8 @@ package gov.bnl.channelfinder;
  */
 
 import static gov.bnl.channelfinder.ElasticSearchClient.getNewClient;
+import static gov.bnl.channelfinder.ElasticSearchClient.getSearchClient;
+
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ import java.util.logging.Logger;
 
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
 
 import com.google.common.base.Function;
 //import javax.ws.rs.core.Response;
@@ -38,6 +41,8 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.metadata.MetaDataDeleteIndexService.Response;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.WildcardQueryBuilder;
+
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -47,6 +52,7 @@ import org.springframework.boot.json.JsonParseException;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -248,6 +254,238 @@ public class TagManager {
     }
 
 
+    /**
+     * PUT method to create and <b>exclusively</b> update the tag identified by the
+     * path parameter <tt>name</tt> to all channels identified in the payload
+     * structure <tt>data</tt>.
+     * Setting the owner attribute in the XML root element is mandatory.
+     * 
+     * @param data XmlTag structure containing the list of channels to be tagged
+     * @return HTTP Response
+     */
+    @PutMapping("/tag/{data}")
+    public List<XmlTag> createTags(@PathVariable("data") List<XmlTag> data) {
+        long start = System.currentTimeMillis();
+        Client client = getNewClient();
+        audit.info("client initialization: "+ (System.currentTimeMillis() - start));
+        try {
+            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            for (XmlTag xmlTag : data) {
+                IndexRequest indexRequest = new IndexRequest("tags", "tag", xmlTag.getName()).source(jsonBuilder().startObject()
+                        .field("name", xmlTag.getName()).field("owner", xmlTag.getOwner()).endObject());
+                UpdateRequest updateRequest = new UpdateRequest("tags", "tag", xmlTag.getName()).doc(
+                        jsonBuilder().startObject()
+                        .field("name", xmlTag.getName()).field("owner", xmlTag.getOwner()).endObject()).upsert(indexRequest);
+                bulkRequest.add(updateRequest);
+                SearchResponse qbResult = client.prepareSearch("channelfinder")
+                        .setQuery(QueryBuilders.matchQuery("tags.name", xmlTag.getName())).addField("name").setSize(10000).execute()
+                        .actionGet();
+                
+                Set<String> existingChannels = new HashSet<String>();
+                for (SearchHit hit : qbResult.getHits()) {
+                    existingChannels.add(hit.getId());
+                }
+
+                Set<String> newChannels = new HashSet<>();
+                if (xmlTag.getChannels() != null) {
+                    newChannels.addAll(
+                            Collections2.transform(xmlTag.getChannels(), new Function<XmlChannel, String>() {
+                                @Override
+                                public String apply(XmlChannel channel) {
+                                    return channel.getName();
+                                }
+                            }));
+                }
+
+                Set<String> remove = new HashSet<String>(existingChannels);
+                remove.removeAll(newChannels);
+                
+                Set<String> add = new HashSet<String>(newChannels);
+                add.removeAll(existingChannels);
+
+                HashMap<String, String> param = new HashMap<String, String>(); 
+                param.put("name", xmlTag.getName());
+                param.put("owner", xmlTag.getOwner());
+                HashMap<String, Object> params = new HashMap<>();
+                params.put("tag", param);
+                for (String ch : remove) {
+                    bulkRequest.add(new UpdateRequest("channelfinder", "channel", ch).refresh(true)
+                    		.script("removeTag = new Object();" + "for (xmltag in ctx._source.tags) "
+                                    + "{ if (xmltag.name == tag.name) { removeTag = xmltag} }; "
+                                    + "ctx._source.tags.remove(removeTag);")
+                            .addScriptParam("tag", param));
+                }
+                for (String ch : add) {
+                    bulkRequest.add(new UpdateRequest("channelfinder", "channel", ch).refresh(true)
+                            .script("ctx._source.tags.add(tag)").addScriptParam("tag", param));
+                }
+            }
+
+            bulkRequest.setRefresh(true);
+            BulkResponse bulkResponse = bulkRequest.execute().actionGet();
+            if (bulkResponse.hasFailures()) {
+                audit.severe(bulkResponse.buildFailureMessage());
+                if (bulkResponse.buildFailureMessage().contains("DocumentMissingException")) {
+                    return null;
+                } else {
+                    return null;
+                }
+            } else {
+                return data;
+            }
+        } catch (Exception e) {
+            return null;
+        } finally {
+            client.close();
+        }
+}
+    
+    /**
+     * POST method to update the the tag identified by the path parameter <tt>name</tt>,
+     * adding it to all channels identified by the channels inside the payload
+     * structure <tt>data</tt>.
+     * Setting the owner attribute in the XML root element is mandatory.
+     * 
+     * TODO: Optimize the bulk channel update
+     *
+     * @param tag URI path parameter: tag name
+     * @param data list of channels to addSingle the tag <tt>name</tt> to
+     * @return HTTP Response
+     */
+    @PostMapping("/tag/{tag}/{data}")
+    public XmlTag update(@PathVariable("tag") String tag, @PathVariable("data") XmlTag data) {
+        long start = System.currentTimeMillis();
+        Client client = getNewClient();
+        audit.info("client initialization: "+ (System.currentTimeMillis() - start));
+        try {
+            GetResponse response = client.prepareGet("tags", "tag", tag).get();
+            if(!response.isExists()){
+                return null;
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            XmlTag original = mapper.readValue(response.getSourceAsBytes(), XmlTag.class);
+            // rename a tag
+            if(!original.getName().equals(data.getName())){
+                return renameTag(client, original, data);
+            }
+            String tagOwner = data.getOwner() != null && !data.getOwner().isEmpty()? data.getOwner() : original.getOwner();
+            
+            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            UpdateRequest updateRequest = new UpdateRequest("tags", "tag", tag)
+                                                .doc(jsonBuilder().startObject()
+                                                           .field("name", data.getName())
+                                                           .field("owner", tagOwner)
+                                                           .endObject());
+            // New owner
+            HashMap<String, String> param = new HashMap<String, String>(); 
+            param.put("name", data.getName());
+            param.put("owner", tagOwner);
+            HashMap<String, Object> params = new HashMap<>();
+            params.put("tag", param);
+            if(!original.getOwner().equals(data.getOwner())){
+                SearchResponse queryResponse = client.prepareSearch("channelfinder")
+                        .setQuery(new WildcardQueryBuilder("tags.name", original.getName().trim()))
+                        .addField("name")
+                        .setSize(10000).execute()
+                        .actionGet();
+
+                for (SearchHit hit : queryResponse.getHits()) {
+                    bulkRequest.add(new UpdateRequest("channelfinder", "channel", hit.getId())
+                            .script("ctx._source.tags.add(tag)").addScriptParam("tag", param));
+                }
+            }
+            bulkRequest.add(updateRequest);
+            if (data.getChannels() != null) {                
+                for (XmlChannel channel : data.getChannels()) {
+                    bulkRequest.add(new UpdateRequest("channelfinder", "channel", channel.getName())
+                            .script("ctx._source.tags.add(tag)").addScriptParam("tag", param));
+                }
+            }
+            bulkRequest.setRefresh(true);
+            BulkResponse bulkResponse = bulkRequest.get();
+            if (bulkResponse.hasFailures()) {
+                audit.severe(bulkResponse.buildFailureMessage());
+                if (bulkResponse.buildFailureMessage().contains("DocumentMissingException")) {
+                    return null;
+                } else {
+                    return null;
+                }
+            } else {
+//                Response r = Response.ok().build();
+//                audit.info("|POST|OK|" +  "|data="  + XmlTag.toLog(data));
+                return null;
+            }
+        } catch (Exception e) {
+            return null;
+        } finally {
+        }
+}
+
+    /**
+     * Utility method to rename an existing tag
+     * @param data 
+     * @param original 
+     * @param client 
+     * @param um 
+     * @param client
+     * @param original
+     * @param data
+     * @return
+     */
+    private XmlTag renameTag(Client client, XmlTag original, XmlTag data) {
+        try {
+            SearchResponse queryResponse = client.prepareSearch("channelfinder")
+                    .setQuery(new WildcardQueryBuilder("tags.name", original.getName().trim()))
+                    .addField("name")
+                    .setSize(10000).get();
+            List<String> channelNames = new ArrayList<String>();
+            for (SearchHit hit : queryResponse.getHits()) {
+                channelNames.add(hit.getId());
+            }
+            String tagOwner = data.getOwner() != null && !data.getOwner().isEmpty()? data.getOwner() : original.getOwner();
+            
+            BulkRequestBuilder bulkRequest = client.prepareBulk();
+            bulkRequest.add(new DeleteRequest("tags", "tag", original.getName()));
+            IndexRequest indexRequest = new IndexRequest("tags", "tag", data.getName()).source(jsonBuilder()
+                    .startObject().field("name", data.getName()).field("owner", data.getOwner()).endObject());
+            UpdateRequest updateRequest;
+            updateRequest = new UpdateRequest("tags", "tag", data.getName()).doc(jsonBuilder().startObject()
+                    .field("name", data.getName()).field("owner", data.getOwner()).endObject()).upsert(indexRequest);
+            bulkRequest.add(updateRequest);
+            if (!channelNames.isEmpty()) {
+                HashMap<String, String> originalParam = new HashMap<>(); 
+                originalParam.put("name", original.getName());
+                HashMap<String, String> param = new HashMap<>(); 
+                param.put("name", data.getName());
+                param.put("owner", tagOwner);
+                HashMap<String, Object> params = new HashMap<>();
+                params.put("originalTag", originalParam);
+                params.put("tag", param);
+                for (String channel : channelNames) {
+                    bulkRequest.add(new UpdateRequest("channelfinder", "channel", channel)
+                            .script("ctx._source.tags.add(tag)").addScriptParam("tag", param));
+
+                }
+            }
+            bulkRequest.setRefresh(true);
+            BulkResponse bulkResponse = bulkRequest.get();
+            if (bulkResponse.hasFailures()) {
+                audit.severe(bulkResponse.buildFailureMessage());
+                if (bulkResponse.buildFailureMessage().contains("DocumentMissingException")) {
+                    return null;
+                } else {
+                    return null;
+                }
+            } else {
+//                Response r = Response.ok().build();
+//                audit.info("|POST|OK|" + "|data="+ XmlTag.toLog(data));
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+}
+    
 	abstract class OnlyXmlTag {
 		@JsonIgnore
 		private List<XmlChannel> channels;
