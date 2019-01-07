@@ -46,7 +46,7 @@ import org.elasticsearch.index.query.WildcardQueryBuilder;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import org.elasticsearch.search.SearchHit;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.json.JsonParseException;
 import org.springframework.util.MultiValueMap;
@@ -54,6 +54,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,6 +72,8 @@ public class TagManager {
 	private Logger audit = Logger.getLogger(this.getClass().getPackage().getName() + ".audit");
 	private Logger log = Logger.getLogger(this.getClass().getName());
 	
+	@Autowired
+	Client client;
 	/**
      * GET method for retrieving the list of tags in the database.
      *
@@ -168,10 +171,10 @@ public class TagManager {
      * @param data XmlTag structure containing the list of channels to be tagged
      * @return HTTP Response
      */
-    @PutMapping("/tag/{tag}/{data}")
-    public XmlTag create(@PathVariable("tag") String tag, @PathVariable("data") XmlTag data) {
+    @PutMapping("/tag/{tag}")
+    public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
         long start = System.currentTimeMillis();
-        Client client = getNewClient();
+        //Client client = getNewClient();
         audit.info("client initialization: "+ (System.currentTimeMillis() - start));
         try {
             if (tag.equals(data.getName())) {
