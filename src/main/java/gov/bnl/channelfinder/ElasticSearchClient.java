@@ -27,6 +27,7 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Service;
 
 /**
  * @author Kunal Shroff {@literal <shroffk@bnl.gov>}
@@ -34,6 +35,7 @@ import org.springframework.context.annotation.Bean;
  */
 
 @WebListener
+@Service
 public class ElasticSearchClient implements ServletContextListener{
 
     private static Logger log = Logger.getLogger(ElasticSearchClient.class.getCanonicalName());
