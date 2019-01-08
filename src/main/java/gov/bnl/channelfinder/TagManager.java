@@ -86,7 +86,7 @@ public class TagManager {
 	 */
 	@GetMapping
 	public List<XmlTag> listTags(@RequestParam Map<String,String> allRequestParams) {
-		Client client = getNewClient();
+		//Client client = getNewClient();
 		final ObjectMapper mapper = new ObjectMapper();
 		mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
 		try {
@@ -111,7 +111,7 @@ public class TagManager {
 			e.printStackTrace();
 			return null;
 		} finally {
-			client.close();
+			//client.close();
 		}
 	}
 
@@ -127,7 +127,7 @@ public class TagManager {
 	@GetMapping("/tag")
 	public XmlTag read(@RequestParam("tag") String tag, @RequestParam("withChannels") boolean withChannels) {
 		long start = System.currentTimeMillis();
-		Client client = getNewClient();
+		//Client client = getNewClient();
 		audit.info("client initialization: "+ (System.currentTimeMillis() - start));
 		//String user = securityContext.getUserPrincipal() != null ? securityContext.getUserPrincipal().getName() : "";
 		XmlTag result = null;        
@@ -162,7 +162,7 @@ public class TagManager {
 			e.printStackTrace();
 			return null;
 		} finally {
-			client.close();
+			//client.close();
 		}
 	}
 
@@ -257,7 +257,7 @@ public class TagManager {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			client.close();
+			//client.close();
 		}
 	}
 
@@ -270,10 +270,10 @@ public class TagManager {
 	 * @param data XmlTag structure containing the list of channels to be tagged
 	 * @return HTTP Response
 	 */
-	@PutMapping("/tag/{data}")
-	public List<XmlTag> createTags(@PathVariable("data") List<XmlTag> data) {
+	@PutMapping("/tag")
+	public List<XmlTag> createTags(@RequestBody List<XmlTag> data) {
 		long start = System.currentTimeMillis();
-		Client client = getNewClient();
+		//Client client = getNewClient();
 		audit.info("client initialization: "+ (System.currentTimeMillis() - start));
 		try {
 			BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -343,7 +343,7 @@ public class TagManager {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			client.close();
+			//client.close();
 		}
 	}
 
@@ -359,10 +359,10 @@ public class TagManager {
 	 * @param data list of channels to addSingle the tag <tt>name</tt> to
 	 * @return HTTP Response
 	 */
-	@PostMapping("/tag/{tag}/{data}")
-	public XmlTag update(@PathVariable("tag") String tag, @PathVariable("data") XmlTag data) {
+	@PostMapping("/tag/{tag}")
+	public XmlTag update(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
 		long start = System.currentTimeMillis();
-		Client client = getNewClient();
+		//Client client = getNewClient();
 		audit.info("client initialization: "+ (System.currentTimeMillis() - start));
 		try {
 			GetResponse response = client.prepareGet("tags", "tag", tag).get();
@@ -501,9 +501,9 @@ public class TagManager {
 	 * @return HTTP Response
 	 * @throws IOException when audit or log fail
 	 */
-	@PostMapping("/tag/{data}")
-	public List<XmlTag> updateTags(@PathVariable("data") List<XmlTag> data) throws IOException {
-		Client client = getNewClient();
+	@PostMapping("/tag")
+	public List<XmlTag> updateTags(@RequestBody List<XmlTag> data) throws IOException {
+		//Client client = getNewClient();
 		try {
 			BulkRequestBuilder bulkRequest = client.prepareBulk();
 			for (XmlTag tag : data) {
@@ -546,7 +546,7 @@ public class TagManager {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			client.close();
+			//client.close();
 		}
 	}
 
@@ -559,7 +559,7 @@ public class TagManager {
 	 */
 	@DeleteMapping
 	public String remove(@RequestParam("tagName") String tag) {
-		Client client = getNewClient();
+		//Client client = getNewClient();
 		try {
 			BulkRequestBuilder bulkRequest = client.prepareBulk();
 			bulkRequest.add(new DeleteRequest("tags", "tag", tag));
@@ -594,7 +594,7 @@ public class TagManager {
 		} catch (Exception e) {
 			return null;
 		} finally {
-			client.close();
+			//client.close();
 		}
 	}
 
@@ -616,7 +616,7 @@ public class TagManager {
 	 */
 	@PutMapping("/{tagName}/{chName}")
 	public String addSingle(@PathVariable ("tagName") String tag, @PathVariable ("chName") String chan, XmlTag data) {
-		Client client = getNewClient();
+		//Client client = getNewClient();
 		XmlTag result = null;
 		try {
 			GetResponse response = client.prepareGet("tags", "tag", tag).execute().actionGet();
@@ -658,7 +658,7 @@ public class TagManager {
 		}  catch (Exception e) {
 			return null;
 		} finally {
-			client.close();
+			//client.close();
 		}
 	}
 
@@ -673,6 +673,39 @@ public class TagManager {
 		return existing.getName().equals(request.getName());
 	}
 
+	/**
+     * DELETE method for deleting the tag identified by <tt>tag</tt> from the channel
+     * <tt>chan</tt> (both path parameters).
+     *
+     * @param tag URI path parameter: tag name to remove
+     * @param chan URI path parameter: channel to remove <tt>tag</tt> from
+     * @return HTTP Response
+     */
+	@DeleteMapping
+    public String removeSingle(@RequestParam ("tagName") final String tag, @RequestParam ("chName") String chan) {
+        //Client client = getNewClient();
+        try {
+            if (client.prepareGet("tags", "tag", tag).get().isExists()) {
+                UpdateResponse updateResponse = client
+                        .update(new UpdateRequest("channelfinder", "channel", chan).refresh(true)
+                                .script(" removeTags = new java.util.ArrayList();" + "for (tag in ctx._source.tags) "
+                                        + "{ if (tag.name == tag.name) { removeTags.add(tag)} }; "
+                                        + "for (removeTag in removeTags) {ctx._source.tags.remove(removeTag)}")
+                        .addScriptParam("tagName", tag)).actionGet();
+                //Response r = Response.ok().build();
+                return "removed";
+            } else {
+                return null;
+            }
+        } catch (DocumentMissingException e) {
+            return null;
+        } catch (Exception e) {
+            return null;
+        } finally {
+            //client.close();
+        }
+}
+	
 	abstract class OnlyXmlTag {
 		@JsonIgnore
 		private List<XmlChannel> channels;
