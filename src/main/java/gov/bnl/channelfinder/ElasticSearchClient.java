@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
  */
 
 @WebListener
-<<<<<<< HEAD
+@Service
 public class ElasticSearchClient implements ServletContextListener {
 
 	private static Logger log = Logger.getLogger(ElasticSearchClient.class.getCanonicalName());
@@ -99,71 +99,5 @@ public class ElasticSearchClient implements ServletContextListener {
 		searchClient.close();
 		indexClient.close();
 	}
-=======
-@Service
-public class ElasticSearchClient implements ServletContextListener{
-
-    private static Logger log = Logger.getLogger(ElasticSearchClient.class.getCanonicalName());
-
-    private static Settings settings;
-    
-    private static TransportClient searchClient;
-    private static TransportClient indexClient;
-
-    public static TransportClient getSearchClient() {
-        return searchClient;
-    }
-    
-    public static TransportClient getIndexClient() {
-        return indexClient;
-    }
-
-    /**
-     * Returns a new {@link TransportClient} using the default settings
-     * **IMPORTANT** it is the responsibility of the caller to close this client
-     * @return es transport client
-     */
-    @SuppressWarnings("resource")
-    public static TransportClient getNewClient() {
-        String host = settings.get("network.host");
-        int port = Integer.valueOf(settings.get("transport.tcp.port"));
-        try {
-            return new TransportClient().addTransportAddress(new InetSocketTransportAddress(host, port));
-        } catch (ElasticsearchException e) {
-            log.severe(e.getDetailedMessage());
-            return null;
-        }
-    }
-    
-    public static Settings getSettings(){
-        return settings;
-    }
-
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
-        log.info("Initializing a new Transport clients.");
-        client();
-    }
-
-    @Bean
-    public Client client() {
-        searchClient = new TransportClient();
-        indexClient = new TransportClient();
-        settings = searchClient.settings();
-        String host = settings.get("network.host");
-        int port = Integer.valueOf(settings.get("transport.tcp.port"));
-        searchClient.addTransportAddress(new InetSocketTransportAddress(host, port));
-        indexClient.addTransportAddress(new InetSocketTransportAddress(host, port));
-
-        return indexClient;
-}
-    
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        log.info("Closeing the default Transport clients.");
-        searchClient.close();
-        indexClient.close();
-    }
->>>>>>> 75115c24f1bb7c39b1d0ee2fbca8bcd21d875819
 
 }

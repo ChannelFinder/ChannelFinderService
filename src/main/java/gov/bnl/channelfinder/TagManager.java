@@ -14,7 +14,6 @@ package gov.bnl.channelfinder;
 import static gov.bnl.channelfinder.ElasticSearchClient.getNewClient;
 import static gov.bnl.channelfinder.ElasticSearchClient.getSearchClient;
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -76,13 +75,10 @@ public class TagManager {
 	//	private SecurityContext securityContext;
 	private Logger audit = Logger.getLogger(this.getClass().getPackage().getName() + ".audit");
 	private Logger log = Logger.getLogger(this.getClass().getName());
-<<<<<<< HEAD
 
-=======
-	
 	@Autowired
 	Client client;
->>>>>>> 75115c24f1bb7c39b1d0ee2fbca8bcd21d875819
+
 	/**
 	 * GET method for retrieving the list of tags in the database.
 	 *
@@ -171,7 +167,6 @@ public class TagManager {
 	}
 
 	/**
-<<<<<<< HEAD
 	 * PUT method to create and <b>exclusively</b> update the tag identified by the
 	 * path parameter <tt>name</tt> to all channels identified in the payload
 	 * structure <tt>data</tt>.
@@ -181,10 +176,10 @@ public class TagManager {
 	 * @param data XmlTag structure containing the list of channels to be tagged
 	 * @return HTTP Response
 	 */
-	@PutMapping("/tag/{tag}/{data}")
-	public XmlTag create(@PathVariable("tag") String tag, @PathVariable("data") XmlTag data) {
+	@PutMapping("/tag/{tag}")
+	public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
 		long start = System.currentTimeMillis();
-		Client client = getNewClient();
+		//Client client = getNewClient();
 		audit.info("client initialization: "+ (System.currentTimeMillis() - start));
 		try {
 			if (tag.equals(data.getName())) {
@@ -198,39 +193,6 @@ public class TagManager {
 				SearchResponse qbResult = client.prepareSearch("channelfinder")
 						.setQuery(QueryBuilders.matchQuery("tags.name", tag)).addField("name").setSize(10000).execute()
 						.actionGet();
-=======
-     * PUT method to create and <b>exclusively</b> update the tag identified by the
-     * path parameter <tt>name</tt> to all channels identified in the payload
-     * structure <tt>data</tt>.
-     * Setting the owner attribute in the XML root element is mandatory.
-     * 
-     * @param tag URI path parameter: tag name
-     * @param data XmlTag structure containing the list of channels to be tagged
-     * @return HTTP Response
-     */
-    @PutMapping("/tag/{tag}")
-    public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
-        long start = System.currentTimeMillis();
-        //Client client = getNewClient();
-        audit.info("client initialization: "+ (System.currentTimeMillis() - start));
-        try {
-            if (tag.equals(data.getName())) {
-                BulkRequestBuilder bulkRequest = client.prepareBulk();
-                IndexRequest indexRequest = new IndexRequest("tags", "tag", tag).source(jsonBuilder().startObject()
-                        .field("name", data.getName()).field("owner", data.getOwner()).endObject());
-                UpdateRequest updateRequest = new UpdateRequest("tags", "tag", tag).doc(jsonBuilder().startObject()
-                        .field("name", data.getName()).field("owner", data.getOwner()).endObject())
-                        .upsert(indexRequest);
-                bulkRequest.add(updateRequest);
-                SearchResponse qbResult = client.prepareSearch("channelfinder")
-                        .setQuery(QueryBuilders.matchQuery("tags.name", tag)).addField("name").setSize(10000).execute()
-                        .actionGet();
-
-                Set<String> existingChannels = new HashSet<String>();
-                for (SearchHit hit : qbResult.getHits()) {
-                    existingChannels.add(hit.field("name").getValue().toString());
-                }
->>>>>>> 75115c24f1bb7c39b1d0ee2fbca8bcd21d875819
 
 				Set<String> existingChannels = new HashSet<String>();
 				for (SearchHit hit : qbResult.getHits()) {
@@ -637,94 +599,94 @@ public class TagManager {
 	}
 
 	/**
-     * PUT method for adding the tag identified by <tt>tag</tt> to the single
-     * channel <tt>chan</tt> (both path parameters). 
-     * 
-     * TODO: could be simplified
-     * with multi index update and script which can use wildcards thus removing
-     * the need to explicitly define the entire tag
-     * 
-     * @param tag
-     *            URI path parameter: tag name
-     * @param chan
-     *            URI path parameter: channel to update <tt>tag</tt> to
-     * @param data
-     *            tag data (ignored)
-     * @return HTTP Response
-     */
-    @PutMapping("/{tagName}/{chName}")
-    public String addSingle(@PathVariable ("tagName") String tag, @PathVariable ("chName") String chan, XmlTag data) {
-        Client client = getNewClient();
-        XmlTag result = null;
-        try {
-            GetResponse response = client.prepareGet("tags", "tag", tag).execute().actionGet();
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.addMixIn(XmlChannel.class, MyMixInForXmlChannels.class);
-            result = mapper.readValue(response.getSourceAsBytes(), XmlTag.class);
-            
-            if (result != null) {
-//                if(um.userHasAdminRole() || um.userIsInGroup(result.getOwner())){
-                if (validateTag(result, data)) {
-                    HashMap<String, String> param = new HashMap<String, String>();
-                    param.put("name", result.getName());
-                    param.put("owner", result.getOwner());
-                    UpdateResponse updateResponse = client
-                            .update(new UpdateRequest("channelfinder", "channel", chan).refresh(true)
-                                    .refresh(true)
-                                    .script("removeTags = new java.util.ArrayList();" + "for (tag in ctx._source.tags) "
-                                            + "{ if (tag.name == tag.name) { removeTags.add(tag)} }; "
-                                            + "for (removeTag in removeTags) {ctx._source.tags.remove(removeTag)};"
-                                            + "ctx._source.tags.add(tag)")
-                                    .addScriptParam("tag", param))
-                                    .actionGet();
-                    //Response r = Response.ok().build();
-                    return "added single";
-                } else {
-                    return null;
-                }
-//                }else{
-//                    return Response.status(Status.FORBIDDEN)
-//                            .entity("User '" + um.getUserName() + "' does not belong to owner group '"
-//                                    + result.getOwner() + "' of tag '" + result.getName() + "'")
-//                            .build();
-//                }
-            }else{
-                return null;
-            }
-        } catch (DocumentMissingException e) {
-            return null;
-        }  catch (Exception e) {
-            return null;
-        } finally {
-            client.close();
-        }
-    }
+	 * PUT method for adding the tag identified by <tt>tag</tt> to the single
+	 * channel <tt>chan</tt> (both path parameters). 
+	 * 
+	 * TODO: could be simplified
+	 * with multi index update and script which can use wildcards thus removing
+	 * the need to explicitly define the entire tag
+	 * 
+	 * @param tag
+	 *            URI path parameter: tag name
+	 * @param chan
+	 *            URI path parameter: channel to update <tt>tag</tt> to
+	 * @param data
+	 *            tag data (ignored)
+	 * @return HTTP Response
+	 */
+	@PutMapping("/{tagName}/{chName}")
+	public String addSingle(@PathVariable ("tagName") String tag, @PathVariable ("chName") String chan, XmlTag data) {
+		Client client = getNewClient();
+		XmlTag result = null;
+		try {
+			GetResponse response = client.prepareGet("tags", "tag", tag).execute().actionGet();
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.addMixIn(XmlChannel.class, MyMixInForXmlChannels.class);
+			result = mapper.readValue(response.getSourceAsBytes(), XmlTag.class);
 
-    /**
-     * Check that the existing tag and the tag in the request body match 
-     *  
-     * @param existing
-     * @param request
-     * @return
-     */
-    private boolean validateTag(XmlTag existing, XmlTag request) {
-        return existing.getName().equals(request.getName());
-}
-	
+			if (result != null) {
+				//                if(um.userHasAdminRole() || um.userIsInGroup(result.getOwner())){
+				if (validateTag(result, data)) {
+					HashMap<String, String> param = new HashMap<String, String>();
+					param.put("name", result.getName());
+					param.put("owner", result.getOwner());
+					UpdateResponse updateResponse = client
+							.update(new UpdateRequest("channelfinder", "channel", chan).refresh(true)
+									.refresh(true)
+									.script("removeTags = new java.util.ArrayList();" + "for (tag in ctx._source.tags) "
+											+ "{ if (tag.name == tag.name) { removeTags.add(tag)} }; "
+											+ "for (removeTag in removeTags) {ctx._source.tags.remove(removeTag)};"
+											+ "ctx._source.tags.add(tag)")
+									.addScriptParam("tag", param))
+							.actionGet();
+					//Response r = Response.ok().build();
+					return "added single";
+				} else {
+					return null;
+				}
+				//                }else{
+				//                    return Response.status(Status.FORBIDDEN)
+				//                            .entity("User '" + um.getUserName() + "' does not belong to owner group '"
+				//                                    + result.getOwner() + "' of tag '" + result.getName() + "'")
+				//                            .build();
+				//                }
+			}else{
+				return null;
+			}
+		} catch (DocumentMissingException e) {
+			return null;
+		}  catch (Exception e) {
+			return null;
+		} finally {
+			client.close();
+		}
+	}
+
+	/**
+	 * Check that the existing tag and the tag in the request body match 
+	 *  
+	 * @param existing
+	 * @param request
+	 * @return
+	 */
+	private boolean validateTag(XmlTag existing, XmlTag request) {
+		return existing.getName().equals(request.getName());
+	}
+
 	abstract class OnlyXmlTag {
 		@JsonIgnore
 		private List<XmlChannel> channels;
 	}
 	/**
-     * A filter to be used with the jackson mapper to ignore the embedded
-     * xmlchannels in the tag object
-     * 
-     * @author Kunal Shroff
-     *
-     */
-    @JsonIgnoreType
-    public class MyMixInForXmlChannels {
-        //
-}
+	 * A filter to be used with the jackson mapper to ignore the embedded
+	 * xmlchannels in the tag object
+	 * 
+	 * @author Kunal Shroff
+	 *
+	 */
+	@JsonIgnoreType
+	public class MyMixInForXmlChannels {
+		//
+	}
 
 }
