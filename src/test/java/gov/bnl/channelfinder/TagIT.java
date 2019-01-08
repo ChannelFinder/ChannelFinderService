@@ -14,6 +14,10 @@ public class TagIT {
 
     @Autowired
     TagManager tagManager;
+    
+    static XmlTag testTag;
+    static XmlTag createdTag;
+    
 
     @Test
     public void simpleTest() {
@@ -25,13 +29,37 @@ public class TagIT {
      */
     @Test
     public void createTagTest() {
-        XmlTag testTag = new XmlTag();
+        testTag = new XmlTag();
         testTag.setName("test-tag");
         testTag.setOwner("test-owner");
-        XmlTag createdTag = tagManager.create("test-tag", testTag);
+        createdTag = tagManager.create("test-tag", testTag);
         // now check if the created tag has the correct name and owner
         assertEquals("Failed to create the tag", testTag.getName(), createdTag.getName());
         assertEquals("Failed to create the tag", testTag.getOwner(), createdTag.getOwner());
+
+        // TODO Cleanup - remove the test tag that was previously created
+    }
+    
+    /**
+     * test the retrieval of a tag
+     */
+    @Test
+    public void readTagTest() {
+    	XmlTag readTag = tagManager.read("test-tag",false);
+        // check if the read tag has the correct name and owner
+        assertEquals("Failed to read the tag", createdTag.getName(), readTag.getName());
+        assertEquals("Failed to read the tag", createdTag.getOwner(), readTag.getOwner());
+
+    }
+    
+    /**
+     * test the removal of a tag
+     */
+    @Test
+    public void removeTagTest() {
+        String removed = tagManager.remove("test-tag");
+        // now check if the created tag has the correct name and owner
+        assertEquals("Failed to remove the tag", null, tagManager.read("test-tag",false));
 
         // TODO Cleanup - remove the test tag that was previously created
     }

@@ -16,6 +16,8 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+
 /**
  * Tag object that can be represented as XML/JSON in payload data.
  *
