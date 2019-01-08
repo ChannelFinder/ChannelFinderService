@@ -17,6 +17,7 @@ public class TagIT {
 
     @Test
     public void simpleTest() {
+    	assertEquals("4 isn't 4", 4, 4);
     }
 
     /**

@@ -681,8 +681,8 @@ public class TagManager {
      * @param chan URI path parameter: channel to remove <tt>tag</tt> from
      * @return HTTP Response
      */
-	@DeleteMapping
-    public String removeSingle(@RequestParam ("tagName") final String tag, @RequestParam ("chName") String chan) {
+	@DeleteMapping("/{tagName}")
+    public String removeSingle(@PathVariable ("tagName") final String tag, @RequestParam ("chName") String chan) {
         //Client client = getNewClient();
         try {
             if (client.prepareGet("tags", "tag", tag).get().isExists()) {
