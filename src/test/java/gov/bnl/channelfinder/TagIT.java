@@ -1,17 +1,38 @@
 package gov.bnl.channelfinder;
 
-import org.elasticsearch.client.Client;
-import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.junit4.SpringRunner;
+
+@RunWith(SpringRunner.class)
+@WebMvcTest(TagManager.class)
 public class TagIT {
 
-	@Autowired
-	private Client client;
-	
-	@Test
-	public void simpleTest() {
-		System.out.println(client);
-	}
+    @Autowired
+    TagManager tagManager;
+
+    @Test
+    public void simpleTest() {
+    }
+
+    /**
+     * test the creation of a single tag
+     */
+    @Test
+    public void createTagTest() {
+        XmlTag testTag = new XmlTag();
+        testTag.setName("test-tag");
+        testTag.setOwner("test-owner");
+        XmlTag createdTag = tagManager.create("test-tag", testTag);
+        // now check if the created tag has the correct name and owner
+        assertEquals("Failed to create the tag", testTag.getName(), createdTag.getName());
+        assertEquals("Failed to create the tag", testTag.getOwner(), createdTag.getOwner());
+
+        // TODO Cleanup - remove the test tag that was previously created
+    }
 
 }
