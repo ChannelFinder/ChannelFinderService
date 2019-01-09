@@ -373,7 +373,7 @@ public class TagManager {
 			XmlTag original = mapper.readValue(response.getSourceAsBytes(), XmlTag.class);
 			// rename a tag
 			if(!original.getName().equals(data.getName())){
-				return renameTag(client, original, data);
+				return renameTag(original, data);
 			}
 			String tagOwner = data.getOwner() != null && !data.getOwner().isEmpty()? data.getOwner() : original.getOwner();
 
@@ -439,12 +439,14 @@ public class TagManager {
 	 * @param data
 	 * @return
 	 */
-	private XmlTag renameTag(Client client, XmlTag original, XmlTag data) {
+	XmlTag renameTag(XmlTag original, XmlTag data) {
 		try {
 			SearchResponse queryResponse = client.prepareSearch("channelfinder")
-					.setQuery(new WildcardQueryBuilder("tags.name", original.getName().trim()))
-					.addField("name")
-					.setSize(10000).get();
+//					.setQuery(new WildcardQueryBuilder("tags.name", original.getName().trim()))
+//					.addField("name")
+//					.setSize(10000).get();
+					.setQuery(matchQuery("tags.name",  original.getName().trim())).setSize(10000).get();
+			
 			List<String> channelNames = new ArrayList<String>();
 			for (SearchHit hit : queryResponse.getHits()) {
 				channelNames.add(hit.getId());
@@ -669,7 +671,7 @@ public class TagManager {
 	 * @param request
 	 * @return
 	 */
-	private boolean validateTag(XmlTag existing, XmlTag request) {
+	boolean validateTag(XmlTag existing, XmlTag request) {
 		return existing.getName().equals(request.getName());
 	}
 
