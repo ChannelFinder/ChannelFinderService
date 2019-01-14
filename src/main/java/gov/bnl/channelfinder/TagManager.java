@@ -191,7 +191,8 @@ public class TagManager {
 						.upsert(indexRequest);
 				bulkRequest.add(updateRequest);
 				SearchResponse qbResult = client.prepareSearch("channelfinder")
-						.setQuery(QueryBuilders.matchQuery("tags.name", tag)).addField("name").setSize(10000).execute()
+						.setQuery(QueryBuilders.matchQuery("tags.name", tag)).
+						addField("name").setSize(10000).execute()
 						.actionGet();
 
 				Set<String> existingChannels = new HashSet<String>();
@@ -338,7 +339,18 @@ public class TagManager {
 					return null;
 				}
 			} else {
-				return data;
+				//return data;
+				List<XmlTag> r = new ArrayList<XmlTag>();
+				for(int i = 0; i < data.size(); i++)
+				{
+					GetResponse response = client.prepareGet("tags", "tag", data.get(i).getName()).execute().actionGet();
+					ObjectMapper mapper = new ObjectMapper();
+					XmlTag result = mapper.readValue(response.getSourceAsBytes(), XmlTag.class);
+					if (!(result == null)) {
+						r.add(result);
+					}
+				}
+				return r;
 			}
 		} catch (Exception e) {
 			return null;
@@ -442,11 +454,10 @@ public class TagManager {
 	XmlTag renameTag(XmlTag original, XmlTag data) {
 		try {
 			SearchResponse queryResponse = client.prepareSearch("channelfinder")
-//					.setQuery(new WildcardQueryBuilder("tags.name", original.getName().trim()))
-//					.addField("name")
-//					.setSize(10000).get();
-					.setQuery(matchQuery("tags.name",  original.getName().trim())).setSize(10000).get();
-			
+					.setTypes("tags")
+					.setQuery(matchQuery("tags.name",  original.getName().trim()))
+					.setSize(10000).get();
+
 			List<String> channelNames = new ArrayList<String>();
 			for (SearchHit hit : queryResponse.getHits()) {
 				channelNames.add(hit.getId());
@@ -486,9 +497,16 @@ public class TagManager {
 					return null;
 				}
 			} else {
-				//                Response r = Response.ok().build();
-				//                audit.info("|POST|OK|" + "|data="+ XmlTag.toLog(data));
-				return null;
+				GetResponse response = client.prepareGet("tags", "tag", data.getName()).execute().actionGet();
+				ObjectMapper mapper = new ObjectMapper();
+				XmlTag result = mapper.readValue(response.getSourceAsBytes(), XmlTag.class);
+				XmlTag r;
+				if (result == null) {
+					r = null;
+				} else {
+					r = result;
+				}
+				return r;
 			}
 		} catch (IOException e) {
 			return null;
@@ -676,38 +694,38 @@ public class TagManager {
 	}
 
 	/**
-     * DELETE method for deleting the tag identified by <tt>tag</tt> from the channel
-     * <tt>chan</tt> (both path parameters).
-     *
-     * @param tag URI path parameter: tag name to remove
-     * @param chan URI path parameter: channel to remove <tt>tag</tt> from
-     * @return HTTP Response
-     */
+	 * DELETE method for deleting the tag identified by <tt>tag</tt> from the channel
+	 * <tt>chan</tt> (both path parameters).
+	 *
+	 * @param tag URI path parameter: tag name to remove
+	 * @param chan URI path parameter: channel to remove <tt>tag</tt> from
+	 * @return HTTP Response
+	 */
 	@DeleteMapping("/{tagName}")
-    public String removeSingle(@PathVariable ("tagName") final String tag, @RequestParam ("chName") String chan) {
-        //Client client = getNewClient();
-        try {
-            if (client.prepareGet("tags", "tag", tag).get().isExists()) {
-                UpdateResponse updateResponse = client
-                        .update(new UpdateRequest("channelfinder", "channel", chan).refresh(true)
-                                .script(" removeTags = new java.util.ArrayList();" + "for (tag in ctx._source.tags) "
-                                        + "{ if (tag.name == tag.name) { removeTags.add(tag)} }; "
-                                        + "for (removeTag in removeTags) {ctx._source.tags.remove(removeTag)}")
-                        .addScriptParam("tagName", tag)).actionGet();
-                //Response r = Response.ok().build();
-                return "removed";
-            } else {
-                return null;
-            }
-        } catch (DocumentMissingException e) {
-            return null;
-        } catch (Exception e) {
-            return null;
-        } finally {
-            //client.close();
-        }
-}
-	
+	public String removeSingle(@PathVariable ("tagName") final String tag, @RequestParam ("chName") String chan) {
+		//Client client = getNewClient();
+		try {
+			if (client.prepareGet("tags", "tag", tag).get().isExists()) {
+				UpdateResponse updateResponse = client
+						.update(new UpdateRequest("channelfinder", "channel", chan).refresh(true)
+								.script(" removeTags = new java.util.ArrayList();" + "for (tag in ctx._source.tags) "
+										+ "{ if (tag.name == tag.name) { removeTags.add(tag)} }; "
+										+ "for (removeTag in removeTags) {ctx._source.tags.remove(removeTag)}")
+								.addScriptParam("tagName", tag)).actionGet();
+				//Response r = Response.ok().build();
+				return "removed";
+			} else {
+				return null;
+			}
+		} catch (DocumentMissingException e) {
+			return null;
+		} catch (Exception e) {
+			return null;
+		} finally {
+			//client.close();
+		}
+	}
+
 	abstract class OnlyXmlTag {
 		@JsonIgnore
 		private List<XmlChannel> channels;
