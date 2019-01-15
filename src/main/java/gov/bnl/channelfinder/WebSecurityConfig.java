@@ -13,7 +13,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		http.authorizeRequests()
 				.anyRequest().fullyAuthenticated()
 				.and()
-			.formLogin();
+			.formLogin().permitAll().and().logout().logoutSuccessUrl("/");
 	}
 
 	@Override
@@ -22,11 +22,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 				.userDnPatterns("uid={0},ou=people")
 				.groupSearchBase("ou=groups")
 				.contextSource()
-					.url("ldap://localhost:8389/dc=springframework,dc=org")
-					//.url("ldap://localhost:8080")
-					.and()
+				.url("ldap://localhost:8389/dc=springframework,dc=org")
+				//.url("ldap://localhost:8080")
+				.and()
 				.passwordCompare()
 					.passwordEncoder(new LdapShaPasswordEncoder())
 					.passwordAttribute("userPassword");
+				
 	}
 }

@@ -62,7 +62,7 @@ objectclass: inetOrgPerson
 cn: Joe Smeth
 sn: Smeth
 uid: joe
-userPassword: joespassword
+userPassword: $apr1$g5YvEfgt$3gQai1REWyU56kwFlL2wc0
 
 dn: cn=mouse\, jerry,ou=people,dc=springframework,dc=org
 objectclass: top
