@@ -608,11 +608,11 @@ public class TagManager {
 					//					audit.info(um.getUserName() + "|" + uriInfo.getPath() + "|DELETE|OK|" + r.getStatus());
 					return "Deleted successfully";
 				} else {
-					return null;
+					return "Something went wrong";
 				}
 			}
 		} catch (Exception e) {
-			return null;
+			return "Something went wrong";
 		} finally {
 			//client.close();
 		}

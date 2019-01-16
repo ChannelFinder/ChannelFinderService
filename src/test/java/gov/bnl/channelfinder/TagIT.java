@@ -111,7 +111,8 @@ public class TagIT {
 		testTag.setOwner("test-owner");
 		createdTag = tagManager.create("test-tag", testTag);
 		String removed = tagManager.remove("test-tag");
-		// now check if the created tag has the correct name and owner
+		// now check if the tag was removed
+		assertEquals("Failed to remove the tag", "Deleted successfully", removed);
 		assertEquals("Failed to remove the tag", null, tagManager.read("test-tag",false));
 	}
 
