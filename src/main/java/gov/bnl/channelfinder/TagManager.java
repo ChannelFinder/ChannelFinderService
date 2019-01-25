@@ -3,6 +3,7 @@ package gov.bnl.channelfinder;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
+import com.google.common.collect.Lists;
 
 @RestController
 @RequestMapping("/tags")
@@ -64,8 +66,10 @@ public class TagManager {
      */
     @GetMapping
     public List<XmlTag> listTags(@RequestParam Map<String, String> allRequestParams) {
-        tagRepository.findAll();
-        return null;
+        // TODO this is an extra copy becuase the CF API contract was a List and the
+        // CRUDrepository contract is a Iterable. In the future one of the two should be
+        // changed.
+        return Lists.newArrayList(tagRepository.findAll());
     }
 
     /**
@@ -76,8 +80,12 @@ public class TagManager {
      * @param tag URI path parameter: tag name to search for
      * @return list of channels with their properties and tags that match
      */
-    @GetMapping("/tag")
-    public XmlTag read(@RequestParam("tag") String tag, @RequestParam("withChannels") boolean withChannels) {
+    @GetMapping("/tag/{tag}")
+    public XmlTag read(@PathVariable("tag") String tag, @RequestParam("withChannels") boolean withChannels) {
+        Optional<XmlTag> foundTag = tagRepository.findById(tag);
+        if(foundTag.isPresent()) {
+            return foundTag.get();
+        }
         return null;
     }
 

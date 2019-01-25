@@ -1,5 +1,7 @@
 package gov.bnl.channelfinder;
 
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
 
@@ -37,25 +39,31 @@ import org.springframework.stereotype.Repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Repository
-public class TagRepository implements CrudRepository<XmlTag, String> {
+public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     @Autowired
     ElasticSearchClient esService;
 
     ObjectMapper objectMapper = new ObjectMapper();
-
-    @SuppressWarnings("unused")
-    public <S extends XmlTag> S index(S entity) {
+    /**
+     * create a new property using the given XmlProperty
+     * 
+     * @param testProperty
+     * @return 
+     * @return the created property
+     */
+    public <S extends XmlProperty> S index(XmlProperty property) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(entity.getName())
-                    .source(objectMapper.writeValueAsBytes(entity), XContentType.JSON);
+            IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
+                    .id(property.getName())
+                    .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
             IndexResponse indexRespone = client.index(indexRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
             Result result = indexRespone.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                 // client.get(, options)
-                return (S) findById(entity.getName()).get();
+                return (S) findById(property.getName()).get();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,14 +71,14 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    public <S extends XmlTag> Iterable<S> indexAll(Iterable<S> entities) {
+    public <S extends XmlProperty> Iterable<S> indexAll(List<XmlProperty> properties) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
-            for (XmlTag tag : entities) {
-                IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(tag.getName())
-                        .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
+            for (XmlProperty property : properties) {
+                IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
+                        .id(property.getName())
+                        .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                 bulkRequest.add(indexRequest);
             }
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
@@ -79,45 +87,46 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 // Failed to create all the tags
 
             } else {
-                List<String> createdTagIds = new ArrayList<String>();
+                List<String> createdPropertiesIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
                     if (bulkItemResponse.getResponse().getResult().equals(Result.CREATED)) {
-                        createdTagIds.add(bulkItemResponse.getId());
+                        createdPropertiesIds.add(bulkItemResponse.getId());
                     }
                 }
-                return (Iterable<S>) findAllById(createdTagIds);
+                return (Iterable<S>) findAllById(createdPropertiesIds);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
-
     }
 
     @Override
-    public <S extends XmlTag> S save(S entity) {
-        return null;
-    }
-
-    @Override
-    public <S extends XmlTag> Iterable<S> saveAll(Iterable<S> entities) {
+    public <S extends XmlProperty> S save(S entity) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Optional<XmlTag> findById(String id) {
-        return findById(id, false);
+    public <S extends XmlProperty> Iterable<S> saveAll(Iterable<S> entities) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
-    public Optional<XmlTag> findById(String id, boolean withChannels) {
+    @Override
+    public Optional<XmlProperty> findById(String id) {
+        return findById(id, false);
+    }
+   
+    public Optional<XmlProperty> findById(String id, boolean withChannels) {
         RestHighLevelClient client = esService.getSearchClient();
-        GetRequest getRequest = new GetRequest(ES_TAG_INDEX, ES_TAG_TYPE, id);
+        GetRequest getRequest = new GetRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id);
         try {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
-                XmlTag tag = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlTag.class);
-                return Optional.of(tag);
+                XmlProperty property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(),
+                        XmlProperty.class);
+                return Optional.of(property);
             }
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -133,19 +142,20 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     }
 
     @Override
-    public Iterable<XmlTag> findAll() {
+    public Iterable<XmlProperty> findAll() {
 
         RestHighLevelClient client = esService.getSearchClient();
         SearchRequest searchRequest = new SearchRequest();
-        searchRequest.indices(ES_TAG_INDEX);
+        searchRequest.indices(ES_PROPERTY_INDEX);
+        searchRequest.types(ES_PROPERTY_TYPE);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             if (searchResponse.status().equals(RestStatus.OK)) {
-                List<XmlTag> result = new ArrayList<XmlTag>();
+                List<XmlProperty> result = new ArrayList<XmlProperty>();
                 for (SearchHit hit : searchResponse.getHits()) {
-                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), XmlTag.class));
+                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), XmlProperty.class));
                 }
                 return result;
             }
@@ -157,24 +167,23 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     }
 
     @Override
-    public Iterable<XmlTag> findAllById(Iterable<String> ids) {
-
+    public Iterable<XmlProperty> findAllById(Iterable<String> ids) {
         MultiGetRequest request = new MultiGetRequest();
         for (String id : ids) {
-            request.add(new MultiGetRequest.Item(ES_TAG_INDEX, ES_TAG_TYPE, id));
+            request.add(new MultiGetRequest.Item(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id));
         }
         try {
-            List<XmlTag> foundTags = new ArrayList<XmlTag>();
+            List<XmlProperty> foundProperties = new ArrayList<XmlProperty>();
             MultiGetResponse response = esService.getSearchClient().mget(request, RequestOptions.DEFAULT);
             for (MultiGetItemResponse multiGetItemResponse : response) {
                 if (!multiGetItemResponse.isFailed()) {
-                    foundTags.add(objectMapper.readValue(
-                            multiGetItemResponse.getResponse().getSourceAsBytesRef().streamInput(), XmlTag.class));
+                    foundProperties.add(objectMapper.readValue(
+                            multiGetItemResponse.getResponse().getSourceAsBytesRef().streamInput(), XmlProperty.class));
                 } else {
                     // failed to fetch all the listed tags
                 }
             }
-            return foundTags;
+            return foundProperties;
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -189,9 +198,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     }
 
     @Override
-    public void deleteById(String tag) {
+    public void deleteById(String id) {
         RestHighLevelClient client = esService.getIndexClient();
-        DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag);
+        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id);
         try {
             DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
             Result result = response.getResult();
@@ -205,12 +214,12 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     }
 
     @Override
-    public void delete(XmlTag entity) {
+    public void delete(XmlProperty entity) {
         deleteById(entity.getName());
     }
 
     @Override
-    public void deleteAll(Iterable<? extends XmlTag> entities) {
+    public void deleteAll(Iterable<? extends XmlProperty> entities) {
         // TODO Auto-generated method stub
 
     }
@@ -219,18 +228,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     public void deleteAll() {
         // TODO Auto-generated method stub
 
-    }
-
-    /**
-     * Utility method to rename an existing tag
-     * 
-     * @param original
-     * @param data
-     * @return
-     */
-    XmlTag renameTag(XmlTag original, XmlTag data) {
-
-        return null;
     }
 
 }
