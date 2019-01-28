@@ -73,6 +73,37 @@ public class PropertyRepositoryIT {
     }
 
     /**
+     * Test is the requested property exists
+     */
+    @Test
+    public void testPropertyExist() {
+        XmlProperty testProperty1 = new XmlProperty();
+        testProperty1.setName("test-property1");
+        testProperty1.setOwner("test-owner");
+
+        XmlProperty testProperty2 = new XmlProperty();
+        testProperty2.setName("test-property2");
+        testProperty2.setOwner("test-owner");
+
+        List<XmlProperty> testPropertys = Arrays.asList(testProperty1, testProperty2);
+
+        Iterable<XmlProperty> createdPropertys = propertyRepository.indexAll(testPropertys);
+
+        try {
+            // Test if created tags exist
+            assertTrue("Failed to check the existance of " + testProperty1.getName(), propertyRepository.existsById(testProperty1.getName()));
+            assertTrue("Failed to check the existance of " + testProperty2.getName(), propertyRepository.existsById(testProperty2.getName()));
+            // Test the check for existance of a non existant tag returns false
+            assertTrue("Failed to check the existance of 'non-existant-tag'", !propertyRepository.existsById("non-existant-tag"));
+        } finally {
+            // clean up
+            createdPropertys.forEach(createdProperty -> {
+                propertyRepository.deleteById(createdProperty.getName());
+            });
+        }
+    }
+
+    /**
      * A test to index a multiple properties
      */
     @Test

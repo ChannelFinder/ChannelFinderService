@@ -168,6 +168,39 @@ public class ChannelRepositoryIT {
         });
     }
 
+
+    /**
+     * Test is the requested channel exists
+     */
+    @Test
+    public void testPropertyExist() {
+
+        XmlChannel testChannel1 = new XmlChannel();
+        testChannel1.setName("test-channel1");
+        testChannel1.setOwner("test-owner");
+
+        XmlChannel testChannel2 = new XmlChannel();
+        testChannel2.setName("test-channel2");
+        testChannel2.setOwner("test-owner");
+
+        List<XmlChannel> testChannels = Arrays.asList(testChannel1, testChannel2);
+
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+
+        try {
+            // Test if created tags exist
+            assertTrue("Failed to check the existance of " + testChannel1.getName(), channelRepository.existsById(testChannel1.getName()));
+            assertTrue("Failed to check the existance of " + testChannel2.getName(), channelRepository.existsById(testChannel2.getName()));
+            // Test the check for existance of a non existant tag returns false
+            assertTrue("Failed to check the existance of 'non-existant-channel'", !channelRepository.existsById("non-existant-channel"));
+        } finally {
+            // clean up
+            createdChannels.forEach(createdChannel -> {
+                channelRepository.deleteById(createdChannel.getName());
+            });
+        }
+    }
+    
     /**
      * TODO Create a channel with a property
      */

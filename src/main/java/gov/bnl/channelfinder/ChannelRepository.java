@@ -2,6 +2,8 @@ package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -135,7 +138,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     @Override
     public boolean existsById(String id) {
-        // TODO Auto-generated method stub
+
+        RestHighLevelClient client = esService.getSearchClient();
+        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
+        getRequest.fetchSourceContext(new FetchSourceContext(false));
+        getRequest.storedFields("_none_");
+        try {
+            return client.exists(getRequest, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return false;
     }
 
