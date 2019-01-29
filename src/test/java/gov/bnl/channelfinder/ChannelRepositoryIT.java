@@ -3,7 +3,9 @@ package gov.bnl.channelfinder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -135,7 +137,7 @@ public class ChannelRepositoryIT {
     }
 
     /**
-     * TODO Create a channel with a list of tags
+     * Create a channel with a list of tags
      */
     @Test
     public void indexChannelWithTags() {
@@ -168,12 +170,148 @@ public class ChannelRepositoryIT {
         });
     }
 
-
     /**
-     * Test is the requested channel exists
+     * Create a channel with a property
      */
     @Test
-    public void testPropertyExist() {
+    public void indexChannelWithProperty() {
+
+        XmlChannel testChannel1 = new XmlChannel();
+        testChannel1.setName("test-channel1");
+        testChannel1.setOwner("test-owner");
+
+        XmlProperty testProperty1 = new XmlProperty();
+        testProperty1.setName("test-property1");
+        testProperty1.setOwner("test-owner");
+        testProperty1.setValue("test-property1-value");
+
+        try {
+            XmlProperty createdProperty = propertyRepository.index(testProperty1);
+            testChannel1.addProperty(createdProperty);
+            XmlChannel createdChannel = channelRepository.index(testChannel1);
+            // verify the channel was created as expected
+            assertEquals("Failed to create the test channel with property", createdChannel, testChannel1);
+        } finally {
+            // clean up
+            channelRepository.deleteById(testChannel1.getName());
+            propertyRepository.deleteById(testProperty1.getName());
+        }
+    }
+
+    /**
+     * Create a channel with a list of properties
+     */
+    @Test
+    public void indexChannelWithProperties() {
+
+        XmlChannel testChannel1 = new XmlChannel();
+        testChannel1.setName("test-channel1");
+        testChannel1.setOwner("test-owner");
+
+        List<XmlProperty> testProperties = createTestProperties(2);
+
+        try {
+            testChannel1.addProperties(testProperties);
+            XmlChannel createdChannel = channelRepository.index(testChannel1);
+            // verify the tag was created as expected
+            assertEquals("Failed to create the test channel with a list of properties", testChannel1, createdChannel);
+            // verify the tag was created as expected
+        } finally {
+            // clean up
+            channelRepository.deleteById(testChannel1.getName());
+            testProperties.forEach(testProperty -> {
+                propertyRepository.deleteById(testProperty.getName());
+            });
+        }
+    }
+
+
+    /**
+     * Create a channel with a list of tags and properties
+     */
+    @Test
+    public void indexChannelWithTagsAndProperties() {
+
+        XmlChannel testChannel = new XmlChannel();
+        testChannel.setName("test-channel1");
+        testChannel.setOwner("test-owner");
+        
+        List<XmlProperty> testProperties = createTestProperties(2);
+        List<XmlTag> testTags = createTestTags(2);
+        try {
+            testChannel.addProperties(testProperties);
+            testChannel.addTags(testTags);
+            XmlChannel createdChannel = channelRepository.index(testChannel);
+            // verify the tag was created as expected
+            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
+            // verify the tag was created as expected
+        } finally {
+            // clean up
+            channelRepository.deleteById(testChannel.getName());
+            testProperties.forEach(testProperty -> {
+                propertyRepository.deleteById(testProperty.getName());
+            });
+
+            testTags.forEach(testTag -> {
+                tagRepository.deleteById(testTag.getName());
+            });
+        }
+    }
+    
+    /**
+     * Update a channel with
+     * 1. additional list of tags and properties
+     * 2. update the values of existing properties
+     */
+    @Test
+    public void updateChannelWithTagsAndProperties() {
+
+        XmlChannel testChannel = new XmlChannel();
+        testChannel.setName("test-channel1");
+        testChannel.setOwner("test-owner");
+        
+        List<XmlProperty> testProperties = createTestProperties(2);
+        List<XmlTag> testTags = createTestTags(2);
+        try {
+            testChannel.addProperty(testProperties.get(0));
+            testChannel.addTag(testTags.get(0));
+            XmlChannel createdChannel = channelRepository.index(testChannel);
+            // verify the tag was created as expected
+            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
+            // update the channel with new tags and properties
+            testChannel.setTags(testTags);
+            testChannel.setProperties(testProperties);
+            XmlChannel updatedChannel = channelRepository.save(testChannel);
+            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, updatedChannel);
+            assertTrue("Failed updated the channel with new tags", testChannel.getTags().containsAll(testTags));
+            assertTrue("Failed updated the channel with new properties", testChannel.getProperties().containsAll(testProperties));
+            // update the channel with new property values
+            testProperties.get(0).setValue("new-value0");
+            testProperties.get(1).setValue("new-value1");
+            testChannel.setProperties(testProperties);
+            XmlChannel updatedValueChannel = channelRepository.save(testChannel);
+            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, updatedValueChannel);
+            assertTrue("Failed updated the channel with new tags", testChannel.getTags().containsAll(testTags));
+            assertTrue("Failed updated the channel with new properties", testChannel.getProperties().containsAll(testProperties));
+
+        } finally {
+            // clean up
+            channelRepository.deleteById(testChannel.getName());
+            testProperties.forEach(testProperty -> {
+                propertyRepository.deleteById(testProperty.getName());
+            });
+
+            testTags.forEach(testTag -> {
+                tagRepository.deleteById(testTag.getName());
+            });
+        }
+    }
+
+    /**
+     * Test if the requested channel exists
+     */
+    @Test
+    public void testChannelExist() {
 
         XmlChannel testChannel1 = new XmlChannel();
         testChannel1.setName("test-channel1");
@@ -189,10 +327,46 @@ public class ChannelRepositoryIT {
 
         try {
             // Test if created tags exist
-            assertTrue("Failed to check the existance of " + testChannel1.getName(), channelRepository.existsById(testChannel1.getName()));
-            assertTrue("Failed to check the existance of " + testChannel2.getName(), channelRepository.existsById(testChannel2.getName()));
+            assertTrue("Failed to check the existance of " + testChannel1.getName(),
+                    channelRepository.existsById(testChannel1.getName()));
+            assertTrue("Failed to check the existance of " + testChannel2.getName(),
+                    channelRepository.existsById(testChannel2.getName()));
             // Test the check for existance of a non existant tag returns false
-            assertTrue("Failed to check the existance of 'non-existant-channel'", !channelRepository.existsById("non-existant-channel"));
+            assertTrue("Failed to check the existance of 'non-existant-channel'",
+                    !channelRepository.existsById("non-existant-channel"));
+        } finally {
+            // clean up
+            createdChannels.forEach(createdChannel -> {
+                channelRepository.deleteById(createdChannel.getName());
+            });
+        }
+    }
+
+    /**
+     * Test if the requested list of channels exists
+     */
+    @Test
+    public void testChannelsExist() {
+
+        XmlChannel testChannel1 = new XmlChannel();
+        testChannel1.setName("test-channel1");
+        testChannel1.setOwner("test-owner");
+
+        XmlChannel testChannel2 = new XmlChannel();
+        testChannel2.setName("test-channel2");
+        testChannel2.setOwner("test-owner");
+
+        List<XmlChannel> testChannels = Arrays.asList(testChannel1, testChannel2);
+
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+
+        try {
+            // Test if created tags exist
+            assertTrue("Failed to check the existance of channels",
+                    channelRepository.existsByIds(Arrays.asList("test-channel1", "test-channel2")));
+            // Test the check for existance of a non existant tag returns false
+            assertTrue("Failed to check the existance of 'non-existant-channel'",
+                    !channelRepository.existsByIds(Arrays.asList("test-channel1", "non-existant-channel")));
         } finally {
             // clean up
             createdChannels.forEach(createdChannel -> {
@@ -202,18 +376,46 @@ public class ChannelRepositoryIT {
     }
     
     /**
-     * TODO Create a channel with a property
+     * A utility class which will create the requested number of test properties named 'test-property#' 
+     * @return list of created properties
      */
-    @Test
-    public void indexChannelWithProperty() {
-
+    private List<XmlProperty> createTestProperties(int count){
+        List<XmlProperty> testProperties = new ArrayList<XmlProperty>();
+        for (int i = 0; i < count; i++) {
+            XmlProperty testProperty = new XmlProperty();
+            testProperty.setName("test-property"+i);
+            testProperty.setOwner("test-owner");
+            testProperty.setValue("test-property"+i+"-value");
+            testProperties.add(testProperty);
+        }
+        try {
+            return Lists.newArrayList(propertyRepository.indexAll(testProperties));
+        } catch (Exception e) {
+            propertyRepository.deleteAll(testProperties);
+            return Collections.emptyList();
+        }
     }
+
 
     /**
-     * TODO Create a channel with a list of properties
+     * A utility class which will create the requested number of test tags named 'test-tag#' 
+     * @return list of created tags
      */
-    @Test
-    public void indexChannelWithProperties() {
-
+    private List<XmlTag> createTestTags(int count){
+        List<XmlTag> testTags = new ArrayList<XmlTag>();
+        for (int i = 0; i < count; i++) {
+            XmlTag testTag = new XmlTag();
+            testTag.setName("test-tag"+i);
+            testTag.setOwner("test-owner");
+            testTags.add(testTag);
+        }
+        try {
+        return Lists.newArrayList(tagRepository.indexAll(testTags));
+        } catch (Exception e) {
+            tagRepository.deleteAll(testTags);
+            return Collections.emptyList();
+        }
+       
     }
+
 }
