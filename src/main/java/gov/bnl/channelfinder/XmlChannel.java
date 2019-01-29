@@ -121,21 +121,44 @@ public class XmlChannel {
         this.tags = tags;
     }
 
+    /**
+     * Add the given tag to the list of tags associated with this channel
+     * @param tag the tag to be added to the channel
+     */
     public void addTag(XmlTag tag) {
         this.tags.add(tag);
     }
 
+    /**
+     * Add the given list of tags to the list of tags associated with this channel
+     * @param tags the tags to be added to the channel
+     */
     public void addTags(List<XmlTag> tags) {
         this.tags.addAll(tags);
     }
 
+    /**
+     * Add the given property to the list of properties associated with this channel
+     * @param property the property to be added to the channel
+     */
+    public void addProperty(XmlProperty property) {
+        this.properties.add(property);
+    }
+
+    /**
+     * Add the given list of properties to the properties associated with this channel
+     * @param properties the properties to be added to the channel
+     */
+    public void addProperties(List<XmlProperty> properties) {
+        this.properties.addAll(properties);
+    }
     /**
      * Creates a compact string representation for the log.
      *
      * @param data XmlChannel to create the string representation for
      * @return string representation
      */
-    public static String toLog(XmlChannel data) {
+    public String toLog(XmlChannel data) {
         return data.getName() + "(" + data.getOwner() + "):["
                 + (data.properties)
                 + (data.tags)
@@ -184,4 +207,5 @@ public class XmlChannel {
             return false;
         return true;
     }
+
 }

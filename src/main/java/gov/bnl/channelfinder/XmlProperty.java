@@ -16,6 +16,8 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Property object that can be represented as JSON in payload data.
  *
@@ -134,15 +136,14 @@ public class XmlProperty {
     /**
      * Creates a compact string representation for the log.
      *
-     * @param data the XmlProperty to log
      * @return string representation for log
      */
-    public static String toLog(XmlProperty data) {
-         if (data.channels == null) {
-            return data.getName() + "(" + data.getOwner() + ")";
+    public String toLog() {
+         if (this.channels == null) {
+            return this.getName() + "(" + this.getOwner() + ")";
         } else {
-            return data.getName() + "(" + data.getOwner() + ")"
-                    + (data.channels);
+            return this.getName() + "(" + this.getOwner() + ")"
+                    + (this.channels);
         }
     }
 
@@ -188,6 +189,30 @@ public class XmlProperty {
             return false;
         return true;
     }
-    
-    
+
+    /**
+     * A filter to be used with the jackson mapper to ignore the embedded
+     * xmlchannels in the property object
+     * 
+     * @author Kunal Shroff
+     *
+     */
+    abstract class OnlyXmlProperty {
+        @JsonIgnore
+        private List<XmlChannel> channels;
+    }
+
+    /**
+     * A filter to be used with the jackson mapper to ignore the embedded
+     * xmlchannels and value in the property object
+     * 
+     * @author Kunal Shroff
+     *
+     */
+    abstract class OnlyNameOwnerXmlProperty {
+        @JsonIgnore
+        private String value;
+        @JsonIgnore
+        private List<XmlChannel> channels;
+    }
 }

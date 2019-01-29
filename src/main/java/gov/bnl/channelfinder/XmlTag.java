@@ -114,14 +114,13 @@ public class XmlTag {
     /**
      * Creates a compact string representation for the log.
      *
-     * @param data the XmlTag to log
      * @return string representation for log
      */
-    public static String toLog(XmlTag data) {
-        if (data.channels == null) {
-            return data.getName() + "(" + data.getOwner() + ")";
+    public String toLog() {
+        if (this.channels == null) {
+            return this.getName() + "(" + this.getOwner() + ")";
         } else {
-            return data.getName() + "(" + data.getOwner() + ")" + (data.channels);
+            return this.getName() + "(" + this.getOwner() + ")" + (this.channels);
         }
     }
 
