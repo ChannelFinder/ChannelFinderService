@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
@@ -34,6 +37,9 @@ public class TagManager {
     @Autowired
     TagRepository tagRepository;
 
+    @Autowired
+    ChannelRepository channelRepository;
+
     /**
      * PUT method to create and <b>exclusively</b> update the tag identified by the
      * path parameter <tt>name</tt> to all channels identified in the payload
@@ -48,15 +54,28 @@ public class TagManager {
     public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
         long start = System.currentTimeMillis();
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-        try {
-            if (tag.equals(data.getName())) {
-                return tagRepository.index(data);
-            } else {
-                return null;
-            }
-        } catch (Exception e) {
-            return null;
+        if (tag.equals(data.getName())) {
+            validateTagRequest(data);
+            return tagRepository.index(data);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The tag name in the body " + data.toString() + " Does not match the URI " + tag, null);
         }
+    }
+
+    /**
+     * Checks if
+     * 1. the tag owner is not null or empty
+     * 2. all the listed channels exist
+     * 
+     * @param data
+     */
+    private void validateTagRequest(XmlTag tag) {
+        if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The tag owner cannot be null or empty " + tag.toString(), null);
+        }
+//        tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList())
     }
 
     /**
@@ -188,23 +207,6 @@ public class TagManager {
     @DeleteMapping("/{tagName}")
     public String removeSingle(@PathVariable("tagName") final String tag, @RequestParam("chName") String chan) {
         return null;
-    }
-
-    abstract class OnlyXmlTag {
-        @JsonIgnore
-        private List<XmlChannel> channels;
-    }
-
-    /**
-     * A filter to be used with the jackson mapper to ignore the embedded
-     * xmlchannels in the tag object
-     * 
-     * @author Kunal Shroff
-     *
-     */
-    @JsonIgnoreType
-    public class MyMixInForXmlChannels {
-        //
     }
 
 }

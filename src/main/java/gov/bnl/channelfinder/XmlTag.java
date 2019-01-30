@@ -18,6 +18,8 @@ import javax.xml.bind.annotation.XmlType;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Tag object that can be represented as XML/JSON in payload data.
  *
@@ -160,6 +162,17 @@ public class XmlTag {
             return false;
         return true;
     }
-    
-    
+
+    /**
+     * A filter to be used with the jackson mapper to ignore the embedded
+     * xmlchannels in the tag object
+     * 
+     * @author Kunal Shroff
+     *
+     */
+    abstract class OnlyXmlTag {
+        @JsonIgnore
+        private List<XmlChannel> channels;
+    }
+
 }

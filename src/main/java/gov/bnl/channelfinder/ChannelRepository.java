@@ -2,15 +2,19 @@ package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
+import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
+import static org.elasticsearch.index.query.QueryBuilders.nestedQuery;
+import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 
+import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -33,16 +37,24 @@ import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.DisMaxQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.elasticsearch.search.sort.ScoreSortBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.MultiValueMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import gov.bnl.channelfinder.XmlProperty.OnlyXmlProperty;
+import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 
 @Repository
 public class ChannelRepository implements CrudRepository<XmlChannel, String> {
@@ -68,7 +80,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             /// verify the creation of the tag
             Result result = indexRespone.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                // client.get(, options)
+                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
@@ -164,11 +176,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             request.add(getRequest);
         }
         try {
+            long start = System.currentTimeMillis();
             MultiGetResponse response = client.mget(request, RequestOptions.DEFAULT);
             for (MultiGetItemResponse multiGetItemResponse : response) {
                 if( !multiGetItemResponse.getResponse().isExists())
                     return false;
             }
+            System.out.println("Completed existance check for " + ids.size()+ " in: " + (System.currentTimeMillis() - start));
             return true;
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -278,6 +292,122 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     public void deleteAll() {
         // TODO Auto-generated method stub
 
+    }
+
+    /**
+     * Search for a list of channels based on their name, tags, and/or properties.
+     * Search parameters
+     * ~name - The name of the channel
+     * ~tags - A list of comma separated values
+     * ${propertyName}:${propertyValue} - 
+     * 
+     * The query result is sorted based on the channel name
+     * ~size - The number of channels to be returned
+     * ~from - The starting index of the channel list
+     */
+    public List<XmlChannel> search(MultiValueMap<String, String> searchParameters) {
+        
+        StringBuffer performance = new StringBuffer();
+        long start = System.currentTimeMillis();
+        long totalStart = System.currentTimeMillis();
+        RestHighLevelClient client = esService.getSearchClient();
+        start = System.currentTimeMillis();
+        try {
+            BoolQueryBuilder qb = boolQuery();
+            int size = 10000;
+            int from = 0;
+            for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
+                switch (parameter.getKey()) {
+                case "~name":
+                    for (String value : parameter.getValue()) {
+                        DisMaxQueryBuilder nameQuery = disMaxQuery();
+                        for (String pattern : value.split("\\|")) {
+                            nameQuery.add(wildcardQuery("name", pattern.trim()));
+                        }
+                        qb.must(nameQuery);
+                    }
+                    break;
+                case "~tag":
+                    for (String value : parameter.getValue()) {
+                        DisMaxQueryBuilder tagQuery = disMaxQuery();
+                        for (String pattern : value.split("\\|")) {
+                            tagQuery.add(wildcardQuery("tags.name", pattern.trim()));
+                        }
+                        qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
+                    }
+                    break;
+                case "~size":
+                    Optional<String> maxSize = parameter.getValue().stream().max((o1, o2) -> {
+                        return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
+                    });
+                    if (maxSize.isPresent()) {
+                        size = Integer.valueOf(maxSize.get());
+                    }
+                    break;
+                case "~from":
+                    Optional<String> maxFrom = parameter.getValue().stream().max((o1, o2) -> {
+                        return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
+                    });
+                    if (maxFrom.isPresent()) {
+                        from = Integer.valueOf(maxFrom.get());
+                    }
+                    break;
+                default:
+                    DisMaxQueryBuilder propertyQuery = disMaxQuery();
+                    for (String value : parameter.getValue()) {
+                        for (String pattern : value.split("\\|")) {
+                            propertyQuery.add(
+                                    nestedQuery("properties",
+                                                boolQuery()
+                                                    .must(matchQuery("properties.name", parameter.getKey().trim()))
+                                                    .must(wildcardQuery("properties.value", pattern.trim())),
+                                                ScoreMode.None));
+                        }
+                    }
+                    qb.must(propertyQuery);
+                    break;
+                }
+            }
+
+            performance.append("|prepare:" + (System.currentTimeMillis() - start));
+            start = System.currentTimeMillis();
+            SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.size(size);
+            if (from >= 0) {
+                searchSourceBuilder.from(from);
+            }
+            searchSourceBuilder.query(qb); 
+            searchSourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC));
+            searchRequest.types(ES_CHANNEL_TYPE); 
+            searchRequest.source(searchSourceBuilder); 
+
+            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            performance.append(
+                    "|query:(" + searchResponse.getHits().getTotalHits() + ")" + (System.currentTimeMillis() - start));
+            start = System.currentTimeMillis();
+            final ObjectMapper mapper = new ObjectMapper();
+            mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
+            mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
+            start = System.currentTimeMillis();
+            List<XmlChannel> result = new ArrayList<XmlChannel>();
+            searchResponse.getHits().forEach(hit -> {
+                try {
+                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } 
+            });
+
+            performance.append("|parse:" + (System.currentTimeMillis() - start));
+//            log.info(user + "|" + uriInfo.getPath() + "|GET|OK" + performance.toString() + "|total:"
+//                    + (System.currentTimeMillis() - totalStart) + "|" + r.getStatus() + "|returns "
+//                    + qbResult.getHits().getTotalHits() + " channels");
+            return result;
+        } catch (Exception e) {
+            
+        }
+        return null;
     }
 
 }

@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.elasticsearch.action.DocWriteResponse.Result;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -55,7 +57,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             /// verify the creation of the tag
             Result result = indexRespone.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                // client.get(, options)
+                client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(entity.getName()).get();
             }
         } catch (Exception e) {
@@ -86,6 +88,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                         createdTagIds.add(bulkItemResponse.getId());
                     }
                 }
+                client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdTagIds);
             }
         } catch (Exception e) {
