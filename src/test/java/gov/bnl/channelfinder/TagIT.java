@@ -145,7 +145,6 @@ public class TagIT {
 	/**
 	 * test the retrieval of tags
 	 * (read method)
-	 * NOT DONE
 	 */
 	@Test
 	public void listTagsTest() {

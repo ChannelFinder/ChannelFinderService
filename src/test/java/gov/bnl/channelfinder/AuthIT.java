@@ -20,13 +20,23 @@ public class AuthIT {
 	private MockMvc mockMvc;
 
 	@Test
-	public void loginWithValidUserThenAuthenticated() throws Exception {
+	public void loginWithLDAPValidUserThenAuthenticated() throws Exception {
 		FormLoginRequestBuilder login = formLogin()
 				.user("ben")
 				.password("benspassword");
 
 		mockMvc.perform(login)
 		.andExpect(authenticated().withUsername("ben"));
+	}
+	
+	@Test
+	public void loginWithINMEMValidUserThenAuthenticated() throws Exception {
+		FormLoginRequestBuilder login = formLogin()
+				.user("admin")
+				.password("adminPass");
+
+		mockMvc.perform(login)
+		.andExpect(authenticated().withUsername("admin"));
 	}
 
 	@Test

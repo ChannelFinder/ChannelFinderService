@@ -11,9 +11,6 @@ package gov.bnl.channelfinder;
  * #L%
  */
 
-import static gov.bnl.channelfinder.ElasticSearchClient.getNewClient;
-import static gov.bnl.channelfinder.ElasticSearchClient.getSearchClient;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,23 +20,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
+
+import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
-
-import com.google.common.base.Function;
-//import javax.ws.rs.core.Response;
-//import javax.ws.rs.core.SecurityContext;
-import com.google.common.collect.Collections2;
-
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.cluster.metadata.MetaDataDeleteIndexService.Response;
 import org.elasticsearch.index.engine.DocumentMissingException;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -47,11 +41,9 @@ import org.elasticsearch.index.query.WildcardQueryBuilder;
 
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
-import org.elasticsearch.search.SearchHit;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.json.JsonParseException;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -64,7 +56,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
@@ -638,7 +629,6 @@ public class TagManager {
 	 */
 	@PutMapping("/{tagName}/{chName}")
 	public String addSingle(@PathVariable ("tagName") String tag, @PathVariable ("chName") String chan, XmlTag data) {
-		//Client client = getNewClient();
 		XmlTag result = null;
 		try {
 			GetResponse response = client.prepareGet("tags", "tag", tag).execute().actionGet();
@@ -647,7 +637,6 @@ public class TagManager {
 			result = mapper.readValue(response.getSourceAsBytes(), XmlTag.class);
 
 			if (result != null) {
-				//                if(um.userHasAdminRole() || um.userIsInGroup(result.getOwner())){
 				if (validateTag(result, data)) {
 					HashMap<String, String> param = new HashMap<String, String>();
 					param.put("name", result.getName());
