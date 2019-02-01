@@ -106,8 +106,10 @@ public class TagManager {
 					hits.add(mapper.readValue(hit.source(), XmlTag.class));
 				}
 			}
+			System.out.println("get executed succesfully");
 			return hits;
 		} catch (Exception e) {
+			System.out.println("there was an error in getting");
 			e.printStackTrace();
 			return null;
 		} finally {
@@ -600,7 +602,7 @@ public class TagManager {
 			BulkResponse bulkResponse = bulkRequest.execute().actionGet();
 			if (bulkResponse.hasFailures()) {
 				audit.severe(bulkResponse.buildFailureMessage());
-				return null;
+				return "Something went wrong";
 			} else {
 				DeleteResponse deleteResponse = bulkResponse.getItems()[0].getResponse();
 				if (deleteResponse.isFound()) {

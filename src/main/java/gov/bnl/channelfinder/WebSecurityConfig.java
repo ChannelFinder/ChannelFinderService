@@ -1,5 +1,6 @@
 package gov.bnl.channelfinder;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,6 +14,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+	
+	@Autowired
+    private MyBasicAuthenticationEntryPoint authenticationEntryPoint;
+	
 	@Override
 	public void configure(WebSecurity web) throws Exception {
 	    web
@@ -22,8 +27,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
+		http.csrf().disable();
 		http.authorizeRequests().anyRequest().authenticated();
-		http.httpBasic();
+		http.httpBasic().authenticationEntryPoint(authenticationEntryPoint);
 		http.formLogin().permitAll().and().logout().logoutSuccessUrl("/");
 	}
 
