@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import org.junit.After;
@@ -59,13 +60,107 @@ public class ChannelRepositorySearchIT {
 
     /**
      * Test searching for channels based on name
+     * @throws InterruptedException 
      */
     @Test
-    public void searchNameTest() {
-        populateService.getChannelList().stream().forEach(System.out::println);
-        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap();
-        searchParameters.add("~name", "SR*");
+    public void searchNameTest() throws InterruptedException {
+        List<String> channelNames = Arrays
+                .asList(populateService.getChannelList().toArray(new String[populateService.getChannelList().size()]));
+
+        // Need to add a sleep to ensure the indexed documents in all the indices are refreshed
+        Thread.sleep(10000);
+        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+        // Search for a single unique channel
+        searchParameters.add("~name", channelNames.get(0));
         List<XmlChannel> result = channelRepository.search(searchParameters);
-        assertTrue(result.size() == 1000);
+        assertTrue(result.size() == 1 && result.get(0).getName().equals(channelNames.get(0)));
+
+        // Search for all channels via wildcards
+        searchParameters.clear();
+        searchParameters.add("~name", "BR:C001-BI:2{BLA}Pos:?-RB");
+        result = channelRepository.search(searchParameters);
+        assertTrue("Expected 2 but got " + result.size(), result.size() == 2);
+
+        searchParameters.clear();
+        searchParameters.add("~name", "BR:C001-BI:?{BLA}Pos:*");
+        result = channelRepository.search(searchParameters);
+        assertTrue("Expected 4 but got " + result.size(), result.size() == 4);
+
+        // Search for all 1000 channels
+        searchParameters.clear();
+        searchParameters.add("~name", "SR*");
+        result = channelRepository.search(searchParameters);
+        assertTrue("Expected 1000 but got " + result.size(), result.size() == 1000);
+
+        // Search for all 1000 SR channels and all 500 booster channels
+        searchParameters.clear();
+        searchParameters.add("~name", "SR*|BR*");
+        result = channelRepository.search(searchParameters);
+        assertTrue("Expected 1500 but got " + result.size(), result.size() == 1500);
+
+        searchParameters.clear();
+        searchParameters.add("~name", "SR*,BR*");
+        result = channelRepository.search(searchParameters);
+        assertTrue("Expected 1500 but got " + result.size(), result.size() == 1500);
+    }
+
+    final List<Integer> val_bucket = Arrays.asList(1, 2, 5, 10, 20, 50, 100, 200, 500);
+
+    /**
+     * Query for channels based on tags
+     * @throws InterruptedException 
+     */
+    @Test
+    public void searchTagTest() throws InterruptedException {
+        // Need to add a sleep to ensure the indexed documents in all the indices are
+        // refreshed
+        Thread.sleep(10000);
+
+        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+        // search for channels based on a tag
+        for (int i = 0; i < 5; i++) {
+
+            long id = new Random().nextInt(10);
+            int index = new Random().nextInt(9);
+            searchParameters.clear();
+            searchParameters.add("~name", "SR*");
+            searchParameters.add("~tag", "group"+id+"_"+val_bucket.get(index));
+
+            List<XmlChannel> result = channelRepository.search(searchParameters);
+            assertTrue("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), result.size() == val_bucket.get(index));
+        }
+    }
+
+    /**
+     * Query for channels based on properties
+     * @throws InterruptedException 
+     */
+    @Test
+    public void searchPropertyTest() throws InterruptedException {
+        // Need to add a sleep to ensure the indexed documents in all the indices are
+        // refreshed
+        Thread.sleep(10000);
+
+        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+        // search for channels based on a tag
+        for (int i = 0; i < 5; i++) {
+
+            long id = new Random().nextInt(10);
+            int index = new Random().nextInt(9);
+            searchParameters.clear();
+            searchParameters.add("~name", "SR*");
+            searchParameters.add("group"+id, String.valueOf(val_bucket.get(index)));
+
+            List<XmlChannel> result = channelRepository.search(searchParameters);
+            assertTrue("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), result.size() == val_bucket.get(index));
+        }
+    }
+    
+    private String maptoString(MultiValueMap<String, String> searchParameters) {
+        StringBuffer sb = new StringBuffer();
+        searchParameters.entrySet().forEach(e -> {
+            sb.append(e.getKey() + " " + e.getValue());
+        });
+        return sb.toString();
     }
 }

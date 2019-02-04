@@ -58,9 +58,12 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.*;
  * Additionally, each channel has a list of tags and properties
  * 
  * Properties include:
- * location, cell, element, device, family, unit, type, z_pos_r, mount, and some generic properties group[1-9] 
+ * location, cell, element, device, family, unit, type, z_pos_r, mount, and some generic properties 
+ * properties group[0-9] with values [0, 1, 2, 5, 10, 20, 50, 100, 200, 500] which matches the # of channels with those values
  * 
  * Tags include:
+ * group[0-9]_[count] with count values [0, 1, 2, 5, 10, 20, 50, 100, 200, 500] which matches the # of channels with those values
+ * 
  * @author Kunal Shroff
  *
  */

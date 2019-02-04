@@ -2,6 +2,8 @@ package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
+import static gov.bnl.channelfinder.ChannelManager.logManagerAudit;
+import static gov.bnl.channelfinder.ChannelManager.log;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
@@ -32,6 +34,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -63,19 +66,20 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     ElasticSearchClient esService;
 
     ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * create a new property using the given XmlChannel
      * 
      * @param testProperty
-     * @return 
+     * @return
      * @return the created property
      */
     public <S extends XmlChannel> S index(XmlChannel channel) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-                    .id(channel.getName())
+            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
                     .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+            indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             IndexResponse indexRespone = client.index(indexRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
             Result result = indexRespone.getResult();
@@ -93,25 +97,26 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         RestHighLevelClient client = esService.getIndexClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
-            for (XmlChannel property : channels) {
-                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-                        .id(property.getName())
-                        .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
+            for (XmlChannel channel : channels) {
+                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
+                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
                 bulkRequest.add(indexRequest);
             }
+
+            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the tag
+            // verify the creation of the channels
             if (bulkResponse.hasFailures()) {
-                // Failed to create all the tags
+                // Failed to create all the channels
 
             } else {
                 List<String> createdPropertiesIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
-                    if (bulkItemResponse.getResponse().getResult().equals(Result.CREATED)) {
+                    Result result = bulkItemResponse.getResponse().getResult();
+                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                         createdPropertiesIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdPropertiesIds);
             }
         } catch (Exception e) {
@@ -121,21 +126,19 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     }
 
     @Override
-    public <S extends XmlChannel> S save(S entity) {
+    public <S extends XmlChannel> S save(S channel) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-                    .id(entity.getName())
-                    .source(objectMapper.writeValueAsBytes(entity), XContentType.JSON);
-            UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, entity.getName())
-                    .doc(objectMapper.writeValueAsBytes(entity), XContentType.JSON)
-                    .upsert(indexRequest);
+            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
+                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+            UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName())
+                    .doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
             UpdateResponse updateRespone = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
             Result result = updateRespone.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                 // client.get(, options)
-                return (S) findById(entity.getName()).get();
+                return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -144,8 +147,38 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     }
 
     @Override
-    public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> entities) {
-        // TODO Auto-generated method stub
+    public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> channels) {
+
+        RestHighLevelClient client = esService.getIndexClient();
+        BulkRequest bulkRequest = new BulkRequest();
+        try {
+            for (XmlChannel channel : channels) {
+                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
+                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName())
+                        .doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
+                UpdateResponse updateRespone = client.update(updateRequest, RequestOptions.DEFAULT);
+                bulkRequest.add(indexRequest);
+            }
+
+            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+            if (bulkResponse.hasFailures()) {
+                // Failed to create/update all the channels
+
+            } else {
+                List<String> createdPropertiesIds = new ArrayList<String>();
+                for (BulkItemResponse bulkItemResponse : bulkResponse) {
+                    Result result = bulkItemResponse.getResponse().getResult();
+                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
+                        createdPropertiesIds.add(bulkItemResponse.getId());
+                    }
+                }
+                return (Iterable<S>) findAllById(createdPropertiesIds);
+            }
+        } catch (Exception e) {
+
+        }
         return null;
     }
 
@@ -156,7 +189,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         try {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
-                XmlChannel property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlChannel.class);
+                XmlChannel property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(),
+                        XmlChannel.class);
                 return Optional.of(property);
             }
         } catch (IOException e) {
@@ -179,10 +213,11 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             long start = System.currentTimeMillis();
             MultiGetResponse response = client.mget(request, RequestOptions.DEFAULT);
             for (MultiGetItemResponse multiGetItemResponse : response) {
-                if( !multiGetItemResponse.getResponse().isExists())
+                if (!multiGetItemResponse.getResponse().isExists())
                     return false;
             }
-            System.out.println("Completed existance check for " + ids.size()+ " in: " + (System.currentTimeMillis() - start));
+            logManagerAudit.info(
+                    "Completed existance check for " + ids.size() + " in: " + (System.currentTimeMillis() - start));
             return true;
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -190,7 +225,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         }
         return false;
     }
-
 
     @Override
     public boolean existsById(String id) {
@@ -205,6 +239,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         }
         return false;
     }
+
     @Override
     public Iterable<XmlChannel> findAll() {
 
@@ -284,29 +319,24 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     @Override
     public void deleteAll(Iterable<? extends XmlChannel> entities) {
-        // TODO Auto-generated method stub
-
+        // TODO
     }
 
     @Override
     public void deleteAll() {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException("Delete All is not supported.");
     }
 
     /**
      * Search for a list of channels based on their name, tags, and/or properties.
-     * Search parameters
-     * ~name - The name of the channel
-     * ~tags - A list of comma separated values
-     * ${propertyName}:${propertyValue} - 
+     * Search parameters ~name - The name of the channel ~tags - A list of comma
+     * separated values ${propertyName}:${propertyValue} -
      * 
-     * The query result is sorted based on the channel name
-     * ~size - The number of channels to be returned
-     * ~from - The starting index of the channel list
+     * The query result is sorted based on the channel name ~size - The number of
+     * channels to be returned ~from - The starting index of the channel list
      */
     public List<XmlChannel> search(MultiValueMap<String, String> searchParameters) {
-        
+
         StringBuffer performance = new StringBuffer();
         long start = System.currentTimeMillis();
         long totalStart = System.currentTimeMillis();
@@ -321,7 +351,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 case "~name":
                     for (String value : parameter.getValue()) {
                         DisMaxQueryBuilder nameQuery = disMaxQuery();
-                        for (String pattern : value.split("\\|")) {
+                        for (String pattern : value.split("[\\|,;]")) {
                             nameQuery.add(wildcardQuery("name", pattern.trim()));
                         }
                         qb.must(nameQuery);
@@ -330,7 +360,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 case "~tag":
                     for (String value : parameter.getValue()) {
                         DisMaxQueryBuilder tagQuery = disMaxQuery();
-                        for (String pattern : value.split("\\|")) {
+                        for (String pattern : value.split("[\\|,;]")) {
                             tagQuery.add(wildcardQuery("tags.name", pattern.trim()));
                         }
                         qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
@@ -355,13 +385,12 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 default:
                     DisMaxQueryBuilder propertyQuery = disMaxQuery();
                     for (String value : parameter.getValue()) {
-                        for (String pattern : value.split("\\|")) {
-                            propertyQuery.add(
-                                    nestedQuery("properties",
-                                                boolQuery()
-                                                    .must(matchQuery("properties.name", parameter.getKey().trim()))
+                        for (String pattern : value.split("[\\|,;]")) {
+                            propertyQuery
+                                    .add(nestedQuery("properties",
+                                            boolQuery().must(matchQuery("properties.name", parameter.getKey().trim()))
                                                     .must(wildcardQuery("properties.value", pattern.trim())),
-                                                ScoreMode.None));
+                                            ScoreMode.None));
                         }
                     }
                     qb.must(propertyQuery);
@@ -377,10 +406,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             if (from >= 0) {
                 searchSourceBuilder.from(from);
             }
-            searchSourceBuilder.query(qb); 
+            searchSourceBuilder.query(qb);
             searchSourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC));
-            searchRequest.types(ES_CHANNEL_TYPE); 
-            searchRequest.source(searchSourceBuilder); 
+            searchRequest.types(ES_CHANNEL_TYPE);
+            searchRequest.source(searchSourceBuilder);
 
             final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             performance.append(
@@ -396,7 +425,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
                 } catch (IOException e) {
                     e.printStackTrace();
-                } 
+                }
             });
 
             performance.append("|parse:" + (System.currentTimeMillis() - start));
@@ -405,7 +434,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 //                    + qbResult.getHits().getTotalHits() + " channels");
             return result;
         } catch (Exception e) {
-            
+
         }
         return null;
     }
