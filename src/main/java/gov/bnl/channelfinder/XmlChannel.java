@@ -12,8 +12,8 @@ package gov.bnl.channelfinder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
@@ -123,9 +123,15 @@ public class XmlChannel {
 
     /**
      * Add the given tag to the list of tags associated with this channel
+     * If the tag already exists then it is replaced with <tt>tag</tt>
      * @param tag the tag to be added to the channel
      */
     public void addTag(XmlTag tag) {
+        // If the tag already exists, then filter it out
+        this.tags = this.tags.stream().filter(t -> {
+            return !t.getName().equals(tag.getName());
+        }).collect(Collectors.toList());
+        // add the updated version of the tag
         this.tags.add(tag);
     }
 
@@ -139,9 +145,15 @@ public class XmlChannel {
 
     /**
      * Add the given property to the list of properties associated with this channel
+     * If the property already exists then it is replaced with the provided one
      * @param property the property to be added to the channel
      */
     public void addProperty(XmlProperty property) {
+        // If the property already exists, then filter it out
+        this.properties = this.properties.stream().filter(p -> {
+            return !p.getName().equals(property.getName());
+        }).collect(Collectors.toList());
+        // add the updated version of the property
         this.properties.add(property);
     }
 
@@ -158,10 +170,10 @@ public class XmlChannel {
      * @param data XmlChannel to create the string representation for
      * @return string representation
      */
-    public String toLog(XmlChannel data) {
-        return data.getName() + "(" + data.getOwner() + "):["
-                + (data.properties)
-                + (data.tags)
+    public String toLog() {
+        return this.getName() + "(" + this.getOwner() + "):["
+                + (this.properties)
+                + (this.tags)
                 + "]";
     }
 
