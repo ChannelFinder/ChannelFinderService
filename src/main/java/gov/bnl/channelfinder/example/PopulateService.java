@@ -1,5 +1,12 @@
 package gov.bnl.channelfinder.example;
 
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,8 +15,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -18,18 +25,15 @@ import java.util.stream.Collectors;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,8 +42,6 @@ import gov.bnl.channelfinder.ElasticSearchClient;
 import gov.bnl.channelfinder.XmlChannel;
 import gov.bnl.channelfinder.XmlProperty;
 import gov.bnl.channelfinder.XmlTag;
-
-import static gov.bnl.channelfinder.CFResourceDescriptors.*;
 /**
  * An class for creating the example database.
  *

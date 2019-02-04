@@ -188,7 +188,6 @@ public class TagManager {
      * <tt>name</tt> from all channels.
      *
      * @param tag URI path parameter: tag name to remove
-     * @return HTTP Response
      */
     @DeleteMapping("/{tagName}")
     public void remove(@PathVariable("tagName") String tag) {
@@ -201,7 +200,6 @@ public class TagManager {
      *
      * @param tag  URI path parameter: tag name to remove
      * @param chan URI path parameter: channel to remove <tt>tag</tt> from
-     * @return HTTP Response
      */
     @DeleteMapping("/{tagName}/{chName}")
     public String removeSingle(@PathVariable("tagName") final String tag, @PathVariable("chName") String chan) {

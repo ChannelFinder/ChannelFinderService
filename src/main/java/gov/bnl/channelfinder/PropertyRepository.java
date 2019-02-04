@@ -1,9 +1,7 @@
 package gov.bnl.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -94,7 +92,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             } else {
                 List<String> createdPropertiesIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
-                    if (bulkItemResponse.getResponse().getResult().equals(Result.CREATED)) {
+                    Result result = bulkItemResponse.getResponse().getResult();
+                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                         createdPropertiesIds.add(bulkItemResponse.getId());
                     }
                 }

@@ -24,11 +24,6 @@ public class TagManagerIT {
     static XmlTag createdTag;
     static List<XmlTag> Tags;
 
-    @Test
-    public void simpleTest() {
-        assertEquals("4 isn't 4", 4, 4);
-    }
-
     /**
      * test the creation of a single tag (create method)
      */
