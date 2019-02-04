@@ -1,11 +1,12 @@
 package gov.bnl.channelfinder;
 
+import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -21,12 +22,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import com.google.common.collect.Lists;
 
 @RestController
-@RequestMapping("/tags")
+@RequestMapping(TAG_RESOURCE_URI)
 @EnableAutoConfiguration
 public class TagManager {
 
@@ -50,7 +49,7 @@ public class TagManager {
      * @param data XmlTag structure containing the list of channels to be tagged
      * @return HTTP Response
      */
-    @PutMapping("/tag/{tag}")
+    @PutMapping("/{tag}")
     public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
         long start = System.currentTimeMillis();
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
@@ -85,8 +84,8 @@ public class TagManager {
      */
     @GetMapping
     public List<XmlTag> listTags(@RequestParam Map<String, String> allRequestParams) {
-        // TODO this is an extra copy becuase the CF API contract was a List and the
-        // CRUDrepository contract is a Iterable. In the future one of the two should be
+        // TODO this is an extra copy because the CF API contract was a List and the
+        // CRUDrepository contract is an Iterable. In the future one of the two should be
         // changed.
         return Lists.newArrayList(tagRepository.findAll());
     }
@@ -99,7 +98,7 @@ public class TagManager {
      * @param tag URI path parameter: tag name to search for
      * @return list of channels with their properties and tags that match
      */
-    @GetMapping("/tag/{tag}")
+    @GetMapping("/{tag}")
     public XmlTag read(@PathVariable("tag") String tag, @RequestParam("withChannels") boolean withChannels) {
         Optional<XmlTag> foundTag = tagRepository.findById(tag);
         if(foundTag.isPresent()) {
@@ -117,7 +116,7 @@ public class TagManager {
      * @param data XmlTag structure containing the list of channels to be tagged
      * @return HTTP Response
      */
-    @PutMapping("/tag")
+    @PutMapping()
     public List<XmlTag> createTags(@RequestBody List<XmlTag> data) {
         long start = System.currentTimeMillis();
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
@@ -136,7 +135,7 @@ public class TagManager {
      * @param data list of channels to addSingle the tag <tt>name</tt> to
      * @return HTTP Response
      */
-    @PostMapping("/tag/{tag}")
+    @PostMapping("/{tag}")
     public XmlTag update(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
         long start = System.currentTimeMillis();
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
@@ -151,21 +150,9 @@ public class TagManager {
      * @return HTTP Response
      * @throws IOException when audit or log fail
      */
-    @PostMapping("/tag")
+    @PostMapping()
     public List<XmlTag> updateTags(@RequestBody List<XmlTag> data) throws IOException {
         return null;
-    }
-
-    /**
-     * DELETE method for deleting the tag identified by the path parameter
-     * <tt>name</tt> from all channels.
-     *
-     * @param tag URI path parameter: tag name to remove
-     * @return HTTP Response
-     */
-    @DeleteMapping
-    public void remove(@RequestParam("tagName") String tag) {
-        tagRepository.deleteById(tag);
     }
 
     /**
@@ -197,6 +184,18 @@ public class TagManager {
     }
 
     /**
+     * DELETE method for deleting the tag identified by the path parameter
+     * <tt>name</tt> from all channels.
+     *
+     * @param tag URI path parameter: tag name to remove
+     * @return HTTP Response
+     */
+    @DeleteMapping("/{tagName}")
+    public void remove(@PathVariable("tagName") String tag) {
+        tagRepository.deleteById(tag);
+    }
+
+    /**
      * DELETE method for deleting the tag identified by <tt>tag</tt> from the
      * channel <tt>chan</tt> (both path parameters).
      *
@@ -204,8 +203,8 @@ public class TagManager {
      * @param chan URI path parameter: channel to remove <tt>tag</tt> from
      * @return HTTP Response
      */
-    @DeleteMapping("/{tagName}")
-    public String removeSingle(@PathVariable("tagName") final String tag, @RequestParam("chName") String chan) {
+    @DeleteMapping("/{tagName}/{chName}")
+    public String removeSingle(@PathVariable("tagName") final String tag, @PathVariable("chName") String chan) {
         return null;
     }
 
