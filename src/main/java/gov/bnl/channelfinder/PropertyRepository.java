@@ -62,7 +62,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     .id(property.getName())
                     .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
             IndexResponse indexRespone = client.index(indexRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the tag
+            /// verify the creation of the property
             Result result = indexRespone.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                 client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);

@@ -87,7 +87,9 @@ public class PropertyManager {
      */
     @PutMapping(value = "/{propertyName}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public XmlProperty create(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
-        return propertyRepository.index(property);
+        XmlProperty createdProperty = propertyRepository.index(property);
+        channelRepository.saveAll(property.getChannels());
+        return createdProperty;
     }
 
     /**

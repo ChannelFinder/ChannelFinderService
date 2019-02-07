@@ -104,29 +104,19 @@ public class PopulateService {
     public synchronized void cleanupDB() {
         RestHighLevelClient client = esService.getIndexClient();
         try {
+            BulkRequest bulkRequest = new BulkRequest();
             for (String channelName : channel_list) {
-                BulkRequest bulkRequest = new BulkRequest();
                 bulkRequest.add(new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName));
-                BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-                if(bulkResponse.hasFailures()){
-                    log.warning(bulkResponse.buildFailureMessage());
-                }
             }
             for (XmlTag tag : tag_list) {
-                BulkRequest bulkRequest = new BulkRequest();
                 bulkRequest.add(new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName()));
-                BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-                if(bulkResponse.hasFailures()){
-                    log.warning(bulkResponse.buildFailureMessage());
-                }
             }
             for (XmlProperty property : prop_list) {
-                BulkRequest bulkRequest = new BulkRequest();
                 bulkRequest.add(new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName()));
-                BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-                if(bulkResponse.hasFailures()){
-                    log.warning(bulkResponse.buildFailureMessage());
-                }
+            }
+            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+            if (bulkResponse.hasFailures()) {
+                log.warning(bulkResponse.buildFailureMessage());
             }
         } catch (Exception e) {
             log.log(Level.WARNING, e.getMessage(), e);

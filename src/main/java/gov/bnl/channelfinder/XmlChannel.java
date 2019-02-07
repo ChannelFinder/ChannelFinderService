@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import javafx.beans.property.Property;
+
 /**
  * Channel object that can be represented as XML/JSON in payload data.
  *
@@ -140,7 +142,7 @@ public class XmlChannel {
      * @param tags the tags to be added to the channel
      */
     public void addTags(List<XmlTag> tags) {
-        this.tags.addAll(tags);
+        tags.forEach(this::addTag);
     }
 
     /**
@@ -162,7 +164,7 @@ public class XmlChannel {
      * @param properties the properties to be added to the channel
      */
     public void addProperties(List<XmlProperty> properties) {
-        this.properties.addAll(properties);
+        properties.forEach(this::addProperty);
     }
     /**
      * Creates a compact string representation for the log.

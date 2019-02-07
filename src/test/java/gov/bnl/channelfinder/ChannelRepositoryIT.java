@@ -308,6 +308,57 @@ public class ChannelRepositoryIT {
     }
 
     /**
+     * Update a channel with patial objects, this is needed when you want to add a
+     * single tag or property
+     */
+    @Test
+    public void updateChannelWithPartialObjects() {
+
+        XmlChannel testChannel = new XmlChannel();
+        testChannel.setName("test-update-channel1");
+        testChannel.setOwner("test-owner");
+        
+        List<XmlProperty> testProperties = createTestProperties(2);
+        List<XmlTag> testTags = createTestTags(2);
+        try {
+            testChannel.addTag(testTags.get(0));
+            testChannel.addProperty(testProperties.get(0));
+            XmlChannel createdChannel = channelRepository.index(testChannel);
+            // verify the tag was created as expected
+            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
+            // update the channel with new tags and properties provided via partial object
+
+            XmlChannel updateTestChannel = new XmlChannel();
+            updateTestChannel.setName("test-update-channel1");
+            updateTestChannel.setOwner("test-owner");
+            updateTestChannel.addTag(testTags.get(1));
+            updateTestChannel.addProperty(testProperties.get(1));
+
+            XmlChannel updatedChannel = channelRepository.save(updateTestChannel);
+
+            XmlChannel expectedTestChannel = new XmlChannel();
+            expectedTestChannel.setName("test-update-channel1");
+            expectedTestChannel.setOwner("test-owner");
+            expectedTestChannel.addTag(testTags.get(0));
+            expectedTestChannel.addTag(testTags.get(1));
+            expectedTestChannel.addProperty(testProperties.get(0));
+            expectedTestChannel.addProperty(testProperties.get(1));
+            assertEquals("Failed to create the test channel with a list of tags & properties", expectedTestChannel, updatedChannel);
+
+        } finally {
+            // clean up
+            channelRepository.deleteById(testChannel.getName());
+            testProperties.forEach(testProperty -> {
+                propertyRepository.deleteById(testProperty.getName());
+            });
+
+            testTags.forEach(testTag -> {
+                tagRepository.deleteById(testTag.getName());
+            });
+        }
+    }
+    
+    /**
      * Test if the requested channel exists
      */
     @Test

@@ -129,10 +129,20 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     public <S extends XmlChannel> S save(S channel) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
-                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-            UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName())
-                    .doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
+
+            UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+
+            Optional<XmlChannel> existingChannel = findById(channel.getName());
+            if(existingChannel.isPresent()) {
+                XmlChannel newChannel = existingChannel.get();
+                newChannel.addTags(channel.getTags());
+                newChannel.addProperties(channel.getProperties());
+                updateRequest.doc(objectMapper.writeValueAsBytes(newChannel), XContentType.JSON);
+            } else {
+                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
+                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+                updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
+            }
             UpdateResponse updateRespone = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
             Result result = updateRespone.getResult();
@@ -153,12 +163,20 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlChannel channel : channels) {
-                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
-                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName())
-                        .doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
-                UpdateResponse updateRespone = client.update(updateRequest, RequestOptions.DEFAULT);
-                bulkRequest.add(indexRequest);
+                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+
+                Optional<XmlChannel> existingChannel = findById(channel.getName());
+                if (existingChannel.isPresent()) {
+                    XmlChannel newChannel = existingChannel.get();
+                    newChannel.addTags(channel.getTags());
+                    newChannel.addProperties(channel.getProperties());
+                    updateRequest.doc(objectMapper.writeValueAsBytes(newChannel), XContentType.JSON);
+                } else {
+                    IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+                            .id(channel.getName()).source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+                    updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
+                }
+                bulkRequest.add(updateRequest);
             }
 
             bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
