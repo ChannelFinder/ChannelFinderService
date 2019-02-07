@@ -14,41 +14,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-<<<<<<< HEAD
 	
 	@Autowired
-    private MyBasicAuthenticationEntryPoint authenticationEntryPoint;
+	private MyBasicAuthenticationEntryPoint authenticationEntryPoint;
 	
-	@Override
-	public void configure(WebSecurity web) throws Exception {
-	    web
-	        .ignoring()
-	        .antMatchers(HttpMethod.GET, "/tag**");
-	}
-	
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
-		http.csrf().disable();
-		http.authorizeRequests().anyRequest().authenticated();
-		http.httpBasic().authenticationEntryPoint(authenticationEntryPoint);
-		http.formLogin().permitAll().and().logout().logoutSuccessUrl("/");
-	}
-
-	@Override
-	public void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.ldapAuthentication()
-				.userDnPatterns("uid={0},ou=people")
-				.groupSearchBase("ou=groups")
-				.contextSource()
-				.url("ldap://localhost:8389/dc=springframework,dc=org")
-				//.url("ldap://localhost:8389/dc=cf-test,dc=local")
-				//.url("ldaps://ldap01.nsls2.bnl.gov/dc=nsls2,dc=bnl,dc=gov")
-				.and()
-				.passwordCompare()
-					.passwordEncoder(new LdapShaPasswordEncoder())
-					.passwordAttribute("userPassword");
-		auth.inMemoryAuthentication()
-=======
     @Override
     public void configure(WebSecurity web) throws Exception {
         web.ignoring().antMatchers(HttpMethod.GET, "/**");
@@ -56,8 +25,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+    	http.csrf().disable();
         http.authorizeRequests().anyRequest().authenticated();
-        http.httpBasic();
+        http.httpBasic().authenticationEntryPoint(authenticationEntryPoint);
         http.formLogin().permitAll().and().logout().logoutSuccessUrl("/");
     }
 
@@ -68,13 +38,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .groupSearchBase("ou=groups")
                 .contextSource()
                 .url("ldap://localhost:8389/dc=springframework,dc=org")
-                // .url("ldap://localhost:8080")
+                // .url("ldap://localhost:8389/dc=cf-test,dc=local")
+                // .url("ldap://ldap01.nsls2.bnl.gov/dc=bnl,dc=gov")
                 .and()
                 .passwordCompare()
                 .passwordEncoder(new LdapShaPasswordEncoder())
                 .passwordAttribute("userPassword");
         auth.inMemoryAuthentication()
->>>>>>> c4d5e3f205cf9dfb08d85124f333d27d2eaecc33
         .withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN")
         .and()
                 .withUser("user").password(encoder().encode("userPass")).roles("USER");
