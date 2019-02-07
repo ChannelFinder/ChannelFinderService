@@ -18,6 +18,8 @@ import javax.xml.bind.annotation.XmlType;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Tag object that can be represented as XML/JSON in payload data.
  *
@@ -114,14 +116,63 @@ public class XmlTag {
     /**
      * Creates a compact string representation for the log.
      *
-     * @param data the XmlTag to log
      * @return string representation for log
      */
-    public static String toLog(XmlTag data) {
-        if (data.channels == null) {
-            return data.getName() + "(" + data.getOwner() + ")";
+    public String toLog() {
+        if (this.channels == null) {
+            return this.getName() + "(" + this.getOwner() + ")";
         } else {
-            return data.getName() + "(" + data.getOwner() + ")" + (data.channels);
+            return this.getName() + "(" + this.getOwner() + ")" + (this.channels);
         }
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((channels == null) ? 0 : channels.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((owner == null) ? 0 : owner.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        XmlTag other = (XmlTag) obj;
+        if (channels == null) {
+            if (other.channels != null)
+                return false;
+        } else if (!channels.equals(other.channels))
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        if (owner == null) {
+            if (other.owner != null)
+                return false;
+        } else if (!owner.equals(other.owner))
+            return false;
+        return true;
+    }
+
+    /**
+     * A filter to be used with the jackson mapper to ignore the embedded
+     * xmlchannels in the tag object
+     * 
+     * @author Kunal Shroff
+     *
+     */
+    abstract class OnlyXmlTag {
+        @JsonIgnore
+        private List<XmlChannel> channels;
+    }
+
 }
