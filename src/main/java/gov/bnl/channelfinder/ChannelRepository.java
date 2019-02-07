@@ -143,6 +143,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
                 updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
             }
+            updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateRespone = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
             Result result = updateRespone.getResult();
