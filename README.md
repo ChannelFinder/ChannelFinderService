@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-Updating ChannelFinder to use SpringBoot and stop using GlassFish.
-=======
-
 ### Channel Finder
 
 #### A simple directory service
@@ -76,4 +72,3 @@ java -jar target/alarm-logger-<version>.jar
 ```
 mvn spring-boot:run
 ```
->>>>>>> c4d5e3f205cf9dfb08d85124f333d27d2eaecc33
