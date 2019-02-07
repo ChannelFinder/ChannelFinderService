@@ -3,6 +3,8 @@
  */
 package gov.bnl.channelfinder;
 
+import java.io.IOException;
+
 /*
  * #%L
  * ChannelFinder Directory Service
@@ -18,86 +20,85 @@ import java.util.logging.Logger;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
 
+import org.apache.http.HttpHost;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.client.Client;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
 
 /**
  * @author Kunal Shroff {@literal <shroffk@bnl.gov>}
  *
  */
 
-@WebListener
-@Service
+@Configuration
+@PropertySource("classpath:/elasticsearch.properties")
 public class ElasticSearchClient implements ServletContextListener {
 
-	private static Logger log = Logger.getLogger(ElasticSearchClient.class.getCanonicalName());
+    private static Logger log = Logger.getLogger(ElasticSearchClient.class.getCanonicalName());
 
-	private static Settings settings;
+    private static Settings settings;
 
-	private static TransportClient searchClient;
-	private static TransportClient indexClient;
+    private RestHighLevelClient searchClient;
+    private RestHighLevelClient indexClient;
 
-	public static TransportClient getSearchClient() {
-		return searchClient;
-	}
+    @Value("${elasticsearch.cluster.name:elasticsearch}")
+    private String clusterName;
+    @Value("${network.host:localhost}")
+    private String host;
+    @Value("${http.port:9200}")
+    private int port;
 
-	public static TransportClient getIndexClient() {
-		return indexClient;
-	}
+    public RestHighLevelClient getSearchClient() {
+        if(searchClient == null) {
+            searchClient = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
+        }
+        return searchClient;
+    }
 
-	/**
-	 * Returns a new {@link TransportClient} using the default settings
-	 * **IMPORTANT** it is the responsibility of the caller to close this client
-	 * 
-	 * @return es transport client
-	 */
-	@SuppressWarnings("resource")
-	public static TransportClient getNewClient() {
-		String host = settings.get("network.host");
-		int port = Integer.valueOf(settings.get("transport.tcp.port"));
-		try {
-			return new TransportClient().addTransportAddress(new InetSocketTransportAddress(host, port));
-		} catch (ElasticsearchException e) {
-			log.severe(e.getDetailedMessage());
-			return null;
-		}
-	}
+    public RestHighLevelClient getIndexClient() {
+        if(indexClient == null) {
+            indexClient = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
+        }
+        return indexClient;
+    }
 
-	public static Settings getSettings() {
-		return settings;
-	}
+    /**
+     * Returns a new {@link TransportClient} using the default settings
+     * **IMPORTANT** it is the responsibility of the caller to close this client
+     * 
+     * @return es transport client
+     */
+    @SuppressWarnings("resource")
+    public RestHighLevelClient getNewClient() {
+        try {
+            RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
+            return client;
+        } catch (ElasticsearchException e) {
+            log.severe(e.getDetailedMessage());
+            return null;
+        }
+    }
 
-	@Override
-	public void contextInitialized(ServletContextEvent sce) {
-		log.info("Initializing a new Transport clients.");
-		client();
-	}
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        log.info("Initializing a new Transport clients.");
+    }
 
-	@Bean
-	public Client client() {
-		searchClient = new TransportClient();
-		indexClient = new TransportClient();
-		settings = searchClient.settings();
-		String host = settings.get("network.host");
-		int port = Integer.valueOf(settings.get("transport.tcp.port"));
-		searchClient.addTransportAddress(new InetSocketTransportAddress(host, port));
-		indexClient.addTransportAddress(new InetSocketTransportAddress(host, port));
-
-		return indexClient;
-	}
-
-	@Override
-	public void contextDestroyed(ServletContextEvent sce) {
-		log.info("Closeing the default Transport clients.");
-		searchClient.close();
-		indexClient.close();
-	}
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        log.info("Closeing the default Transport clients.");
+        try {
+            searchClient.close();
+            indexClient.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 }

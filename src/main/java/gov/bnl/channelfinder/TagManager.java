@@ -1,5 +1,6 @@
 package gov.bnl.channelfinder;
 
+<<<<<<< HEAD
 /*
  * #%L
  * ChannelFinder Directory Service
@@ -10,16 +11,17 @@ package gov.bnl.channelfinder;
  * All rights reserved. Use is subject to license terms.
  * #L%
  */
+=======
+import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
+>>>>>>> c4d5e3f205cf9dfb08d85124f333d27d2eaecc33
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.logging.Logger;
 
+<<<<<<< HEAD
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 
@@ -44,6 +46,11 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+=======
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.http.HttpStatus;
+>>>>>>> c4d5e3f205cf9dfb08d85124f333d27d2eaecc33
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,16 +60,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+<<<<<<< HEAD
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+=======
+import com.google.common.collect.Lists;
+>>>>>>> c4d5e3f205cf9dfb08d85124f333d27d2eaecc33
 
 @RestController
-@RequestMapping("/tags")
+@RequestMapping(TAG_RESOURCE_URI)
 @EnableAutoConfiguration
 public class TagManager {
 
+<<<<<<< HEAD
 	//	private SecurityContext securityContext;
 	private Logger audit = Logger.getLogger(this.getClass().getPackage().getName() + ".audit");
 	private Logger log = Logger.getLogger(this.getClass().getName());
@@ -732,5 +745,183 @@ public class TagManager {
 	public class MyMixInForXmlChannels {
 		//
 	}
+=======
+    // private SecurityContext securityContext;
+    static Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
+    static Logger log = Logger.getLogger(TagManager.class.getName());
+
+    @Autowired
+    TagRepository tagRepository;
+
+    @Autowired
+    ChannelRepository channelRepository;
+
+    /**
+     * PUT method to create and <b>exclusively</b> update the tag identified by the
+     * path parameter <tt>name</tt> to all channels identified in the payload
+     * structure <tt>data</tt>. Setting the owner attribute in the XML root element
+     * is mandatory.
+     * 
+     * @param tag  URI path parameter: tag name
+     * @param data XmlTag structure containing the list of channels to be tagged
+     * @return HTTP Response
+     */
+    @PutMapping("/{tag}")
+    public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
+        long start = System.currentTimeMillis();
+        tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+        if (tag.equals(data.getName())) {
+            validateTagRequest(data);
+            return tagRepository.index(data);
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The tag name in the body " + data.toString() + " Does not match the URI " + tag, null);
+        }
+    }
+
+    /**
+     * Checks if
+     * 1. the tag owner is not null or empty
+     * 2. all the listed channels exist
+     * 
+     * @param data
+     */
+    private void validateTagRequest(@RequestBody XmlTag tag) {
+        if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The tag owner cannot be null or empty " + tag.toString(), null);
+        }
+//        tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList())
+    }
+
+    /**
+     * GET method for retrieving the list of tags in the database.
+     *
+     * @return list of tags
+     */
+    @GetMapping
+    public List<XmlTag> listTags(@RequestParam Map<String, String> allRequestParams) {
+        // TODO this is an extra copy because the CF API contract was a List and the
+        // CRUDrepository contract is an Iterable. In the future one of the two should be
+        // changed.
+        return Lists.newArrayList(tagRepository.findAll());
+    }
+
+    /**
+     * GET method for retrieving the tag with the path parameter <tt>tagName</tt>
+     * 
+     * To get all its channels use the parameter "withChannels"
+     *
+     * @param tag URI path parameter: tag name to search for
+     * @return list of channels with their properties and tags that match
+     */
+    @GetMapping("/{tag}")
+    public XmlTag read(@PathVariable("tag") String tag, @RequestParam("withChannels") boolean withChannels) {
+        Optional<XmlTag> foundTag = tagRepository.findById(tag);
+        if(foundTag.isPresent()) {
+            return foundTag.get();
+        }
+        return null;
+    }
+
+    /**
+     * PUT method to create and <b>exclusively</b> update the tag identified by the
+     * path parameter <tt>name</tt> to all channels identified in the payload
+     * structure <tt>data</tt>. Setting the owner attribute in the XML root element
+     * is mandatory.
+     * 
+     * @param data XmlTag structure containing the list of channels to be tagged
+     * @return HTTP Response
+     */
+    @PutMapping()
+    public List<XmlTag> createTags(@RequestBody List<XmlTag> data) {
+        long start = System.currentTimeMillis();
+        tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+        return (List<XmlTag>) tagRepository.indexAll(data);
+    }
+
+    /**
+     * POST method to update the the tag identified by the path parameter
+     * <tt>name</tt>, adding it to all channels identified by the channels inside
+     * the payload structure <tt>data</tt>. Setting the owner attribute in the XML
+     * root element is mandatory.
+     * 
+     * TODO: Optimize the bulk channel update
+     *
+     * @param tag  URI path parameter: tag name
+     * @param data list of channels to addSingle the tag <tt>name</tt> to
+     * @return HTTP Response
+     */
+    @PostMapping("/{tag}")
+    public XmlTag update(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
+        long start = System.currentTimeMillis();
+        tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+        return tagRepository.save(data);
+    }
+
+    /**
+     * POST method for creating multiple tags and updating all the appropriate
+     * channels If the channels don't exist it will fail
+     *
+     * @param data XmlTags data (from payload)
+     * @return HTTP Response
+     * @throws IOException when audit or log fail
+     */
+    @PostMapping()
+    public List<XmlTag> updateTags(@RequestBody List<XmlTag> data) throws IOException {
+        return null;
+    }
+
+    /**
+     * PUT method for adding the tag identified by <tt>tag</tt> to the single
+     * channel <tt>chan</tt> (both path parameters).
+     * 
+     * TODO: could be simplified with multi index update and script which can use
+     * wildcards thus removing the need to explicitly define the entire tag
+     * 
+     * @param tag  URI path parameter: tag name
+     * @param chan URI path parameter: channel to update <tt>tag</tt> to
+     * @param data tag data (ignored)
+     * @return HTTP Response
+     */
+    @PutMapping("/{tagName}/{chName}")
+    public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, @RequestBody XmlTag data) {
+        return null;
+    }
+
+    /**
+     * Check that the existing tag and the tag in the request body match
+     * 
+     * @param existing
+     * @param request
+     * @return
+     */
+    boolean validateTag(XmlTag existing, XmlTag request) {
+        return existing.getName().equals(request.getName());
+    }
+
+    /**
+     * DELETE method for deleting the tag identified by the path parameter
+     * <tt>name</tt> from all channels.
+     *
+     * @param tag URI path parameter: tag name to remove
+     */
+    @DeleteMapping("/{tagName}")
+    public void remove(@PathVariable("tagName") String tag) {
+        tagRepository.deleteById(tag);
+    }
+
+    /**
+     * DELETE method for deleting the tag identified by <tt>tag</tt> from the
+     * channel <tt>chan</tt> (both path parameters).
+     *
+     * @param tag  URI path parameter: tag name to remove
+     * @param chan URI path parameter: channel to remove <tt>tag</tt> from
+     */
+    @DeleteMapping("/{tagName}/{chName}")
+    public String removeSingle(@PathVariable("tagName") final String tag, @PathVariable("chName") String chan) {
+        return null;
+    }
+>>>>>>> c4d5e3f205cf9dfb08d85124f333d27d2eaecc33
 
 }

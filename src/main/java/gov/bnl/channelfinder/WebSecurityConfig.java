@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+<<<<<<< HEAD
 	
 	@Autowired
     private MyBasicAuthenticationEntryPoint authenticationEntryPoint;
@@ -47,14 +48,41 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 					.passwordEncoder(new LdapShaPasswordEncoder())
 					.passwordAttribute("userPassword");
 		auth.inMemoryAuthentication()
+=======
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers(HttpMethod.GET, "/**");
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeRequests().anyRequest().authenticated();
+        http.httpBasic();
+        http.formLogin().permitAll().and().logout().logoutSuccessUrl("/");
+    }
+
+    @Override
+    public void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.ldapAuthentication()
+                .userDnPatterns("uid={0},ou=people")
+                .groupSearchBase("ou=groups")
+                .contextSource()
+                .url("ldap://localhost:8389/dc=springframework,dc=org")
+                // .url("ldap://localhost:8080")
+                .and()
+                .passwordCompare()
+                .passwordEncoder(new LdapShaPasswordEncoder())
+                .passwordAttribute("userPassword");
+        auth.inMemoryAuthentication()
+>>>>>>> c4d5e3f205cf9dfb08d85124f333d27d2eaecc33
         .withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN")
         .and()
-        .withUser("user").password(encoder().encode("userPass")).roles("USER");
-	}
-	
-	@Bean
-	public PasswordEncoder  encoder() {
-	    return new BCryptPasswordEncoder();
-	}
-	
+                .withUser("user").password(encoder().encode("userPass")).roles("USER");
+    }
+
+    @Bean
+    public PasswordEncoder encoder() {
+        return new BCryptPasswordEncoder();
+    }
+
 }
