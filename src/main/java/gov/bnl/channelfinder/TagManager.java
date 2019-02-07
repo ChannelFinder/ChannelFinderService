@@ -69,7 +69,7 @@ public class TagManager {
      * 
      * @param data
      */
-    private void validateTagRequest(XmlTag tag) {
+    private void validateTagRequest(@RequestBody XmlTag tag) {
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The tag owner cannot be null or empty " + tag.toString(), null);
@@ -168,7 +168,7 @@ public class TagManager {
      * @return HTTP Response
      */
     @PutMapping("/{tagName}/{chName}")
-    public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, XmlTag data) {
+    public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, @RequestBody XmlTag data) {
         return null;
     }
 

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -84,9 +85,8 @@ public class PropertyManager {
      * @param property an XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
      * @return the created property
      */
-    @PutMapping(value = "/{propertyName}",
-                consumes = MediaType.APPLICATION_JSON_VALUE)
-    public XmlProperty create(@PathVariable("propertyName") String propertyName, XmlProperty property) {
+    @PutMapping(value = "/{propertyName}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public XmlProperty create(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
         return propertyRepository.index(property);
     }
 
@@ -97,7 +97,7 @@ public class PropertyManager {
      * @return The list of properties created
      */
     @PutMapping()
-    public List<XmlProperty> create(List<XmlProperty> data) {
+    public List<XmlProperty> create(@RequestBody List<XmlProperty> data) {
         return Lists.newArrayList(propertyRepository.indexAll(data));
     }
     
@@ -113,7 +113,7 @@ public class PropertyManager {
      */
     @PostMapping(value = "/{propertyName}",
                  consumes = MediaType.APPLICATION_JSON_VALUE)
-    public XmlProperty update(@PathVariable("propertyName") String propertyName, XmlProperty property) {
+    public XmlProperty update(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
         return propertyRepository.save(property);
     }
     /**
@@ -127,7 +127,7 @@ public class PropertyManager {
      *             when audit or log fail
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public Iterable<XmlProperty> update(List<XmlProperty> properties) {
+    public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
         return propertyRepository.saveAll(properties);
     }
     

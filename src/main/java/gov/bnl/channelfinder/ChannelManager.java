@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -83,7 +84,7 @@ public class ChannelManager {
      * @return HTTP The created XmlChannel
      */
     @PutMapping("/{channelName}")
-    public XmlChannel create(@PathVariable("channelName") String channelName, XmlChannel data) {
+    public XmlChannel create(@PathVariable("channelName") String channelName, @RequestBody XmlChannel data) {
         logManagerAudit.info("PUT:" + data.toLog());
         // TODO Validate the authorization of the user
         // TODO Validate the channel
@@ -97,7 +98,7 @@ public class ChannelManager {
      * @return A list of the created channels
      */
     @PutMapping
-    public List<XmlChannel> create(List<XmlChannel> data) {
+    public List<XmlChannel> create(@RequestBody List<XmlChannel> data) {
 
         data.stream().forEach(log -> {
             logManagerAudit.info("PUT" + log.toLog());
@@ -119,7 +120,7 @@ public class ChannelManager {
      *                    channel <tt>channelName</tt>
      */
     @PostMapping("/{channelName}")
-    public XmlChannel update(@PathVariable("channelName") String channelName, XmlChannel data) {
+    public XmlChannel update(@PathVariable("channelName") String channelName, @RequestBody XmlChannel data) {
         long start = System.currentTimeMillis();
         if (data.getName() == null || data.getName().isEmpty()) {
         }
@@ -155,7 +156,7 @@ public class ChannelManager {
      *                    channel <tt>channelName</tt>
      */
     @PostMapping()
-    public List<XmlChannel> update(List<XmlChannel> data) {
+    public List<XmlChannel> update(@RequestBody List<XmlChannel> data) {
         long start = System.currentTimeMillis();
         // TODO check user authorization
         // TODO validate the channels
