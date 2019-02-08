@@ -3,6 +3,7 @@ package gov.bnl.channelfinder;
 import static gov.bnl.channelfinder.CFResourceDescriptors.PROPERTY_RESOURCE_URI;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -88,6 +89,7 @@ public class PropertyManager {
     @PutMapping(value = "/{propertyName}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public XmlProperty create(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
         XmlProperty createdProperty = propertyRepository.index(property);
+        // Updated the listed channels in the properties payload with new properties/property values
         channelRepository.saveAll(property.getChannels());
         return createdProperty;
     }
@@ -95,12 +97,19 @@ public class PropertyManager {
     /**
      * PUT method for creating multiple properties.
      *
-     * @param data XmlProperties data (from payload)
+     * @param properties XmlProperties properties (from payload)
      * @return The list of properties created
      */
     @PutMapping()
-    public List<XmlProperty> create(@RequestBody List<XmlProperty> data) {
-        return Lists.newArrayList(propertyRepository.indexAll(data));
+    public List<XmlProperty> create(@RequestBody List<XmlProperty> properties) {
+        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(properties);
+        // Updated the listed channels in the properties payload with new properties/property values
+        List<XmlChannel> channels = new ArrayList<>();
+        properties.forEach(property -> {
+            channels.addAll(property.getChannels());
+        });
+        channelRepository.saveAll(channels);
+        return Lists.newArrayList(createdProperties);
     }
     
     /**
@@ -116,7 +125,10 @@ public class PropertyManager {
     @PostMapping(value = "/{propertyName}",
                  consumes = MediaType.APPLICATION_JSON_VALUE)
     public XmlProperty update(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
-        return propertyRepository.save(property);
+        XmlProperty updatedProperty = propertyRepository.save(property);
+        // Updated the listed channels in the properties payload with new properties/property values
+        channelRepository.saveAll(property.getChannels());
+        return updatedProperty;
     }
     /**
      * POST method for creating multiple properties.
@@ -130,7 +142,14 @@ public class PropertyManager {
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
-        return propertyRepository.saveAll(properties);
+        Iterable<XmlProperty> createdProperties = propertyRepository.saveAll(properties);
+        // Updated the listed channels in the properties payload with new properties/property values
+        List<XmlChannel> channels = new ArrayList<>();
+        properties.forEach(property -> {
+            channels.addAll(property.getChannels());
+        });
+        channelRepository.saveAll(channels);
+        return Lists.newArrayList(createdProperties);
     }
     
 
