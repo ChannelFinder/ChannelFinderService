@@ -138,6 +138,16 @@ public class XmlChannel {
     }
 
     /**
+     * Remove the given tag to the list of tags associated with this channel
+     * @param tag the tag to be removed from channel
+     */
+    public void removeTag(XmlTag tag) {
+        this.tags = this.tags.stream().filter(t -> {
+            return !t.getName().equals(tag.getName());
+        }).collect(Collectors.toList());
+    }
+
+    /**
      * Add the given list of tags to the list of tags associated with this channel
      * @param tags the tags to be added to the channel
      */
@@ -157,6 +167,16 @@ public class XmlChannel {
         }).collect(Collectors.toList());
         // add the updated version of the property
         this.properties.add(property);
+    }
+
+    /**
+     * Remove the given property to the list of properties associated with this channel
+     * @param property the property to be removed from the channel
+     */
+    public void removeProperty(XmlProperty property) {
+        this.properties = this.properties.stream().filter(p -> {
+            return !p.getName().equals(property.getName());
+        }).collect(Collectors.toList());
     }
 
     /**

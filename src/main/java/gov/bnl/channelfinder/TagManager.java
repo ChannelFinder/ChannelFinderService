@@ -212,14 +212,22 @@ public class TagManager {
 
     /**
      * DELETE method for deleting the tag identified by <tt>tag</tt> from the
-     * channel <tt>chan</tt> (both path parameters).
+     * channel <tt>channelName</tt> (both path parameters).
      *
      * @param tag  URI path parameter: tag name to remove
-     * @param chan URI path parameter: channel to remove <tt>tag</tt> from
+     * @param channelName URI path parameter: channel to remove <tt>tag</tt> from
      */
-    @DeleteMapping("/{tagName}/{chName}")
-    public String removeSingle(@PathVariable("tagName") final String tag, @PathVariable("chName") String chan) {
-        return null;
+    @DeleteMapping("/{tagName}/{channelName}")
+    public void removeSingle(@PathVariable("tagName") final String tagName, @PathVariable("channelName") String channelName) {
+        Optional<XmlChannel> ch = channelRepository.findById(channelName);
+        if(ch.isPresent()) {
+            XmlChannel channel = ch.get();
+            channel.removeProperty(new XmlProperty(tagName, ""));
+            channelRepository.index(channel);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The channel with the name " + channelName + " does not exist");
+        }
     }
 
 }
