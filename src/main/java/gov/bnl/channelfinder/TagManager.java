@@ -222,7 +222,7 @@ public class TagManager {
         Optional<XmlChannel> ch = channelRepository.findById(channelName);
         if(ch.isPresent()) {
             XmlChannel channel = ch.get();
-            channel.removeProperty(new XmlProperty(tagName, ""));
+            channel.removeTag(new XmlTag(tagName, ""));
             channelRepository.index(channel);
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
