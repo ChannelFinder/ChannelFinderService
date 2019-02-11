@@ -156,6 +156,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(ES_TAG_INDEX);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        // TODO use of scroll will be necessary
+        searchSourceBuilder.size(10000);
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);

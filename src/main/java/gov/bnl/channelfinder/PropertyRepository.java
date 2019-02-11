@@ -164,6 +164,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         searchRequest.indices(ES_PROPERTY_INDEX);
         searchRequest.types(ES_PROPERTY_TYPE);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        // TODO use of scroll will be necessary
+        searchSourceBuilder.size(10000);
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
@@ -184,6 +186,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @Override
     public Iterable<XmlProperty> findAllById(Iterable<String> ids) {
         MultiGetRequest request = new MultiGetRequest();
+        
         for (String id : ids) {
             request.add(new MultiGetRequest.Item(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id));
         }
