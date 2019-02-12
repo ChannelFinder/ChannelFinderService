@@ -24,6 +24,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Lists;
 
+import javafx.beans.property.Property;
+
 @RestController
 @RequestMapping(PROPERTY_RESOURCE_URI)
 @EnableAutoConfiguration
@@ -157,11 +159,30 @@ public class PropertyManager {
      * DELETE method for deleting the property identified by the path parameter
      * <tt>propertyName</tt> from all channels.
      *
-     * @param propertyName
-     *            URI path parameter: property name to remove
+     * @param propertyName URI path parameter: property name to remove
      */
     @DeleteMapping(value = "/{propertyName}")
     public void remove(@PathVariable("propertyName") String propertyName) {
         propertyRepository.deleteById(propertyName);
+    }
+
+    /**
+     * DELETE method for deleting the property identified by <tt>propertyName</tt> from the
+     * channel <tt>channelName</tt> (both path parameters).
+     *
+     * @param property  URI path parameter: property name to remove
+     * @param channelName URI path parameter: channel to remove <tt>propertyName</tt> from
+     */
+    @DeleteMapping("/{propertyName}/{channelName}")
+    public void removeSingle(@PathVariable("propertyName") final String propertyName, @PathVariable("channelName") String channelName) {
+        Optional<XmlChannel> ch = channelRepository.findById(channelName);
+        if(ch.isPresent()) {
+            XmlChannel channel = ch.get();
+            channel.removeProperty(new XmlProperty(propertyName, ""));
+            channelRepository.index(channel);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The channel with the name " + channelName + " does not exist");
+        }
     }
 }

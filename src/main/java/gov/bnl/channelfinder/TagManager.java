@@ -3,6 +3,7 @@ package gov.bnl.channelfinder;
 import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -131,28 +132,43 @@ public class TagManager {
      * 
      * TODO: Optimize the bulk channel update
      *
-     * @param tag  URI path parameter: tag name
-     * @param data list of channels to addSingle the tag <tt>name</tt> to
+     * @param tagName  URI path parameter: tag name
+     * @param tag with list of channels to addSingle the tag <tt>name</tt> to
      * @return HTTP Response
      */
     @PostMapping("/{tag}")
-    public XmlTag update(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
+    public XmlTag update(@PathVariable("tag") String tagName, @RequestBody XmlTag tag) {
         long start = System.currentTimeMillis();
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-        return tagRepository.save(data);
+        XmlTag updatedTag = tagRepository.save(tag);
+        // Updated the listed channels in tags with the associated tag
+        tag.getChannels().forEach(channel -> {
+            channel.addTag(updatedTag);
+        });
+        channelRepository.saveAll(tag.getChannels());
+        return updatedTag;
     }
 
     /**
      * POST method for creating multiple tags and updating all the appropriate
-     * channels If the channels don't exist it will fail
+     * channels.
+     * 
+     * If the channels don't exist it will fail
      *
-     * @param data XmlTags data (from payload)
-     * @return HTTP Response
+     * @param tags XmlTags data (from payload)
+     * @return List of all the updated tags
      * @throws IOException when audit or log fail
      */
     @PostMapping()
-    public List<XmlTag> updateTags(@RequestBody List<XmlTag> data) throws IOException {
-        return null;
+    public List<XmlTag> updateTags(@RequestBody List<XmlTag> tags) throws IOException {
+        Iterable<XmlTag> createdTags = tagRepository.saveAll(tags);
+        // Updated the listed channels in tags with the associated tags
+        List<XmlChannel> channels = new ArrayList<>();
+        tags.forEach(tag -> {
+            channels.addAll(tag.getChannels());
+        });
+        channelRepository.saveAll(channels);
+        return Lists.newArrayList(createdTags);
     }
 
     /**
@@ -196,14 +212,22 @@ public class TagManager {
 
     /**
      * DELETE method for deleting the tag identified by <tt>tag</tt> from the
-     * channel <tt>chan</tt> (both path parameters).
+     * channel <tt>channelName</tt> (both path parameters).
      *
      * @param tag  URI path parameter: tag name to remove
-     * @param chan URI path parameter: channel to remove <tt>tag</tt> from
+     * @param channelName URI path parameter: channel to remove <tt>tag</tt> from
      */
-    @DeleteMapping("/{tagName}/{chName}")
-    public String removeSingle(@PathVariable("tagName") final String tag, @PathVariable("chName") String chan) {
-        return null;
+    @DeleteMapping("/{tagName}/{channelName}")
+    public void removeSingle(@PathVariable("tagName") final String tagName, @PathVariable("channelName") String channelName) {
+        Optional<XmlChannel> ch = channelRepository.findById(channelName);
+        if(ch.isPresent()) {
+            XmlChannel channel = ch.get();
+            channel.removeTag(new XmlTag(tagName, ""));
+            channelRepository.index(channel);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The channel with the name " + channelName + " does not exist");
+        }
     }
 
 }

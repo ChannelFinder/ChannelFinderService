@@ -1,5 +1,7 @@
 package gov.bnl.channelfinder;
 
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
 
@@ -26,6 +28,8 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -102,7 +106,32 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     }
 
     @Override
-    public <S extends XmlTag> S save(S entity) {
+    public <S extends XmlTag> S save(S tag) {
+        RestHighLevelClient client = esService.getIndexClient();
+        try {
+
+            UpdateRequest updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
+
+            Optional<XmlTag> existingTag = findById(tag.getName());
+            if(existingTag.isPresent()) {
+                XmlTag newTag = existingTag.get();
+                updateRequest.doc(objectMapper.writeValueAsBytes(newTag), XContentType.JSON);
+            } else {
+                IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(tag.getName())
+                        .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
+                updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON).upsert(indexRequest);
+            }
+            updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+            UpdateResponse updateRespone = client.update(updateRequest, RequestOptions.DEFAULT);
+            /// verify the creation of the tag
+            Result result = updateRespone.getResult();
+            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
+                // client.get(, options)
+                return (S) findById(tag.getName()).get();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
@@ -156,6 +185,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(ES_TAG_INDEX);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        // TODO use of scroll will be necessary
+        searchSourceBuilder.size(10000);
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
