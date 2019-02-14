@@ -24,8 +24,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Lists;
 
-import javafx.beans.property.Property;
-
 @RestController
 @RequestMapping(PROPERTY_RESOURCE_URI)
 @EnableAutoConfiguration
