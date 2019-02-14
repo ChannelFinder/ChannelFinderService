@@ -20,6 +20,26 @@
 		</dependencies>
 	</dependencyManagement>
 	<dependencies>
+		<!--
+		The following 3 dependencies are temporarily added for java 11 compatibility
+		TODO They should be removed as soon as possible.
+		 -->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-core</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+		<!-- The above 3 dependencies are temporarily added for java 11 compatibility -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
@@ -95,16 +115,6 @@
 					<source>1.8</source>
 					<target>1.8</target>
 					<encoding>${project.build.sourceEncoding}</encoding>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.20.1</version>
-				<configuration>
-					<includes>
-						<include>**/ResourceManagerTestSuite.class</include>
-					</includes>
 				</configuration>
 			</plugin>
 		</plugins>
