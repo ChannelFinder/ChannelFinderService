@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
-import javafx.beans.property.Property;
-
 /**
  * Channel object that can be represented as XML/JSON in payload data.
  *
