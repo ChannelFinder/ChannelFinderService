@@ -48,7 +48,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	protected void configure(HttpSecurity http) throws Exception {
 		http.csrf().disable();
 		http.authorizeRequests().anyRequest().authenticated();
-//		http.requiresChannel().anyRequest().requiresSecure();
+		http.requiresChannel().anyRequest().requiresSecure();
 //		http.portMapper().http(8080).mapsTo(8443);
 		http.httpBasic().authenticationEntryPoint(authenticationEntryPoint);
 		http.formLogin().permitAll().and().logout().logoutSuccessUrl("/");
