@@ -1,5 +1,11 @@
 package gov.bnl.channelfinder;
 
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,9 +15,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @Configuration
@@ -51,11 +59,20 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		//http.requiresChannel().anyRequest().requiresSecure();
 //		http.portMapper().http(8080).mapsTo(8443);
 		http.httpBasic().authenticationEntryPoint(authenticationEntryPoint);
-		http.formLogin().permitAll().and().logout().logoutSuccessUrl("/");
+		http.formLogin().successHandler(new AuthenticationLoginSuccessHandler()).permitAll().and().logout().logoutSuccessUrl("/");
+        //http.successHandler(new AuthenticationLoginSuccessHandler());
 		//http.headers().httpStrictTransportSecurity();
 		//http.portMapper().http(80).mapsTo(443);
 		//http.antMatcher("/**").requiresChannel().anyRequest().requiresSecure();
 	}
+	
+    private class AuthenticationLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+        @Override
+        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+                throws IOException, ServletException {
+            response.setStatus(HttpServletResponse.SC_OK);
+        }
+    }
 
 	@Override
 	public void configure(AuthenticationManagerBuilder auth) throws Exception {
