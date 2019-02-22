@@ -45,13 +45,10 @@ public class MyUserDetailsService implements UserDetailsService {
 			e.printStackTrace();
 		}
 
-		//The magic is happen in this private method !
 		return buildUserForAuthentication(user);
 
 	}
 
-
-	//Fill your extended User object (CurrentUser) here and return it
 	private User buildUserForAuthentication(String user) {
 
 		String[] info = user.split(" ");

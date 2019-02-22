@@ -188,7 +188,8 @@ public class TagManager {
      */
     @PutMapping("/{tagName}/{chName}")
     public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, @RequestBody XmlTag data) {
-        return null;
+    	//TODO: method
+    	return null;
     }
 
     /**
