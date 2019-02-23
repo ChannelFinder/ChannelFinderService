@@ -66,6 +66,7 @@ public class ChannelManager {
      */
     @GetMapping("/{channelName}")
     public XmlChannel read(@PathVariable("channelName") String channelName) {
+    	System.out.println("hi");
         logManagerAudit.info("getting channel :" + channelName);
         if (channelRepository.findById(channelName).isPresent())
             return channelRepository.findById(channelName).get();

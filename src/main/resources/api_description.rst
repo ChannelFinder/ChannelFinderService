@@ -9,7 +9,8 @@ The directory contains directory entries.
 Each directory entry consists of a channel name, an arbitrary set of properties (name-value pairs), and an arbitrary set of tags (names).
 Each of these elements has an owner group, which can be set by the user that created the element.
 All names and values are strings.
-Tags and property names are case insensitive when used in pattern matching, the capitalization used when adding a tag or property for the first time is enforced in all later operations. Channel names are always case sensitive. Owner (group) names are always case insensitive, they are forced to lower case in all write operations.
+Channel names, tags, property names, and owner (group) names are all case insensitive.
+
 
 Service Type
 ------------
@@ -30,6 +31,13 @@ All operations are idempotent, i.e. when repeatedly applying the identical opera
 •  See http://en.wikipedia.org/wiki/Representational_State_Transfer for a detailed discussion.
 
 Directory data can be uploaded and retrieved in XML or JSON notation, the client specifies the type using standard HTTP headers (“Content-Type”, “Accepts”).
+
+XML Representation
+------------------
+
+Table 1 and Table 2 show the XML and JSON representations of directory entries, i.e. the payload format of the web service transactions.
+
+
 
 Web Service URLs and Operations
 -------------------------------
