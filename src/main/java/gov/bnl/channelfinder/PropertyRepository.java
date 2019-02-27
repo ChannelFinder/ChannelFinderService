@@ -47,6 +47,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     ElasticSearchClient esService;
 
     ObjectMapper objectMapper = new ObjectMapper();
+ 
     /**
      * create a new property using the given XmlProperty
      * 

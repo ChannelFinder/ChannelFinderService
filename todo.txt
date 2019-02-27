@@ -1,0 +1,6 @@
+- implement ownership restrictions
+- implement authorization for operations
+- implement/look into null values and empty property value string
+- work out the details of using lists vs CRUD
+- finish implementing operations
+- finish implementing logging of exceptions

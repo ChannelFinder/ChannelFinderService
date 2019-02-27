@@ -12,6 +12,9 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,7 +33,7 @@ import com.google.common.collect.Lists;
 @EnableAutoConfiguration
 public class TagManager {
 
-    // private SecurityContext securityContext;
+	//	private SecurityContext securityContext;
     static Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
     static Logger log = Logger.getLogger(TagManager.class.getName());
 
@@ -185,7 +188,8 @@ public class TagManager {
      */
     @PutMapping("/{tagName}/{chName}")
     public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, @RequestBody XmlTag data) {
-        return null;
+    	//TODO: method
+    	return null;
     }
 
     /**

@@ -51,7 +51,6 @@ public class PropertyManager {
         return propertyRepository.findAll();
     }
     
-
     /**
      * GET method for retrieving the property with the path parameter
      * <tt>propertyName</tt> 
@@ -130,7 +129,8 @@ public class PropertyManager {
         channelRepository.saveAll(property.getChannels());
         return updatedProperty;
     }
-    /**
+
+   /**
      * POST method for creating multiple properties.
      *
      * If the channels don't exist it will fail
@@ -152,7 +152,6 @@ public class PropertyManager {
         return Lists.newArrayList(createdProperties);
     }
     
-
     /**
      * DELETE method for deleting the property identified by the path parameter
      * <tt>propertyName</tt> from all channels.

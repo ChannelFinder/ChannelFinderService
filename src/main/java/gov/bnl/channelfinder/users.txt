@@ -1,0 +1,7 @@
+admin adminpass ADMIN admingroup
+admin2 adminpass ADMIN admingroup
+user1 userpass USER c1 c2
+user2 userpass USER c4 c2
+user3 userpass USER c1 c6
+user4 userpass USER c3 c2
+user5 userpass USER c6 c4

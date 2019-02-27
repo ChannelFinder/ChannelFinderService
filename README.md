@@ -1,4 +1,3 @@
-
 ### Channel Finder
 
 #### A simple directory service
@@ -60,7 +59,7 @@ a ElasticSearch index.
 mvn clean install
 ``` 
 
-#### Start the alarm logging service
+#### Start the service
 
 1. Run the jar
 

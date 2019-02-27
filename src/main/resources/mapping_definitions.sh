@@ -1,6 +1,6 @@
 #!/bin/sh
 
-es_host=130.199.219.217
+es_host=localhost
 es_port=9200
 
 ###
