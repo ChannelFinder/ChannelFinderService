@@ -4,3 +4,4 @@
 - work out the details of using lists vs CRUD
 - finish implementing operations
 - finish implementing logging of exceptions
+- once these todo items are completed, add them to documentation
