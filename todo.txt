@@ -3,5 +3,10 @@
 - implement/look into null values and empty property value string
 - work out the details of using lists vs CRUD
 - finish implementing operations
+--> tagM: validateTag, addSingle
+--> chanM: create, update, remove
+--> tagR: iterable, saveAll, findAll, deleteAll, renameTag
+--> chanR: deleteAll
+--> propR: save, iterable, findAll, deleteAll 
 - finish implementing logging of exceptions
 - once these todo items are completed, add them to documentation
