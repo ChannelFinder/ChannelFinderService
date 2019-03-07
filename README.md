@@ -43,7 +43,7 @@ a ElasticSearch index.
 * Prerequisites
 
   * JDK 8 or newer
-  * Elastic erion 6.3
+  * Elastic version 6.3
   * <For authN/authZ using LDAP:> LDAP server, e.g. OpenLDAP
 
 * setup elastic search  
@@ -61,13 +61,7 @@ mvn clean install
 
 #### Start the service
 
-1. Run the jar
-
-```
-java -jar target/alarm-logger-<version>.jar
-```
-
-2. Using spring boot  
+1. Using spring boot  
 
 ```
 mvn spring-boot:run
