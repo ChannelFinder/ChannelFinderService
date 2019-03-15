@@ -56,9 +56,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Override
 	public void configure(WebSecurity web) throws Exception {
-//		web.ignoring().antMatchers(HttpMethod.GET, "/**");
+		web.ignoring().antMatchers(HttpMethod.GET, "/**");
 		// TODO a temporary workaround for lbnl test installation
-		web.ignoring().anyRequest();
+//		web.ignoring().anyRequest();
 	}
 
 	//	//@Bean
