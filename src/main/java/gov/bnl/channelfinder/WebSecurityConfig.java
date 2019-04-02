@@ -9,6 +9,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
@@ -29,8 +31,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.UserDetailsServiceLdapAuthoritiesPopulator;
+import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
 import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
+import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.util.ResourceUtils;
@@ -93,23 +98,54 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             response.setStatus(HttpServletResponse.SC_OK);
         }
     }
+    
+    private String ldapUrl = "ldaps://controlns02.nsls2.bnl.gov/dc=nsls2,dc=bnl,dc=gov";
+//    private String bindUser = "ou=People,dc=bnl,dc=gov";
+//    private String bindPW = "<password>";
+//    private String groupSearchBase = "ou=Groups";
+    private String userDnPattern = "uid={0},ou=People";
+//    private Log log = LogFactory.getLog(this.getClass());
 
 	@Override
 	public void configure(AuthenticationManagerBuilder auth) throws Exception {
 
-		boolean ldap_enabled = true;
-				
-		if(ldap_enabled) {
-			auth.ldapAuthentication()
-			.userDnPatterns("uid={0},ou=People")
-			.groupSearchBase("ou=Groups")
-			.contextSource()
-			//.url("ldap://localhost:8389/dc=springframework,dc=org")
-			//.url("ldap://localhost:8389/dc=cf-test,dc=local")
-			//.url("ldap://ldap01.nsls2.bnl.gov/dc=bnl,dc=gov")
-			.url("ldaps://controlns02.nsls2.bnl.gov/dc=bnl,dc=gov")
-			.and()
-			.ldapAuthoritiesPopulator(myAuthPopulator);
+		
+//		DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldapUrl);
+
+//        contextSource.setUserDn(bindUser);
+//        contextSource.setPassword(bindPW);
+//        contextSource.afterPropertiesSet();
+//        log.info(contextSource.getReadOnlyContext().getAttributes("uid=testuser,ou=users")); // returns all LDAP attributes from that user
+
+//        DefaultLdapAuthoritiesPopulator populator = new DefaultLdapAuthoritiesPopulator(contextSource, groupSearchBase);
+//        populator.setSearchSubtree(true);
+//        populator.setIgnorePartialResultException(true);
+
+        auth
+        .ldapAuthentication()
+//        .ldapAuthoritiesPopulator(populator)
+//        .contextSource(contextSource)
+//        .userDetailsContextMapper(userDetailsContextMapper())
+        .contextSource()
+        	.url(ldapUrl)
+        	.and()
+        .userDnPatterns(userDnPattern)
+        ;
+		
+        
+//		boolean ldap_enabled = true;
+//				
+//		if(ldap_enabled) {
+//			auth.ldapAuthentication()
+//			.userDnPatterns("uid={0},ou=People")
+//			.groupSearchBase("ou=Groups")
+//			.contextSource()
+//			//.url("ldap://localhost:8389/dc=springframework,dc=org")
+//			//.url("ldap://localhost:8389/dc=cf-test,dc=local")
+//			//.url("ldap://ldap01.nsls2.bnl.gov/dc=bnl,dc=gov")
+//			.url("ldaps://controlns02.nsls2.bnl.gov/dc=bnl,dc=gov")
+//			.and()
+//			.ldapAuthoritiesPopulator(myAuthPopulator);
 //			.port(639)
 //			.managerDn("cn=manager,ou=institution,ou=people,dc=bnl,dc=gov") 
 //			.managerPassword("password")
@@ -117,14 +153,19 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //			.passwordCompare()
 //			.passwordEncoder(new LdapShaPasswordEncoder())
 //			.passwordAttribute("userPassword");
-		}
-		auth.inMemoryAuthentication()
-		.withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN")
-		.and().withUser("user").password(encoder().encode("userPass")).roles("USER");
-
-		auth.userDetailsService(new MyUserDetailsService());
+//		}
+//		auth.inMemoryAuthentication()
+//		.withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN")
+//		.and().withUser("user").password(encoder().encode("userPass")).roles("USER");
+//
+//		auth.userDetailsService(new MyUserDetailsService());
 	}
 
+	@Bean
+    public UserDetailsContextMapper userDetailsContextMapper() {
+        return new CustomUserDetailsContextMapper();
+    }
+	
 	@Bean
 	public PasswordEncoder encoder() {
 		return new BCryptPasswordEncoder();

@@ -25,7 +25,7 @@ public class Application {
 //      System.setProperty("https.protocols", "TLSv1.2");
     	System.setProperty("javax.net.ssl.trustStore", "/home/student/ChannelFinder-SpringBoot/src/main/resources/keystore/cacerts"); 
     	System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
-    	System.setProperty("javax.net.debug", "all");
+    	//System.setProperty("javax.net.debug", "all");
         SpringApplication.run(Application.class, args);
     }
 

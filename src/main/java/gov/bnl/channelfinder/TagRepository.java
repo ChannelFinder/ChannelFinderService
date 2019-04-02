@@ -44,6 +44,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 
@@ -251,11 +252,12 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             if (!result.equals(Result.DELETED)) {
                 // Failed to delete the requested tag
             	System.out.println("failed to delete the tag, but no error");
-            	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            	String currentPrincipalName = authentication.getName();
-            	MyUser user = (MyUser)authentication.getPrincipal();
-            	System.out.println(currentPrincipalName);
-            	System.out.println(user.getGroups());
+//            	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//            	String currentPrincipalName = authentication.getName();
+//            	//MyUser user = (MyUser)authentication.getPrincipal();
+//            	User user = (User) authentication.getPrincipal();
+//            	System.out.println(currentPrincipalName);
+            	//System.out.println(user.getGroups());
             }
             else
             	System.out.println("tag deleted! yay!");
