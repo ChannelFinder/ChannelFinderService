@@ -252,12 +252,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             if (!result.equals(Result.DELETED)) {
                 // Failed to delete the requested tag
             	System.out.println("failed to delete the tag, but no error");
-//            	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//            	String currentPrincipalName = authentication.getName();
-//            	//MyUser user = (MyUser)authentication.getPrincipal();
-//            	User user = (User) authentication.getPrincipal();
-//            	System.out.println(currentPrincipalName);
-            	//System.out.println(user.getGroups());
+            	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            	System.out.println(authentication.getName());
+            	System.out.println(authentication.getPrincipal());
             }
             else
             	System.out.println("tag deleted! yay!");
