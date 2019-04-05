@@ -55,6 +55,9 @@ public class TagManager {
      */
     @PutMapping("/{tag}")
     public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println(authentication.getName());
+        System.out.println(authentication.getPrincipal());
         long start = System.currentTimeMillis();
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
         if (tag.equals(data.getName())) {

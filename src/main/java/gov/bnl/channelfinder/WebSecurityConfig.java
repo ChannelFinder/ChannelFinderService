@@ -1,12 +1,8 @@
 package gov.bnl.channelfinder;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,98 +10,70 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
-import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-	@Autowired
-	private MyBasicAuthenticationEntryPoint authenticationEntryPoint;
+    @Autowired
+    @Qualifier("myAuthPopulator")
+    LdapAuthoritiesPopulator myAuthPopulator;
 
-	//	@Bean
-	//	SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-	//	    http
-	//	        // ...
-	//	        .redirectToHttps();
-	//	    return http.build();
-	//	}
-
-	@Override
-	public void configure(WebSecurity web) throws Exception {
-		web.ignoring().antMatchers(HttpMethod.GET, "/**");
-	}
-
-	//	//@Bean
-	//    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-	//         http.authorizeExchange().anyExchange().authenticated();
-	//         http.httpBasic();
-	//         //.authenticationEntryPoint(authenticationEntryPoint);
-	//         http.formLogin();
-	//         //.permitAll().and().logout().logoutSuccessUrl("/");
-	//         http.redirectToHttps();
-	//         return http.build();
-	//    }
-
-	@Override
-	protected void configure(HttpSecurity http) throws Exception {
-		http.csrf().disable();
-		http.authorizeRequests().anyRequest().authenticated();
-		//http.requiresChannel().anyRequest().requiresSecure();
-//		http.portMapper().http(8080).mapsTo(8443);
-		http.httpBasic().authenticationEntryPoint(authenticationEntryPoint);
-		http.formLogin().successHandler(new AuthenticationLoginSuccessHandler()).permitAll().and().logout().logoutSuccessUrl("/");
-        //http.successHandler(new AuthenticationLoginSuccessHandler());
-		//http.headers().httpStrictTransportSecurity();
-		//http.portMapper().http(80).mapsTo(443);
-		//http.antMatcher("/**").requiresChannel().anyRequest().requiresSecure();
-	}
-	
-    private class AuthenticationLoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
-        @Override
-        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication)
-                throws IOException, ServletException {
-            response.setStatus(HttpServletResponse.SC_OK);
-        }
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.csrf().disable();
+        http.authorizeRequests().anyRequest().authenticated();
+        http.httpBasic();
     }
 
-	@Override
-	public void configure(AuthenticationManagerBuilder auth) throws Exception {
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers(HttpMethod.GET, "/**");
+        // TODO a temporary workaround for lbnl test installation
+//      web.ignoring().anyRequest();
+    }
+    /**
+     * LDAP configuration properties
+     */
+    @Value("${ldap.enabled:false}")
+    boolean ldap_enabled;
+    @Value("${ldap.urls:ldaps://localhost:389/}")
+    String ldap_url;
+    @Value("${ldap.base.dn}")
+    String ldap_base_dn;
+    @Value("${ldap.user.dn.pattern}")
+    String ldap_user_dn_pattern;
 
-		boolean ldap_enabled = true;
+    /**
+     * File based authentication
+     */
+    @Value("${file.auth.enabled:true}")
+    boolean file_enabled;
 
-		if(ldap_enabled) {
-			auth.ldapAuthentication()
-			.userDnPatterns("uid={0},ou=people")
-			.groupSearchBase("ou=groups")
-			.contextSource()
-			//.url("ldap://localhost:8389/dc=springframework,dc=org")
-			//.url("ldap://localhost:8389/dc=cf-test,dc=local")
-			//.url("ldap://ldap01.nsls2.bnl.gov/dc=bnl,dc=gov")
-			.url("ldaps://controls02.nsls2.bnl.gov/dc=bnl,dc=gov")
-//			.port(639)
-//			.managerDn("cn=manager,ou=institution,ou=people,dc=bnl,dc=gov") 
-//			.managerPassword("password")
-			.and()
-			.passwordCompare()
-			.passwordEncoder(new LdapShaPasswordEncoder())
-			.passwordAttribute("userPassword");
-		}
-		auth.inMemoryAuthentication()
-		.withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN")
-		.and().withUser("user").password(encoder().encode("userPass")).roles("USER");
+    @Override
+    public void configure(AuthenticationManagerBuilder auth) throws Exception {
 
-		auth.userDetailsService(new MyUserDetailsService());
-	}
+        boolean ldap_enabled = true;
 
-	@Bean
-	public PasswordEncoder encoder() {
-		return new BCryptPasswordEncoder();
-	}
+        if (ldap_enabled) {
+            auth.ldapAuthentication()
+                    .userDnPatterns(ldap_user_dn_pattern)
+                    .groupSearchBase("ou=Groups")
+                    .contextSource()
+                    .url(ldap_url)
+                    .and().ldapAuthoritiesPopulator(myAuthPopulator);
+        }
+        auth.inMemoryAuthentication().withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN").and()
+                .withUser("user").password(encoder().encode("userPass")).roles("USER");
+
+        auth.userDetailsService(new MyUserDetailsService());
+    }
+
+    @Bean
+    public PasswordEncoder encoder() {
+        return new BCryptPasswordEncoder();
+    }
 
 }
