@@ -82,7 +82,7 @@ public class PropertyManagerIT {
     public void basicChannelsCRUDOperations() {
 
         // Create a list of properties
-        List<XmlProperty> createdProperties = propertyManager.create(testProperties);
+        List<XmlProperty> createdProperties = Lists.newArrayList(propertyManager.create(testProperties));
         assertTrue("failed to create test properties", createdProperties != null && testProperties.equals(createdProperties));
         // list of properties
         List<XmlProperty> foundChannels = Lists.newArrayList(propertyManager.list());

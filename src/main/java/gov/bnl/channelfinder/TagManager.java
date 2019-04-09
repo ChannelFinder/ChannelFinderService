@@ -12,7 +12,6 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,8 +24,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
-import com.google.common.collect.Lists;
 
 @RestController
 @RequestMapping(TAG_RESOURCE_URI)
@@ -90,11 +87,11 @@ public class TagManager {
      * @return list of tags
      */
     @GetMapping
-    public List<XmlTag> listTags(@RequestParam Map<String, String> allRequestParams) {
+    public Iterable<XmlTag> listTags(@RequestParam Map<String, String> allRequestParams) {
         // TODO this is an extra copy because the CF API contract was a List and the
         // CRUDrepository contract is an Iterable. In the future one of the two should be
         // changed.
-        return Lists.newArrayList(tagRepository.findAll());
+        return tagRepository.findAll();
     }
 
     /**
@@ -169,7 +166,7 @@ public class TagManager {
      * @throws IOException when audit or log fail
      */
     @PostMapping()
-    public List<XmlTag> updateTags(@RequestBody List<XmlTag> tags) throws IOException {
+    public Iterable<XmlTag> updateTags(@RequestBody List<XmlTag> tags) throws IOException {
         Iterable<XmlTag> createdTags = tagRepository.saveAll(tags);
         // Updated the listed channels in tags with the associated tags
         List<XmlChannel> channels = new ArrayList<>();
@@ -177,7 +174,7 @@ public class TagManager {
             channels.addAll(tag.getChannels());
         });
         channelRepository.saveAll(channels);
-        return Lists.newArrayList(createdTags);
+        return createdTags;
     }
 
     /**

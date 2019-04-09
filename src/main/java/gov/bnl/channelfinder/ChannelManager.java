@@ -23,8 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.google.common.collect.Lists;
-
 @RestController
 @RequestMapping(CHANNEL_RESOURCE_URI)
 @EnableAutoConfiguration
@@ -99,17 +97,15 @@ public class ChannelManager {
      * @return A list of the created channels
      */
     @PutMapping
-    public List<XmlChannel> create(@RequestBody List<XmlChannel> data) {
+    public Iterable<XmlChannel> create(@RequestBody List<XmlChannel> data) {
 
         data.stream().forEach(log -> {
             logManagerAudit.info("PUT" + log.toLog());
         });
         // TODO validate user authorization
         // TODO validate each channel
-        // TODO this is an extra copy because the CF API contract was a List and the
-        // CRUDrepository contract is an Iterable. In the future one of the two should
-        // be changed.
-        return Lists.newArrayList(channelRepository.indexAll(data));
+        return channelRepository.indexAll(data);
+        // return Lists.newArrayList(channelRepository.indexAll(data));
     }
 
     /**
@@ -157,7 +153,7 @@ public class ChannelManager {
      *                    channel <tt>channelName</tt>
      */
     @PostMapping()
-    public List<XmlChannel> update(@RequestBody List<XmlChannel> data) {
+    public Iterable<XmlChannel> update(@RequestBody List<XmlChannel> data) {
         long start = System.currentTimeMillis();
         // TODO check user authorization
         // TODO validate the channels
@@ -174,7 +170,8 @@ public class ChannelManager {
             logManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
                     + (System.currentTimeMillis() - start));
             start = System.currentTimeMillis();
-            return Lists.newArrayList(channelRepository.saveAll(data));
+            return channelRepository.saveAll(data);
+            //return Lists.newArrayList(channelRepository.saveAll(data));
         } catch (Exception e) {
 
         } finally {
