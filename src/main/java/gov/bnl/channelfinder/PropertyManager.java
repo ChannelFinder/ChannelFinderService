@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -63,7 +64,8 @@ public class PropertyManager {
      */
     @GetMapping(value = "/{propName}",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public XmlProperty read(@PathVariable("propName") String propertyName) {
+    public XmlProperty read(@PathVariable("propName") String propertyName,
+                            @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         Optional<XmlProperty> foundProperty = propertyRepository.findById(propertyName);
         if (foundProperty.isPresent()) {
             return foundProperty.get();

@@ -106,12 +106,15 @@ public class TagManager {
      * @return list of channels with their properties and tags that match
      */
     @GetMapping("/{tag}")
-    public XmlTag read(@PathVariable("tag") String tag, @RequestParam("withChannels") boolean withChannels) {
+    public XmlTag read(@PathVariable("tag") String tag,
+                       @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         Optional<XmlTag> foundTag = tagRepository.findById(tag);
         if(foundTag.isPresent()) {
             return foundTag.get();
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The tag with the name " + tag + " does not exist");
         }
-        return null;
     }
 
     /**
