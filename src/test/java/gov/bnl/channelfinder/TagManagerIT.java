@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.google.common.collect.Lists;
+
 @RunWith(SpringRunner.class)
 @WebMvcTest(TagManager.class)
 public class TagManagerIT {
@@ -154,7 +156,7 @@ public class TagManagerIT {
         tagManager.create("test-tag1", testTag1);
         tagManager.create("test-tag2", testTag2);
         Map<String, String> map = new HashMap<String, String>();
-        List<XmlTag> tagList = tagManager.listTags(map);
+        List<XmlTag> tagList = Lists.newArrayList(tagManager.listTags(map));
         for (int i = 0; i < tagList.size(); i++) {
             assertEquals("Failed to list correct tags(name incorrect)", Tags.get(i).getName(),
                     tagList.get(i).getName());

@@ -50,7 +50,7 @@ public class PropertyManagerIT {
             XmlProperty createdProperty = propertyManager.create(testProperty.getName(), testProperty);
             assertTrue("failed to create test property", createdProperty != null && testProperty.equals(createdProperty));
             // Read a property
-            XmlProperty foundProperty = propertyManager.read(testProperty.getName());
+            XmlProperty foundProperty = propertyManager.read(testProperty.getName(), false);
             assertTrue("failed to find by id the test property",
                     foundProperty != null && testProperty.equals(foundProperty));
             // update the property
@@ -58,7 +58,7 @@ public class PropertyManagerIT {
             // delete property
             propertyManager.remove(testProperty.getName());
             try {
-                propertyManager.read(testProperty.getName());
+                propertyManager.read(testProperty.getName(), false);
                 fail("expected exception : ResponseStatusException:404 NOT_FOUND  was not thrown");
             } catch (ResponseStatusException e) {
 
@@ -82,7 +82,7 @@ public class PropertyManagerIT {
     public void basicChannelsCRUDOperations() {
 
         // Create a list of properties
-        List<XmlProperty> createdProperties = propertyManager.create(testProperties);
+        List<XmlProperty> createdProperties = Lists.newArrayList(propertyManager.create(testProperties));
         assertTrue("failed to create test properties", createdProperties != null && testProperties.equals(createdProperties));
         // list of properties
         List<XmlProperty> foundChannels = Lists.newArrayList(propertyManager.list());
@@ -96,7 +96,7 @@ public class PropertyManagerIT {
         });
         testProperties.forEach(property -> {
             try {
-                propertyManager.read(property.getName());
+                propertyManager.read(property.getName(), false);
                 fail("failed to delete property " + property.getName());
             } catch (ResponseStatusException e) {
 

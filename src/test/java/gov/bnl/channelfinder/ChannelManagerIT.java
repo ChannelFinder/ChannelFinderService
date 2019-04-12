@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.assertj.core.util.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,7 +100,7 @@ public class ChannelManagerIT {
             testChannels.add(testChannel);
         }
         // Create a list of channels
-        List<XmlChannel> createdChannels = channelManager.create(testChannels);
+        List<XmlChannel> createdChannels = Lists.newArrayList(channelManager.create(testChannels));
         assertTrue("failed to create test channel", createdChannels != null && testChannels.equals(createdChannels));
         // Find a list of channels
         LinkedMultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
@@ -116,7 +117,7 @@ public class ChannelManagerIT {
             prop.setValue("test-prop0-value");
             channel.addProperty(prop);
         });
-        List<XmlChannel> updatedChannels = channelManager.update(testChannels);
+        List<XmlChannel> updatedChannels = Lists.newArrayList(channelManager.update(testChannels));
         assertTrue("failed to update test channels, it was expected that all channels with have test-tag0",
                 updatedChannels.stream().allMatch(channel -> {
                     return channel.getTags().contains(testTags.get(0));
