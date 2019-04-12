@@ -64,9 +64,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(entity.getName())
                     .source(objectMapper.writeValueAsBytes(entity), XContentType.JSON);
             indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-            IndexResponse indexRespone = client.index(indexRequest, RequestOptions.DEFAULT);
+            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
-            Result result = indexRespone.getResult();
+            Result result = indexResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                 client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(entity.getName()).get();
@@ -251,11 +251,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             if (!result.equals(Result.DELETED)) {
                 // Failed to delete the requested tag
             	System.out.println("failed to delete the tag, but no error");
-            	Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            	String currentPrincipalName = authentication.getName();
-            	MyUser user = (MyUser)authentication.getPrincipal();
-            	System.out.println(currentPrincipalName);
-            	System.out.println(user.getGroups());
+            	Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); 
+            	System.out.println(authentication.getName());
+            	System.out.println(authentication.getPrincipal());
             }
             else
             	System.out.println("tag deleted! yay!");
