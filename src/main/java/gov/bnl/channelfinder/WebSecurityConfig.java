@@ -14,6 +14,7 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
@@ -23,81 +24,107 @@ import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-//    @Autowired
-//    @Qualifier("myAuthPopulator")
-//    MyAuthoritiesPopulator myAuthPopulator;
-	
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-        http.csrf().disable();
-        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.authorizeRequests().anyRequest().authenticated();
-        http.httpBasic();
-    }
+	//    @Autowired
+	//    @Qualifier("myAuthPopulator")
+	//    MyAuthoritiesPopulator myAuthPopulator;
 
-    @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers(HttpMethod.GET, "/**");
-        // TODO a temporary workaround for lbnl test installation
-//      web.ignoring().anyRequest();
-    }
-    /**
-     * LDAP configuration properties
-     */
-    @Value("${ldap.enabled:false}")
-    boolean ldap_enabled;
-    @Value("${ldap.urls:ldaps://localhost:389/}")
-    String ldap_url;
-    @Value("${ldap.base.dn}")
-    String ldap_base_dn;
-    @Value("${ldap.user.dn.pattern}")
-    String ldap_user_dn_pattern;
+	@Override
+	protected void configure(HttpSecurity http) throws Exception {
+		http.csrf().disable();
+		http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+		http.authorizeRequests().anyRequest().authenticated();
+		http.httpBasic();
+	}
 
-    /**
-     * File based authentication
-     */
-    @Value("${file.auth.enabled:true}")
-    boolean file_enabled;
+	@Override
+	public void configure(WebSecurity web) throws Exception {
+		web.ignoring().antMatchers(HttpMethod.GET, "/**");
+		// TODO a temporary workaround for lbnl test installation
+		//      web.ignoring().anyRequest();
+	}
+	/**
+	 * External LDAP configuration properties
+	 */
+	@Value("${ldap.enabled:false}")
+	boolean ldap_enabled;
+	@Value("${ldap.urls:ldaps://localhost:389/}")
+	String ldap_url;
+	@Value("${ldap.base.dn}")
+	String ldap_base_dn;
+	@Value("${ldap.user.dn.pattern}")
+	String ldap_user_dn_pattern;
 
-    @Override
-    public void configure(AuthenticationManagerBuilder auth) throws Exception {
+	/**
+	 * Embedded LDAP configuration properties
+	 */
+	@Value("${embedded_ldap.enabled:false}")
+	boolean embedded_ldap_enabled;
+	@Value("${embedded_ldap.urls:ldaps://localhost:389/}")
+	String embedded_ldap_url;
+	@Value("${embedded_ldap.base.dn}")
+	String embedded_ldap_base_dn;
+	@Value("${embedded_ldap.user.dn.pattern}")
+	String embedded_ldap_user_dn_pattern;
 
-        boolean ldap_enabled = true;
-        
-        DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
-        contextSource.afterPropertiesSet();
-//        log.info(contextSource.getReadOnlyContext().getAttributes("uid=testuser,ou=users")); // returns all LDAP attributes from that user
-        DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, "ou=Group");
-        myAuthPopulator.setGroupSearchFilter("(member= {0})");
-        myAuthPopulator.setSearchSubtree(true);
-        myAuthPopulator.setIgnorePartialResultException(true);
-        
+	/**
+	 * File based authentication
+	 */
+	@Value("${file.auth.enabled:true}")
+	boolean file_enabled;
 
-        if (ldap_enabled) {
-            auth.ldapAuthentication()
-                    .userDnPatterns(ldap_user_dn_pattern)
-                    .ldapAuthoritiesPopulator(myAuthPopulator)
-//                    .groupSearchFilter("(member= {0})")
-//                    .groupSearchBase("ou=Group")
-                    .contextSource(contextSource)
-                    //.url(ldap_url);
-//                    .and()
-                    .userDetailsContextMapper(userDetailsContextMapper());
-        }
-        auth.inMemoryAuthentication().withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN").and()
-                .withUser("user").password(encoder().encode("userPass")).roles("USER");
+	@Override
+	public void configure(AuthenticationManagerBuilder auth) throws Exception {
 
-        auth.userDetailsService(new MyUserDetailsService());
-    }
+		boolean ldap_enabled = true;
+		boolean embedded_ldap_enabled = true;
 
-    @Bean
-    public UserDetailsContextMapper userDetailsContextMapper() {
-        return new CustomUserDetailsContextMapper();
-    }
-    
-    @Bean
-    public PasswordEncoder encoder() {
-        return new BCryptPasswordEncoder();
-    }
+
+		DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
+		contextSource.afterPropertiesSet();
+		//      log.info(contextSource.getReadOnlyContext().getAttributes("uid=testuser,ou=users")); // returns all LDAP attributes from that user
+		DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, "ou=Group");
+		myAuthPopulator.setGroupSearchFilter("(member= {0})");
+		myAuthPopulator.setSearchSubtree(true);
+		myAuthPopulator.setIgnorePartialResultException(true);
+
+		if (ldap_enabled) {
+			auth.ldapAuthentication()
+			.userDnPatterns(ldap_user_dn_pattern)
+			.ldapAuthoritiesPopulator(myAuthPopulator)
+			//                    .groupSearchFilter("(member= {0})")
+			//                    .groupSearchBase("ou=Group")
+			.contextSource(contextSource)
+			//.url(ldap_url);
+			//                    .and()
+			.userDetailsContextMapper(userDetailsContextMapper());
+		}
+
+		if (embedded_ldap_enabled) {
+			auth.ldapAuthentication()
+			.userDnPatterns(embedded_ldap_user_dn_pattern)
+			.groupSearchBase("ou=groups")
+			.contextSource()
+			.url(embedded_ldap_url)
+			.and()
+			.passwordCompare()
+			.passwordEncoder(new LdapShaPasswordEncoder())
+			.passwordAttribute("userPassword");    
+		}
+
+		auth.inMemoryAuthentication().withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN").and()
+		.withUser("user").password(encoder().encode("userPass")).roles("USER");
+
+		auth.userDetailsService(new MyUserDetailsService());
+	}
+
+	@Bean
+	public UserDetailsContextMapper userDetailsContextMapper() {
+		return new CustomUserDetailsContextMapper();
+	}
+
+	@Bean
+	public PasswordEncoder encoder() {
+		return new BCryptPasswordEncoder();
+	}
 
 }
