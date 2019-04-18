@@ -24,40 +24,40 @@ public class CustomUserDetailsContextMapper extends LdapUserDetailsMapper implem
 
     private Logger log = Logger.getLogger(this.getClass().getName());
 
-//    @Override
-//    public LdapUserDetails mapUserFromContext(DirContextOperations ctx, String username, Collection<? extends GrantedAuthority> authorities) {
-//
-//        LdapUserDetailsImpl details = (LdapUserDetailsImpl) super.mapUserFromContext(ctx, username, authorities);
-//        log.info("DN from ctx: " + ctx.getDn()); // return correct DN
-//        log.info("Attributes size: " + ctx.getAttributes().size()); // always returns 0
-//
-//        return new CustomUserDetails(details);
-//    }
     @Override
-    public UserDetails mapUserFromContext(DirContextOperations ctx, String username, Collection<? extends GrantedAuthority> authorities) 
-    {
+    public LdapUserDetails mapUserFromContext(DirContextOperations ctx, String username, Collection<? extends GrantedAuthority> authorities) {
 
-        Attributes attributes = ctx.getAttributes();
-        Object[] groups = new Object[100];
-        groups = ctx.getObjectAttributes("memberOf");
+        LdapUserDetailsImpl details = (LdapUserDetailsImpl) super.mapUserFromContext(ctx, username, authorities);
+        log.info("DN from ctx: " + ctx.getDn()); // return correct DN
+        log.info("Attributes size: " + ctx.getAttributes().size()); // always returns 0
 
-        //LOGGER.debug("Attributes: {}", attributes);
-
-        Set<GrantedAuthority> authority = new HashSet<GrantedAuthority>();
-
-        for(Object group: groups)
-        {
-
-            if (group.toString().toLowerCase().contains("GROUP_NAME".toLowerCase()) == true)
-            {
-                authority.add(new SimpleGrantedAuthority("ROLE_USER"));
-                break;          
-            }
-        }
-
-        User userDetails = new User(username, "", false, false, false, false, authority);
-        return userDetails;
+        return new CustomUserDetails(details);
     }
+//    @Override
+//    public UserDetails mapUserFromContext(DirContextOperations ctx, String username, Collection<? extends GrantedAuthority> authorities) 
+//    {
+//
+//        Attributes attributes = ctx.getAttributes();
+//        Object[] groups = new Object[100];
+//        groups = ctx.getObjectAttributes("memberOf");
+//
+//        //LOGGER.debug("Attributes: {}", attributes);
+//
+//        Set<GrantedAuthority> authority = new HashSet<GrantedAuthority>();
+//
+//        for(Object group: groups)
+//        {
+//
+//            if (group.toString().toLowerCase().contains("GROUP_NAME".toLowerCase()) == true)
+//            {
+//                authority.add(new SimpleGrantedAuthority("ROLE_USER"));
+//                break;          
+//            }
+//        }
+//
+//        User userDetails = new User(username, "", false, false, false, false, authority);
+//        return userDetails;
+//    }
 
     @Override
     public void mapUserToContext(UserDetails user, DirContextAdapter ctx) {

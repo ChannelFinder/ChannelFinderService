@@ -1,5 +1,7 @@
 package gov.bnl.channelfinder;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,16 +15,18 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
+import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
 import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
 import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 
 @Configuration
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    @Autowired
-    @Qualifier("myAuthPopulator")
-    MyAuthoritiesPopulator myAuthPopulator;
-
+//    @Autowired
+//    @Qualifier("myAuthPopulator")
+//    MyAuthoritiesPopulator myAuthPopulator;
+	
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable();
@@ -59,16 +63,26 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(AuthenticationManagerBuilder auth) throws Exception {
 
         boolean ldap_enabled = true;
+        
+        DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
+        contextSource.afterPropertiesSet();
+//        log.info(contextSource.getReadOnlyContext().getAttributes("uid=testuser,ou=users")); // returns all LDAP attributes from that user
+        DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, "ou=Group");
+        myAuthPopulator.setGroupSearchFilter("(member= {0})");
+        myAuthPopulator.setSearchSubtree(true);
+        myAuthPopulator.setIgnorePartialResultException(true);
+        
 
         if (ldap_enabled) {
             auth.ldapAuthentication()
                     .userDnPatterns(ldap_user_dn_pattern)
                     .ldapAuthoritiesPopulator(myAuthPopulator)
-                    .groupSearchBase("ou=Groups")
-                    .contextSource()
-                    .url(ldap_url);
+//                    .groupSearchFilter("(member= {0})")
+//                    .groupSearchBase("ou=Group")
+                    .contextSource(contextSource)
+                    //.url(ldap_url);
 //                    .and()
-//                    .userDetailsContextMapper(userDetailsContextMapper());
+                    .userDetailsContextMapper(userDetailsContextMapper());
         }
         auth.inMemoryAuthentication().withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN").and()
                 .withUser("user").password(encoder().encode("userPass")).roles("USER");
