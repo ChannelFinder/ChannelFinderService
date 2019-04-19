@@ -77,17 +77,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 		boolean ldap_enabled = true;
 		boolean embedded_ldap_enabled = true;
-
-
-		DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
-		contextSource.afterPropertiesSet();
-		//      log.info(contextSource.getReadOnlyContext().getAttributes("uid=testuser,ou=users")); // returns all LDAP attributes from that user
-		DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, "ou=Group");
-		myAuthPopulator.setGroupSearchFilter("(member= {0})");
-		myAuthPopulator.setSearchSubtree(true);
-		myAuthPopulator.setIgnorePartialResultException(true);
+	
 
 		if (ldap_enabled) {
+			DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(ldap_url);
+			contextSource.afterPropertiesSet();
+			//      log.info(contextSource.getReadOnlyContext().getAttributes("uid=testuser,ou=users")); // returns all LDAP attributes from that user
+			DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, "ou=Group");
+			myAuthPopulator.setGroupSearchFilter("(member= {0})");
+			myAuthPopulator.setSearchSubtree(true);
+			myAuthPopulator.setIgnorePartialResultException(true);
+			
 			auth.ldapAuthentication()
 			.userDnPatterns(ldap_user_dn_pattern)
 			.ldapAuthoritiesPopulator(myAuthPopulator)
@@ -103,6 +103,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 			auth.ldapAuthentication()
 			.userDnPatterns(embedded_ldap_user_dn_pattern)
 			.groupSearchBase("ou=groups")
+//			.groupSearchBase("ou=Group")
 			.contextSource()
 			.url(embedded_ldap_url)
 			.and()
