@@ -22,7 +22,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 public class Application {
     public static void main(String[] args) {
-        // Load the default cacert store
+        // Load the default cacert store 
         System.setProperty("javax.net.ssl.trustStore", Application.class.getResource("/keystore/cacerts").getPath());
         System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
         //System.setProperty("javax.net.debug", "all");

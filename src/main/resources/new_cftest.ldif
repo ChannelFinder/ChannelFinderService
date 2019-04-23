@@ -1,0 +1,104 @@
+# LDIF Structure
+
+dn: dc=cf-test,dc=local
+objectclass: top
+objectclass: domain
+objectclass: extensibleObject
+dc: cf-test
+
+
+dn: ou=Group,dc=cf-test,dc=local
+objectclass: top
+objectclass: organizationalUnit
+ou: Group
+
+
+dn: ou=People,dc=cf-test,dc=local
+objectclass: top
+objectclass: organizationalUnit
+ou: People
+
+
+
+#LDIF Accounts ( note that passwords maay be SHA encrypted or plantext)
+
+dn: uid=tag,ou=People,dc=cf-test,dc=local
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: tag
+sn: tag
+uid: tag
+userPassword: {SHA}Xptg9pFl8y+JMIQ8pxjhD97jDFI=
+
+
+dn: uid=property,ou=People,dc=cf-test,dc=local
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: property
+sn: property
+uid: property
+userPassword: property
+
+
+dn: uid=channel,ou=People,dc=cf-test,dc=local
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: channel
+sn: channel
+uid: channel
+userPassword: channel
+
+
+dn: uid=admin,ou=People,dc=cf-test,dc=local
+objectclass: top
+objectclass: person
+objectclass: organizationalPerson
+objectclass: inetOrgPerson
+cn: admin
+sn: admin
+uid: admin
+userPassword: admin
+
+
+
+// LDIF Groups
+
+dn: cn=cf-ttags,ou=Group,dc=cf-test,dc=local
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: cf-ttags
+ou: cf-ttag
+uniqueMember: uid=tag,ou=People,dc=cf-test,dc=local
+uniqueMember: uid=property,ou=People,dc=cf-test,dc=local
+uniqueMember: uid=channel,ou=People,dc=cf-test,dc=local
+
+
+dn: cn=cf-tproperties,ou=Group,dc=cf-test,dc=local
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: cf-tproperties
+ou: cf-tproperty
+uniqueMember: uid=property,ou=People,dc=cf-test,dc=local
+uniqueMember: uid=channel,ou=People,dc=cf-test,dc=local
+
+
+dn: cn=cf-tchannels,ou=Group,dc=cf-test,dc=local
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: cf-tchannels
+ou: cf-tchannel
+uniqueMember: uid=channel,ou=People,dc=cf-test,dc=local
+
+
+dn: cn=cf-admins,ou=Group,dc=cf-test,dc=local
+objectclass: top
+objectclass: groupOfUniqueNames
+cn: cf-admins
+ou: cf-admin
+uniqueMember: uid=admin,ou=People,dc=cf-test,dc=local

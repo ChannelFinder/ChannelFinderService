@@ -93,17 +93,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 			.ldapAuthoritiesPopulator(myAuthPopulator)
 			//                    .groupSearchFilter("(member= {0})")
 			//                    .groupSearchBase("ou=Group")
-			.contextSource(contextSource)
+			.contextSource(contextSource);
 			//.url(ldap_url);
 			//                    .and()
-			.userDetailsContextMapper(userDetailsContextMapper());
+//			.userDetailsContextMapper(userDetailsContextMapper());
 		}
 
 		if (embedded_ldap_enabled) {
 			auth.ldapAuthentication()
 			.userDnPatterns(embedded_ldap_user_dn_pattern)
-			.groupSearchBase("ou=groups")
-//			.groupSearchBase("ou=Group")
+//			.groupSearchBase("ou=groups")
+			.groupSearchBase("ou=Group")
 			.contextSource()
 			.url(embedded_ldap_url)
 			.and()
@@ -115,7 +115,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 		auth.inMemoryAuthentication().withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN").and()
 		.withUser("user").password(encoder().encode("userPass")).roles("USER");
 
-		auth.userDetailsService(new MyUserDetailsService());
+//		auth.userDetailsService(new MyUserDetailsService());
 	}
 
 	@Bean
