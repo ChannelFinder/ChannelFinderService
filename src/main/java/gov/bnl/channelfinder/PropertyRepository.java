@@ -52,7 +52,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * create a new property using the given XmlProperty
      * 
      * @param testProperty
-     * @return 
      * @return the created property
      */
     public <S extends XmlProperty> S index(XmlProperty property) {

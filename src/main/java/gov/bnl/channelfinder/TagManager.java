@@ -12,8 +12,6 @@ import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,7 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 @EnableAutoConfiguration
 public class TagManager {
 
-	//	private SecurityContext securityContext;
+    // private SecurityContext securityContext;
     static Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
     static Logger log = Logger.getLogger(TagManager.class.getName());
 
@@ -52,13 +50,10 @@ public class TagManager {
      */
     @PutMapping("/{tag}")
     public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println(authentication.getName());
-        System.out.println(authentication.getPrincipal());
         long start = System.currentTimeMillis();
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
         if (tag.equals(data.getName())) {
-            validateTagRequest(data);
+            validateTagRequest(tag, data);
             return tagRepository.index(data);
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -68,12 +63,17 @@ public class TagManager {
 
     /**
      * Checks if
-     * 1. the tag owner is not null or empty
-     * 2. all the listed channels exist
+     * 1. the tag name is not null and matches the name in the body
+     * 2. the tag owner is not null or empty
+     * 3. all the listed channels exist
      * 
      * @param data
      */
-    private void validateTagRequest(@RequestBody XmlTag tag) {
+    private void validateTagRequest(String tagName, XmlTag tag) {
+        if (tag.getName() == null || !tagName.equals(tag.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The tag name cannot be null or empty " + tag.toString(), null);
+        }
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The tag owner cannot be null or empty " + tag.toString(), null);
@@ -88,9 +88,6 @@ public class TagManager {
      */
     @GetMapping
     public Iterable<XmlTag> listTags(@RequestParam Map<String, String> allRequestParams) {
-        // TODO this is an extra copy because the CF API contract was a List and the
-        // CRUDrepository contract is an Iterable. In the future one of the two should be
-        // changed.
         return tagRepository.findAll();
     }
 
@@ -191,8 +188,8 @@ public class TagManager {
      */
     @PutMapping("/{tagName}/{chName}")
     public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, @RequestBody XmlTag data) {
-    	//TODO: method
-    	return null;
+        // TODO: method
+        return null;
     }
 
     /**

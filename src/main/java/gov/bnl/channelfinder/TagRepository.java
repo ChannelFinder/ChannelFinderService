@@ -40,12 +40,11 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -136,6 +135,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to update/save tag" + tag, null);
         }
         return null;
     }
@@ -243,6 +244,11 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
     @Override
     public void deleteById(String tag) {
+        System.out.println("failed to delete the tag, but no error");
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); 
+        System.out.println(authentication.getName());
+        System.out.println(authentication.getPrincipal());
+        
         RestHighLevelClient client = esService.getIndexClient();
         DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag);
         try {
@@ -250,10 +256,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             Result result = response.getResult();
             if (!result.equals(Result.DELETED)) {
                 // Failed to delete the requested tag
-            	System.out.println("failed to delete the tag, but no error");
-            	Authentication authentication = SecurityContextHolder.getContext().getAuthentication(); 
-            	System.out.println(authentication.getName());
-            	System.out.println(authentication.getPrincipal());
             }
             else
             	System.out.println("tag deleted! yay!");
