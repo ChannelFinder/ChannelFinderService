@@ -59,7 +59,7 @@ objectClass: account
 objectClass: posixAccount
 description: User with admin role
 cn: admin
-userPassword: {CRYPT}mcmDNXZR.0kJQ
+userPassword: 1234
 uidNumber: 23004
 gidNumber: 23004
 homeDirectory: /dev/null

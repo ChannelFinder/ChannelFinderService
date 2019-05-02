@@ -97,7 +97,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             DefaultSpringSecurityContextSource contextSource = new DefaultSpringSecurityContextSource(embedded_ldap_url);
             contextSource.afterPropertiesSet();
 
-            DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, embedded_ldap_groups_search_pattern);
+            DefaultLdapAuthoritiesPopulator myAuthPopulator = new DefaultLdapAuthoritiesPopulator(contextSource, embedded_ldap_groups_search_base);
             myAuthPopulator.setGroupSearchFilter(embedded_ldap_groups_search_pattern);
             myAuthPopulator.setSearchSubtree(true);
             myAuthPopulator.setIgnorePartialResultException(true);
