@@ -26,7 +26,7 @@ objectClass: account
 objectClass: posixAccount
 description: User with tag role
 cn: tag
-userPassword: tag
+userPassword: 1234
 uidNumber: 23001
 gidNumber: 23001
 homeDirectory: /dev/null
@@ -37,7 +37,7 @@ objectClass: account
 objectClass: posixAccount
 description: User with property role
 cn: property
-userPassword: {CRYPT}jz9DC5lO..YX.
+userPassword: 1234
 uidNumber: 23002
 gidNumber: 23002
 homeDirectory: /dev/null
@@ -48,7 +48,7 @@ objectClass: account
 objectClass: posixAccount
 description: User with channel role
 cn: channel
-userPassword: {CRYPT}jJImTnwe5XvnY
+userPassword: 1234
 uidNumber: 23003
 gidNumber: 23003
 homeDirectory: /dev/null

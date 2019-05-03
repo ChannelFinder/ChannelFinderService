@@ -1,13 +1,14 @@
 - implement ownership restrictions
 - implement authorization for operations
 - implement/look into null values and empty property value string
-- work out the details of using lists vs CRUD
 - finish implementing operations
 --> tagM: addSingle
 --> chanM: create, update, remove
---> tagR: iterable, saveAll, findAll, deleteAll, renameTag
+--> tagR: deleteAll
 --> chanR: deleteAll
---> propR: save, iterable, findAll, deleteAll 
+--> propR: findAll, deleteAll 
 - finish implementing logging of exceptions
-- once these todo items are completed, add them to documentation
---> tagM: validateTag(?)
+- once these todo items are completed, add them to documentation:
+	--> completed operations
+	--> worked out the details of using lists vs CRUD
+	--> exceptions implemented for tagR
