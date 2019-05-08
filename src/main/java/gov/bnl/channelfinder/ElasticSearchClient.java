@@ -4,6 +4,7 @@
 package gov.bnl.channelfinder;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /*
  * #%L
@@ -26,7 +27,6 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.Settings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -37,21 +37,19 @@ import org.springframework.context.annotation.PropertySource;
  */
 
 @Configuration
-@PropertySource("classpath:/elasticsearch.properties")
+@PropertySource("classpath:/application.properties")
 public class ElasticSearchClient implements ServletContextListener {
 
     private static Logger log = Logger.getLogger(ElasticSearchClient.class.getCanonicalName());
-
-    private static Settings settings;
 
     private RestHighLevelClient searchClient;
     private RestHighLevelClient indexClient;
 
     @Value("${elasticsearch.cluster.name:elasticsearch}")
     private String clusterName;
-    @Value("${network.host:localhost}")
+    @Value("${elasticsearch.network.host:localhost}")
     private String host;
-    @Value("${http.port:9200}")
+    @Value("${elasticsearch.http.port:9200}")
     private int port;
 
     public RestHighLevelClient getSearchClient() {
@@ -80,7 +78,7 @@ public class ElasticSearchClient implements ServletContextListener {
             RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
             return client;
         } catch (ElasticsearchException e) {
-            log.severe(e.getDetailedMessage());
+            log.log(Level.SEVERE, "failed to create elastic client", e.getDetailedMessage());
             return null;
         }
     }
@@ -92,7 +90,7 @@ public class ElasticSearchClient implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        log.info("Closeing the default Transport clients.");
+        log.info("Closing the default Transport clients.");
         try {
             searchClient.close();
             indexClient.close();

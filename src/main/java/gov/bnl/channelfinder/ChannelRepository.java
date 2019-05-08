@@ -51,8 +51,10 @@ import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -80,9 +82,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
                     .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
             indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-            IndexResponse indexRespone = client.index(indexRequest, RequestOptions.DEFAULT);
+            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
-            Result result = indexRespone.getResult();
+            Result result = indexResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                 client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(channel.getName()).get();
@@ -144,15 +146,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
             }
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-            UpdateResponse updateRespone = client.update(updateRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the tag
-            Result result = updateRespone.getResult();
-            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
+            UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
+            /// verify the creation of the channel
+            Result result = updateResponse.getResult();
+            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
                 // client.get(, options)
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to update/save channel" + channel, null);
         }
         return null;
     }
@@ -186,17 +190,19 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 // Failed to create/update all the channels
 
             } else {
-                List<String> createdPropertiesIds = new ArrayList<String>();
+                List<String> createdChannelIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
                     Result result = bulkItemResponse.getResponse().getResult();
-                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                        createdPropertiesIds.add(bulkItemResponse.getId());
+                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
+                        createdChannelIds.add(bulkItemResponse.getId());
                     }
                 }
-                return (Iterable<S>) findAllById(createdPropertiesIds);
+                return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
-
+        	e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to update/save channels" + channels, null);
         }
         return null;
     }

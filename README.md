@@ -59,10 +59,29 @@ a ElasticSearch index.
 mvn clean install
 ``` 
 
-#### Start the service
+#### Start the service  
 
 1. Using spring boot  
 
 ```
 mvn spring-boot:run
 ```
+
+2. Using the jar
+
+```
+java -jar ChannelFinder-4.0.0.jar
+```
+
+The above command with start the channelfinder service with the default settings and an embedded ldap server. The users and roles for this server are definded in the cf.ldif file.
+
+#### Start up options  
+
+You can start the channelfinder service with your own applications.properties file as follows:  
+```
+mvn spring-boot:run -Dspring.config.location=file:./application.properties
+ 
+java -jar ChannelFinder-4.0.0.jar -Dspring.config.location=file:./application.properties
+```
+
+
