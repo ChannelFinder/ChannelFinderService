@@ -78,10 +78,26 @@ The above command with start the channelfinder service with the default settings
 #### Start up options  
 
 You can start the channelfinder service with your own applications.properties file as follows:  
+
 ```
 mvn spring-boot:run -Dspring.config.location=file:./application.properties
- 
+```
+or  
+```
 java -jar ChannelFinder-4.0.0.jar -Dspring.config.location=file:./application.properties
+```
+
+You can also start up channelfinder with demo data using the command line argument "demo-data" followed by an integer number n  
+n*1500 channels will be created to simulate some of the most common types of devices found in accelerators like magnets, power supplies, etc...  
+
+```
+java -jar target/ChannelFinder-4.0.0.jar --demo-data=1
+java -jar target/ChannelFinder-4.0.0.jar --cleanup=1
+```
+  
+```
+mvn spring-boot:run -Dspring-boot.run.arguments="--demo-data=1"
+mvn spring-boot:run -Dspring-boot.run.arguments="--cleanup=1"
 ```
 
 
