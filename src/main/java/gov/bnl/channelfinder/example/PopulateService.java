@@ -94,6 +94,7 @@ public class PopulateService {
 
     @Autowired
     ElasticSearchClient esService;
+
     static ObjectMapper mapper = new ObjectMapper();
 
 
@@ -133,7 +134,6 @@ public class PopulateService {
     }
 
     public synchronized void createDB() {
-
         // Create a list of properties
         for (int i = 10; i < 70; i++) {
             prop_list.add(new XmlProperty("prop" + String.format("%03d", i), powner));
@@ -640,11 +640,5 @@ public class PopulateService {
         }
         return result;
     }
-    
-    public static void main(String[] args) {
-        PopulateService service = new PopulateService();
-        service.createDB(1);
-        service.cleanupDB();
 
-    }
 }
