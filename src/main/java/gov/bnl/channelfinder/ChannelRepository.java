@@ -137,6 +137,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             Optional<XmlChannel> existingChannel = findById(channel.getName());
             if(existingChannel.isPresent()) {
                 XmlChannel newChannel = existingChannel.get();
+                // TODO check ownership to ensure permission to modify channel
                 newChannel.addTags(channel.getTags());
                 newChannel.addProperties(channel.getProperties());
                 updateRequest.doc(objectMapper.writeValueAsBytes(newChannel), XContentType.JSON);
