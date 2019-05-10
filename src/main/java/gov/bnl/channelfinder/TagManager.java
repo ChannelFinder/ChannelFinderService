@@ -11,7 +11,9 @@ import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import gov.bnl.channelfinder.AuthorizationService.ROLES;
 
 @RestController
 @RequestMapping(TAG_RESOURCE_URI)
@@ -38,6 +42,8 @@ public class TagManager {
     @Autowired
     ChannelRepository channelRepository;
 
+    @Autowired
+    AuthorizationService authorizationService;
     /**
      * PUT method to create and <b>exclusively</b> update the tag identified by the
      * path parameter <tt>name</tt> to all channels identified in the payload
@@ -142,6 +148,9 @@ public class TagManager {
     @PostMapping("/{tag}")
     public XmlTag update(@PathVariable("tag") String tagName, @RequestBody XmlTag tag) {
         long start = System.currentTimeMillis();
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            
+        }
         tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
         XmlTag updatedTag = tagRepository.save(tag);
         // Updated the listed channels in tags with the associated tag
@@ -211,6 +220,9 @@ public class TagManager {
      */
     @DeleteMapping("/{tagName}")
     public void remove(@PathVariable("tagName") String tag) {
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            
+        }
         tagRepository.deleteById(tag);
     }
 
