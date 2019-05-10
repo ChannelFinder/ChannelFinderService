@@ -55,6 +55,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     ElasticSearchClient esService;
 
     ObjectMapper objectMapper = new ObjectMapper();
+    
+    @Autowired
+    AuthorizationService authorizationService;
 
     @SuppressWarnings("unused")
     public <S extends XmlTag> S index(S tag) {
@@ -288,17 +291,33 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Override
     public void deleteById(String tag) {
         RestHighLevelClient client = esService.getIndexClient();
-        DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag);
-        try {
-            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-            Result result = response.getResult();
-            if (!result.equals(Result.DELETED)) {
-                // Failed to delete the requested tag
+
+        Optional<XmlTag> existingTag = findById(tag);
+        if(existingTag.isPresent()) {
+            
+            if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+
+                DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag);
+
+                try {
+                    DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
+                    Result result = response.getResult();
+                    if (!result.equals(Result.DELETED)) {
+                        throw new Exception();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Failed to delete tag" + tag, null);
+                }
+            } else {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this tag" + tag, null);
             }
-        } catch (IOException e) {
-        	e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index tag" + tag, null);
+        
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The tag with the name " + tag + " does not exist");
         }
     }
 

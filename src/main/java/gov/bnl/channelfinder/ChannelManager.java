@@ -11,6 +11,7 @@ import javax.servlet.ServletContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+
+import gov.bnl.channelfinder.AuthorizationService.ROLES;
 
 @RestController
 @RequestMapping(CHANNEL_RESOURCE_URI)
@@ -42,6 +45,9 @@ public class ChannelManager {
 
     @Autowired
     ChannelRepository channelRepository;
+
+    @Autowired
+    AuthorizationService authorizationService;
 
     /**
      * GET method for retrieving a collection of Channel instances, based on a
@@ -64,7 +70,6 @@ public class ChannelManager {
      */
     @GetMapping("/{channelName}")
     public XmlChannel read(@PathVariable("channelName") String channelName) {
-    	System.out.println("hi");
         logManagerAudit.info("getting channel :" + channelName);
         if (channelRepository.findById(channelName).isPresent())
             return channelRepository.findById(channelName).get();
@@ -84,10 +89,14 @@ public class ChannelManager {
      */
     @PutMapping("/{channelName}")
     public XmlChannel create(@PathVariable("channelName") String channelName, @RequestBody XmlChannel data) {
-        logManagerAudit.info("PUT:" + data.toLog());
-        // TODO Validate the authorization of the user
-        // TODO Validate the channel
-        return channelRepository.index(data);
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
+            logManagerAudit.info("PUT:" + data.toLog());
+            // TODO Validate the authorization of the user
+            // TODO Validate the channel
+            return channelRepository.index(data);
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
     }
 
     /**
@@ -97,15 +106,18 @@ public class ChannelManager {
      * @return A list of the created channels
      */
     @PutMapping
-    public Iterable<XmlChannel> create(@RequestBody List<XmlChannel> data) {
-
-        data.stream().forEach(log -> {
-            logManagerAudit.info("PUT" + log.toLog());
-        });
-        // TODO validate user authorization
-        // TODO validate each channel
-        return channelRepository.indexAll(data);
-        // return Lists.newArrayList(channelRepository.indexAll(data));
+    public Iterable<XmlChannel> create(@RequestBody List<XmlChannel> channels) {
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
+            channels.stream().forEach(log -> {
+                logManagerAudit.info("PUT" + log.toLog());
+            });
+            // TODO validate user authorization
+            // TODO validate each channel
+            return channelRepository.indexAll(channels);
+            // return Lists.newArrayList(channelRepository.indexAll(data));
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
     }
 
     /**
@@ -118,31 +130,35 @@ public class ChannelManager {
      */
     @PostMapping("/{channelName}")
     public XmlChannel update(@PathVariable("channelName") String channelName, @RequestBody XmlChannel data) {
-        long start = System.currentTimeMillis();
-        if (data.getName() == null || data.getName().isEmpty()) {
-        }
-//        if (!validateChannelName(channelName, data)) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Specified channel name '" + channelName
-//                    + "' and payload channel name '" + data.getName() + "' do not match");
-//        }
-        try {
-            start = System.currentTimeMillis();
-            // TODO validate channel
-            logManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
-                    + (System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
-            Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
-            if (foundChannel.isPresent()) {
-                return channelRepository.save(data);
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The channel with the name " + channelName + " does not exist");
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
+            long start = System.currentTimeMillis();
+            if (data.getName() == null || data.getName().isEmpty()) {
             }
-        } catch (Exception e) {
+            //        if (!validateChannelName(channelName, data)) {
+            //            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Specified channel name '" + channelName
+            //                    + "' and payload channel name '" + data.getName() + "' do not match");
+            //        }
+            try {
+                start = System.currentTimeMillis();
+                // TODO validate channel
+                logManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
+                        + (System.currentTimeMillis() - start));
+                start = System.currentTimeMillis();
+                Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
+                if (foundChannel.isPresent()) {
+                    return channelRepository.save(data);
+                } else {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "The channel with the name " + channelName + " does not exist");
+                }
+            } catch (Exception e) {
 
-        } finally {
-        }
-        return null;
+            } finally {
+            }
+            return null;
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
     }
 
     /**
@@ -153,30 +169,34 @@ public class ChannelManager {
      *                    channel <tt>channelName</tt>
      */
     @PostMapping()
-    public Iterable<XmlChannel> update(@RequestBody List<XmlChannel> data) {
-        long start = System.currentTimeMillis();
-        // TODO check user authorization
-        // TODO validate the channels
-        try {
-            // check if all the channels exist
-            for (XmlChannel xmlChannel : data) {
-                Optional<XmlChannel> foundChannel = channelRepository.findById(xmlChannel.getName());
-                if (!foundChannel.isPresent()) {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "The channel with the name " + xmlChannel.getName() + " does not exist");
+    public Iterable<XmlChannel> update(@RequestBody List<XmlChannel> channels) {
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
+            long start = System.currentTimeMillis();
+            // TODO check user authorization
+            // TODO validate the channels
+            try {
+                // check if all the channels exist
+                for (XmlChannel xmlChannel : channels) {
+                    Optional<XmlChannel> foundChannel = channelRepository.findById(xmlChannel.getName());
+                    if (!foundChannel.isPresent()) {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                "The channel with the name " + xmlChannel.getName() + " does not exist");
+                    }
                 }
-            }
-            start = System.currentTimeMillis();
-            logManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
-                    + (System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
-            return channelRepository.saveAll(data);
-            //return Lists.newArrayList(channelRepository.saveAll(data));
-        } catch (Exception e) {
+                start = System.currentTimeMillis();
+                logManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
+                        + (System.currentTimeMillis() - start));
+                start = System.currentTimeMillis();
+                return channelRepository.saveAll(channels);
+                //return Lists.newArrayList(channelRepository.saveAll(data));
+            } catch (Exception e) {
 
-        } finally {
-        }
-        return null;
+            } finally {
+            }
+            return null;
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
     }
 
     /**
@@ -187,9 +207,14 @@ public class ChannelManager {
      */
     @DeleteMapping("/{channelName}")
     public void remove(@PathVariable("channelName") String channelName) {
-        logManagerAudit.info("deleting ch:" + channelName);
-        // TODO check authorization
-        // TODO validate the channel
-        channelRepository.deleteById(channelName);
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
+            logManagerAudit.info("deleting ch:" + channelName);
+            // TODO check authorization
+            // TODO validate the channel
+            channelRepository.deleteById(channelName);
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
     }
+
 }

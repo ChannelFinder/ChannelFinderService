@@ -44,6 +44,7 @@ public class TagManager {
 
     @Autowired
     AuthorizationService authorizationService;
+
     /**
      * PUT method to create and <b>exclusively</b> update the tag identified by the
      * path parameter <tt>name</tt> to all channels identified in the payload
@@ -56,15 +57,19 @@ public class TagManager {
      */
     @PutMapping("/{tag}")
     public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
-        long start = System.currentTimeMillis();
-        tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-        if (tag.equals(data.getName())) {
-            validateTagRequest(tag, data);
-            return tagRepository.index(data);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name in the body " + data.toString() + " Does not match the URI " + tag, null);
-        }
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            long start = System.currentTimeMillis();
+            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            if (tag.equals(data.getName())) {
+                validateTagRequest(tag, data);
+                return tagRepository.index(data);
+            } else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "The tag name in the body " + data.toString() + " Does not match the URI " + tag, null);
+            }        
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
     }
 
     /**
@@ -84,7 +89,7 @@ public class TagManager {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The tag owner cannot be null or empty " + tag.toString(), null);
         }
-//        tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList())
+        //        tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList())
     }
 
     /**
@@ -107,7 +112,7 @@ public class TagManager {
      */
     @GetMapping("/{tag}")
     public XmlTag read(@PathVariable("tag") String tag,
-                       @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
+            @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         Optional<XmlTag> foundTag = tagRepository.findById(tag);
         if(foundTag.isPresent()) {
             return foundTag.get();
@@ -127,10 +132,14 @@ public class TagManager {
      * @return HTTP Response
      */
     @PutMapping()
-    public List<XmlTag> createTags(@RequestBody List<XmlTag> data) {
-        long start = System.currentTimeMillis();
-        tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-        return (List<XmlTag>) tagRepository.indexAll(data);
+    public List<XmlTag> createTags(@RequestBody List<XmlTag> tags) {
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            long start = System.currentTimeMillis();
+            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            return (List<XmlTag>) tagRepository.indexAll(tags);       
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tags, null);      
     }
 
     /**
@@ -147,18 +156,22 @@ public class TagManager {
      */
     @PostMapping("/{tag}")
     public XmlTag update(@PathVariable("tag") String tagName, @RequestBody XmlTag tag) {
-        long start = System.currentTimeMillis();
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
-            
-        }
-        tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-        XmlTag updatedTag = tagRepository.save(tag);
-        // Updated the listed channels in tags with the associated tag
-        tag.getChannels().forEach(channel -> {
-            channel.addTag(updatedTag);
-        });
-        channelRepository.saveAll(tag.getChannels());
-        return updatedTag;
+            long start = System.currentTimeMillis();
+            if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+
+            }
+            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            XmlTag updatedTag = tagRepository.save(tag);
+            // Updated the listed channels in tags with the associated tag
+            tag.getChannels().forEach(channel -> {
+                channel.addTag(updatedTag);
+            });
+            channelRepository.saveAll(tag.getChannels());
+            return updatedTag;        
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
     }
 
     /**
@@ -173,14 +186,18 @@ public class TagManager {
      */
     @PostMapping()
     public Iterable<XmlTag> updateTags(@RequestBody List<XmlTag> tags) throws IOException {
-        Iterable<XmlTag> createdTags = tagRepository.saveAll(tags);
-        // Updated the listed channels in tags with the associated tags
-        List<XmlChannel> channels = new ArrayList<>();
-        tags.forEach(tag -> {
-            channels.addAll(tag.getChannels());
-        });
-        channelRepository.saveAll(channels);
-        return createdTags;
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            Iterable<XmlTag> createdTags = tagRepository.saveAll(tags);
+            // Updated the listed channels in tags with the associated tags
+            List<XmlChannel> channels = new ArrayList<>();
+            tags.forEach(tag -> {
+                channels.addAll(tag.getChannels());
+            });
+            channelRepository.saveAll(channels);
+            return createdTags;
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on these tag: " + tags, null);
     }
 
     /**
@@ -197,8 +214,12 @@ public class TagManager {
      */
     @PutMapping("/{tagName}/{chName}")
     public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, @RequestBody XmlTag data) {
-        // TODO: method
-        return null;
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            // TODO: method
+            return null;        
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
     }
 
     /**
@@ -221,9 +242,10 @@ public class TagManager {
     @DeleteMapping("/{tagName}")
     public void remove(@PathVariable("tagName") String tag) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
-            
-        }
-        tagRepository.deleteById(tag);
+            tagRepository.deleteById(tag);
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
     }
 
     /**
@@ -235,15 +257,19 @@ public class TagManager {
      */
     @DeleteMapping("/{tagName}/{channelName}")
     public void removeSingle(@PathVariable("tagName") final String tagName, @PathVariable("channelName") String channelName) {
-        Optional<XmlChannel> ch = channelRepository.findById(channelName);
-        if(ch.isPresent()) {
-            XmlChannel channel = ch.get();
-            channel.removeTag(new XmlTag(tagName, ""));
-            channelRepository.index(channel);
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "The channel with the name " + channelName + " does not exist");
-        }
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            Optional<XmlChannel> ch = channelRepository.findById(channelName);
+            if(ch.isPresent()) {
+                XmlChannel channel = ch.get();
+                channel.removeTag(new XmlTag(tagName, ""));
+                channelRepository.index(channel);
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The channel with the name " + channelName + " does not exist");
+            }
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);       
     }
 
 }
