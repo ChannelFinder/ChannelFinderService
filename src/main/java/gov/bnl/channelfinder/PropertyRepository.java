@@ -57,16 +57,17 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     ElasticSearchClient esService;
 
     ObjectMapper objectMapper = new ObjectMapper();
-    
+
     @Autowired
     AuthorizationService authorizationService;
- 
+
     /**
      * create a new property using the given XmlProperty
      * 
-     * @param testProperty
+     * @param property - property to be created
      * @return the created property
      */
+    @SuppressWarnings("unchecked")
     public <S extends XmlProperty> S index(XmlProperty property) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
@@ -87,6 +88,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         return null;
     }
 
+    /**
+     * create new properties using the given XmlProperties
+     * 
+     * @param properties - properties to be created
+     * @return the created properties
+     */
+    @SuppressWarnings("unchecked")
     public <S extends XmlProperty> Iterable<S> indexAll(List<XmlProperty> properties) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
@@ -97,51 +105,63 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                 bulkRequest.add(indexRequest);
             }
+
+            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the tag
+            /// verify the creation of the properties
             if (bulkResponse.hasFailures()) {
-                // Failed to create all the tags
+                // Failed to create all the properties
 
             } else {
-                List<String> createdPropertiesIds = new ArrayList<String>();
+                List<String> createdPropertyIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
                     Result result = bulkItemResponse.getResponse().getResult();
                     if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                        createdPropertiesIds.add(bulkItemResponse.getId());
+                        createdPropertyIds.add(bulkItemResponse.getId());
                     }
                 }
                 client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
-                return (Iterable<S>) findAllById(createdPropertiesIds);
+                return (Iterable<S>) findAllById(createdPropertyIds);
             }
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to index tags" + properties, null);      
         }
         return null;
     }
 
+    /**
+     * update/save property using the given XmlProperty
+     * 
+     * @param property - property to be created
+     * @return the updated/saved property
+     */
+    @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlProperty> S save(S property) {
-    	RestHighLevelClient client = esService.getIndexClient();
-    	
-    	Optional<XmlProperty> existingProperty = findById(property.getName());
-    	boolean present = existingProperty.isPresent();
+        RestHighLevelClient client = esService.getIndexClient();
+
+        Optional<XmlProperty> existingProperty = findById(property.getName());
+        boolean present = existingProperty.isPresent();
         if(present) {
             XmlProperty newProperty = existingProperty.get();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newProperty)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag" + property, null);
+                        "User does not have the proper authorization to perform an operation on this property" + property, null);
             }
         }
-            
+
         try {
 
             UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
 
             if(present) {
-            	XmlProperty newProperty = existingProperty.get();
+                XmlProperty newProperty = existingProperty.get();
                 updateRequest.doc(objectMapper.writeValueAsBytes(newProperty), XContentType.JSON);
             } else {
-                IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE).id(property.getName())
+                IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
+                        .id(property.getName())
                         .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                 updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
             }
@@ -161,10 +181,17 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         return null;
     }
 
+    /**
+     * update/save properties using the given XmlProperties
+     * 
+     * @param properties - properties to be created
+     * @return the updated/saved properties
+     */
+    @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlProperty> Iterable<S> saveAll(Iterable<S> properties) {
-        
-    	RestHighLevelClient client = esService.getIndexClient();
+
+        RestHighLevelClient client = esService.getIndexClient();
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlProperty property : properties) {
@@ -172,10 +199,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
                 Optional<XmlProperty> existingProperty = findById(property.getName());
                 if (existingProperty.isPresent()) {
-                	XmlProperty newProperty = existingProperty.get();
+                    XmlProperty newProperty = existingProperty.get();
                     updateRequest.doc(objectMapper.writeValueAsBytes(newProperty), XContentType.JSON);
                 } else {
-                	IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(property.getName())
+                    IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
+                            .id(property.getName())
                             .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                     updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
                 }
@@ -185,44 +213,56 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
             if (bulkResponse.hasFailures()) {
-                // Failed to create/update all the tags
-
+                // Failed to create/update all the properties
+                throw new Exception();
             } else {
                 List<String> createdPropertyIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
                     Result result = bulkItemResponse.getResponse().getResult();
                     if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-                    	createdPropertyIds.add(bulkItemResponse.getId());
+                        createdPropertyIds.add(bulkItemResponse.getId());
                     }
                 }
                 return (Iterable<S>) findAllById(createdPropertyIds);
             }
         } catch (Exception e) {
-        	e.printStackTrace();
+            e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update/save properties" + properties, null);
         }
-        return null;
     }
 
+    /**
+     * find property using the given property id
+     * 
+     * @param propertyId - id of property to be found
+     * @return the found property
+     */
     @Override
-    public Optional<XmlProperty> findById(String id) {
-        return findById(id, false);
+    public Optional<XmlProperty> findById(String propertyId) {
+        return findById(propertyId, false);
     }
-   
-    public Optional<XmlProperty> findById(String id, boolean withChannels) {
+
+    /**
+     * find property using the given property id
+     * 
+     * @param propertyId - id of property to be found
+     * @param withChannels - whether channels should be included
+     * @return the found property
+     */
+    public Optional<XmlProperty> findById(String propertyId, boolean withChannels) {
         RestHighLevelClient client = esService.getSearchClient();
-        GetRequest getRequest = new GetRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id);
+        GetRequest getRequest = new GetRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyId);
         try {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
-                XmlProperty property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(),
-                        XmlProperty.class);
+                XmlProperty property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlProperty.class);
                 return Optional.of(property);
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Failed to find property" + propertyId, null);
         }
         return Optional.empty();
     }
@@ -243,17 +283,24 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         return false;
     }
 
+    /**
+     * find all properties 
+     * 
+     * @return the found properties
+     */
     @Override
     public Iterable<XmlProperty> findAll() {
-
         RestHighLevelClient client = esService.getSearchClient();
+        
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(ES_PROPERTY_INDEX);
         searchRequest.types(ES_PROPERTY_TYPE);
+        
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // TODO use of scroll will be necessary
         searchSourceBuilder.size(10000);
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
+        
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             if (searchResponse.status().equals(RestStatus.OK)) {
@@ -264,18 +311,25 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 return result;
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to fihd all properties", null);
         }
         return null;
     }
 
+    /**
+     * find properties using the given property ids
+     * 
+     * @param propertyIds - ids of properties to be found
+     * @return the found properties
+     */
     @Override
-    public Iterable<XmlProperty> findAllById(Iterable<String> ids) {
+    public Iterable<XmlProperty> findAllById(Iterable<String> propertyIds) {
         MultiGetRequest request = new MultiGetRequest();
-        
-        for (String id : ids) {
-            request.add(new MultiGetRequest.Item(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id));
+
+        for (String propertyId : propertyIds) {
+            request.add(new MultiGetRequest.Item(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyId));
         }
         try {
             List<XmlProperty> foundProperties = new ArrayList<XmlProperty>();
@@ -284,16 +338,14 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 if (!multiGetItemResponse.isFailed()) {
                     foundProperties.add(objectMapper.readValue(
                             multiGetItemResponse.getResponse().getSourceAsBytesRef().streamInput(), XmlProperty.class));
-                } else {
-                    // failed to fetch all the listed tags
-                }
+                } 
             }
             return foundProperties;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Failed to find all properties" + propertyIds, null);
         }
-        return null;
     }
 
     @Override
@@ -302,6 +354,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         return 0;
     }
 
+    /**
+     * delete the given property by property name
+     * 
+     * @param property - property to be deleted
+     */
     @Override
     public void deleteById(String property) {
         RestHighLevelClient client = esService.getIndexClient();
@@ -333,6 +390,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         }
     }
 
+    /**
+     * delete the given property
+     * 
+     * @param property - property to be deleted
+     */
     @Override
     public void delete(XmlProperty property) {
         deleteById(property.getName());

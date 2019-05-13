@@ -2,6 +2,7 @@ package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
 
@@ -59,7 +60,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Autowired
     AuthorizationService authorizationService;
 
-    @SuppressWarnings("unused")
+    /**
+     * create a new tag using the given XmlTag
+     * 
+     * @param tag - tag to be created
+     * @return the created tag
+     */
+    @SuppressWarnings("unchecked")
     public <S extends XmlTag> S index(S tag) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
@@ -81,27 +88,35 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         return null;
     }
 
+    /**
+     * create new tags using the given XmlTags
+     * 
+     * @param tags - tags to be created
+     * @return the created tags
+     */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> Iterable<S> indexAll(Iterable<S> tags) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlTag tag : tags) {
-                IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(tag.getName())
+                IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
+                        .id(tag.getName())
                         .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
                 bulkRequest.add(indexRequest);
             }
 
             bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the tag
+            /// verify the creation of the tags
             if (bulkResponse.hasFailures()) {
                 // Failed to create all the tags
 
             } else {
                 List<String> createdTagIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
-                    if (bulkItemResponse.getResponse().getResult().equals(Result.CREATED)) {
+                    Result result = bulkItemResponse.getResponse().getResult();
+                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
                         createdTagIds.add(bulkItemResponse.getId());
                     }
                 }
@@ -110,11 +125,19 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index tags" + tags, null);        }
+                    "Failed to index tags" + tags, null);      
+        }
         return null;
 
     }
 
+    /**
+     * update/save tag using the given XmlTag
+     * 
+     * @param tag - tag to be created
+     * @return the updated/saved tag
+     */
+    @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlTag> S save(S tag) {
         RestHighLevelClient client = esService.getIndexClient();
@@ -137,7 +160,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 XmlTag newTag = existingTag.get();
                 updateRequest.doc(objectMapper.writeValueAsBytes(newTag), XContentType.JSON);
             } else {
-                IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(tag.getName())
+                IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
+                        .id(tag.getName())
                         .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
                 updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON).upsert(indexRequest);
             }
@@ -158,6 +182,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         return null;
     }
 
+    /**
+     * update/save tags using the given XmlTags
+     * 
+     * @param tags - tags to be created
+     * @return the updated/saved tags
+     */
+    @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlTag> Iterable<S> saveAll(Iterable<S> tags) {
 
@@ -172,7 +203,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     XmlTag newTag = existingTag.get();
                     updateRequest.doc(objectMapper.writeValueAsBytes(newTag), XContentType.JSON);
                 } else {
-                    IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(tag.getName())
+                    IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
+                            .id(tag.getName())
                             .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
                     updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON).upsert(indexRequest);
                 }
@@ -183,7 +215,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
             if (bulkResponse.hasFailures()) {
                 // Failed to create/update all the tags
-
+                throw new Exception();
             } else {
                 List<String> createdTagIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
@@ -199,17 +231,29 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update/save tags" + tags, null);
         }
-        return null;
     }
 
+    /**
+     * find tag using the given tag id
+     * 
+     * @param tagId - id of tag to be found
+     * @return the found tag
+     */
     @Override
-    public Optional<XmlTag> findById(String id) {
-        return findById(id, false);
+    public Optional<XmlTag> findById(String tagId) {
+        return findById(tagId, false);
     }
 
-    public Optional<XmlTag> findById(String id, boolean withChannels) {
+    /**
+     * find tag using the given tag id
+     * 
+     * @param tagId - id of tag to be found
+     * @param withChannels - whether channels should be included
+     * @return the found tag
+     */
+    public Optional<XmlTag> findById(String tagId, boolean withChannels) {
         RestHighLevelClient client = esService.getSearchClient();
-        GetRequest getRequest = new GetRequest(ES_TAG_INDEX, ES_TAG_TYPE, id);
+        GetRequest getRequest = new GetRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagId);
         try {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
@@ -218,8 +262,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to find tag by id" + id, null);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Failed to find tag" + tagId, null);
         }
         return Optional.empty();
     }
@@ -240,16 +284,24 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         }
     }
 
+    /**
+     * find all tags 
+     * 
+     * @return the found tags
+     */
     @Override
     public Iterable<XmlTag> findAll() {
-
         RestHighLevelClient client = esService.getSearchClient();
+        
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(ES_TAG_INDEX);
+        searchRequest.types(ES_TAG_TYPE);
+        
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // TODO use of scroll will be necessary
         searchSourceBuilder.size(10000);
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
+        
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             if (searchResponse.status().equals(RestStatus.OK)) {
@@ -267,12 +319,18 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         return null;
     }
 
+    /**
+     * find tags using the given tags ids
+     * 
+     * @param tagIds - ids of tags to be found
+     * @return the found tags
+     */
     @Override
-    public Iterable<XmlTag> findAllById(Iterable<String> ids) {
-
+    public Iterable<XmlTag> findAllById(Iterable<String> tagIds) {
         MultiGetRequest request = new MultiGetRequest();
-        for (String id : ids) {
-            request.add(new MultiGetRequest.Item(ES_TAG_INDEX, ES_TAG_TYPE, id));
+        
+        for (String tagId : tagIds) {
+            request.add(new MultiGetRequest.Item(ES_TAG_INDEX, ES_TAG_TYPE, tagId));
         }
         try {
             List<XmlTag> foundTags = new ArrayList<XmlTag>();
@@ -281,15 +339,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 if (!multiGetItemResponse.isFailed()) {
                     foundTags.add(objectMapper.readValue(
                             multiGetItemResponse.getResponse().getSourceAsBytesRef().streamInput(), XmlTag.class));
-                } else {
-                    // failed to fetch all the listed tags
-                }
+                } 
             }
             return foundTags;
         } catch (IOException e) {
             e.printStackTrace();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to find all tags by ids" + ids, null);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Failed to find all tags by ids" + tagIds, null);
         }
     }
 
@@ -299,6 +355,11 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         return 0;
     }
 
+    /**
+     * delete the given tag by tag name
+     * 
+     * @param tag - tag to be deleted
+     */
     @Override
     public void deleteById(String tag) {
         RestHighLevelClient client = esService.getIndexClient();
@@ -325,13 +386,18 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag" + tag, null);
             }
-            
+
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The tag with the name " + tag + " does not exist");
         }
     }
 
+    /**
+     * delete the given property
+     * 
+     * @param propertyId - property to be deleted
+     */
     @Override
     public void delete(XmlTag tag) {
         deleteById(tag.getName());
