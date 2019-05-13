@@ -42,6 +42,7 @@ import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -56,6 +57,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     ElasticSearchClient esService;
 
     ObjectMapper objectMapper = new ObjectMapper();
+    
+    @Autowired
+    AuthorizationService authorizationService;
  
     /**
      * create a new property using the given XmlProperty
@@ -118,12 +122,22 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @Override
     public <S extends XmlProperty> S save(S property) {
     	RestHighLevelClient client = esService.getIndexClient();
+    	
+    	Optional<XmlProperty> existingProperty = findById(property.getName());
+    	boolean present = existingProperty.isPresent();
+        if(present) {
+            XmlProperty newProperty = existingProperty.get();
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newProperty)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this tag" + property, null);
+            }
+        }
+            
         try {
 
             UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
 
-            Optional<XmlProperty> existingProperty = findById(property.getName());
-            if(existingProperty.isPresent()) {
+            if(present) {
             	XmlProperty newProperty = existingProperty.get();
                 updateRequest.doc(objectMapper.writeValueAsBytes(newProperty), XContentType.JSON);
             } else {
@@ -284,41 +298,54 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     @Override
     public long count() {
-        // TODO Auto-generated method stub
+        // NOT USED
         return 0;
     }
 
     @Override
-    public void deleteById(String id) {
+    public void deleteById(String property) {
         RestHighLevelClient client = esService.getIndexClient();
-        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id);
-        try {
-            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-            Result result = response.getResult();
-            if (!result.equals(Result.DELETED)) {
-                // Failed to delete the requested tag
+
+        Optional<XmlProperty> existingProperty = findById(property);
+        if(existingProperty.isPresent()) {
+
+            if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+
+                DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property);
+
+                try {
+                    DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
+                    Result result = response.getResult();
+                    if (!result.equals(Result.DELETED)) 
+                        throw new Exception();                    
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Failed to delete property" + property, null);
+                }
+            } else {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this property" + property, null);
             }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The property with the name " + property + " does not exist");
         }
     }
 
     @Override
-    public void delete(XmlProperty entity) {
-        deleteById(entity.getName());
+    public void delete(XmlProperty property) {
+        deleteById(property.getName());
     }
 
     @Override
     public void deleteAll(Iterable<? extends XmlProperty> entities) {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException("Delete All is not supported.");
     }
 
     @Override
     public void deleteAll() {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedOperationException("Delete All is not supported.");
     }
 
 }

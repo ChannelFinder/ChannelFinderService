@@ -52,6 +52,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
@@ -68,6 +69,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     ElasticSearchClient esService;
 
     ObjectMapper objectMapper = new ObjectMapper();
+    
+    @Autowired
+    AuthorizationService authorizationService;
 
     /**
      * create a new property using the given XmlChannel
@@ -130,14 +134,23 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @Override
     public <S extends XmlChannel> S save(S channel) {
         RestHighLevelClient client = esService.getIndexClient();
+        
+        Optional<XmlChannel> existingChannel = findById(channel.getName());
+        boolean present = existingChannel.isPresent();
+        if(present) {
+            XmlChannel newChannel = existingChannel.get();
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newChannel)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this channel" + channel, null);
+            }
+        }
+        
         try {
 
             UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
 
-            Optional<XmlChannel> existingChannel = findById(channel.getName());
-            if(existingChannel.isPresent()) {
+            if(present) {
                 XmlChannel newChannel = existingChannel.get();
-                // TODO check ownership to ensure permission to modify channel
                 newChannel.addTags(channel.getTags());
                 newChannel.addProperties(channel.getProperties());
                 updateRequest.doc(objectMapper.writeValueAsBytes(newChannel), XContentType.JSON);
@@ -318,34 +331,51 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     @Override
     public long count() {
-        // TODO Auto-generated method stub
+        // NOT USED
         return 0;
     }
 
     @Override
-    public void deleteById(String id) {
+    public void deleteById(String channel) {
         RestHighLevelClient client = esService.getIndexClient();
-        DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
-        try {
-            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-            Result result = response.getResult();
-            if (!result.equals(Result.DELETED)) {
-                // Failed to delete the requested tag
+
+        Optional<XmlChannel> existingChannel = findById(channel);
+        if(existingChannel.isPresent()) {
+
+            if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+
+                DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel);
+                
+                try {
+                    DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
+                    Result result = response.getResult();
+                    if (!result.equals(Result.DELETED)) {
+                        throw new Exception();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Failed to delete channel" + channel, null);
+                }
+            } else {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this channel" + channel, null);
             }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The tag with the channel " + channel + " does not exist");
         }
     }
 
     @Override
-    public void delete(XmlChannel entity) {
-        deleteById(entity.getName());
+    public void delete(XmlChannel channel) {
+        deleteById(channel.getName());
     }
 
     @Override
     public void deleteAll(Iterable<? extends XmlChannel> entities) {
-        // TODO
+        throw new UnsupportedOperationException("Delete All is not supported.");
     }
 
     @Override
