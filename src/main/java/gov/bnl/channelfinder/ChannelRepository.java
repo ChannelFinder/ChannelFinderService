@@ -71,9 +71,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * create a new property using the given XmlChannel
-     * 
+     *
      * @param testProperty
-     * @return
      * @return the created property
      */
     public <S extends XmlChannel> S index(XmlChannel channel) {
