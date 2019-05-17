@@ -37,6 +37,7 @@ public class PropertyManager {
 
     @Autowired
     TagRepository tagRepository;
+    
     @Autowired
     PropertyRepository propertyRepository;
 

@@ -40,6 +40,7 @@ public class ChannelManager {
 
     @Autowired
     TagRepository tagRepository;
+    
     @Autowired
     PropertyRepository propertyRepository;
 
