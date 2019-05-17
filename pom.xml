@@ -99,6 +99,13 @@
 			<artifactId>spring-security-test</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>org.epics</groupId>
+			<artifactId>epics-core</artifactId>
+			<type>pom</type>
+			<version>7.0.2</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<scope>test</scope>
@@ -151,4 +158,13 @@
 			</plugin>
 		</plugins>
 	</build>
+	<repositories>
+		<repository>
+			<id>snapshots-repo</id>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 </project>
