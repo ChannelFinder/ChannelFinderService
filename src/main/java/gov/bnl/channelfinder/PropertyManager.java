@@ -32,7 +32,7 @@ import gov.bnl.channelfinder.AuthorizationService.ROLES;
 public class PropertyManager {
 
     // private SecurityContext securityContext;
-    static Logger logManagerAudit = Logger.getLogger(PropertyManager.class.getName() + ".audit");
+    static Logger propertyManagerAudit = Logger.getLogger(PropertyManager.class.getName() + ".audit");
     static Logger log = Logger.getLogger(PropertyManager.class.getName());
 
     @Autowired
@@ -58,18 +58,17 @@ public class PropertyManager {
     }
 
     /**
-     * GET method for retrieving the property with the path parameter
-     * <tt>propertyName</tt> 
+     * GET method for retrieving the property with the path parameter <tt>propertyName</tt> 
      * 
      * To get all its channels use the parameter "withChannels"
      *
-     * @param propertyName
-     *            URI path parameter: property name to search for
+     * @param propertyName - property name to search for
      * @return list of channels with their properties and tags that match
      */
-    @GetMapping(value = "/{propName}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public XmlProperty read(@PathVariable("propName") String propertyName,
+    @GetMapping(value = "/{propertyName}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public XmlProperty read(@PathVariable("propertyName") String propertyName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
+        propertyManagerAudit.info("getting property: " + propertyName);
         Optional<XmlProperty> foundProperty = propertyRepository.findById(propertyName);
         if (foundProperty.isPresent()) {
             return foundProperty.get();
@@ -87,8 +86,8 @@ public class PropertyManager {
      * are taken from the payload.
      *
      *
-     * @param propertyName URI path parameter: property name
-     * @param property an XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
+     * @param propertyName - name of property to be created
+     * @param property - an XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
      * @return the created property
      */
     @PutMapping(value = "/{propertyName}", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -106,8 +105,8 @@ public class PropertyManager {
     /**
      * PUT method for creating multiple properties.
      *
-     * @param properties XmlProperties properties (from payload)
-     * @return The list of properties created
+     * @param properties - XmlProperties to be created
+     * @return the list of properties created
      */
     @PutMapping()
     public Iterable<XmlProperty> create(@RequestBody List<XmlProperty> properties) {
@@ -131,9 +130,9 @@ public class PropertyManager {
      * <tt>property</tt>. Setting the owner attribute in the XML root element is
      * mandatory. Values for the properties are taken from the payload.
      *
-     * @param propertyName URI path parameter: property name
-     * @param property a XmlProperty instance with the  list of channels to add the property <tt>propertyName</tt> to
-     * @return XmlProperty the updated property
+     * @param propertyName - name of property to be updated
+     * @param property - a XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
+     * @return the updated property
      */
     @PostMapping(value = "/{propertyName}",
             consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -149,14 +148,12 @@ public class PropertyManager {
     }
 
     /**
-     * POST method for creating multiple properties.
+     * POST method for updating multiple properties.
      *
      * If the channels don't exist it will fail
      *
-     * @param properties List of XmlProperty data (from payload)
-     * @return List of all the updated properties
-     * @throws IOException
-     *             when audit or log fail
+     * @param properties - XmlProperties to be updated
+     * @return the updated properties
      */
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
@@ -178,9 +175,9 @@ public class PropertyManager {
      * DELETE method for deleting the property identified by the path parameter
      * <tt>propertyName</tt> from all channels.
      *
-     * @param propertyName URI path parameter: property name to remove
+     * @param propertyName - name of property to remove
      */
-    @DeleteMapping(value = "/{propertyName}")
+    @DeleteMapping("/{propertyName}")
     public void remove(@PathVariable("propertyName") String propertyName) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             propertyRepository.deleteById(propertyName);
@@ -193,8 +190,7 @@ public class PropertyManager {
      * DELETE method for deleting the property identified by <tt>propertyName</tt> from the
      * channel <tt>channelName</tt> (both path parameters).
      *
-     * @param property  URI path parameter: property name to remove
-     * @param channelName URI path parameter: channel to remove <tt>propertyName</tt> from
+     * @param propertyName - name of property to remove
      */
     @DeleteMapping("/{propertyName}/{channelName}")
     public void removeSingle(@PathVariable("propertyName") final String propertyName, @PathVariable("channelName") String channelName) {

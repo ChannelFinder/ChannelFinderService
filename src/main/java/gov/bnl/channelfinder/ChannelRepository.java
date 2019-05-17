@@ -2,7 +2,7 @@ package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
-import static gov.bnl.channelfinder.ChannelManager.logManagerAudit;
+import static gov.bnl.channelfinder.ChannelManager.channelManagerAudit;
 import static gov.bnl.channelfinder.ChannelManager.log;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
@@ -286,7 +286,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 if (!multiGetItemResponse.getResponse().isExists())
                     return false;
             }
-            logManagerAudit.info(
+            channelManagerAudit.info(
                     "Completed existance check for " + ids.size() + " in: " + (System.currentTimeMillis() - start));
             return true;
         } catch (IOException e) {

@@ -11,7 +11,6 @@ import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -51,7 +50,7 @@ public class TagManager {
      * @return list of tags
      */
     @GetMapping
-    public Iterable<XmlTag> listTags(@RequestParam Map<String, String> allRequestParams) {
+    public Iterable<XmlTag> list() {
         return tagRepository.findAll();
     }
 
@@ -63,15 +62,16 @@ public class TagManager {
      * @param tag URI path parameter: tag name to search for
      * @return list of channels with their properties and tags that match
      */
-    @GetMapping("/{tag}")
-    public XmlTag read(@PathVariable("tag") String tag,
+    @GetMapping("/{tagName}")
+    public XmlTag read(@PathVariable("tagName") String tagName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
-        Optional<XmlTag> foundTag = tagRepository.findById(tag);
+        tagManagerAudit.info("getting tag: " + tagName);
+        Optional<XmlTag> foundTag = tagRepository.findById(tagName);
         if(foundTag.isPresent()) {
             return foundTag.get();
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "The tag with the name " + tag + " does not exist");
+                    "The tag with the name " + tagName + " does not exist");
         }
     }
 
@@ -81,21 +81,21 @@ public class TagManager {
      * structure <tt>data</tt>. Setting the owner attribute in the XML root element
      * is mandatory.
      * 
-     * @param tag  URI path parameter: tag name
-     * @param data XmlTag structure containing the list of channels to be tagged
-     * @return HTTP Response
+     * @param tagName - name of tag to be created
+     * @param tag - XmlTag structure containing the list of channels to be tagged
+     * @return the created tag
      */
-    @PutMapping("/{tag}")
-    public XmlTag create(@PathVariable("tag") String tag, @RequestBody XmlTag data) {
+    @PutMapping("/{tagName}")
+    public XmlTag create(@PathVariable("tagName") String tagName, @RequestBody XmlTag tag) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            if (tag.equals(data.getName())) {
-                validateTagRequest(tag, data);
-                return tagRepository.index(data);
+            if (tagName.equals(tag.getName())) {
+                validateTagRequest(tagName, tag);
+                return tagRepository.index(tag);
             } else {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "The tag name in the body " + data.toString() + " Does not match the URI " + tag, null);
+                        "The tag name in the body " + tag.toString() + " Does not match the URI " + tagName, null);
             }        
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -103,16 +103,13 @@ public class TagManager {
     }
     
     /**
-     * PUT method to create and <b>exclusively</b> update the tag identified by the
-     * path parameter <tt>name</tt> to all channels identified in the payload
-     * structure <tt>data</tt>. Setting the owner attribute in the XML root element
-     * is mandatory.
+     * PUT method for creating multiple tags.
      * 
-     * @param data XmlTag structure containing the list of channels to be tagged
-     * @return HTTP Response
+     * @param tags - XmlTags to be created
+     * @return the list of tags created
      */
     @PutMapping()
-    public List<XmlTag> createTags(@RequestBody List<XmlTag> tags) {
+    public List<XmlTag> create(@RequestBody List<XmlTag> tags) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
@@ -129,13 +126,13 @@ public class TagManager {
      * TODO: could be simplified with multi index update and script which can use
      * wildcards thus removing the need to explicitly define the entire tag
      * 
-     * @param tag  URI path parameter: tag name
-     * @param chan URI path parameter: channel to update <tt>tag</tt> to
-     * @param data tag data (ignored)
+     * @param tagName - name of tag to be created
+     * @param channelName - channel to update <tt>tag</tt> to
+     * @param tag - tag data (ignored)
      * @return HTTP Response
      */
     @PutMapping("/{tagName}/{chName}")
-    public String addSingle(@PathVariable("tagName") String tag, @PathVariable("chName") String chan, @RequestBody XmlTag data) {
+    public String addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName, @RequestBody XmlTag tag) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             // TODO: method
             return null;        
@@ -152,12 +149,12 @@ public class TagManager {
      * 
      * TODO: Optimize the bulk channel update
      *
-     * @param tagName  URI path parameter: tag name
-     * @param tag with list of channels to addSingle the tag <tt>name</tt> to
-     * @return HTTP Response
+     * @param tagName - URI path parameter: tag name
+     * @param tag - with list of channels to addSingle the tag <tt>name</tt> to
+     * @return the updated tag
      */
-    @PostMapping("/{tag}")
-    public XmlTag update(@PathVariable("tag") String tagName, @RequestBody XmlTag tag) {
+    @PostMapping("/{tagName}")
+    public XmlTag update(@PathVariable("tagName") String tagName, @RequestBody XmlTag tag) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -177,17 +174,16 @@ public class TagManager {
     }
 
     /**
-     * POST method for creating multiple tags and updating all the appropriate
+     * POST method for updating multiple tags and updating all the appropriate
      * channels.
      * 
      * If the channels don't exist it will fail
      *
-     * @param tags XmlTags data (from payload)
-     * @return List of all the updated tags
-     * @throws IOException when audit or log fail
+     * @param tags - XmlTags to be updated
+     * @return the updated tags
      */
     @PostMapping()
-    public Iterable<XmlTag> updateTags(@RequestBody List<XmlTag> tags) throws IOException {
+    public Iterable<XmlTag> update(@RequestBody List<XmlTag> tags) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             Iterable<XmlTag> createdTags = tagRepository.saveAll(tags);
             // Updated the listed channels in tags with the associated tags
@@ -206,23 +202,23 @@ public class TagManager {
      * DELETE method for deleting the tag identified by the path parameter
      * <tt>name</tt> from all channels.
      *
-     * @param tag URI path parameter: tag name to remove
+     * @param tagName - name of tag to remove
      */
     @DeleteMapping("/{tagName}")
-    public void remove(@PathVariable("tagName") String tag) {
+    public void remove(@PathVariable("tagName") String tagName) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
-            tagRepository.deleteById(tag);
+            tagRepository.deleteById(tagName);
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                    "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
     }
 
     /**
      * DELETE method for deleting the tag identified by <tt>tag</tt> from the
      * channel <tt>channelName</tt> (both path parameters).
      *
-     * @param tag  URI path parameter: tag name to remove
-     * @param channelName URI path parameter: channel to remove <tt>tag</tt> from
+     * @param tagName - name of tag to remove
+     * @param channelName - channel to remove <tt>tag</tt> from
      */
     @DeleteMapping("/{tagName}/{channelName}")
     public void removeSingle(@PathVariable("tagName") final String tagName, @PathVariable("channelName") String channelName) {
