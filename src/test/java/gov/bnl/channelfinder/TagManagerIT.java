@@ -123,7 +123,7 @@ public class TagManagerIT {
         testTag1.setOwner("test-owner1");
         Tags.add(testTag);
         Tags.add(testTag1);
-        List<XmlTag> createdTags = tagManager.createTags(Tags);
+        List<XmlTag> createdTags = tagManager.create(Tags);
         // now check if the created tag has the correct name and owner
         assertEquals("Failed to create the first tag", testTag.getName(), createdTags.get(0).getName());
         assertEquals("Failed to create the first tag", testTag.getOwner(), createdTags.get(0).getOwner());
@@ -156,7 +156,7 @@ public class TagManagerIT {
         tagManager.create("test-tag1", testTag1);
         tagManager.create("test-tag2", testTag2);
         Map<String, String> map = new HashMap<String, String>();
-        List<XmlTag> tagList = Lists.newArrayList(tagManager.listTags(map));
+        List<XmlTag> tagList = Lists.newArrayList(tagManager.list());
         for (int i = 0; i < tagList.size(); i++) {
             assertEquals("Failed to list correct tags(name incorrect)", Tags.get(i).getName(),
                     tagList.get(i).getName());
