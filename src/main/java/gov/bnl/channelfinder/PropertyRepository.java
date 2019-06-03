@@ -313,7 +313,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to fihd all properties", null);
+                    "Failed to find all properties", null);
         }
         return null;
     }

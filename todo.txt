@@ -1,14 +1,7 @@
-- implement ownership restrictions
-- implement authorization for operations
 - implement/look into null values and empty property value string
 - finish implementing operations
---> tagM: addSingle
---> chanM: create, update, remove
---> tagR: deleteAll
---> chanR: deleteAll
---> propR: findAll, deleteAll 
-- finish implementing logging of exceptions
+- finish implementing logging
 - once these todo items are completed, add them to documentation:
 	--> completed operations
 	--> worked out the details of using lists vs CRUD
-	--> exceptions implemented for tagR
+	--> exceptions / authorization

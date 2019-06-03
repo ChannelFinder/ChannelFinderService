@@ -46,11 +46,12 @@ public class TagManager {
 
     /**
      * GET method for retrieving the list of tags in the database.
+     * @param map 
      *
      * @return list of tags
      */
     @GetMapping
-    public Iterable<XmlTag> list() {
+    public Iterable<XmlTag> list(Map<String, String> map) {
         return tagRepository.findAll();
     }
 
