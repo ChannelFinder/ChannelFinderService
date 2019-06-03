@@ -2,6 +2,7 @@ package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
 import static gov.bnl.channelfinder.ChannelManager.channelManagerAudit;
 import static gov.bnl.channelfinder.ChannelManager.log;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
@@ -83,7 +84,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     public <S extends XmlChannel> S index(XmlChannel channel) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE).id(channel.getName())
+            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+                    .id(channel.getName())
                     .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
             indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
@@ -95,6 +97,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to index channel: " + channel, null);
         }
         return null;
     }
@@ -131,12 +135,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         createdChannelIds.add(bulkItemResponse.getId());
                     }
                 }
+                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index tags" + channels, null);
+                    "Failed to index channels: " + channels, null);
         }
         return null;
     }
@@ -158,7 +163,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             XmlChannel newChannel = existingChannel.get();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newChannel)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this channel" + channel, null);
+                        "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
             }
         }
 
@@ -188,7 +193,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save channel" + channel, null);
+                    "Failed to update/save channel: " + channel, null);
         }
         return null;
     }
@@ -237,12 +242,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         createdChannelIds.add(bulkItemResponse.getId());
                     }
                 }
+                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save channels" + channels, null);
+                    "Failed to update/save channels: " + channels, null);
         }
     }
 
@@ -265,7 +271,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find property" + channelId, null);
+                    "Failed to find channel: " + channelId, null);
         }
         return Optional.empty();
     }
@@ -371,7 +377,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find all channels" + channelIds, null);
+                    "Failed to find all channels: " + channelIds, null);
         }
     }
 
@@ -406,11 +412,11 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to delete channel" + channel, null);
+                            "Failed to delete channel: " + channel, null);
                 }
             } else {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this channel" + channel, null);
+                        "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
             }
 
         } else {
@@ -512,7 +518,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 }
             }
 
-            performance.append("|prepare:" + (System.currentTimeMillis() - start));
+            performance.append("|prepare: " + (System.currentTimeMillis() - start));
             start = System.currentTimeMillis();
             SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -540,7 +546,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 } catch (IOException e) {
                     e.printStackTrace();
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to parse result for search : " + searchParameters + " CAUSE: " + e.getMessage(), e);
+                            "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
                 }
             });
 
@@ -551,7 +557,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             return result;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Search failed for: " + searchParameters + " CAUSE: " + e.getMessage(), e);
+                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
         }
     }
 

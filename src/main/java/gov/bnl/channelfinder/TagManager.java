@@ -48,7 +48,7 @@ public class TagManager {
      * GET method for retrieving the list of tags in the database.
      * @param map 
      *
-     * @return list of tags
+     * @return list of all tags
      */
     @GetMapping
     public Iterable<XmlTag> list(Map<String, String> map) {
@@ -60,8 +60,8 @@ public class TagManager {
      * 
      * To get all its channels use the parameter "withChannels"
      *
-     * @param tag URI path parameter: tag name to search for
-     * @return list of channels with their properties and tags that match
+     * @param tagName - tag name to search for
+     * @return found tag
      */
     @GetMapping("/{tagName}")
     public XmlTag read(@PathVariable("tagName") String tagName,
@@ -91,13 +91,8 @@ public class TagManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            if (tagName.equals(tag.getName())) {
-                validateTagRequest(tagName, tag);
-                return tagRepository.index(tag);
-            } else {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "The tag name in the body " + tag.toString() + " Does not match the URI " + tagName, null);
-            }        
+            validateTagRequest(tagName,tag);
+            return tagRepository.index(tag);
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
@@ -114,10 +109,16 @@ public class TagManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            for(XmlTag tag : tags) 
+            { 
+                if (tag.getName() == null || tag.getName().isEmpty() || tag.getOwner() == null || tag.getOwner().isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "The tag and tag owner cannot be null or empty " + tag.toString(), null);}
+            }
             return (List<XmlTag>) tagRepository.indexAll(tags);       
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tags, null);      
+                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);      
     }
 
     /**
@@ -150,8 +151,8 @@ public class TagManager {
      * 
      * TODO: Optimize the bulk channel update
      *
-     * @param tagName - URI path parameter: tag name
-     * @param tag - with list of channels to addSingle the tag <tt>name</tt> to
+     * @param tagName - name of tag to be updated
+     * @param tag - XmlTag with list of channels to addSingle the tag <tt>name</tt> to
      * @return the updated tag
      */
     @PostMapping("/{tagName}")
@@ -171,7 +172,7 @@ public class TagManager {
             return updatedTag;        
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                    "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
     }
 
     /**
@@ -201,7 +202,7 @@ public class TagManager {
    
     /**
      * DELETE method for deleting the tag identified by the path parameter
-     * <tt>name</tt> from all channels.
+     * <tt>tagName</tt> from all channels.
      *
      * @param tagName - name of tag to remove
      */
@@ -215,11 +216,11 @@ public class TagManager {
     }
 
     /**
-     * DELETE method for deleting the tag identified by <tt>tag</tt> from the
+     * DELETE method for deleting the tag identified by <tt>tagName</tt> from the
      * channel <tt>channelName</tt> (both path parameters).
      *
      * @param tagName - name of tag to remove
-     * @param channelName - channel to remove <tt>tag</tt> from
+     * @param channelName - channel to remove <tt>tagName</tt> from
      */
     @DeleteMapping("/{tagName}/{channelName}")
     public void removeSingle(@PathVariable("tagName") final String tagName, @PathVariable("channelName") String channelName) {
@@ -260,7 +261,7 @@ public class TagManager {
     private void validateTagRequest(String tagName, XmlTag tag) {
         if (tag.getName() == null || !tagName.equals(tag.getName())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null or empty " + tag.toString(), null);
+                    "The tag name cannot be null or empty and must match the tag in the URI " + tag.toString(), null);
         }
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,

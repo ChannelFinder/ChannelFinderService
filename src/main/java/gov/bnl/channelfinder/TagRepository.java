@@ -2,6 +2,7 @@ package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
 import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
@@ -70,7 +71,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     public <S extends XmlTag> S index(S tag) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(tag.getName())
+            IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
+                    .id(tag.getName())
                     .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
             indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
@@ -83,7 +85,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index tag" + tag, null);
+                    "Failed to index tag: " + tag, null);
         }
         return null;
     }
@@ -120,15 +122,15 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                         createdTagIds.add(bulkItemResponse.getId());
                     }
                 }
+                client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdTagIds);
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index tags" + tags, null);      
+                    "Failed to index tags: " + tags, null);      
         }
         return null;
-
     }
 
     /**
@@ -148,7 +150,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             XmlTag newTag = existingTag.get();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newTag)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag" + tag, null);
+                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
         }
 
@@ -165,7 +167,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                         .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
                 updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON).upsert(indexRequest);
             }
-
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the creation of the tag
@@ -177,7 +178,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save tag" + tag, null);
+                    "Failed to update/save tag: " + tag, null);
         }
         return null;
     }
@@ -224,12 +225,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                         createdTagIds.add(bulkItemResponse.getId());
                     }
                 }
+                client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdTagIds);
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save tags" + tags, null);
+                    "Failed to update/save tags: " + tags, null);
         }
     }
 
@@ -263,7 +265,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find tag" + tagId, null);
+                    "Failed to find tag: " + tagId, null);
         }
         return Optional.empty();
     }
@@ -280,7 +282,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to check if tag exists by id" + id, null); 
+                    "Failed to check if tag exists by id: " + id, null); 
         }
     }
 
@@ -345,7 +347,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find all tags by ids" + tagIds, null);
+                    "Failed to find all tags: " + tagIds, null);
         }
     }
 
@@ -380,11 +382,11 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to delete tag" + tag, null);
+                            "Failed to delete tag: " + tag, null);
                 }
             } else {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag" + tag, null);
+                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
 
         } else {

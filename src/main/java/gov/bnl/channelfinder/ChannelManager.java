@@ -55,7 +55,7 @@ public class ChannelManager {
      * multi-parameter query specifying patterns for tags, property values, and
      * channel names to match against.
      *
-     * @return list of channels
+     * @return list of all channels
      */
     @GetMapping
     public List<XmlChannel> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
@@ -66,14 +66,15 @@ public class ChannelManager {
      * GET method for retrieving an instance of Channel identified by
      * <tt>channelName</tt>.
      *
-     * @param channelName channel name
-     * @return XmlChannel identified with the name channelName
+     * @param channelName - channel name to search for
+     * @return found channel
      */
     @GetMapping("/{channelName}")
     public XmlChannel read(@PathVariable("channelName") String channelName) {
         channelManagerAudit.info("getting channel: " + channelName);
-        if (channelRepository.findById(channelName).isPresent())
-            return channelRepository.findById(channelName).get();
+        Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
+        if (foundChannel.isPresent())
+            return foundChannel.get();
         else
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");
@@ -189,8 +190,7 @@ public class ChannelManager {
                 //return Lists.newArrayList(channelRepository.saveAll(data));
             } catch (Exception e) {
 
-            } finally {
-            }
+            } 
             return null;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

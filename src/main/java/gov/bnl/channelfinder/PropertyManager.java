@@ -50,9 +50,9 @@ public class PropertyManager {
     /**
      * GET method for retrieving the list of properties in the database.
      *
-     * @return list of properties
+     * @return list of all properties
      */
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping
     public Iterable<XmlProperty> list() {
         return propertyRepository.findAll();
     }
@@ -63,9 +63,9 @@ public class PropertyManager {
      * To get all its channels use the parameter "withChannels"
      *
      * @param propertyName - property name to search for
-     * @return list of channels with their properties and tags that match
+     * @return found property
      */
-    @GetMapping(value = "/{propertyName}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping("/{propertyName}")
     public XmlProperty read(@PathVariable("propertyName") String propertyName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         propertyManagerAudit.info("getting property: " + propertyName);
@@ -90,7 +90,7 @@ public class PropertyManager {
      * @param property - an XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
      * @return the created property
      */
-    @PutMapping(value = "/{propertyName}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping("/{propertyName}")
     public XmlProperty create(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             XmlProperty createdProperty = propertyRepository.index(property);
@@ -134,8 +134,7 @@ public class PropertyManager {
      * @param property - a XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
      * @return the updated property
      */
-    @PostMapping(value = "/{propertyName}",
-            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping("/{propertyName}")
     public XmlProperty update(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             XmlProperty updatedProperty = propertyRepository.save(property);
@@ -148,14 +147,15 @@ public class PropertyManager {
     }
 
     /**
-     * POST method for updating multiple properties.
+     * POST method for updating multiple properties and updating all the appropriate
+     * channels.
      *
      * If the channels don't exist it will fail
      *
      * @param properties - XmlProperties to be updated
      * @return the updated properties
      */
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping()
     public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             Iterable<XmlProperty> createdProperties = propertyRepository.saveAll(properties);
@@ -191,6 +191,7 @@ public class PropertyManager {
      * channel <tt>channelName</tt> (both path parameters).
      *
      * @param propertyName - name of property to remove
+     * @param channelName - channel to remove <tt>propertyName</tt> from
      */
     @DeleteMapping("/{propertyName}/{channelName}")
     public void removeSingle(@PathVariable("propertyName") final String propertyName, @PathVariable("channelName") String channelName) {

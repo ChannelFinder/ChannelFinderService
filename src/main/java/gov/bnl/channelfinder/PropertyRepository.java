@@ -75,6 +75,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
                     .id(property.getName())
                     .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
+            indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
             /// verify the creation of the property
             Result result = indexResponse.getResult();
@@ -84,6 +85,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to index property: " + property, null);
         }
         return null;
     }
@@ -126,7 +129,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index tags" + properties, null);      
+                    "Failed to index properties: " + properties, null);      
         }
         return null;
     }
@@ -148,7 +151,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             XmlProperty newProperty = existingProperty.get();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newProperty)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property" + property, null);
+                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
             }
         }
 
@@ -176,7 +179,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save property" + property, null);
+                    "Failed to update/save property: " + property, null);
         }
         return null;
     }
@@ -202,7 +205,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     XmlProperty newProperty = existingProperty.get();
                     updateRequest.doc(objectMapper.writeValueAsBytes(newProperty), XContentType.JSON);
                 } else {
-                    IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
+                    IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
                             .id(property.getName())
                             .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                     updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
@@ -223,12 +226,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         createdPropertyIds.add(bulkItemResponse.getId());
                     }
                 }
+                client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdPropertyIds);
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save properties" + properties, null);
+                    "Failed to update/save properties: " + properties, null);
         }
     }
 
@@ -262,7 +266,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find property" + propertyId, null);
+                    "Failed to find property: " + propertyId, null);
         }
         return Optional.empty();
     }
@@ -279,7 +283,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return false;
     }
 
@@ -344,7 +347,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find all properties" + propertyIds, null);
+                    "Failed to find all properties: " + propertyIds, null);
         }
     }
 
@@ -378,11 +381,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 } catch (Exception e) {
                     e.printStackTrace();
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to delete property" + property, null);
+                            "Failed to delete property: " + property, null);
                 }
             } else {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property" + property, null);
+                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
             }
         } else {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
