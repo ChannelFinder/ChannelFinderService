@@ -340,7 +340,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to fihd all channels", null);
+                    "Failed to find all channels", null);
         }
         return null;
     }
@@ -539,6 +539,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
                 } catch (IOException e) {
                     e.printStackTrace();
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                            "Failed to parse result for search : " + searchParameters + " CAUSE: " + e.getMessage(), e);
                 }
             });
 
@@ -549,7 +551,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             return result;
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Search failed for: " + searchParameters, null);
+                    "Search failed for: " + searchParameters + " CAUSE: " + e.getMessage(), e);
         }
     }
 
