@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -93,6 +94,7 @@ public class PropertyManager {
     @PutMapping("/{propertyName}")
     public XmlProperty create(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
+            validatePropertyRequest(propertyName,property);
             XmlProperty createdProperty = propertyRepository.index(property);
             // Updated the listed channels in the properties payload with new properties/property values
             channelRepository.saveAll(property.getChannels());
@@ -111,6 +113,7 @@ public class PropertyManager {
     @PutMapping()
     public Iterable<XmlProperty> create(@RequestBody List<XmlProperty> properties) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
+            validatePropertyRequest(properties);
             Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(properties);
             // Updated the listed channels in the properties payload with new properties/property values
             List<XmlChannel> channels = new ArrayList<>();
@@ -137,6 +140,7 @@ public class PropertyManager {
     @PostMapping("/{propertyName}")
     public XmlProperty update(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
+            validatePropertyRequest(propertyName,property);
             XmlProperty updatedProperty = propertyRepository.save(property);
             // Updated the listed channels in the properties payload with new properties/property values
             channelRepository.saveAll(property.getChannels());
@@ -158,6 +162,7 @@ public class PropertyManager {
     @PostMapping()
     public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
+            validatePropertyRequest(properties);
             Iterable<XmlProperty> createdProperties = propertyRepository.saveAll(properties);
             // Updated the listed channels in the properties payload with new properties/property values
             List<XmlChannel> channels = new ArrayList<>();
@@ -200,7 +205,7 @@ public class PropertyManager {
             if(ch.isPresent()) {
                 XmlChannel channel = ch.get();
                 channel.removeProperty(new XmlProperty(propertyName, ""));
-                channelRepository.index(channel);
+                channelRepository.save(channel);
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The channel with the name " + channelName + " does not exist");
@@ -208,5 +213,86 @@ public class PropertyManager {
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this property: " + propertyName, null);
+    }
+    
+    /**
+     * Check that the existing property and the property in the request body match
+     * 
+     * @param existing
+     * @param request
+     * @return
+     */
+    boolean validatePropertyRequest(XmlProperty existing, XmlProperty request) {
+        return existing.getName().equals(request.getName());
+    }
+
+    /**
+     * Checks if
+     * 1. the property name is not null and matches the name in the body
+     * 2. the property owner is not null or empty
+     * 3. the property value is not null or empty
+     * 4. all the listed channels exist
+     * 
+     * @param data
+     */
+    private void validatePropertyRequest(String propertyName, XmlProperty property) {
+        // 1 
+        if (property.getName() == null || !propertyName.equals(property.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The property name cannot be null and must match the property in the URI " + property.toString(), null);
+        }
+        // 2
+        if (property.getOwner() == null || property.getOwner().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The property owner cannot be null or empty " + property.toString(), null);
+        }
+         // 3
+        if (property.getValue() == null || property.getValue().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The property value cannot be null or empty " + property.toString(), null);
+        }
+        // 4
+        List <String> channelNames = property.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
+        for(String channelName:channelNames) {
+            Optional<XmlChannel> ch = channelRepository.findById(channelName);
+            if(!ch.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The channel with the name " + channelName + " does not exist");
+            }
+        }
+        
+    }
+    
+    /**
+     * Checks if
+     * 1. the property name is not null and matches the name in the body
+     * 2. the property owner is not null or empty
+     * 3. the property value is not null or empty
+     * 4. all the listed channels exist
+     * 
+     * @param data
+     */
+    private void validatePropertyRequest(List<XmlProperty> properties) {
+        for(XmlProperty property: properties) {
+            validatePropertyRequest(property.getName(),property);
+        }
+    }
+    
+    /**
+     * Checks if
+     * 1. the property name is not null and matches the name in the body
+     * 2. the property owner is not null or empty
+     * 3. the property value is not null or empty
+     * 4. all the listed channels exist
+     * 
+     * @param data
+     */
+    private void validatePropertyRequest(String propertyName, XmlProperty property, String channelName) {
+        validatePropertyRequest(propertyName, property); 
+        Optional<XmlChannel> ch = channelRepository.findById(channelName);
+        if(!ch.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The channel with the name " + channelName + " does not exist");
+        }
     }
 }

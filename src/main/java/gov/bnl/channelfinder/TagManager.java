@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -91,8 +92,12 @@ public class TagManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            // Validate request parameters
             validateTagRequest(tagName,tag);
-            return tagRepository.index(tag);
+            XmlTag createdTag = tagRepository.index(tag);
+            // Updated the listed channels in the properties payload with new tag
+            channelRepository.saveAll(tag.getChannels());
+            return createdTag;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
@@ -109,13 +114,14 @@ public class TagManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            for(XmlTag tag : tags) 
-            { 
-                if (tag.getName() == null || tag.getName().isEmpty() || tag.getOwner() == null || tag.getOwner().isEmpty()) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "The tag and tag owner cannot be null or empty " + tag.toString(), null);}
-            }
-            return (List<XmlTag>) tagRepository.indexAll(tags);       
+            validateTagRequest(tags);
+            Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
+            List<XmlChannel> channels = new ArrayList<>();
+            tags.forEach(tag -> {
+                channels.addAll(tag.getChannels());
+            });
+            channelRepository.saveAll(channels);
+            return (List)createdTags;    
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these tags: " + tags, null);      
@@ -130,19 +136,25 @@ public class TagManager {
      * 
      * @param tagName - name of tag to be created
      * @param channelName - channel to update <tt>tag</tt> to
-     * @param tag - tag data (ignored)
+     * @param tag - tag data
      * @return HTTP Response
      */
     @PutMapping("/{tagName}/{chName}")
-    public String addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName, @RequestBody XmlTag tag) {
+    public XmlTag addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName, @RequestBody XmlTag tag) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
-            // TODO: method
-            return null;        
+            long start = System.currentTimeMillis();
+            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            validateTagRequest(tagName, tag, channelName);
+            XmlTag createdTag = tagRepository.index(tag);
+            XmlChannel channel = channelRepository.findById(channelName).get();
+            channel.addTag(tag);
+            channelRepository.save(channel);
+            return createdTag;        
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
     }
-    
+
     /**
      * POST method to update the the tag identified by the path parameter
      * <tt>name</tt>, adding it to all channels identified by the channels inside
@@ -159,15 +171,10 @@ public class TagManager {
     public XmlTag update(@PathVariable("tagName") String tagName, @RequestBody XmlTag tag) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
-
-            }
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            validateTagRequest(tagName,tag);
             XmlTag updatedTag = tagRepository.save(tag);
             // Updated the listed channels in tags with the associated tag
-            tag.getChannels().forEach(channel -> {
-                channel.addTag(updatedTag);
-            });
             channelRepository.saveAll(tag.getChannels());
             return updatedTag;        
         } else
@@ -187,6 +194,7 @@ public class TagManager {
     @PostMapping()
     public Iterable<XmlTag> update(@RequestBody List<XmlTag> tags) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            validateTagRequest(tags);
             Iterable<XmlTag> createdTags = tagRepository.saveAll(tags);
             // Updated the listed channels in tags with the associated tags
             List<XmlChannel> channels = new ArrayList<>();
@@ -259,14 +267,56 @@ public class TagManager {
      * @param data
      */
     private void validateTagRequest(String tagName, XmlTag tag) {
+        // 1 
         if (tag.getName() == null || !tagName.equals(tag.getName())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null or empty and must match the tag in the URI " + tag.toString(), null);
+                    "The tag name cannot be null and must match the tag in the URI " + tag.toString(), null);
         }
+        // 2
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The tag owner cannot be null or empty " + tag.toString(), null);
         }
-        //        tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList())
+        // 3
+        List <String> channelNames = tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
+        for(String channelName:channelNames) {
+            Optional<XmlChannel> ch = channelRepository.findById(channelName);
+            if(!ch.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The channel with the name " + channelName + " does not exist");
+            }
+        }
+        
+    }
+    
+    /**
+     * Checks if
+     * 1. the tag names are not null
+     * 2. the tag owners are not null or empty
+     * 3. all the channels exist
+     * 
+     * @param data
+     */
+    private void validateTagRequest(List<XmlTag> tags) {
+        for(XmlTag tag: tags) {
+            validateTagRequest(tag.getName(),tag);
+        }
+    }
+    
+    /**
+     * Checks if
+     * 1. the tag name is not null
+     * 2. the tag owner is not null or empty
+     * 3. all the channel exist
+     * 
+     * @param data
+     */
+    private void validateTagRequest(String tagName, XmlTag tag, String channelName) {
+        validateTagRequest(tagName, tag); 
+        Optional<XmlChannel> ch = channelRepository.findById(channelName);
+        if(!ch.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The channel with the name " + channelName + " does not exist");
+        }
     }
 }

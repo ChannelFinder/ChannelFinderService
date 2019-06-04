@@ -149,7 +149,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * update/save channel using the given XmlChannel
      * 
-     * @param channel - channel to be created
+     * @param channel - channel to be saved
      * @return the updated/saved channel
      */
     @SuppressWarnings("unchecked")
@@ -201,7 +201,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * update/save channels using the given XmlChannels
      * 
-     * @param channels - channels to be created
+     * @param channels - channels to be saved
      * @return the updated/saved channels
      */
     @SuppressWarnings("unchecked")

@@ -1,6 +1,7 @@
 - implement/look into null values and empty property value string
 - finish implementing operations
 - finish implementing logging
+- testing
 - once these todo items are completed, add them to documentation:
 	--> completed operations
 	--> worked out the details of using lists vs CRUD

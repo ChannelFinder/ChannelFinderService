@@ -5,6 +5,7 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 
@@ -93,7 +94,7 @@ public class ChannelManager {
     public XmlChannel create(@PathVariable("channelName") String channelName, @RequestBody XmlChannel channel) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             channelManagerAudit.info("PUT:" + channel.toLog());
-            // TODO Validate the channel
+            validateChannelRequest(channelName,channel);
             return channelRepository.index(channel);
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -109,10 +110,10 @@ public class ChannelManager {
     @PutMapping
     public Iterable<XmlChannel> create(@RequestBody List<XmlChannel> channels) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
+            validateChannelRequest(channels);
             channels.stream().forEach(log -> {
                 channelManagerAudit.info("PUT" + log.toLog());
             });
-            // TODO validate each channel
             return channelRepository.indexAll(channels);
             // return Lists.newArrayList(channelRepository.indexAll(data));
         } else
@@ -132,15 +133,9 @@ public class ChannelManager {
     public XmlChannel update(@PathVariable("channelName") String channelName, @RequestBody XmlChannel channel) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
-            if (channel.getName() == null || channel.getName().isEmpty()) {
-            }
-            //        if (!validateChannelName(channelName, data)) {
-            //            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Specified channel name '" + channelName
-            //                    + "' and payload channel name '" + data.getName() + "' do not match");
-            //        }
             try {
                 start = System.currentTimeMillis();
-                // TODO validate channel
+                validateChannelRequest(channelName,channel);
                 channelManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
                         + (System.currentTimeMillis() - start));
                 start = System.currentTimeMillis();
@@ -171,8 +166,7 @@ public class ChannelManager {
     public Iterable<XmlChannel> update(@RequestBody List<XmlChannel> channels) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
-            // TODO check user authorization
-            // TODO validate the channels
+            validateChannelRequest(channels);   
             try {
                 // check if all the channels exist
                 for (XmlChannel xmlChannel : channels) {
@@ -213,5 +207,68 @@ public class ChannelManager {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
     }
+    /**
+     * Check that the existing channel and the channel in the request body match
+     * 
+     * @param existing
+     * @param request
+     * @return
+     */
+    boolean validateChannel(XmlChannel existing, XmlChannel request) {
+        return existing.getName().equals(request.getName());
+    }
 
+    /**
+     * Checks if
+     * 1. the channel name is not null and matches the name in the body
+     * 2. the channel owner is not null or empty
+     * 3. all the listed tags/props exist
+     * 
+     * @param data
+     */
+    private void validateChannelRequest(String channelName, XmlChannel channel) {
+        // 1 
+        if (channel.getName() == null || !channelName.equals(channel.getName())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The channel name cannot be null and must match the channel in the URI " + channel.toString(), null);
+        }
+        // 2
+        if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The channel owner cannot be null or empty " + channel.toString(), null);
+        }
+        // 3 
+        List <String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
+        for(String tagName:tagNames) {
+            Optional<XmlTag> tag = tagRepository.findById(tagName);
+            if(!tag.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The tag with the name " + tagName + " does not exist");
+            }
+        }
+        // 3 
+        List <String> propertyNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
+        for(String propertyName:propertyNames) {
+            Optional<XmlProperty> property = propertyRepository.findById(propertyName);
+            if(!property.isPresent()) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The property with the name " + propertyName + " does not exist");
+            }
+        }
+        
+    }
+    
+    /**
+     * Checks if
+     * 1. the tag names are not null
+     * 2. the tag owners are not null or empty
+     * 3. all the channels exist
+     * 
+     * @param data
+     */
+    private void validateChannelRequest(List<XmlChannel> channels) {
+        for(XmlChannel channel: channels) {
+            validateChannelRequest(channel.getName(),channel);
+        }
+    }
 }
