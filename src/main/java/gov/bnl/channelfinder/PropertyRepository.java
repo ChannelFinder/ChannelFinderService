@@ -70,6 +70,20 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @SuppressWarnings("unchecked")
     public <S extends XmlProperty> S index(XmlProperty property) {
         RestHighLevelClient client = esService.getIndexClient();
+        
+        Optional<XmlProperty> existingProperty = findById(property.getName());
+        boolean present = existingProperty.isPresent();
+        if(present) {
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+            } 
+        } 
+        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this property: " + property, null);
+        }
+        
         try {
             objectMapper.addMixIn(XmlProperty.class, OnlyNameOwnerXmlProperty.class);
             IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
@@ -100,6 +114,22 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @SuppressWarnings("unchecked")
     public <S extends XmlProperty> Iterable<S> indexAll(List<XmlProperty> properties) {
         RestHighLevelClient client = esService.getIndexClient();
+        
+        for(XmlProperty property: properties) {
+            Optional<XmlProperty> existingProperty = findById(property.getName());
+            boolean present = existingProperty.isPresent();
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+                } 
+            } 
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
+            }
+        }
+        
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlProperty property : properties) {
@@ -148,11 +178,14 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         Optional<XmlProperty> existingProperty = findById(property.getName());
         boolean present = existingProperty.isPresent();
         if(present) {
-            XmlProperty newProperty = existingProperty.get();
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newProperty)) {
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
-            }
+                        "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+            } 
+        } 
+        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this property: " + property, null);
         }
 
         try {
@@ -193,8 +226,23 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlProperty> Iterable<S> saveAll(Iterable<S> properties) {
-
         RestHighLevelClient client = esService.getIndexClient();
+        
+        for(XmlProperty property: properties) {
+            Optional<XmlProperty> existingProperty = findById(property.getName());
+            boolean present = existingProperty.isPresent();
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+                } 
+            } 
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
+            }
+        }
+        
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlProperty property : properties) {

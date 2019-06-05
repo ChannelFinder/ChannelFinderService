@@ -207,6 +207,7 @@ public class ChannelManager {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
     }
+    
     /**
      * Check that the existing channel and the channel in the request body match
      * 

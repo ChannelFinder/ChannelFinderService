@@ -32,12 +32,53 @@ All operations are idempotent, i.e. when repeatedly applying the identical opera
 
 Directory data can be uploaded and retrieved in XML or JSON notation, the client specifies the type using standard HTTP headers (“Content-Type”, “Accepts”).
 
+Ownership Restrictions
+----------------------
+
+All channels, properties, and tags have an owner. The owner is intended to be the name of a group, the service can find out membership through LDAP. Users can only set the ownership of entries to a group they belong to. (Unless they have Admin role.)
+This allows for the binding of each property and tag to a certain user group, making sure that only users of that group can change property values, the ownership of existing properties and tags, or delete properties and tags.
+
+Authorization, Authentication, and Encryption
+---------------------------------------------
+
+No authentication or encryption is required to query the service.
+All operations that modify the directory require authentication and authorization to succeed. To avoid compromising authentication data, encrypted transport is available. Standard framework-supplied web server techniques are used.
+For each authenticated user the user's group memberships are also received through LDAP.
+The service's web descriptor defines four roles that are used in authorization, listed here ordered by decreasing rights. Each level includes all prior levels.
+•  Administrator: Overrides all ownership restrictions.
+•  ChannelMod: Needed for all operations that create, modify, or delete channels.
+•  PropertyMod: Needed for all operations that create, modify, or delete properties, or to modify property values.
+•  TagMod: Needed for all operations that create, modify, or delete tags.
+
 XML Representation
 ------------------
 
 Table 1 and Table 2 show the XML and JSON representations of directory entries, i.e. the payload format of the web service transactions.
-
-
+[{"name":"originalChannelName","owner":"cf-channels","properties":[{"name":"originalProp","owner":"cf-properties","value":"originalValue","channels":[]}],"tags":[{"name":"originalTag","owner":"cf-tags","channels":[]}]}]
+Table 1: XML Representation of Directory Data (Channels)
+[
+    {
+        "name": "originalChannelName",
+        "owner": "cf-channels",
+        "properties": [
+            {
+                "name": "originalProp",
+                "owner": "cf-properties",
+                "value": "originalValue",
+                "channels": []
+            }
+        ],
+        "tags": [
+            {
+                "name": "originalTag",
+                "owner": "cf-tags",
+                "channels": []
+            }
+        ]
+    }
+]
+Table 2: JSON Representation of Directory Data (Channels)
+Payload data for properties and tags is the same as when part of a channel. Property and tag payloads may embed a <channels> list. This allows the operation that creates a tag to also attach the tag to a set of channels, and the operation that creates a property to set the property on the embedded list of channels. In the latter case the property's by-instance values are taken from the matching <property> item inside the property's channel list.
 
 Web Service URLs and Operations
 -------------------------------
@@ -56,7 +97,7 @@ Return the full listing of a single channel with the given name.
 **List Channels / Query by Pattern**
 
 **.../channels?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...**
-1. 
+ 
 Method: GET    Returns: List of Channels    Required Role: None
 
 Return the list of channels which match all given expressions, i.e. the expressions are combined in a logical AND.
@@ -154,7 +195,7 @@ Method: GET    Returns: List of Properties   Required Role: None
 
 Return the list of all properties in the directory.
 
-**Create/Update a Property**
+**Create/Replace a Property**
 
 .../properties/<name>
 
@@ -181,7 +222,7 @@ property value is replaced by the payload data.
 The authenticated user must belong to the group that owns the property. (Administrator role overrides
 this restriction.)
 
-**Add Multiple Properties**
+**Create/Replace Properties**
 
 .../properties
 
@@ -196,7 +237,7 @@ not included on the list. Existing property values are replaced by the payload d
 For all properties that are to be replaced or added, the authenticated user is required to be a member of
 their owner group. (Administrator role overrides this restriction.)
 
-**Add Property to Multiple Channels - CURRENTLY NOT WORKING**
+**Add Property to Multiple Channels**
 
 .../properties/<name>
 
@@ -212,7 +253,7 @@ The authenticated user must belong to the group that owns the property. If the o
 ownership, the user must belong to both the old and the new group. (Administrator role overrides these
 restrictions.)
 
-**Add Multiple Properties - CURRENTLY NOT WORKING**
+**Add Multiple Properties**
 
 .../properties
 
@@ -235,7 +276,7 @@ Method: DELETE						         Required Role: PropertyMod
 
 Remove property with the given property_name from the channel with the given channel_name.
 
-The authenticated user must belong to the group that owns the property to be removed. (Administrator role overrides
+The authenticated user must belong to the group that owns the property. (Administrator role overrides
 this restriction.)
 
 **Remove Property**
@@ -268,18 +309,7 @@ Method: GET    Returns: List of Tags         Required Role: None
 
 Return the list of all tags in the directory.
 
-**Add Tag to Single Channel - CURRENTLY NOT WORKING**
-
-.../tags/<tag_name>/<channel_name>
-
-Method: PUT     Payload: Single Tag          Required Role: TagMod
-
-Add tag with the given tag_name to the channel with the given channel_name.
-
-The authenticated user must belong to the group that owns the tag. (Administrator role overrides this
-restriction.)
-
-**Create/Update a Tag**
+**Create/Replace a Tag**
 
 .../tags/<name>
 
@@ -291,6 +321,30 @@ channels in the payload data, removing it from all channels that are not include
 
 The authenticated user must belong to the group that owns the tag. (Administrator role overrides this
 restriction.)
+
+**Add Tag to Single Channel**
+
+.../tags/<tag_name>/<channel_name>
+
+Method: PUT     Payload: Single Tag          Required Role: TagMod
+
+Add tag with the given tag_name to the channel with the given channel_name.
+
+The authenticated user must belong to the group that owns the tag. (Administrator role overrides this
+restriction.)
+
+**Create/Replace Tags**
+
+.../tags/<name>
+
+Method: PUT     Payload: List of Tag         Required Role: TagMod
+
+Add the tags in the payload to the directory. If a payload tag contains an embedded <channels> list, the
+tag is added to all channels in that list. The tag is set exclusively on all channels in the embedded list,
+removing it from all channels that are not included.
+
+For all tags that are to be replaced or added, the authenticated user is required to be a member of their
+owner group. (Administrator role overrides this restriction.)
 
 **Add Tag to Multiple Channels**
 
@@ -306,7 +360,7 @@ The authenticated user must belong to the group that owns the tag. If the operat
 ownership, the user must belong to both the old and the new group. (Administrator role overrides these
 restrictions.)
 
-**Add Multiple Tags - CURRENTLY NOT WORKING**
+**Add Multiple Tags**
 
 .../tags
 
@@ -327,7 +381,7 @@ Method: DELETE						         Required Role: TagMod
 
 Remove tag with the given tag_name from the channel with the given channel_name.
 
-The authenticated user must belong to the group that owns the tag to be removed. (Administrator role
+The authenticated user must belong to the group that owns the tag. (Administrator role
 overrides this restriction.)
 
 **Delete Tag**

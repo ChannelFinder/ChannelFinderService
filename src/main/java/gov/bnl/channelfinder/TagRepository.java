@@ -70,6 +70,20 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> S index(S tag) {
         RestHighLevelClient client = esService.getIndexClient();
+        
+        Optional<XmlTag> existingTag = findById(tag.getName());
+        boolean present = existingTag.isPresent();
+        if(present) {
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+            } 
+        } 
+        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+        }
+        
         try {
             IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
                     .id(tag.getName())
@@ -99,6 +113,22 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> Iterable<S> indexAll(Iterable<S> tags) {
         RestHighLevelClient client = esService.getIndexClient();
+        
+        for(XmlTag tag:tags) {
+            Optional<XmlTag> existingTag = findById(tag.getName());
+            boolean present = existingTag.isPresent();
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+                } 
+            } 
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+            } 
+        }
+        
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlTag tag : tags) {
@@ -147,12 +177,15 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         Optional<XmlTag> existingTag = findById(tag.getName());
         boolean present = existingTag.isPresent();
         if(present) {
-            XmlTag newTag = existingTag.get();
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), newTag)) {
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
-            }
-        }
+                        "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+            } 
+        } 
+        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+        }  
 
         try {
 
@@ -192,8 +225,23 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlTag> Iterable<S> saveAll(Iterable<S> tags) {
-
         RestHighLevelClient client = esService.getIndexClient();
+        
+        for(XmlTag tag:tags) {
+            Optional<XmlTag> existingTag = findById(tag.getName());
+            boolean present = existingTag.isPresent();
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+                } 
+            } 
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+            } 
+        }
+        
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlTag tag : tags) {

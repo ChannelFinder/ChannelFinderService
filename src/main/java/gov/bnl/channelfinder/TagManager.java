@@ -137,7 +137,7 @@ public class TagManager {
      * @param tagName - name of tag to be created
      * @param channelName - channel to update <tt>tag</tt> to
      * @param tag - tag data
-     * @return HTTP Response
+     * @return added tag
      */
     @PutMapping("/{tagName}/{chName}")
     public XmlTag addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName, @RequestBody XmlTag tag) {
