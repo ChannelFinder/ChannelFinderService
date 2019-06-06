@@ -1,8 +1,10 @@
 package gov.bnl.channelfinder;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -26,9 +28,12 @@ public class TagRepositoryIT {
 
     @Autowired
     TagRepository tagRepository;
+    
+    @Autowired
+    ChannelRepository channelRepository;
 
     /**
-     * A simple test to index a single tag
+     * index a single tag
      */
     @Test
     public void indexXmlTag() {
@@ -47,7 +52,39 @@ public class TagRepositoryIT {
     }
 
     /**
-     * A test to index a multiple tags
+     * index a single tag with a few channels
+     */
+    @Test
+    public void indexXmlTagWithChannels() {
+        
+        List<XmlChannel> channels = new ArrayList<>();
+        XmlChannel testChannel1 = new XmlChannel();
+        XmlChannel testChannel2 = new XmlChannel();
+        channels.add(testChannel1);
+        channels.add(testChannel2);
+        XmlTag testTag = new XmlTag();
+        testTag.setName("test-tag");
+        testTag.setOwner("test-owner");
+        testTag.setChannels(channels);
+        
+        XmlTag createdTag = tagRepository.index(testTag);
+        // verify the tag failed as expected
+        assertNotEquals("Created the test tag", testTag, createdTag);
+        //assertFails
+        
+        channelRepository.indexAll(channels,false);
+        
+
+        //XmlTag createdTag = tagRepository.index(testTag);
+        // verify the tag was created as expected
+        assertEquals("Failed to create the test tag", testTag, createdTag);
+
+        // clean up
+        tagRepository.deleteById(createdTag.getName());
+    }
+    
+    /**
+     * index multiple tags
      */
     @Test
     public void indexXmlTags() {
@@ -75,7 +112,14 @@ public class TagRepositoryIT {
         }
     }
 
+    /**
+     * TODO index multiple tags with a few channels
+     */
+    @Test
+    public void indexXmlTagsWithChannels() {
 
+    }
+    
     /**
      * Test is the requested tag exists
      */
@@ -139,11 +183,4 @@ public class TagRepositoryIT {
         }
     }
 
-    /**
-     * TODO A simple test to index a single tag with a few channels
-     */
-    @Test
-    public void indexXmlTagWithChannels() {
-
-    }
 }

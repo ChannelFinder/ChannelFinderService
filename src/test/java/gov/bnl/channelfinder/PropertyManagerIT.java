@@ -115,7 +115,7 @@ public class PropertyManagerIT {
 
     @Before
     public void setup() {
-        channelRepository.indexAll(testChannels);
+        channelRepository.indexAll(testChannels,false);
     }
 
     @After

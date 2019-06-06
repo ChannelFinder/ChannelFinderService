@@ -15,7 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-public class AuthIT {
+public class AuthenticationIT {
 	@Autowired
 	private MockMvc mockMvc;
 

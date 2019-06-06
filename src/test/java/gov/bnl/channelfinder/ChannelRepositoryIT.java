@@ -45,7 +45,7 @@ public class ChannelRepositoryIT {
         testChannel.setName("test-channel");
         testChannel.setOwner("test-owner");
 
-        XmlChannel createdChannel = channelRepository.index(testChannel);
+        XmlChannel createdChannel = channelRepository.index(testChannel,true);
         // verify the tag was created as expected
         assertEquals("Failed to create the test property", testChannel, createdChannel);
 
@@ -69,7 +69,7 @@ public class ChannelRepositoryIT {
 
         List<XmlChannel> testChannels = Arrays.asList(testChannel1, testChannel2);
 
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels,true);
         // verify the tag was created as expected
         assertTrue("Failed to create a list of properties", Iterables.elementsEqual(testChannels, createdChannels));
 
@@ -96,7 +96,7 @@ public class ChannelRepositoryIT {
 
         List<XmlChannel> testChannels = Arrays.asList(testChannel1, testChannel2);
         try {
-            Set<XmlChannel> createdChannels = Sets.newHashSet(channelRepository.indexAll(testChannels));
+            Set<XmlChannel> createdChannels = Sets.newHashSet(channelRepository.indexAll(testChannels,true));
             Thread.sleep(2000);
             Set<XmlChannel> listedChannels = Sets.newHashSet(channelRepository.findAll());
             // verify the tag was created as expected
@@ -126,7 +126,7 @@ public class ChannelRepositoryIT {
 
         XmlTag createdTag = tagRepository.index(testTag1);
         testChannel1.addTag(createdTag);
-        XmlChannel createdChannel = channelRepository.index(testChannel1);
+        XmlChannel createdChannel = channelRepository.index(testChannel1,true);
         // verify the tag was created as expected
         assertEquals("Failed to create the test property", createdChannel, testChannel1);
         // verify the tag was created as expected
@@ -158,7 +158,7 @@ public class ChannelRepositoryIT {
         List<XmlTag> createdTags = Lists.newArrayList(tagRepository.indexAll(testTags));
 
         testChannel1.addTags(createdTags);
-        XmlChannel createdChannel = channelRepository.index(testChannel1);
+        XmlChannel createdChannel = channelRepository.index(testChannel1,true);
         // verify the tag was created as expected
         assertEquals("Failed to create the test property", testChannel1, createdChannel);
         // verify the tag was created as expected
@@ -188,7 +188,7 @@ public class ChannelRepositoryIT {
         try {
             XmlProperty createdProperty = propertyRepository.index(testProperty1);
             testChannel1.addProperty(createdProperty);
-            XmlChannel createdChannel = channelRepository.index(testChannel1);
+            XmlChannel createdChannel = channelRepository.index(testChannel1,true);
             // verify the channel was created as expected
             assertEquals("Failed to create the test channel with property", createdChannel, testChannel1);
         } finally {
@@ -212,7 +212,7 @@ public class ChannelRepositoryIT {
 
         try {
             testChannel1.addProperties(testProperties);
-            XmlChannel createdChannel = channelRepository.index(testChannel1);
+            XmlChannel createdChannel = channelRepository.index(testChannel1,true);
             // verify the tag was created as expected
             assertEquals("Failed to create the test channel with a list of properties", testChannel1, createdChannel);
             // verify the tag was created as expected
@@ -224,7 +224,6 @@ public class ChannelRepositoryIT {
             });
         }
     }
-
 
     /**
      * Create a channel with a list of tags and properties
@@ -241,7 +240,7 @@ public class ChannelRepositoryIT {
         try {
             testChannel.addProperties(testProperties);
             testChannel.addTags(testTags);
-            XmlChannel createdChannel = channelRepository.index(testChannel);
+            XmlChannel createdChannel = channelRepository.index(testChannel,true);
             // verify the tag was created as expected
             assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
             // verify the tag was created as expected
@@ -275,7 +274,7 @@ public class ChannelRepositoryIT {
         try {
             testChannel.addProperty(testProperties.get(0));
             testChannel.addTag(testTags.get(0));
-            XmlChannel createdChannel = channelRepository.index(testChannel);
+            XmlChannel createdChannel = channelRepository.index(testChannel,true);
             // verify the tag was created as expected
             assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
             // update the channel with new tags and properties
@@ -323,7 +322,7 @@ public class ChannelRepositoryIT {
         try {
             testChannel.addTag(testTags.get(0));
             testChannel.addProperty(testProperties.get(0));
-            XmlChannel createdChannel = channelRepository.index(testChannel);
+            XmlChannel createdChannel = channelRepository.index(testChannel,true);
             // verify the tag was created as expected
             assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
             // update the channel with new tags and properties provided via partial object
@@ -374,7 +373,7 @@ public class ChannelRepositoryIT {
 
         List<XmlChannel> testChannels = Arrays.asList(testChannel1, testChannel2);
 
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels,true);
 
         try {
             // Test if created tags exist
@@ -409,7 +408,7 @@ public class ChannelRepositoryIT {
 
         List<XmlChannel> testChannels = Arrays.asList(testChannel1, testChannel2);
 
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels,true);
 
         try {
             // Test if created tags exist
