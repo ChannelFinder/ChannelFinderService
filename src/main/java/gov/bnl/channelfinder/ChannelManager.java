@@ -95,7 +95,7 @@ public class ChannelManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             channelManagerAudit.info("PUT:" + channel.toLog());
             validateChannelRequest(channelName,channel);
-            return channelRepository.index(channel);
+            return channelRepository.index(channel,true);
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
@@ -114,7 +114,7 @@ public class ChannelManager {
             channels.stream().forEach(log -> {
                 channelManagerAudit.info("PUT" + log.toLog());
             });
-            return channelRepository.indexAll(channels);
+            return channelRepository.indexAll(channels,true);
             // return Lists.newArrayList(channelRepository.indexAll(data));
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -141,7 +141,7 @@ public class ChannelManager {
                 start = System.currentTimeMillis();
                 Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
                 if (foundChannel.isPresent()) {
-                    return channelRepository.save(channel);
+                    return channelRepository.save(channel,true);
                 } else {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "The channel with the name " + channelName + " does not exist");
@@ -180,7 +180,7 @@ public class ChannelManager {
                 channelManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
                         + (System.currentTimeMillis() - start));
                 start = System.currentTimeMillis();
-                return channelRepository.saveAll(channels);
+                return channelRepository.saveAll(channels,true);
                 //return Lists.newArrayList(channelRepository.saveAll(data));
             } catch (Exception e) {
 

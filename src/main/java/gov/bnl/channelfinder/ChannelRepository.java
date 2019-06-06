@@ -81,20 +81,22 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the created channel
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> S index(XmlChannel channel) {
+    public <S extends XmlChannel> S index(XmlChannel channel, boolean channelOp) {
         RestHighLevelClient client = esService.getIndexClient();
         
-        Optional<XmlChannel> existingChannel = findById(channel.getName());
-        boolean present = existingChannel.isPresent();
-        if(present) {
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+        if(channelOp) {
+            Optional<XmlChannel> existingChannel = findById(channel.getName());
+            boolean present = existingChannel.isPresent();
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+                } 
             } 
-        } 
-        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
+            }
         }
         
         try {
@@ -124,21 +126,23 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the created channels
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> Iterable<S> indexAll(List<XmlChannel> channels) {
+    public <S extends XmlChannel> Iterable<S> indexAll(List<XmlChannel> channels, boolean channelOp) {
         RestHighLevelClient client = esService.getIndexClient();
         
-        for(XmlChannel channel: channels) {
-            Optional<XmlChannel> existingChannel = findById(channel.getName());
-            boolean present = existingChannel.isPresent();
-            if(present) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+        if(channelOp) {
+            for(XmlChannel channel: channels) {
+                Optional<XmlChannel> existingChannel = findById(channel.getName());
+                boolean present = existingChannel.isPresent();
+                if(present) {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+                    } 
                 } 
-            } 
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
+                }
             }
         }
               
@@ -176,34 +180,15 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         return null;
     }
 
-    /**
-     * update/save channel using the given XmlChannel
-     * 
-     * @param channel - channel to be saved
-     * @return the updated/saved channel
-     */
-    @SuppressWarnings("unchecked")
     @Override
+    @SuppressWarnings("unchecked")
     public <S extends XmlChannel> S save(S channel) {
         RestHighLevelClient client = esService.getIndexClient();
 
-        Optional<XmlChannel> existingChannel = findById(channel.getName());
-        boolean present = existingChannel.isPresent();
-        if(present) {
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
-            } 
-        } 
-        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
-        }
-
         try {
-
             UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-
+            Optional<XmlChannel> existingChannel = findById(channel.getName());
+            boolean present = existingChannel.isPresent();
             if(present) {
                 XmlChannel newChannel = existingChannel.get();
                 newChannel.addTags(channel.getTags());
@@ -230,19 +215,18 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         }
         return null;
     }
-
+    
     /**
-     * update/save channels using the given XmlChannels
+     * update/save channel using the given XmlChannel
      * 
-     * @param channels - channels to be saved
-     * @return the updated/saved channels
+     * @param channel - channel to be saved
+     * @return the updated/saved channel
      */
     @SuppressWarnings("unchecked")
-    @Override
-    public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> channels) {
+    public <S extends XmlChannel> S save(S channel, boolean channelOp) {
         RestHighLevelClient client = esService.getIndexClient();
-        
-        for(XmlChannel channel: channels) {
+
+        if(channelOp) {
             Optional<XmlChannel> existingChannel = findById(channel.getName());
             boolean present = existingChannel.isPresent();
             if(present) {
@@ -256,7 +240,15 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
             }
         }
-        
+
+        return save(channel);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> channels) {
+        RestHighLevelClient client = esService.getIndexClient();
+             
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlChannel channel : channels) {
@@ -298,6 +290,35 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update/save channels: " + channels, null);
         }
+    }
+    
+    /**
+     * update/save channels using the given XmlChannels
+     * 
+     * @param channels - channels to be saved
+     * @return the updated/saved channels
+     */
+    @SuppressWarnings("unchecked")
+    public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> channels, boolean channelOp) {
+        RestHighLevelClient client = esService.getIndexClient();
+        
+        if(channelOp) {
+            for(XmlChannel channel: channels) {
+                Optional<XmlChannel> existingChannel = findById(channel.getName());
+                boolean present = existingChannel.isPresent();
+                if(present) {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+                    } 
+                } 
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
+                }
+            }
+        }
+       return saveAll(channels);
     }
 
     /**
@@ -608,5 +629,4 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
         }
     }
-
 }

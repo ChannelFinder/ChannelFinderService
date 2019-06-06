@@ -237,7 +237,7 @@ public class TagManager {
             if(ch.isPresent()) {
                 XmlChannel channel = ch.get();
                 channel.removeTag(new XmlTag(tagName, ""));
-                channelRepository.index(channel);
+                channelRepository.index(channel,false);
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The channel with the name " + channelName + " does not exist");

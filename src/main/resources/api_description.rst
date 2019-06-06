@@ -210,7 +210,7 @@ that are not included in the payload. Existing property values are replaced by t
 The authenticated user must belong to the group that owns the property. (Administrator role overrides
 this restriction.)
 
-**Add Property to a Single Channel - CURRENTLY NOT WORKING** 
+**Add Property to a Single Channel** 
 
 .../properties/<property_name>/<channel_name>
 

@@ -126,6 +126,34 @@ public class PropertyManager {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these properties: " + properties, null);
     }
+    
+    /**
+     * PUT method for adding the property identified by <tt>property</tt> to the single
+     * channel <tt>chan</tt> (both path parameters).
+     * 
+     * TODO: could be simplified with multi index update and script which can use
+     * wildcards thus removing the need to explicitly define the entire property
+     * 
+     * @param propertyName - name of tag to be created
+     * @param channelName - channel to update <tt>tag</tt> to
+     * @param property - property data
+     * @return added property
+     */
+    @PutMapping("/{propertyName}/{chName}")
+    public XmlProperty addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName, @RequestBody XmlProperty property) {
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            long start = System.currentTimeMillis();
+            propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            validatePropertyRequest(propertyName, property, channelName);
+            XmlProperty createdProperty = propertyRepository.index(property);
+            XmlChannel channel = channelRepository.findById(channelName).get();
+            channel.addProperty(property);
+            channelRepository.save(channel);
+            return createdProperty;        
+        } else
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform an operation on this property: " + property, null);
+    }
 
     /**
      * POST method for updating the property identified by the path parameter
@@ -205,7 +233,7 @@ public class PropertyManager {
             if(ch.isPresent()) {
                 XmlChannel channel = ch.get();
                 channel.removeProperty(new XmlProperty(propertyName, ""));
-                channelRepository.save(channel);
+                channelRepository.index(channel,false);
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The channel with the name " + channelName + " does not exist");
