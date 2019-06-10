@@ -14,12 +14,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelManager.class)
+@WithMockUser(roles = "CF-ADMINS")
 public class ChannelManagerIT {
 
     @Autowired

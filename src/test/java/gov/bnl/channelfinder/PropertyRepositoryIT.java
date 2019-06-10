@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.google.common.collect.Iterables;
@@ -18,6 +19,7 @@ import com.google.common.collect.Sets;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyRepository.class)
+@WithMockUser(roles = "CF-ADMINS")
 public class PropertyRepositoryIT {
 
     @Autowired

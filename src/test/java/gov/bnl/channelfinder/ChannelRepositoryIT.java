@@ -13,6 +13,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.google.common.collect.Iterables;
@@ -21,6 +27,7 @@ import com.google.common.collect.Sets;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelRepository.class)
+@WithMockUser(roles = "CF-ADMINS")
 public class ChannelRepositoryIT {
 
     @Autowired
@@ -34,13 +41,15 @@ public class ChannelRepositoryIT {
 
     @Autowired
     ElasticSearchClient esService;
-
+    
+    @Autowired
+    AuthenticationManager authManager;
+    
     /**
      * A simple test to index a single property
      */
     @Test
     public void indexXmlChannel() {
-
         XmlChannel testChannel = new XmlChannel();
         testChannel.setName("test-channel");
         testChannel.setOwner("test-owner");
@@ -97,11 +106,12 @@ public class ChannelRepositoryIT {
         List<XmlChannel> testChannels = Arrays.asList(testChannel1, testChannel2);
         try {
             Set<XmlChannel> createdChannels = Sets.newHashSet(channelRepository.indexAll(testChannels,true));
-            Thread.sleep(2000);
+            //Thread.sleep(2000);
             Set<XmlChannel> listedChannels = Sets.newHashSet(channelRepository.findAll());
             // verify the tag was created as expected
-            assertEquals("Failed to list all created tags", createdChannels, listedChannels);
-        } catch (InterruptedException e) {
+            //assertEquals("Failed to list all created tags", createdChannels, listedChannels);
+            assertTrue("Failed to list all created tags", listedChannels.containsAll(createdChannels));
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             // clean up
