@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.FormLoginRequestBuilder;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -22,22 +23,22 @@ public class AuthenticationIT {
 	@Test
 	public void loginWithLDAPValidUserThenAuthenticated() throws Exception {
 		FormLoginRequestBuilder login = formLogin()
-				.user("ben")
-				.password("benspassword");
-
-		mockMvc.perform(login)
-		.andExpect(authenticated().withUsername("ben"));
-	}
-	
-	@Test
-	public void loginWithINMEMValidUserThenAuthenticated() throws Exception {
-		FormLoginRequestBuilder login = formLogin()
 				.user("admin")
-				.password("adminPass");
+				.password("1234");
 
 		mockMvc.perform(login)
 		.andExpect(authenticated().withUsername("admin"));
 	}
+	
+//	@Test
+//	public void loginWithINMEMValidUserThenAuthenticated() throws Exception {
+//		FormLoginRequestBuilder login = formLogin()
+//				.user("admin")
+//				.password("adminPass");
+//
+//		mockMvc.perform(login)
+//		.andExpect(authenticated().withUsername("admin"));
+//	}
 
 	@Test
 	public void loginWithInvalidUserThenUnauthenticated() throws Exception {
