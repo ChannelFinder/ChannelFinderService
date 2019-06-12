@@ -202,7 +202,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             }
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the tag
+            /// verify the updating/saving of the tag
             Result result = updateResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
                 // client.get(, options)
@@ -364,7 +364,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         } catch (IOException e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to fihd all tags", null);
+                    "Failed to find all tags", null);
         }
         return null;
     }
@@ -392,7 +392,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 } 
             }
             return foundTags;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Failed to find all tags: " + tagIds, null);

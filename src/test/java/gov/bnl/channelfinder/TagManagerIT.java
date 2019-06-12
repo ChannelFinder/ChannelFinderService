@@ -1,6 +1,7 @@
 package gov.bnl.channelfinder;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,6 +43,39 @@ public class TagManagerIT {
         assertEquals("Failed to create the tag", testTag.getOwner(), createdTag.getOwner());
         tagManager.remove("test-tag");
     }
+    
+    // taken from tag repo since they belong here.
+//    /**
+//     * index a single tag with a few channels
+//     */
+//    @Test
+//    public void indexXmlTagWithChannels() {       
+//        List<XmlChannel> channels = new ArrayList<>();        
+//        channels.add(testChannel1);
+//        channels.add(testChannel2);
+//        testTag.setChannels(channels);
+//        
+//        XmlTag createdTag = tagRepository.index(testTag);
+//        // verify the tag failed as expected because channels aren't indexed yet
+//        assertNotEquals("Created the test tag", testTag, createdTag);
+//        
+//        channelRepository.indexAll(channels,false);
+//        
+//
+//        //XmlTag createdTag = tagRepository.index(testTag);
+//        // verify the tag was created as expected
+//        assertEquals("Failed to create the test tag", testTag, createdTag);
+//
+//        // clean up
+//        tagRepository.deleteById(createdTag.getName());
+//    }
+//    /**
+//     * TODO index multiple tags with a few channels
+//     */
+//    @Test
+//    public void indexXmlTagsWithChannels() {
+//
+//    }
 
     /**
      * test the retrieval of a tag (read method)
