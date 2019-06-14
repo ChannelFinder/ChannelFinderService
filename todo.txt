@@ -1,8 +1,8 @@
-- implement/look into null values and empty property value string
-- finish implementing operations
-- finish implementing logging
-- testing
-- once these todo items are completed, add them to documentation:
-	--> completed operations
-	--> worked out the details of using lists vs CRUD
-	--> exceptions / authorization
+ fix channelrepositorysearchIT 
+ fix findall tests 
+ code authenticationIT
+ implement a limit on changing ownership to groups the user belongs to
+ implement all the refresh indices needed
+ implement anything else from question list that isnt yet implemented
+ figure out what to do and what would happen if 2 items have same name
+ deal with the possible hack of changing owners or whatev in payloads
