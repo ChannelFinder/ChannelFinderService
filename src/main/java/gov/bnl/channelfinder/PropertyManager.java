@@ -1,5 +1,7 @@
 package gov.bnl.channelfinder;
 
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
+import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
 import static gov.bnl.channelfinder.CFResourceDescriptors.PROPERTY_RESOURCE_URI;
 
 import java.io.IOException;
@@ -9,6 +11,10 @@ import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.elasticsearch.action.DocWriteResponse.Result;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
@@ -38,7 +44,7 @@ public class PropertyManager {
 
     @Autowired
     TagRepository tagRepository;
-    
+
     @Autowired
     PropertyRepository propertyRepository;
 
@@ -93,10 +99,33 @@ public class PropertyManager {
      */
     @PutMapping("/{propertyName}")
     public XmlProperty create(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
+        // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
-            validatePropertyRequest(propertyName,property);
+            long start = System.currentTimeMillis();
+            propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            // Validate request parameters
+            validatePropertyRequest(property);
+
+            // check if authorized owner
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+            boolean present = existingProperty.isPresent();
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
+            }
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+                } 
+                // delete existing property
+                propertyRepository.deleteById(propertyName);
+            } 
+
+            // create new property
             XmlProperty createdProperty = propertyRepository.index(property);
-            // Updated the listed channels in the properties payload with new properties/property values
+
+            // update the listed channels in the property's payload with the new property
             channelRepository.saveAll(property.getChannels());
             return createdProperty;
         } else
@@ -112,10 +141,35 @@ public class PropertyManager {
      */
     @PutMapping()
     public Iterable<XmlProperty> create(@RequestBody List<XmlProperty> properties) {
+        // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
+            long start = System.currentTimeMillis();
+            propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            // Validate request parameters
             validatePropertyRequest(properties);
+
+            // check if authorized owner
+            for(XmlProperty property: properties) {
+                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+                boolean present = existingProperty.isPresent();
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + property, null);
+                }
+                if(present) {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+                    } 
+                    // delete existing property
+                    propertyRepository.deleteById(property.getName());
+                }         
+            }
+
+            // create new properties
             Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(properties);
-            // Updated the listed channels in the properties payload with new properties/property values
+
+            // update the listed channels in the properties' payloads with the new properties
             List<XmlChannel> channels = new ArrayList<>();
             properties.forEach(property -> {
                 channels.addAll(property.getChannels());
@@ -126,7 +180,7 @@ public class PropertyManager {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these properties: " + properties, null);
     }
-    
+
     /**
      * PUT method for adding the property identified by <tt>property</tt> to the single
      * channel <tt>chan</tt> (both path parameters).
@@ -136,23 +190,37 @@ public class PropertyManager {
      * 
      * @param propertyName - name of tag to be created
      * @param channelName - channel to update <tt>tag</tt> to
-     * @param property - property data
      * @return added property
      */
     @PutMapping("/{propertyName}/{chName}")
-    public XmlProperty addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName, @RequestBody XmlProperty property) {
+    public XmlProperty addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName) {
+        // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            validatePropertyRequest(propertyName, property, channelName);
-            XmlProperty createdProperty = propertyRepository.index(property);
-            XmlChannel channel = channelRepository.findById(channelName).get();
-            channel.addProperty(property);
-            channelRepository.save(channel);
-            return createdProperty;        
+            // Validate request parameters
+            validatePropertyRequest(channelName);
+
+            // check if authorized owner
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(propertyName);
+            boolean present = existingProperty.isPresent();
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+                } 
+                // add property to channel
+                XmlChannel channel = channelRepository.findById(channelName).get();
+                channel.addProperty(existingProperty.get());
+                channelRepository.save(channel);
+                return existingProperty.get();
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The tag with the name " + propertyName + " does not exist");
+            }
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this property: " + property, null);
+                    "User does not have the proper authorization to perform an operation on this property: " + propertyName, null);
     }
 
     /**
@@ -167,10 +235,31 @@ public class PropertyManager {
      */
     @PostMapping("/{propertyName}")
     public XmlProperty update(@PathVariable("propertyName") String propertyName, @RequestBody XmlProperty property) {
+        // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
-            validatePropertyRequest(propertyName,property);
-            XmlProperty updatedProperty = propertyRepository.save(property);
-            // Updated the listed channels in the properties payload with new properties/property values
+            long start = System.currentTimeMillis();
+            propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            // Validate request parameters
+            validatePropertyRequest(property);
+
+            // check if authorized owner
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+            boolean present = existingProperty.isPresent();
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
+            }
+            if(present) {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+                } 
+            } 
+
+            // update property
+            XmlProperty updatedProperty = propertyRepository.save(propertyName,property);
+
+            // update the listed channels in the property's payload with the updated property
             channelRepository.saveAll(property.getChannels());
             return updatedProperty;
         } else
@@ -189,10 +278,33 @@ public class PropertyManager {
      */
     @PostMapping()
     public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
+        // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
+            long start = System.currentTimeMillis();
+            propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            // Validate request parameters
             validatePropertyRequest(properties);
+
+            // check if authorized owner
+            for(XmlProperty property: properties) {
+                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+                boolean present = existingProperty.isPresent();
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + property, null);
+                }
+                if(present) {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
+                    } 
+                }               
+            }
+
+            // update tags
             Iterable<XmlProperty> createdProperties = propertyRepository.saveAll(properties);
-            // Updated the listed channels in the properties payload with new properties/property values
+
+            // update the listed channels in the properties' payloads with the updated properties
             List<XmlChannel> channels = new ArrayList<>();
             properties.forEach(property -> {
                 channels.addAll(property.getChannels());
@@ -212,8 +324,22 @@ public class PropertyManager {
      */
     @DeleteMapping("/{propertyName}")
     public void remove(@PathVariable("propertyName") String propertyName) {
+        // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
-            propertyRepository.deleteById(propertyName);
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(propertyName);
+            if(existingProperty.isPresent()) {
+                // check if authorized owner
+                if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                    // delete property
+                    propertyRepository.deleteById(propertyName);
+                } else {
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + propertyName, null);
+                }
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The property with the name " + propertyName + " does not exist");
+            }
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this property: " + propertyName, null);
@@ -228,21 +354,34 @@ public class PropertyManager {
      */
     @DeleteMapping("/{propertyName}/{channelName}")
     public void removeSingle(@PathVariable("propertyName") final String propertyName, @PathVariable("channelName") String channelName) {
+        // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
-            Optional<XmlChannel> ch = channelRepository.findById(channelName);
-            if(ch.isPresent()) {
-                XmlChannel channel = ch.get();
-                channel.removeProperty(new XmlProperty(propertyName, ""));
-                channelRepository.index(channel,false);
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(propertyName);
+            if(existingProperty.isPresent()) {
+                // check if authorized owner
+                if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                    Optional<XmlChannel> ch = channelRepository.findById(channelName);
+                    if(ch.isPresent()) {
+                        // remove property from channel
+                        XmlChannel channel = ch.get();
+                        channel.removeProperty(new XmlProperty(propertyName, ""));
+                        channelRepository.index(channel);
+                    } else {
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                "The channel with the name " + channelName + " does not exist");
+                    }
+                } else
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                            "User does not have the proper authorization to perform an operation on this property: " + propertyName, null);
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The channel with the name " + channelName + " does not exist");
+                        "The tag with the name " + propertyName + " does not exist");
             }
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this property: " + propertyName, null);
+                    "User does not have the proper authorization to perform an operation on this tag: " + propertyName, null);             
     }
-    
+
     /**
      * Check that the existing property and the property in the request body match
      * 
@@ -263,18 +402,18 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(String propertyName, XmlProperty property) {
+    private void validatePropertyRequest(XmlProperty property) {
         // 1 
-        if (property.getName() == null || !propertyName.equals(property.getName())) {
+        if (property.getName() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The property name cannot be null and must match the property in the URI " + property.toString(), null);
+                    "The property name cannot be null " + property.toString(), null);
         }
         // 2
         if (property.getOwner() == null || property.getOwner().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The property owner cannot be null or empty " + property.toString(), null);
         }
-         // 3
+        // 3
         if (property.getValue() == null || property.getValue().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The property value cannot be null or empty " + property.toString(), null);
@@ -288,9 +427,9 @@ public class PropertyManager {
                         "The channel with the name " + channelName + " does not exist");
             }
         }
-        
+
     }
-    
+
     /**
      * Checks if
      * 1. the property name is not null and matches the name in the body
@@ -302,10 +441,10 @@ public class PropertyManager {
      */
     private void validatePropertyRequest(List<XmlProperty> properties) {
         for(XmlProperty property: properties) {
-            validatePropertyRequest(property.getName(),property);
+            validatePropertyRequest(property);
         }
     }
-    
+
     /**
      * Checks if
      * 1. the property name is not null and matches the name in the body
@@ -315,8 +454,7 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(String propertyName, XmlProperty property, String channelName) {
-        validatePropertyRequest(propertyName, property); 
+    private void validatePropertyRequest(String channelName) {
         Optional<XmlChannel> ch = channelRepository.findById(channelName);
         if(!ch.isPresent()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,

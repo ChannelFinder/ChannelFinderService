@@ -121,7 +121,7 @@ public class TagManager {
             // create new tag
             XmlTag createdTag = tagRepository.index(tag);
 
-            // update the listed channels in the tags payloads with new tags
+            // update the listed channels in the tag's payloads with the new tag
             channelRepository.saveAll(tag.getChannels());
             return createdTag;
         } else
@@ -160,13 +160,12 @@ public class TagManager {
                     // delete existing tag
                     tagRepository.deleteById(tag.getName());                
                 } 
-
             }
 
-            // create new tag
+            // create new tags
             Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
 
-            // update the listed channels in the tags payloads with new tags
+            // update the listed channels in the tags' payloads with new tags
             List<XmlChannel> channels = new ArrayList<>();
             tags.forEach(tag -> {
                 channels.addAll(tag.getChannels());
@@ -258,7 +257,7 @@ public class TagManager {
             // update tag
             XmlTag updatedTag = tagRepository.save(tagName,tag);
 
-            // update the listed channels in tag payload with the associated tag
+            // update the listed channels in the tag's payload with the updated tag
             channelRepository.saveAll(tag.getChannels());
             return updatedTag;        
         } else
@@ -279,6 +278,8 @@ public class TagManager {
     public Iterable<XmlTag> update(@RequestBody List<XmlTag> tags) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+            long start = System.currentTimeMillis();
+            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
             // Validate request parameters
             validateTagRequest(tags);
 
@@ -301,7 +302,7 @@ public class TagManager {
             // update tags
             Iterable<XmlTag> createdTags = tagRepository.saveAll(tags);
 
-            // update the listed channels in tag payloads with the associated tags
+            // update the listed channels in the tags' payloads with the updated tags
             List<XmlChannel> channels = new ArrayList<>();
             tags.forEach(tag -> {
                 channels.addAll(tag.getChannels());
@@ -312,7 +313,6 @@ public class TagManager {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these tag: " + tags, null);
     }
-
 
     /**
      * DELETE method for deleting the tag identified by the path parameter
@@ -334,7 +334,6 @@ public class TagManager {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
                 }
-
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
@@ -365,7 +364,7 @@ public class TagManager {
                         // remove tag from channel
                         XmlChannel channel = ch.get();
                         channel.removeTag(new XmlTag(tagName, ""));
-                        channelRepository.index(channel,false);
+                        channelRepository.index(channel);
                     } else {
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                                 "The channel with the name " + channelName + " does not exist");
@@ -407,7 +406,7 @@ public class TagManager {
         // 1 
         if (tag.getName() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null and must match the tag in the URI " + tag.toString(), null);
+                    "The tag name cannot be null " + tag.toString(), null);
         }
         // 2
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {

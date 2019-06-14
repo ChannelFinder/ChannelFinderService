@@ -70,20 +70,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @SuppressWarnings("unchecked")
     public <S extends XmlProperty> S index(XmlProperty property) {
         RestHighLevelClient client = esService.getIndexClient();
-        
-        Optional<XmlProperty> existingProperty = findById(property.getName());
-        boolean present = existingProperty.isPresent();
-        if(present) {
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
-            } 
-        } 
-        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this property: " + property, null);
-        }
-        
         try {
             objectMapper.addMixIn(XmlProperty.class, OnlyNameOwnerXmlProperty.class);
             IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
@@ -114,22 +100,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @SuppressWarnings("unchecked")
     public <S extends XmlProperty> Iterable<S> indexAll(List<XmlProperty> properties) {
         RestHighLevelClient client = esService.getIndexClient();
-        
-        for(XmlProperty property: properties) {
-            Optional<XmlProperty> existingProperty = findById(property.getName());
-            boolean present = existingProperty.isPresent();
-            if(present) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
-                } 
-            } 
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
-            }
-        }
-        
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlProperty property : properties) {
@@ -144,7 +114,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             /// verify the creation of the properties
             if (bulkResponse.hasFailures()) {
                 // Failed to create all the properties
-
             } else {
                 List<String> createdPropertyIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
@@ -171,30 +140,21 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @return the updated/saved property
      */
     @SuppressWarnings("unchecked")
-    @Override
-    public <S extends XmlProperty> S save(S property) {
+    public <S extends XmlProperty> S save(String propertyName, S property) {
         RestHighLevelClient client = esService.getIndexClient();
-
-        Optional<XmlProperty> existingProperty = findById(property.getName());
-        boolean present = existingProperty.isPresent();
-        if(present) {
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
-            } 
-        } 
-        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this property: " + property, null);
-        }
-
         try {
-
-            UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
-
+            UpdateRequest updateRequest;
+            Optional<XmlProperty> existingProperty = findById(propertyName);
+            boolean present = existingProperty.isPresent();
             if(present) {
+                updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
+                List<XmlChannel> channels = existingProperty.get().getChannels();
+                channels.removeAll(property.getChannels());
+                channels.addAll(property.getChannels());
+                property.setChannels(channels);
                 updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
             } else {
+                updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
                 IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
                         .id(property.getName())
                         .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
@@ -202,7 +162,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             }
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the property
+            /// verify the updating/saving of the property
             Result result = updateResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
                 // client.get(, options)
@@ -216,6 +176,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         return null;
     }
 
+    @Override
+    public <S extends XmlProperty> S save(S property) {
+        return save(property.getName(),property);
+    }
+
     /**
      * update/save properties using the given XmlProperties
      * 
@@ -226,22 +191,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @Override
     public <S extends XmlProperty> Iterable<S> saveAll(Iterable<S> properties) {
         RestHighLevelClient client = esService.getIndexClient();
-        
-        for(XmlProperty property: properties) {
-            Optional<XmlProperty> existingProperty = findById(property.getName());
-            boolean present = existingProperty.isPresent();
-            if(present) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
-                } 
-            } 
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
-            }
-        }
-        
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlProperty property : properties) {
@@ -249,6 +198,10 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
                 Optional<XmlProperty> existingProperty = findById(property.getName());
                 if (existingProperty.isPresent()) {
+                    List<XmlChannel> channels = existingProperty.get().getChannels();
+                    channels.removeAll(property.getChannels());
+                    channels.addAll(property.getChannels());
+                    property.setChannels(channels);
                     updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                 } else {
                     IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
@@ -328,8 +281,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             return client.exists(getRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
             e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to check if property exists by id: " + id, null); 
         }
-        return false;
     }
 
     /**
@@ -340,16 +294,16 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @Override
     public Iterable<XmlProperty> findAll() {
         RestHighLevelClient client = esService.getSearchClient();
-        
+
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(ES_PROPERTY_INDEX);
         searchRequest.types(ES_PROPERTY_TYPE);
-        
+
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // TODO use of scroll will be necessary
         searchSourceBuilder.size(10000);
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
-        
+
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             if (searchResponse.status().equals(RestStatus.OK)) {
@@ -411,31 +365,17 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @Override
     public void deleteById(String property) {
         RestHighLevelClient client = esService.getIndexClient();
+        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property);
 
-        Optional<XmlProperty> existingProperty = findById(property);
-        if(existingProperty.isPresent()) {
-
-            if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-
-                DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property);
-
-                try {
-                    DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-                    Result result = response.getResult();
-                    if (!result.equals(Result.DELETED)) 
-                        throw new Exception();                    
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to delete property: " + property, null);
-                }
-            } else {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this property: " + property, null);
-            }
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "The property with the name " + property + " does not exist");
+        try {
+            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
+            Result result = response.getResult();
+            if (!result.equals(Result.DELETED)) 
+                throw new Exception();                    
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to delete property: " + property, null);
         }
     }
 
