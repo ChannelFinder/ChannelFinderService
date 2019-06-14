@@ -18,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
@@ -96,7 +97,7 @@ public class TagRepositoryIT {
     public void saveXmlTags() {
         List<XmlTag> testTags = Arrays.asList(testTag, testTag1);        
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
-        List<XmlTag> updateTestTags = Arrays.asList(testTag, testTag1);        
+        List<XmlTag> updateTestTags = Arrays.asList(updateTestTag, updateTestTag1);        
 
         Iterable<XmlTag> updatedTestTags = tagRepository.saveAll(updateTestTags);
         // verify the tags were updated as expected
@@ -172,15 +173,26 @@ public class TagRepositoryIT {
     public void findXmlTags() {
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
         List<String> tagNames = Arrays.asList(testTag.getName(),testTag1.getName());
-        Iterable<XmlTag> notFoundTags = tagRepository.findAllById(tagNames);
-        // verify the tag was not found as expected
-        assertNotEquals("Found the tags",testTags,notFoundTags);
+        Iterable<XmlTag> notFoundTags = null;
+        Iterable<XmlTag> foundTags = null;
+
+        try {
+            notFoundTags = tagRepository.findAllById(tagNames);
+        } catch (ResponseStatusException e) {            
+        } finally {
+            // verify the tag was not found as expected
+            assertNotEquals("Found the tags",testTags,notFoundTags);
+        }
 
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
 
-        Iterable<XmlTag> foundTags = tagRepository.findAllById(tagNames);
-        // verify the tag was found as expected
-        assertEquals("Failed to find the tags",createdTags,foundTags);
+        try {
+            foundTags = tagRepository.findAllById(tagNames);
+        } catch (ResponseStatusException e) {
+        } finally {
+            // verify the tag was found as expected
+            assertEquals("Failed to find the tags",createdTags,foundTags);
+        }
 
         // clean up
         createdTags.forEach(createdTag -> {

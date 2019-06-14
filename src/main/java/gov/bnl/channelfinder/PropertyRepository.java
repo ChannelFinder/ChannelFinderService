@@ -193,8 +193,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
 
             if(present) {
-                XmlProperty newProperty = existingProperty.get();
-                updateRequest.doc(objectMapper.writeValueAsBytes(newProperty), XContentType.JSON);
+                updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
             } else {
                 IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
                         .id(property.getName())
@@ -250,8 +249,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
                 Optional<XmlProperty> existingProperty = findById(property.getName());
                 if (existingProperty.isPresent()) {
-                    XmlProperty newProperty = existingProperty.get();
-                    updateRequest.doc(objectMapper.writeValueAsBytes(newProperty), XContentType.JSON);
+                    updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                 } else {
                     IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
                             .id(property.getName())

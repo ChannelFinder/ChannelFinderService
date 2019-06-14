@@ -69,21 +69,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> S index(S tag) {
-        RestHighLevelClient client = esService.getIndexClient();
-        
-        Optional<XmlTag> existingTag = findById(tag.getName());
-        boolean present = existingTag.isPresent();
-        if(present) {
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
-            } 
-        } 
-        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
-        }
-        
+        RestHighLevelClient client = esService.getIndexClient(); 
         try {
             IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
                     .id(tag.getName())
@@ -112,23 +98,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> Iterable<S> indexAll(Iterable<S> tags) {
-        RestHighLevelClient client = esService.getIndexClient();
-        
-        for(XmlTag tag:tags) {
-            Optional<XmlTag> existingTag = findById(tag.getName());
-            boolean present = existingTag.isPresent();
-            if(present) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
-                } 
-            } 
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
-            } 
-        }
-        
+        RestHighLevelClient client = esService.getIndexClient();      
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlTag tag : tags) {
@@ -143,7 +113,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             /// verify the creation of the tags
             if (bulkResponse.hasFailures()) {
                 // Failed to create all the tags
-
             } else {
                 List<String> createdTagIds = new ArrayList<String>();
                 for (BulkItemResponse bulkItemResponse : bulkResponse) {
@@ -170,31 +139,21 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @return the updated/saved tag
      */
     @SuppressWarnings("unchecked")
-    @Override
-    public <S extends XmlTag> S save(S tag) {
+    public <S extends XmlTag> S save(String tagName, S tag) {
         RestHighLevelClient client = esService.getIndexClient();
-
-        Optional<XmlTag> existingTag = findById(tag.getName());
-        boolean present = existingTag.isPresent();
-        if(present) {
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
-            } 
-        } 
-        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
-        }  
-
         try {
-
-            UpdateRequest updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
-
+            UpdateRequest updateRequest;
+            Optional<XmlTag> existingTag = findById(tagName);
+            boolean present = existingTag.isPresent();
             if(present) {
-                XmlTag newTag = existingTag.get();
-                updateRequest.doc(objectMapper.writeValueAsBytes(newTag), XContentType.JSON);
+                updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
+                List<XmlChannel> channels = existingTag.get().getChannels();
+                channels.removeAll(tag.getChannels());
+                channels.addAll(tag.getChannels());
+                tag.setChannels(channels);
+                updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
             } else {
+                updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
                 IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
                         .id(tag.getName())
                         .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
@@ -216,6 +175,11 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         return null;
     }
 
+    @Override
+    public <S extends XmlTag> S save(S tag) {
+        return save(tag.getName(),tag);
+    }
+
     /**
      * update/save tags using the given XmlTags
      * 
@@ -226,22 +190,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Override
     public <S extends XmlTag> Iterable<S> saveAll(Iterable<S> tags) {
         RestHighLevelClient client = esService.getIndexClient();
-        
-        for(XmlTag tag:tags) {
-            Optional<XmlTag> existingTag = findById(tag.getName());
-            boolean present = existingTag.isPresent();
-            if(present) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
-                } 
-            } 
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
-            } 
-        }
-        
         BulkRequest bulkRequest = new BulkRequest();
         try {
             for (XmlTag tag : tags) {
@@ -249,8 +197,11 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
                 Optional<XmlTag> existingTag = findById(tag.getName());
                 if (existingTag.isPresent()) {
-                    XmlTag newTag = existingTag.get();
-                    updateRequest.doc(objectMapper.writeValueAsBytes(newTag), XContentType.JSON);
+                    List<XmlChannel> channels = existingTag.get().getChannels();
+                    channels.removeAll(tag.getChannels());
+                    channels.addAll(tag.getChannels());
+                    tag.setChannels(channels);
+                    updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
                 } else {
                     IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
                             .id(tag.getName())
@@ -342,16 +293,16 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Override
     public Iterable<XmlTag> findAll() {
         RestHighLevelClient client = esService.getSearchClient();
-        
+
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(ES_TAG_INDEX);
         searchRequest.types(ES_TAG_TYPE);
-        
+
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // TODO use of scroll will be necessary
         searchSourceBuilder.size(10000);
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
-        
+
         try {
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             if (searchResponse.status().equals(RestStatus.OK)) {
@@ -378,7 +329,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Override
     public Iterable<XmlTag> findAllById(Iterable<String> tagIds) {
         MultiGetRequest request = new MultiGetRequest();
-        
+
         for (String tagId : tagIds) {
             request.add(new MultiGetRequest.Item(ES_TAG_INDEX, ES_TAG_TYPE, tagId));
         }
@@ -408,45 +359,32 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     /**
      * delete the given tag by tag name
      * 
-     * @param tag - tag to be deleted
+     * @param tagName - tag to be deleted
      */
     @Override
-    public void deleteById(String tag) {
+    public void deleteById(String tagName) {
         RestHighLevelClient client = esService.getIndexClient();
 
-        Optional<XmlTag> existingTag = findById(tag);
-        if(existingTag.isPresent()) {
+        DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
 
-            if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-
-                DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag);
-
-                try {
-                    DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-                    Result result = response.getResult();
-                    if (!result.equals(Result.DELETED)) {
-                        throw new Exception();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to delete tag: " + tag, null);
-                }
-            } else {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+        try {
+            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
+            Result result = response.getResult();
+            if (!result.equals(Result.DELETED)) {
+                throw new Exception();
             }
-
-        } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "The tag with the name " + tag + " does not exist");
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to delete tag: " + tagName, null);
         }
+
     }
 
     /**
-     * delete the given property
+     * delete the given tag
      * 
-     * @param propertyId - property to be deleted
+     * @param tag - tag to be deleted
      */
     @Override
     public void delete(XmlTag tag) {
@@ -462,5 +400,4 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     public void deleteAll() {
         throw new UnsupportedOperationException("Delete All is not supported.");
     }
-
 }
