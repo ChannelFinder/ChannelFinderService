@@ -58,9 +58,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
     ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    AuthorizationService authorizationService;
-
     /**
      * create a new tag using the given XmlTag
      * 

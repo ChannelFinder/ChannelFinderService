@@ -1,6 +1,8 @@
  fix channelrepositorysearchIT 
  fix findall tests 
+ fix save tests from the tag/prop repo ITs
  code authenticationIT
+ implement testing for non auth errors
  implement a limit on changing ownership to groups the user belongs to
  implement all the refresh indices needed
  implement anything else from question list that isnt yet implemented

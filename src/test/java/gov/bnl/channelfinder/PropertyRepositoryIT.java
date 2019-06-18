@@ -1,46 +1,48 @@
 package gov.bnl.channelfinder;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyRepository.class)
-@WithMockUser(roles = "CF-ADMINS")
 public class PropertyRepositoryIT {
-
-    @Autowired
-    PropertyRepository propertyRepository;
 
     @Autowired
     ElasticSearchClient esService;
 
+    @Autowired
+    PropertyRepository propertyRepository;
+
+    // set up
+    XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
+    XmlProperty updateTestProperty = new XmlProperty("updateTestProperty","updateTestOwner");
+    XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
+    XmlProperty updateTestProperty1 = new XmlProperty("updateTestProperty1","updateTestOwner1");
+
     /**
-     * A simple test to index a single property
+     * index a single property
      */
     @Test
     public void indexXmlProperty() {
-
-        XmlProperty testProperty = new XmlProperty();
-        testProperty.setName("test-property");
-        testProperty.setOwner("test-owner");
-
         XmlProperty createdProperty = propertyRepository.index(testProperty);
-        // verify the tag was created as expected
-        assertEquals("Failed to create the test property", testProperty, createdProperty);
+        // verify the property was created as expected
+        assertEquals("Failed to create the property", testProperty, createdProperty);
 
         // clean up
         propertyRepository.deleteById(createdProperty.getName());
@@ -48,78 +50,98 @@ public class PropertyRepositoryIT {
     }
 
     /**
-     * A test to index a multiple properties
+     * index multiple properties
      */
     @Test
     public void indexXmlProperties() {
+        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
 
-        XmlProperty testProperty1 = new XmlProperty();
-        testProperty1.setName("test-property1");
-        testProperty1.setOwner("test-owner");
-
-        XmlProperty testProperty2 = new XmlProperty();
-        testProperty2.setName("test-property2");
-        testProperty2.setOwner("test-owner");
-
-        List<XmlProperty> testPropertys = Arrays.asList(testProperty1, testProperty2);
-
-        Iterable<XmlProperty> createdPropertys = propertyRepository.indexAll(testPropertys);
-        // verify the tag was created as expected
-        assertTrue("Failed to create a list of properties", Iterables.elementsEqual(testPropertys, createdPropertys));
+        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
+        // verify the properties were created as expected
+        assertTrue("Failed to create the list of properties", Iterables.elementsEqual(testProperties, createdProperties));
 
         // clean up
-        createdPropertys.forEach(createdProperty -> {
+        createdProperties.forEach(createdProperty -> {
             propertyRepository.deleteById(createdProperty.getName());
         });
 
     }
 
     /**
-     * Test is the requested property exists
+     * save a single property
      */
     @Test
-    public void testPropertyExist() {
-        XmlProperty testProperty1 = new XmlProperty();
-        testProperty1.setName("test-property1");
-        testProperty1.setOwner("test-owner");
+    public void saveXmlProperty() {
+        XmlProperty createdProperty = propertyRepository.index(testProperty);
 
-        XmlProperty testProperty2 = new XmlProperty();
-        testProperty2.setName("test-property2");
-        testProperty2.setOwner("test-owner");
+        XmlProperty updatedTestProperty = propertyRepository.save(updateTestProperty);
+        // verify the property was updated as expected
+        assertEquals("Failed to update the property", updateTestProperty, updatedTestProperty);
 
-        List<XmlProperty> testPropertys = Arrays.asList(testProperty1, testProperty2);
-
-        Iterable<XmlProperty> createdPropertys = propertyRepository.indexAll(testPropertys);
-
-        try {
-            // Test if created tags exist
-            assertTrue("Failed to check the existance of " + testProperty1.getName(), propertyRepository.existsById(testProperty1.getName()));
-            assertTrue("Failed to check the existance of " + testProperty2.getName(), propertyRepository.existsById(testProperty2.getName()));
-            // Test the check for existance of a non existant tag returns false
-            assertTrue("Failed to check the existance of 'non-existant-tag'", !propertyRepository.existsById("non-existant-tag"));
-        } finally {
-            // clean up
-            createdPropertys.forEach(createdProperty -> {
-                propertyRepository.deleteById(createdProperty.getName());
-            });
-        }
+        // clean up
+        propertyRepository.deleteById(updatedTestProperty.getName());
     }
 
     /**
-     * A test to index a multiple properties
+     * save multiple properties
      */
     @Test
-    public void listAllXmlProperties() {
+    public void saveXmlProperties() {
+        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);        
+        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
+        List<XmlProperty> updateTestProperties = Arrays.asList(updateTestProperty, updateTestProperty1);        
 
-        XmlProperty testProperty1 = new XmlProperty();
-        testProperty1.setName("test-property1");
-        testProperty1.setOwner("test-owner");
+        Iterable<XmlProperty> updatedTestProperties = propertyRepository.saveAll(updateTestProperties);
+        // verify the properties were updated as expected
+        assertTrue("Failed to update the properties", Iterables.elementsEqual(updateTestProperties, updatedTestProperties));
 
-        XmlProperty testProperty2 = new XmlProperty();
-        testProperty2.setName("test-property2");
-        testProperty2.setOwner("test-owner");
+        // clean up
+        updatedTestProperties.forEach(updatedTestProperty -> {
+            propertyRepository.deleteById(updatedTestProperty.getName());
+        });
+    }
+    
+    /**
+     * find a single property
+     */
+    @Test
+    public void findXmlProperty() {
+        Optional<XmlProperty> notFoundProperty = propertyRepository.findById(testProperty.getName());
+        // verify the property was not found as expected
+        assertNotEquals("Found the property",testProperty,notFoundProperty);
 
-        List<XmlProperty> testProperties = Arrays.asList(testProperty1, testProperty2);
+        XmlProperty createdProperty = propertyRepository.index(testProperty);
+
+        Optional<XmlProperty> foundProperty = propertyRepository.findById(createdProperty.getName());
+        // verify the property was found as expected
+        assertEquals("Failed to find the property",createdProperty,foundProperty.get());
+
+        // clean up
+        propertyRepository.deleteById(createdProperty.getName());
+    }
+
+    /**
+     * check if a property exists
+     */
+    @Test
+    public void testPropertyExists() {
+        XmlProperty createdProperty = propertyRepository.index(testProperty);
+
+        // verify the property exists as expected
+        assertTrue("Failed to check the existance of " + testProperty.getName(), propertyRepository.existsById(testProperty.getName()));
+        // verify the property does not exist as expected
+        assertTrue("Failed to check the existance of 'non-existant-property'", !propertyRepository.existsById("non-existant-property"));
+
+        // clean up
+        propertyRepository.deleteById(createdProperty.getName());   
+    }
+
+    /**
+     * find all properties
+     */
+    @Test
+    public void findAllXmlProperties() {
+        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
         try {
             Set<XmlProperty> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
             Thread.sleep(2000);
@@ -130,17 +152,55 @@ public class PropertyRepositoryIT {
             e.printStackTrace();
         } finally {
             // clean up
-            testProperties.forEach(createdTag -> {
-                propertyRepository.deleteById(createdTag.getName());
+            testProperties.forEach(createdProperty -> {
+                propertyRepository.deleteById(createdProperty.getName());
             });
         }
     }
 
     /**
-     * TODO A simple test to index a single tag with a few channels
+     * find multiple properties
      */
     @Test
-    public void indexXmlPropertyWithChannels() {
+    public void findXmlProperties() {
+        List<XmlProperty> testProperties = Arrays.asList(testProperty,testProperty1);
+        List<String> propertyNames = Arrays.asList(testProperty.getName(),testProperty1.getName());
+        Iterable<XmlProperty> notFoundProperties = null;
+        Iterable<XmlProperty> foundProperties = null;
 
+        try {
+            notFoundProperties = propertyRepository.findAllById(propertyNames);
+        } catch (ResponseStatusException e) {            
+        } finally {
+            // verify the properties were not found as expected
+            assertNotEquals("Found the properties",testProperties,notFoundProperties);
+        }
+
+        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
+
+        try {
+            foundProperties = propertyRepository.findAllById(propertyNames);
+        } catch (ResponseStatusException e) {
+        } finally {
+            // verify the properties were found as expected
+            assertEquals("Failed to find the properties",createdProperties,foundProperties);
+        }
+
+        // clean up
+        createdProperties.forEach(createdProperty -> {
+            propertyRepository.deleteById(createdProperty.getName());
+        });
+    }
+
+    /**
+     * delete a single property
+     */
+    @Test
+    public void deleteXmlTag() {
+        XmlProperty createdProperty = propertyRepository.index(testProperty);
+
+        propertyRepository.deleteById(createdProperty.getName());
+        // verify the property was deleted as expected
+        assertNotEquals("Failed to delete property",testProperty,propertyRepository.findById(testProperty.getName()));
     }
 }

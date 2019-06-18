@@ -58,9 +58,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    AuthorizationService authorizationService;
-
     /**
      * create a new property using the given XmlProperty
      * 

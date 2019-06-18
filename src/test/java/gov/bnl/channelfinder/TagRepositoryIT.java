@@ -4,9 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -15,17 +13,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @WebMvcTest(TagRepository.class)
-@WithMockUser(roles = "CF-ADMINS")
 public class TagRepositoryIT {
 
     @Autowired
@@ -34,16 +29,11 @@ public class TagRepositoryIT {
     @Autowired
     TagRepository tagRepository;
 
-    @Autowired
-    ChannelRepository channelRepository;
-
     // set up
     XmlTag testTag = new XmlTag("testTag","testOwner");
     XmlTag updateTestTag = new XmlTag("testTag","updateTestOwner");
     XmlTag testTag1 = new XmlTag("testTag1","testOwner1");    
     XmlTag updateTestTag1 = new XmlTag("testTag1","updateTestOwner1");
-    XmlChannel testChannel1 = new XmlChannel();
-    XmlChannel testChannel2 = new XmlChannel();
 
     /**
      * index a single tag
@@ -132,13 +122,13 @@ public class TagRepositoryIT {
      * check if a tag exists
      */
     @Test
-    public void testTagsExist() {
+    public void testTagExists() {
         XmlTag createdTag = tagRepository.index(testTag);
 
         // verify the tag exists as expected
         assertTrue("Failed to check the existance of " + testTag.getName(), tagRepository.existsById(testTag.getName()));
         // verify the tag does not exist as expected
-        assertTrue("Failed to check the existance of 'non-existant-tag'", !tagRepository.existsById("non-existant-tag"));
+        assertTrue("Failed to check the non-existance of 'non-existant-tag'", !tagRepository.existsById("non-existant-tag"));
 
         // clean up
         tagRepository.deleteById(createdTag.getName());      
@@ -180,7 +170,7 @@ public class TagRepositoryIT {
             notFoundTags = tagRepository.findAllById(tagNames);
         } catch (ResponseStatusException e) {            
         } finally {
-            // verify the tag was not found as expected
+            // verify the tags were not found as expected
             assertNotEquals("Found the tags",testTags,notFoundTags);
         }
 
@@ -190,7 +180,7 @@ public class TagRepositoryIT {
             foundTags = tagRepository.findAllById(tagNames);
         } catch (ResponseStatusException e) {
         } finally {
-            // verify the tag was found as expected
+            // verify the tags were found as expected
             assertEquals("Failed to find the tags",createdTags,foundTags);
         }
 
