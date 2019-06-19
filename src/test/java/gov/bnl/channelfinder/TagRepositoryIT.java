@@ -127,7 +127,7 @@ public class TagRepositoryIT {
 
         // verify the tag exists as expected
         assertTrue("Failed to check the existance of " + testTag.getName(), tagRepository.existsById(testTag.getName()));
-        // verify the tag does not exist as expected
+        // verify the tag does not exist, as expected
         assertTrue("Failed to check the non-existance of 'non-existant-tag'", !tagRepository.existsById("non-existant-tag"));
 
         // clean up

@@ -121,8 +121,10 @@ public class TagManager {
             // create new tag
             XmlTag createdTag = tagRepository.index(tag);
 
-            // update the listed channels in the tag's payloads with the new tag
-            channelRepository.saveAll(tag.getChannels());
+            if(!tag.getChannels().isEmpty()) {
+                // update the listed channels in the tag's payloads with the new tag
+                channelRepository.saveAll(tag.getChannels());
+            }
             return createdTag;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -170,7 +172,9 @@ public class TagManager {
             tags.forEach(tag -> {
                 channels.addAll(tag.getChannels());
             });
-            channelRepository.saveAll(channels);
+            if(!channels.isEmpty()) {
+                channelRepository.saveAll(channels);
+            }
             return (List)createdTags;    
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -258,7 +262,9 @@ public class TagManager {
             XmlTag updatedTag = tagRepository.save(tagName,tag);
 
             // update the listed channels in the tag's payload with the updated tag
-            channelRepository.saveAll(tag.getChannels());
+            if(!tag.getChannels().isEmpty()) {
+                channelRepository.saveAll(tag.getChannels());
+            }
             return updatedTag;        
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -307,7 +313,9 @@ public class TagManager {
             tags.forEach(tag -> {
                 channels.addAll(tag.getChannels());
             });
-            channelRepository.saveAll(channels);
+            if(!channels.isEmpty()) {
+                channelRepository.saveAll(channels);
+            }
             return createdTags;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

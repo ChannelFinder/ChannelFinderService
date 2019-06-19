@@ -125,8 +125,10 @@ public class PropertyManager {
             // create new property
             XmlProperty createdProperty = propertyRepository.index(property);
 
-            // update the listed channels in the property's payload with the new property
-            channelRepository.saveAll(property.getChannels());
+            if(!property.getChannels().isEmpty()) {
+                // update the listed channels in the property's payload with the new property
+                channelRepository.saveAll(property.getChannels());
+            }
             return createdProperty;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -174,7 +176,9 @@ public class PropertyManager {
             properties.forEach(property -> {
                 channels.addAll(property.getChannels());
             });
-            channelRepository.saveAll(channels);
+            if(!channels.isEmpty()) {
+                channelRepository.saveAll(channels);
+            }
             return createdProperties;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -259,8 +263,10 @@ public class PropertyManager {
             // update property
             XmlProperty updatedProperty = propertyRepository.save(propertyName,property);
 
-            // update the listed channels in the property's payload with the updated property
-            channelRepository.saveAll(property.getChannels());
+            if(!property.getChannels().isEmpty()) {
+                // update the listed channels in the property's payload with the updated property
+                channelRepository.saveAll(property.getChannels());
+            }
             return updatedProperty;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -309,7 +315,9 @@ public class PropertyManager {
             properties.forEach(property -> {
                 channels.addAll(property.getChannels());
             });
-            channelRepository.saveAll(channels);
+            if(!channels.isEmpty()) {
+                channelRepository.saveAll(channels);
+            }
             return createdProperties;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -414,9 +422,9 @@ public class PropertyManager {
                     "The property owner cannot be null or empty " + property.toString(), null);
         }
         // 3
-        if (property.getValue() == null || property.getValue().isEmpty()) {
+        if (property.getValue() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The property value cannot be null or empty " + property.toString(), null);
+                    "The property value cannot be null " + property.toString(), null);
         }
         // 4
         List <String> channelNames = property.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());

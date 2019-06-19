@@ -183,6 +183,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             Result result = updateResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
                 // client.get(, options)
+                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
+                findById(channelName);
+                Thread.sleep(2000);
+                findById(channelName);
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
@@ -272,8 +276,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         try {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
-                XmlChannel property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlChannel.class);
-                return Optional.of(property);
+                XmlChannel channel = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlChannel.class);
+                return Optional.of(channel);
             }
         } catch (IOException e) {
             e.printStackTrace();

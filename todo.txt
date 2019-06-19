@@ -8,3 +8,4 @@
  implement anything else from question list that isnt yet implemented
  figure out what to do and what would happen if 2 items have same name
  deal with the possible hack of changing owners or whatev in payloads
+ get cfpy tests to pass
