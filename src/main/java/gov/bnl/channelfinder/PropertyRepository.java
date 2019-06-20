@@ -341,7 +341,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 } 
             }
             return foundProperties;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Failed to find all properties: " + propertyIds, null);

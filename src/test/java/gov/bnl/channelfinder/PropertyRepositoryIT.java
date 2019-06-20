@@ -31,9 +31,9 @@ public class PropertyRepositoryIT {
 
     // set up
     XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-    XmlProperty updateTestProperty = new XmlProperty("updateTestProperty","updateTestOwner");
+    XmlProperty updateTestProperty = new XmlProperty("testProperty","updateTestOwner");
     XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
-    XmlProperty updateTestProperty1 = new XmlProperty("updateTestProperty1","updateTestOwner1");
+    XmlProperty updateTestProperty1 = new XmlProperty("testProperty1","updateTestOwner1");
 
     /**
      * index a single property
@@ -76,10 +76,14 @@ public class PropertyRepositoryIT {
 
         XmlProperty updatedTestProperty = propertyRepository.save(updateTestProperty);
         // verify the property was updated as expected
-        assertEquals("Failed to update the property", updateTestProperty, updatedTestProperty);
+        assertEquals("Failed to update the property with the same name", updateTestProperty, updatedTestProperty);
+
+        XmlProperty updatedTestProperty1 = propertyRepository.save("testProperty",updateTestProperty1);
+        // verify the property was updated as expected
+        assertEquals("Failed to update the property with a different name", updateTestProperty1, updatedTestProperty1);
 
         // clean up
-        propertyRepository.deleteById(updatedTestProperty.getName());
+        propertyRepository.deleteById(updatedTestProperty1.getName());
     }
 
     /**

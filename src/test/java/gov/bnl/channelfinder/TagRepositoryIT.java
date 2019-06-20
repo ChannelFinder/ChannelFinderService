@@ -74,10 +74,14 @@ public class TagRepositoryIT {
 
         XmlTag updatedTestTag = tagRepository.save(updateTestTag);
         // verify the tag was updated as expected
-        assertEquals("Failed to update the tag", updateTestTag, updatedTestTag);
+        assertEquals("Failed to update the tag with the same name", updateTestTag, updatedTestTag);
 
+        XmlTag updatedTestTag1 = tagRepository.save("testTag",updateTestTag1);
+        // verify the tag was updated as expected
+        assertEquals("Failed to update the tag with a different name", updateTestTag1, updatedTestTag1);
+        
         // clean up
-        tagRepository.deleteById(updatedTestTag.getName());
+        tagRepository.deleteById(updatedTestTag1.getName());
     }
 
     /**

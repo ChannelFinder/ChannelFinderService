@@ -385,7 +385,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 } 
             }
             return foundChannels;
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Failed to find all channels: " + channelIds, null);

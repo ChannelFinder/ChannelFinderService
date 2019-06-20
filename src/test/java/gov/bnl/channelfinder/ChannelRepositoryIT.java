@@ -56,12 +56,7 @@ public class ChannelRepositoryIT {
     XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
     XmlProperty updateTestProperty1 = new XmlProperty("updateTestProperty1","updateTestOwner1");
     List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
-    // set up chans
-    //    XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List)createdProperties,(List)createdTags);
-    //    XmlChannel updateTestChannel = new XmlChannel("updateTestChannel","updateTestOwner");
-    //    XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1");    
-    //    XmlChannel updateTestChannel1 = new XmlChannel("updateTestChannel1","updateTestOwner1");
-
+   
     /**
      * index a single channel
      */
@@ -291,10 +286,10 @@ public class ChannelRepositoryIT {
 
         try { 
             notFoundChannels = channelRepository.findAllById(channelNames);
-        } catch (ResponseStatusException e) {            
+        } catch (ResponseStatusException e) { 
         } finally {
             // verify the channels were not found as expected
-            assertNotEquals("Found the channels",testChannels,notFoundChannels);
+            assertNotEquals("Found the channels",testChannels,notFoundChannels);           
         }
 
         Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
@@ -304,7 +299,7 @@ public class ChannelRepositoryIT {
         } catch (ResponseStatusException e) {
         } finally {
             // verify the channels were found as expected
-            assertEquals("Failed to find the tags",createdChannels,foundChannels);
+            assertEquals("Failed to find the tags",createdChannels,foundChannels);           
         }
 
         // clean up
