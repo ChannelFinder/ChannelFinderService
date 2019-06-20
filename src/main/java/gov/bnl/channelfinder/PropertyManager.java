@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -405,8 +406,7 @@ public class PropertyManager {
      * Checks if
      * 1. the property name is not null and matches the name in the body
      * 2. the property owner is not null or empty
-     * 3. the property value is not null or empty
-     * 4. all the listed channels exist
+     * 3. all the listed channels exist and have the property with a non null & non empty value
      * 
      * @param data
      */
@@ -422,19 +422,20 @@ public class PropertyManager {
                     "The property owner cannot be null or empty " + property.toString(), null);
         }
         // 3
-        if (property.getValue() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The property value cannot be null " + property.toString(), null);
-        }
-        // 4
-        List <String> channelNames = property.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
-        for(String channelName:channelNames) {
-            Optional<XmlChannel> ch = channelRepository.findById(channelName);
-            if(!ch.isPresent()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The channel with the name " + channelName + " does not exist");
+        property.getChannels().stream().forEach((channel) -> {
+            if(!channelRepository.existsById(channel.getName())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "The channel with the name " + channel.getName() + " does not exist");
             }
-        }
+            if(channel.getProperties().stream().anyMatch((t) -> {
+                return t.getName().equals(property.getName()) && t.getValue() != null && !t.getValue().isEmpty();
+            })) {
+
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "The channel with the name " + channel.getName()
+                                    + " does not include a valid instance to the property " + property);
+            }
+        });
 
     }
 
