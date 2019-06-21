@@ -134,20 +134,20 @@ public class TagManager {
     /**
      * PUT method for creating multiple tags.
      * 
-     * @param tags - XmlTags to be created
+     * @param testTags - XmlTags to be created
      * @return the list of tags created
      */
     @PutMapping()
-    public List<XmlTag> create(@RequestBody List<XmlTag> tags) {
+    public List<XmlTag> create(@RequestBody Iterable<XmlTag> testTags) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
             // Validate request parameters
-            validateTagRequest(tags);
+            validateTagRequest(testTags);
 
             // check if authorized owner
-            for(XmlTag tag:tags) {
+            for(XmlTag tag:testTags) {
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
@@ -165,11 +165,11 @@ public class TagManager {
             }
 
             // create new tags
-            Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
+            Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
 
             // update the listed channels in the tags' payloads with new tags
             List<XmlChannel> channels = new ArrayList<>();
-            tags.forEach(tag -> {
+            testTags.forEach(tag -> {
                 channels.addAll(tag.getChannels());
             });
             if(!channels.isEmpty()) {
@@ -178,7 +178,7 @@ public class TagManager {
             return (List)createdTags;    
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);      
+                    "User does not have the proper authorization to perform an operation on these tags: " + testTags, null);      
     }
 
     /**
@@ -410,19 +410,19 @@ public class TagManager {
      * 
      * @param data
      */
-    private void validateTagRequest(XmlTag tag) {
+    private void validateTagRequest(XmlTag testTag) {
         // 1 
-        if (tag.getName() == null) {
+        if (testTag.getName() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null " + tag.toString(), null);
+                    "The tag name cannot be null " + testTag.toString(), null);
         }
         // 2
-        if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
+        if (testTag.getOwner() == null || testTag.getOwner().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag owner cannot be null or empty " + tag.toString(), null);
+                    "The tag owner cannot be null or empty " + testTag.toString(), null);
         }
         // 3
-        List <String> channelNames = tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
+        List <String> channelNames = testTag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
         for(String channelName:channelNames) {
             Optional<XmlChannel> ch = channelRepository.findById(channelName);
             if(!ch.isPresent()) {
@@ -442,7 +442,7 @@ public class TagManager {
      * 
      * @param data
      */
-    private void validateTagRequest(List<XmlTag> tags) {
+    private void validateTagRequest(Iterable<XmlTag> tags) {
         for(XmlTag tag: tags) {
             validateTagRequest(tag);
         }
