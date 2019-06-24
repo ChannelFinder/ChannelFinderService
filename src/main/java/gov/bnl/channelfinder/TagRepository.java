@@ -46,17 +46,25 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import gov.bnl.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
+import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 
 @Repository
 public class TagRepository implements CrudRepository<XmlTag, String> {
 
     @Autowired
     ElasticSearchClient esService;
-
-    ObjectMapper objectMapper = new ObjectMapper();
+    
+    @Autowired
+    ChannelRepository channelRepository;
+    
+    ObjectMapper objectMapper = new ObjectMapper().addMixIn(XmlTag.class, OnlyXmlTag.class);
 
     /**
      * create a new tag using the given XmlTag
@@ -144,10 +152,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             boolean present = existingTag.isPresent();
             if(present) {
                 updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
-                List<XmlChannel> channels = existingTag.get().getChannels();
-                channels.removeAll(tag.getChannels());
-                channels.addAll(tag.getChannels());
-                tag.setChannels(channels);
                 updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
             } else {
                 updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
@@ -194,10 +198,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
                 Optional<XmlTag> existingTag = findById(tag.getName());
                 if (existingTag.isPresent()) {
-                    List<XmlChannel> channels = existingTag.get().getChannels();
-                    channels.removeAll(tag.getChannels());
-                    channels.addAll(tag.getChannels());
-                    tag.setChannels(channels);
                     updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
                 } else {
                     IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
@@ -256,6 +256,12 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
                 XmlTag tag = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlTag.class);
+                if(withChannels) {
+                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+                    params.add("~tag",tagId);
+                    List<XmlChannel> chans = channelRepository.search(params);
+                    tag.setChannels(chans);
+                }
                 return Optional.of(tag);
             }
         } catch (IOException e) {

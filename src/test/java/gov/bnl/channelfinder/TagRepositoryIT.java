@@ -28,6 +28,9 @@ public class TagRepositoryIT {
 
     @Autowired
     TagRepository tagRepository;
+    
+    @Autowired
+    ChannelRepository channelRepository;
 
     // set up
     XmlTag testTag = new XmlTag("testTag","testOwner");
@@ -117,9 +120,18 @@ public class TagRepositoryIT {
         Optional<XmlTag> foundTag = tagRepository.findById(createdTag.getName());
         // verify the tag was found as expected
         assertEquals("Failed to find the tag",createdTag,foundTag.get());
+        
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",null,Arrays.asList(createdTag));
+        XmlChannel createdChannel = channelRepository.index(channel);
+        
+        foundTag = tagRepository.findById(createdTag.getName(),true);
+        createdTag.setChannels(Arrays.asList(createdChannel));
+        // verify the tag was found as expected
+        assertEquals("Failed to find the tag",createdTag,foundTag.get());
 
         // clean up
         tagRepository.deleteById(createdTag.getName());
+        channelRepository.deleteById(createdChannel.getName());
     }
 
     /**

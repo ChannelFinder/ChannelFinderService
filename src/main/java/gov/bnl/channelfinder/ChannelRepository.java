@@ -183,10 +183,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             Result result = updateResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
                 // client.get(, options)
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
-                findById(channelName);
-                Thread.sleep(2000);
-                findById(channelName);
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {

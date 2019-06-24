@@ -44,6 +44,8 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,9 +57,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     @Autowired
     ElasticSearchClient esService;
+    
+    @Autowired
+    ChannelRepository channelRepository;
 
-    ObjectMapper objectMapper = new ObjectMapper();
-
+    ObjectMapper objectMapper = new ObjectMapper().addMixIn(XmlProperty.class, OnlyNameOwnerXmlProperty.class);
     /**
      * create a new property using the given XmlProperty
      * 
@@ -68,7 +72,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     public <S extends XmlProperty> S index(XmlProperty property) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            objectMapper.addMixIn(XmlProperty.class, OnlyNameOwnerXmlProperty.class);
             IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
                     .id(property.getName())
                     .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
@@ -145,10 +148,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             boolean present = existingProperty.isPresent();
             if(present) {
                 updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
-                List<XmlChannel> channels = existingProperty.get().getChannels();
-                channels.removeAll(property.getChannels());
-                channels.addAll(property.getChannels());
-                property.setChannels(channels);
                 updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
             } else {
                 updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
@@ -195,10 +194,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
                 Optional<XmlProperty> existingProperty = findById(property.getName());
                 if (existingProperty.isPresent()) {
-                    List<XmlChannel> channels = existingProperty.get().getChannels();
-                    channels.removeAll(property.getChannels());
-                    channels.addAll(property.getChannels());
-                    property.setChannels(channels);
                     updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                 } else {
                     IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
@@ -257,6 +252,12 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
                 XmlProperty property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlProperty.class);
+                if(withChannels) {
+                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+                    params.add(propertyId,"*");
+                    List<XmlChannel> chans = channelRepository.search(params);
+                    property.setChannels(chans);
+                }
                 return Optional.of(property);
             }
         } catch (IOException e) {

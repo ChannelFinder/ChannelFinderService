@@ -29,6 +29,9 @@ public class PropertyRepositoryIT {
     @Autowired
     PropertyRepository propertyRepository;
 
+    @Autowired
+    ChannelRepository channelRepository;
+    
     // set up
     XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
     XmlProperty updateTestProperty = new XmlProperty("testProperty","updateTestOwner");
@@ -120,8 +123,18 @@ public class PropertyRepositoryIT {
         // verify the property was found as expected
         assertEquals("Failed to find the property",createdProperty,foundProperty.get());
 
+        testProperty.setValue("test");
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(testProperty),null);
+        XmlChannel createdChannel = channelRepository.index(channel);
+        
+        foundProperty = propertyRepository.findById(createdProperty.getName(),true);
+        createdProperty.setChannels(Arrays.asList(createdChannel));
+        // verify the property was found as expected
+        assertEquals("Failed to find the property",createdProperty,foundProperty.get());
+        
         // clean up
         propertyRepository.deleteById(createdProperty.getName());
+        channelRepository.deleteById(createdChannel.getName());
     }
 
     /**
