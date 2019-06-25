@@ -134,7 +134,7 @@ public class ChannelManager {
      * @return the list of channels created
      */
     @PutMapping
-    public Iterable<XmlChannel> create(@RequestBody List<XmlChannel> channels) {
+    public Iterable<XmlChannel> create(@RequestBody Iterable<XmlChannel> channels) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             // Validate request parameters
@@ -158,7 +158,7 @@ public class ChannelManager {
 
             }
 
-            channels.stream().forEach(log -> {
+            channels.forEach(log -> {
                 channelManagerAudit.info("PUT" + log.toLog());
             });
 
@@ -216,7 +216,7 @@ public class ChannelManager {
      * @result the updated channels
      */
     @PostMapping()
-    public Iterable<XmlChannel> update(@RequestBody List<XmlChannel> channels) {
+    public Iterable<XmlChannel> update(@RequestBody Iterable<XmlChannel> channels) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
@@ -340,7 +340,7 @@ public class ChannelManager {
      * 
      * @param data
      */
-    private void validateChannelRequest(List<XmlChannel> channels) {
+    private void validateChannelRequest(Iterable<XmlChannel> channels) {
         for(XmlChannel channel: channels) {
             validateChannelRequest(channel);
         }

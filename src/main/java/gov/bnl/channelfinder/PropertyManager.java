@@ -143,7 +143,7 @@ public class PropertyManager {
      * @return the list of properties created
      */
     @PutMapping()
-    public Iterable<XmlProperty> create(@RequestBody List<XmlProperty> properties) {
+    public Iterable<XmlProperty> create(@RequestBody Iterable<XmlProperty> properties) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
@@ -284,7 +284,7 @@ public class PropertyManager {
      * @return the updated properties
      */
     @PostMapping()
-    public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
+    public Iterable<XmlProperty> update(@RequestBody Iterable<XmlProperty> properties) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
@@ -448,7 +448,7 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(List<XmlProperty> properties) {
+    private void validatePropertyRequest(Iterable<XmlProperty> properties) {
         for(XmlProperty property: properties) {
             validatePropertyRequest(property);
         }

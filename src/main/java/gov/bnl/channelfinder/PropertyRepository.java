@@ -80,7 +80,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             /// verify the creation of the property
             Result result = indexResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(property.getName()).get();
             }
         } catch (Exception e) {
@@ -98,7 +97,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @return the created properties
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlProperty> Iterable<S> indexAll(List<XmlProperty> properties) {
+    public <S extends XmlProperty> Iterable<S> indexAll(Iterable<XmlProperty> properties) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
@@ -122,7 +121,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         createdPropertyIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdPropertyIds);
             }
         } catch (Exception e) {
@@ -215,7 +213,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         createdPropertyIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdPropertyIds);
             }
         } catch (Exception e) {

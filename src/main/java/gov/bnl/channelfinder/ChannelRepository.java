@@ -89,7 +89,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             /// verify the creation of the channel
             Result result = indexResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
@@ -107,7 +106,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the created channels
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> Iterable<S> indexAll(List<XmlChannel> channels) {
+    public <S extends XmlChannel> Iterable<S> indexAll(Iterable<XmlChannel> channels) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
@@ -131,7 +130,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         createdChannelIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
@@ -246,7 +244,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         createdChannelIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {

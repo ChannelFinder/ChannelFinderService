@@ -161,11 +161,10 @@ public class PropertyRepositoryIT {
         List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
         try {
             Set<XmlProperty> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
-            Thread.sleep(2000);
             Set<XmlProperty> listedProperties = Sets.newHashSet(propertyRepository.findAll());
             // verify the tag was created as expected
             assertEquals("Failed to list all created tags", createdProperties, listedProperties);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             // clean up

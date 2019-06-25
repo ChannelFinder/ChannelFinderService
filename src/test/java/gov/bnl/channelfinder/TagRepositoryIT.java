@@ -158,11 +158,10 @@ public class TagRepositoryIT {
         List<XmlTag> testTags = Arrays.asList(testTag, testTag1);
         try {
             Set<XmlTag> createdTags = Sets.newHashSet(tagRepository.indexAll(testTags));
-            Thread.sleep(2000);
             Set<XmlTag> listedTags = Sets.newHashSet(tagRepository.findAll());
             // verify the tag was created as expected
             assertEquals("Failed to list all created tags", createdTags, listedTags);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             // clean up

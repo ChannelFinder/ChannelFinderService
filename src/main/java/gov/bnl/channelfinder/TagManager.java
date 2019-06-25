@@ -58,7 +58,7 @@ public class TagManager {
      * @return list of all tags
      */
     @GetMapping
-    public Iterable<XmlTag> list(Map<String, String> map) {
+    public Iterable<XmlTag> list() {
         return tagRepository.findAll();
     }
 
@@ -138,7 +138,7 @@ public class TagManager {
      * @return the list of tags created
      */
     @PutMapping()
-    public List<XmlTag> create(@RequestBody Iterable<XmlTag> testTags) {
+    public Iterable<XmlTag> create(@RequestBody Iterable<XmlTag> testTags) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
@@ -286,7 +286,7 @@ public class TagManager {
      * @return the updated tags
      */
     @PostMapping()
-    public Iterable<XmlTag> update(@RequestBody List<XmlTag> tags) {
+    public Iterable<XmlTag> update(@RequestBody Iterable<XmlTag> tags) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
@@ -356,7 +356,6 @@ public class TagManager {
                     "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
     }
 
-
     /**
      * DELETE method for deleting the tag identified by <tt>tagName</tt> from the
      * channel <tt>channelName</tt> (both path parameters).
@@ -394,7 +393,6 @@ public class TagManager {
                     "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);       
     }
 
-
     /**
      * Check that the existing tag and the tag in the request body match
      * 
@@ -405,7 +403,6 @@ public class TagManager {
     boolean validateTag(XmlTag existing, XmlTag request) {
         return existing.getName().equals(request.getName());
     }
-
 
     /**
      * Checks if
@@ -438,7 +435,6 @@ public class TagManager {
 
     }
 
-
     /**
      * Checks if
      * 1. the tag names are not null
@@ -452,7 +448,6 @@ public class TagManager {
             validateTagRequest(tag);
         }
     }
-
 
     /**
      * Checks if

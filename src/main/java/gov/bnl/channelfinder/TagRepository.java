@@ -84,7 +84,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             /// verify the creation of the tag
             Result result = indexResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(tag.getName()).get();
             }
         } catch (Exception e) {
@@ -126,7 +125,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                         createdTagIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdTagIds);
             }
         } catch (Exception e) {
@@ -219,7 +217,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                         createdTagIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_TAG_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdTagIds);
             }
         } catch (Exception e) {
