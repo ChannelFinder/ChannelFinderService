@@ -327,7 +327,10 @@ public class ChannelManager {
             if(!property.isPresent()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The property with the name " + propertyName + " does not exist");
-            }
+            } //else if(property.get().getValue() == null || property.get().getValue().isEmpty()) {
+//                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+//                        "The property with the name " + propertyName + " is null or empty");
+//            }
         }
 
     }

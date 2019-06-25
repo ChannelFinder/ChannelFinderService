@@ -52,17 +52,20 @@ public class TagManagerIT {
     /**
      * list all tags
      */
-    @Test
+    @Test // might actually work but messed up by full database
     public void listXmlTags() {
         List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
         List<XmlChannel> createdChannels = (List<XmlChannel>) channelRepository.indexAll(testChannels);
         testTag1.setChannels(testChannels);
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
-        List<XmlTag> createdTags = tagManager.create(testTags);
+        Iterable<XmlTag> createdTags = tagManager.create(testTags);
 
-        Iterable<XmlTag> tagList = tagManager.list(null);
+        Iterable<XmlTag> tagList = tagManager.list();
+        for(XmlTag tag: createdTags) {
+            tag.setChannels(null);
+        }
         // verify the tags were listed as expected
-        assertEquals("Failed to list all tags",(Iterable<XmlTag>)createdTags,tagList);        
+        assertEquals("Failed to list all tags",createdTags,tagList);        
 
         // clean up
         createdTags.forEach(createdTag -> {
@@ -82,7 +85,7 @@ public class TagManagerIT {
         List<XmlChannel> createdChannels = (List<XmlChannel>) channelRepository.indexAll(testChannels);
         testTag1.setChannels(testChannels);
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
-        List<XmlTag> createdTags = tagManager.create(testTags);
+        List<XmlTag> createdTags = (List)tagManager.create(testTags);
 
         XmlTag readTag = tagManager.read(createdTags.get(0).getName(), false);
         // verify the tag was read as expected
@@ -321,6 +324,9 @@ public class TagManagerIT {
 
     }
 
+    
+    
+    
     /**
      * test the renaming of a tag (renameTag method)
      */
