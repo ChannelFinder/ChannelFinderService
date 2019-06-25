@@ -147,15 +147,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             Optional<XmlProperty> existingProperty = findById(propertyName);
             boolean present = existingProperty.isPresent();
             if(present) {
-                updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
-                updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-            } else {
-                updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
-                IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
-                        .id(property.getName())
-                        .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-                updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
+                deleteById(propertyName);
             }
+            updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
+            IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
+                    .id(property.getName())
+                    .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
+            updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the updating/saving of the property

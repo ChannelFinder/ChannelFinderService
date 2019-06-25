@@ -157,8 +157,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             Optional<XmlChannel> existingChannel = findById(channelName);
             boolean present = existingChannel.isPresent();
             if(present) {
-                updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName);
-
                 List<XmlTag> tags = existingChannel.get().getTags();
                 tags.removeAll(channel.getTags());
                 tags.addAll(channel.getTags());
@@ -169,14 +167,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 properties.addAll(channel.getProperties());
                 channel.setProperties(properties);
 
-                updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-            } else {
-                updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-                        .id(channel.getName())
-                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-                updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
-            }
+                deleteById(channelName);
+            } 
+            updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+                    .id(channel.getName())
+                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+            updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the creation of the channel

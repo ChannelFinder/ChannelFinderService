@@ -251,19 +251,24 @@ public class TagManager {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
+            List<XmlChannel> chans = null;
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
                 } 
+                chans = existingTag.get().getChannels();
             } 
-
+            
             // update tag
             XmlTag updatedTag = tagRepository.save(tagName,tag);
 
             // update the listed channels in the tag's payload with the updated tag
             if(!tag.getChannels().isEmpty()) {
                 channelRepository.saveAll(tag.getChannels());
+            }
+            if(!chans.isEmpty()) {
+                channelRepository.saveAll(chans);
             }
             return updatedTag;        
         } else

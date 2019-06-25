@@ -151,15 +151,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             Optional<XmlTag> existingTag = findById(tagName);
             boolean present = existingTag.isPresent();
             if(present) {
-                updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
-                updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
-            } else {
-                updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
-                IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
-                        .id(tag.getName())
-                        .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
-                updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON).upsert(indexRequest);
-            }
+                deleteById(tagName);
+            } 
+            updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
+            IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE)
+                    .id(tag.getName())
+                    .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
+            updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON).upsert(indexRequest);
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the updating/saving of the tag
