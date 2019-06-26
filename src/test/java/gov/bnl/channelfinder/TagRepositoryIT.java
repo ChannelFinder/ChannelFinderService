@@ -127,7 +127,7 @@ public class TagRepositoryIT {
         XmlChannel createdChannel = channelRepository.index(channel);
         
         foundTag = tagRepository.findById(createdTag.getName(),true);
-        createdTag.setChannels(Arrays.asList(createdChannel));
+        createdTag.setChannels(Arrays.asList(new XmlChannel(channel.getName(),channel.getOwner())));
         // verify the tag was found as expected
         assertEquals("Failed to find the tag",createdTag,foundTag.get());
 

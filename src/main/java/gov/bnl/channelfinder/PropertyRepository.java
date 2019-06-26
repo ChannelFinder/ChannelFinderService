@@ -251,6 +251,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
                     params.add(propertyId,"*");
                     List<XmlChannel> chans = channelRepository.search(params);
+                    chans.forEach(chan -> chan.setTags(new ArrayList<XmlTag>()));
+                    chans.forEach(chan -> chan.setProperties(new ArrayList<XmlProperty>()));
                     property.setChannels(chans);
                 }
                 return Optional.of(property);

@@ -121,12 +121,18 @@ public class TagManager {
 
             // create new tag
             XmlTag createdTag = tagRepository.index(tag);
+            List<XmlChannel> chans = new ArrayList<XmlChannel>();
 
-            if(!tag.getChannels().isEmpty()) {
-                tag.getChannels().forEach(channel -> channel.setTags(Arrays.asList(createdTag)));
-                // update the listed channels in the tag's payloads with the new tag
-                channelRepository.saveAll(tag.getChannels());
+            for(XmlChannel chan: tag.getChannels()) {
+                chans.add(new XmlChannel(chan.getName(),chan.getOwner()));
             }
+            
+            if(!tag.getChannels().isEmpty()) {
+                tag.getChannels().forEach(channel -> channel.setTags(Arrays.asList(createdTag)));                
+                channelRepository.saveAll(tag.getChannels());                
+            }
+            
+            createdTag.setChannels(chans);
             return createdTag;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

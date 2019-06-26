@@ -255,6 +255,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
                     params.add("~tag",tagId);
                     List<XmlChannel> chans = channelRepository.search(params);
+                    chans.forEach(chan -> chan.setTags(new ArrayList<XmlTag>()));
+                    chans.forEach(chan -> chan.setProperties(new ArrayList<XmlProperty>()));
                     tag.setChannels(chans);
                 }
                 return Optional.of(tag);
