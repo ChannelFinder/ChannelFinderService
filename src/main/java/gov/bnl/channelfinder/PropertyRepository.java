@@ -356,19 +356,27 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @param property - property to be deleted
      */
     @Override
-    public void deleteById(String property) {
+    public void deleteById(String propertyName) {
         RestHighLevelClient client = esService.getIndexClient();
-        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property);
+        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
 
         try {
             DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
             Result result = response.getResult();
             if (!result.equals(Result.DELETED)) 
-                throw new Exception();                    
+                throw new Exception();
+         // delete property from channels
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            params.add(propertyName,"*");
+            List<XmlChannel> chans = channelRepository.search(params);
+            if(!chans.isEmpty()) {
+                chans.forEach(chan -> chan.removeProperty(new XmlProperty(propertyName, "")));
+                channelRepository.indexAll(chans);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to delete property: " + property, null);
+                    "Failed to delete property: " + propertyName, null);
         }
     }
 

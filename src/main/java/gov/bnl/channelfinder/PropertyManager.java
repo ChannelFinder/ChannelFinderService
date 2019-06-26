@@ -6,6 +6,7 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.PROPERTY_RESOURCE_URI;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;

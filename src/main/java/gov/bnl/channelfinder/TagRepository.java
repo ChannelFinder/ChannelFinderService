@@ -362,7 +362,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Override
     public void deleteById(String tagName) {
         RestHighLevelClient client = esService.getIndexClient();
-
         DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
 
         try {
@@ -370,6 +369,14 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             Result result = response.getResult();
             if (!result.equals(Result.DELETED)) {
                 throw new Exception();
+            }
+            // delete tag from channels
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            params.add("~tag",tagName);
+            List<XmlChannel> chans = channelRepository.search(params);
+            if(!chans.isEmpty()) {
+                chans.forEach(chan -> chan.removeTag(new XmlTag(tagName, "")));
+                channelRepository.indexAll(chans);
             }
         } catch (Exception e) {
             e.printStackTrace();

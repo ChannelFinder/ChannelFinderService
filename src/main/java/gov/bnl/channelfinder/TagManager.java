@@ -6,6 +6,7 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -122,6 +123,7 @@ public class TagManager {
             XmlTag createdTag = tagRepository.index(tag);
 
             if(!tag.getChannels().isEmpty()) {
+                tag.getChannels().forEach(channel -> channel.setTags(Arrays.asList(createdTag)));
                 // update the listed channels in the tag's payloads with the new tag
                 channelRepository.saveAll(tag.getChannels());
             }
@@ -138,16 +140,16 @@ public class TagManager {
      * @return the list of tags created
      */
     @PutMapping()
-    public Iterable<XmlTag> create(@RequestBody Iterable<XmlTag> testTags) {
+    public Iterable<XmlTag> create(@RequestBody Iterable<XmlTag> tags) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
             // Validate request parameters
-            validateTagRequest(testTags);
+            validateTagRequest(tags);
 
             // check if authorized owner
-            for(XmlTag tag:testTags) {
+            for(XmlTag tag: tags) {
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
@@ -165,20 +167,24 @@ public class TagManager {
             }
 
             // create new tags
-            Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
+            Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
 
             // update the listed channels in the tags' payloads with new tags
             List<XmlChannel> channels = new ArrayList<>();
-            testTags.forEach(tag -> {
-                channels.addAll(tag.getChannels());
-            });
+            for(XmlTag tag: tags) {
+                for(XmlChannel chan: tag.getChannels()) {
+                    XmlTag t = new XmlTag(tag.getName(),tag.getOwner());
+                    chan.setTags(Arrays.asList(t));
+                    channels.add(chan);
+                }
+            }
             if(!channels.isEmpty()) {
                 channelRepository.saveAll(channels);
             }
-            return (List)createdTags;    
+            return createdTags;    
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on these tags: " + testTags, null);      
+                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);      
     }
 
     /**
@@ -259,15 +265,17 @@ public class TagManager {
                 } 
                 chans = existingTag.get().getChannels();
             } 
-            
+
             // update tag
             XmlTag updatedTag = tagRepository.save(tagName,tag);
 
             // update the listed channels in the tag's payload with the updated tag
             if(!tag.getChannels().isEmpty()) {
+                tag.getChannels().forEach(channel -> channel.setTags(Arrays.asList(updatedTag)));
                 channelRepository.saveAll(tag.getChannels());
             }
             if(!chans.isEmpty()) {
+                chans.forEach(chan -> chan.setTags(Arrays.asList(updatedTag)));
                 channelRepository.saveAll(chans);
             }
             return updatedTag;        
@@ -315,9 +323,13 @@ public class TagManager {
 
             // update the listed channels in the tags' payloads with the updated tags
             List<XmlChannel> channels = new ArrayList<>();
-            tags.forEach(tag -> {
-                channels.addAll(tag.getChannels());
-            });
+            for(XmlTag tag: tags) {
+                for(XmlChannel chan: tag.getChannels()) {
+                    XmlTag t = new XmlTag(tag.getName(),tag.getOwner());
+                    chan.setTags(Arrays.asList(t));
+                    channels.add(chan);
+                }
+            }
             if(!channels.isEmpty()) {
                 channelRepository.saveAll(channels);
             }

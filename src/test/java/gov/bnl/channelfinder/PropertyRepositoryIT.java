@@ -14,6 +14,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
@@ -214,9 +216,22 @@ public class PropertyRepositoryIT {
     @Test
     public void deleteXmlTag() {
         XmlProperty createdProperty = propertyRepository.index(testProperty);
+        createdProperty.setValue("testValue");
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(createdProperty),null);
+        XmlChannel createdChannel = channelRepository.index(channel);
 
         propertyRepository.deleteById(createdProperty.getName());
         // verify the property was deleted as expected
         assertNotEquals("Failed to delete property",testProperty,propertyRepository.findById(testProperty.getName()));
+        
+        XmlChannel foundChannel = channelRepository.findById("testChannel").get();
+        // verify the property was deleted from channels as expected
+        assertTrue("Failed to remove property from channel",foundChannel.getProperties().isEmpty());
+        
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        params.add("testProperty","*");
+        List<XmlChannel> chans = channelRepository.search(params);
+        // verify the property was deleted from channels as expected
+        assertTrue("Failed to remove property from channel",chans.isEmpty());
     }
 }
