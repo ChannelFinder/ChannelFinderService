@@ -162,11 +162,7 @@ public class TagManagerIT {
         try {
             XmlTag foundTag = tagRepository.findById(testTagC.getName(), true).get();
             // verify the tag was created as expected
-            //assertEquals("Failed to create the tag w/ channels",createdTag,foundTag); 
-            assertEquals("",createdTag.getName(),foundTag.getName());
-            assertEquals("",createdTag.getOwner(),foundTag.getOwner());
-            assertTrue("",createdTag.getChannels().containsAll(foundTag.getChannels()));
-            assertTrue("",foundTag.getChannels().containsAll(createdTag.getChannels()));
+            assertTrue("Failed to create the tag w/ channels",tagCompare(testTagC,foundTag)); 
         } catch (Exception e) {
             assertTrue("Failed to create/find the tag w/ channels",false);
         }
@@ -175,7 +171,7 @@ public class TagManagerIT {
         try {
             XmlTag foundTag = tagRepository.findById(testTagC1.getName(), true).get();
             // verify the tag was created as expected
-            assertEquals("Failed to create the tag w/ channels",createdTag1,foundTag);
+            assertTrue("Failed to create the tag w/ channels",tagCompare(testTagC1,foundTag)); 
         } catch (Exception e) {
             assertTrue("Failed to create/find the tag w/ channels",false);
         }
@@ -184,7 +180,7 @@ public class TagManagerIT {
         try {
             XmlTag foundTag = tagRepository.findById(updateTestTagC.getName(), true).get();
             // verify the tag was created as expected
-            assertEquals("Failed to create the tag w/ channels", createdTag,foundTag);
+            assertTrue("Failed to create the tag w/ channels",tagCompare(updateTestTagC,foundTag)); 
         } catch (Exception e) {
             assertTrue("Failed to create/find the tag w/ channels",false);
         }
@@ -193,16 +189,17 @@ public class TagManagerIT {
         try {
             XmlTag foundTag = tagRepository.findById(testTagC2.getName(), true).get();           
             // verify the tag was created as expected
-            assertEquals("Failed to create the tag w/ channels",createdTag2,foundTag);
+            assertTrue("Failed to create the tag w/ channels",tagCompare(testTagC2,foundTag)); 
         } catch (Exception e) {
             assertTrue("Failed to create/find the tag w/ channels",false);
         }
         assertFalse("Failed to replace the old tag", tagRepository.existsById(testTagC.getName()));
 
-        // clean up
-        testTags.forEach(tag -> {
-            tagManager.remove(tag.getName());
-        }); 
+        for(XmlTag tag: testTags) {
+            try {
+                tagManager.remove(tag.getName());
+            } catch(Exception e) {}
+        }
         createdChannels.forEach(createdChannel -> {
             channelRepository.deleteById(createdChannel.getName());
         });
@@ -486,6 +483,14 @@ public class TagManagerIT {
         // assertEquals("Failed to remove the tag", null,
         // tagManager.read("test-tag",false));
         tagManager.remove("test-tag");
+    }
+    
+    public static boolean tagCompare(XmlTag tag1, XmlTag tag2) {
+        if(!(tag1.getName().equals(tag2.getName())) || !(tag1.getOwner().equals(tag2.getOwner()))) 
+            return false;
+        if(!(tag1.getChannels().containsAll(tag2.getChannels())) || !(tag2.getChannels().containsAll(tag1.getChannels())))
+            return false;
+        return true;
     }
 
 }

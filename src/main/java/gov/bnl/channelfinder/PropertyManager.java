@@ -129,7 +129,13 @@ public class PropertyManager {
 
             if(!property.getChannels().isEmpty()) {
                 // update the listed channels in the property's payload with the new property
-                channelRepository.saveAll(property.getChannels());
+                Iterable<XmlChannel> chans = channelRepository.saveAll(property.getChannels());
+                // TODO validate the above result
+                List<XmlChannel> chanList = new ArrayList<XmlChannel>();
+                for(XmlChannel chan: chans) {
+                    chanList.add(chan);
+                }
+                createdProperty.setChannels(chanList);
             }
             return createdProperty;
         } else
@@ -165,6 +171,14 @@ public class PropertyManager {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
                     } 
+                }         
+            }
+
+            // delete existing property
+            for(XmlProperty property: properties) {
+                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+                boolean present = existingProperty.isPresent();
+                if(present) {
                     // delete existing property
                     propertyRepository.deleteById(property.getName());
                 }         
@@ -179,8 +193,9 @@ public class PropertyManager {
                 channels.addAll(property.getChannels());
             });
             if(!channels.isEmpty()) {
-                channelRepository.saveAll(channels);
+                Iterable<XmlChannel> chans = channelRepository.saveAll(channels);
             }
+            // TODO should return created props with properly organized saved channels, but it would be very complicated...
             return createdProperties;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -433,8 +448,8 @@ public class PropertyManager {
             })) {
 
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "The channel with the name " + channel.getName()
-                                    + " does not include a valid instance to the property " + property);
+                        "The channel with the name " + channel.getName()
+                        + " does not include a valid instance to the property " + property);
             }
         });
 
