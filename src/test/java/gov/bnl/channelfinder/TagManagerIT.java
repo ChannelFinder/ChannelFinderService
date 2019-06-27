@@ -162,7 +162,11 @@ public class TagManagerIT {
         try {
             XmlTag foundTag = tagRepository.findById(testTagC.getName(), true).get();
             // verify the tag was created as expected
-            assertEquals("Failed to create the tag w/ channels",createdTag,foundTag); 
+            //assertEquals("Failed to create the tag w/ channels",createdTag,foundTag); 
+            assertEquals("",createdTag.getName(),foundTag.getName());
+            assertEquals("",createdTag.getOwner(),foundTag.getOwner());
+            assertTrue("",createdTag.getChannels().containsAll(foundTag.getChannels()));
+            assertTrue("",foundTag.getChannels().containsAll(createdTag.getChannels()));
         } catch (Exception e) {
             assertTrue("Failed to create/find the tag w/ channels",false);
         }
