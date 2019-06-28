@@ -9,6 +9,7 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -252,7 +253,15 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     params.add(propertyId,"*");
                     List<XmlChannel> chans = channelRepository.search(params);
                     chans.forEach(chan -> chan.setTags(new ArrayList<XmlTag>()));
-                    chans.forEach(chan -> chan.setProperties(new ArrayList<XmlProperty>()));
+                    XmlProperty p = null;
+                    for(XmlChannel chan: chans) {
+                        for(XmlProperty prop: chan.getProperties())
+                        {
+                            if(prop.getName().equals(propertyId))
+                                p = prop;
+                        }
+                        chan.setProperties(Arrays.asList(p));
+                    }
                     property.setChannels(chans);
                 }
                 return Optional.of(property);

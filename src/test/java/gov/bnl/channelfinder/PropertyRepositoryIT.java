@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -126,11 +127,11 @@ public class PropertyRepositoryIT {
         assertEquals("Failed to find the property",createdProperty,foundProperty.get());
 
         testProperty.setValue("test");
-        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(testProperty),null);
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(testProperty),new ArrayList<XmlTag>());
         XmlChannel createdChannel = channelRepository.index(channel);
         
         foundProperty = propertyRepository.findById(createdProperty.getName(),true);
-        createdProperty.setChannels(Arrays.asList(createdChannel));
+        createdProperty.setChannels(Arrays.asList(channel));
         // verify the property was found as expected
         assertEquals("Failed to find the property",createdProperty,foundProperty.get());
         
