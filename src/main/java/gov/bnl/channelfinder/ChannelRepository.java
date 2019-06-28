@@ -49,6 +49,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
@@ -514,7 +515,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 searchSourceBuilder.from(from);
             }
             searchSourceBuilder.query(qb);
-            searchSourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC));
+            searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
             searchRequest.types(ES_CHANNEL_TYPE);
             searchRequest.source(searchSourceBuilder);
 
