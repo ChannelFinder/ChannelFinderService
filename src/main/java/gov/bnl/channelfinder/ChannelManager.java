@@ -38,7 +38,6 @@ import gov.bnl.channelfinder.AuthorizationService.ROLES;
 @EnableAutoConfiguration
 public class ChannelManager {
 
-    // private SecurityContext securityContext;
     static Logger channelManagerAudit = Logger.getLogger(ChannelManager.class.getName() + ".audit");
     static Logger log = Logger.getLogger(ChannelManager.class.getName());
 
@@ -79,6 +78,7 @@ public class ChannelManager {
     @GetMapping("/{channelName}")
     public XmlChannel read(@PathVariable("channelName") String channelName) {
         channelManagerAudit.info("getting channel: " + channelName);
+
         Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
         if (foundChannel.isPresent())
             return foundChannel.get();
@@ -105,7 +105,7 @@ public class ChannelManager {
             validateChannelRequest(channel);
 
             // check if authorized owner
-            Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
             boolean present = existingChannel.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -153,9 +153,17 @@ public class ChannelManager {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
                     } 
+                } 
+            }
+
+            // delete existing channels
+            for(XmlChannel channel: channels) {
+                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+                boolean present = existingChannel.isPresent();
+                if(present) {
+                    // delete existing channel
                     channelRepository.deleteById(channel.getName());
                 } 
-
             }
 
             channels.forEach(log -> {
@@ -164,7 +172,6 @@ public class ChannelManager {
 
             // create new channels
             return channelRepository.indexAll(channels);
-            // return Lists.newArrayList(channelRepository.indexAll(data));
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
@@ -244,8 +251,6 @@ public class ChannelManager {
 
             // update channels
             return channelRepository.saveAll(channels);
-            //return Lists.newArrayList(channelRepository.saveAll(data));
-
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
@@ -328,9 +333,9 @@ public class ChannelManager {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The property with the name " + propertyName + " does not exist");
             } //else if(property.get().getValue() == null || property.get().getValue().isEmpty()) {
-//                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-//                        "The property with the name " + propertyName + " is null or empty");
-//            }
+            //                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            //                        "The property with the name " + propertyName + " is null or empty");
+            //            }
         }
 
     }

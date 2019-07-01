@@ -39,7 +39,6 @@ import gov.bnl.channelfinder.AuthorizationService.ROLES;
 @EnableAutoConfiguration
 public class TagManager {
 
-    // private SecurityContext securityContext;
     static Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
     static Logger log = Logger.getLogger(TagManager.class.getName());
 

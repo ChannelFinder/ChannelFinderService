@@ -161,9 +161,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 tags.addAll(channel.getTags());
                 channel.setTags(tags);
 
-                List<XmlProperty> properties = existingChannel.get().getProperties();
-                properties.removeAll(channel.getProperties());
-                properties.addAll(channel.getProperties());
+                List<XmlProperty> properties = channel.getProperties();
+                List<String> propNames = new ArrayList<String>();
+                for(XmlProperty prop: properties) {
+                    propNames.add(prop.getName());
+                }
+                for(XmlProperty prop: existingChannel.get().getProperties()) {
+                    if(!propNames.contains(prop.getName())) {
+                        properties.add(prop);
+                    }
+                }
+                properties.removeIf(prop -> (prop.getValue().isEmpty() || prop.getValue() == null || prop.getValue().equals("")));
                 channel.setProperties(properties);
 
                 deleteById(channelName);
@@ -217,9 +225,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     tags.addAll(channel.getTags());
                     channel.setTags(tags);
 
-                    List<XmlProperty> properties = existingChannel.get().getProperties();
-                    properties.removeAll(channel.getProperties());
-                    properties.addAll(channel.getProperties());
+                    List<XmlProperty> properties = channel.getProperties();
+                    List<String> propNames = new ArrayList<String>();
+                    for(XmlProperty prop: properties) {
+                        propNames.add(prop.getName());
+                    }
+                    for(XmlProperty prop: existingChannel.get().getProperties()) {
+                        if(!propNames.contains(prop.getName())) {
+                            properties.add(prop);
+                        }
+                    }
+                    properties.removeIf(prop -> (prop.getValue().isEmpty() || prop.getValue() == null || prop.getValue().equals("")));
                     channel.setProperties(properties);
 
                     updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
