@@ -9,6 +9,7 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,6 +45,8 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -55,9 +58,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     @Autowired
     ElasticSearchClient esService;
+    
+    @Autowired
+    ChannelRepository channelRepository;
 
-    ObjectMapper objectMapper = new ObjectMapper();
-
+    ObjectMapper objectMapper = new ObjectMapper().addMixIn(XmlProperty.class, OnlyNameOwnerXmlProperty.class);
     /**
      * create a new property using the given XmlProperty
      * 
@@ -68,7 +73,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     public <S extends XmlProperty> S index(XmlProperty property) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
-            objectMapper.addMixIn(XmlProperty.class, OnlyNameOwnerXmlProperty.class);
             IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
                     .id(property.getName())
                     .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
@@ -77,7 +81,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             /// verify the creation of the property
             Result result = indexResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(property.getName()).get();
             }
         } catch (Exception e) {
@@ -95,7 +98,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @return the created properties
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlProperty> Iterable<S> indexAll(List<XmlProperty> properties) {
+    public <S extends XmlProperty> Iterable<S> indexAll(Iterable<XmlProperty> properties) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
@@ -119,7 +122,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         createdPropertyIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdPropertyIds);
             }
         } catch (Exception e) {
@@ -144,19 +146,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             Optional<XmlProperty> existingProperty = findById(propertyName);
             boolean present = existingProperty.isPresent();
             if(present) {
-                updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
-                List<XmlChannel> channels = existingProperty.get().getChannels();
-                channels.removeAll(property.getChannels());
-                channels.addAll(property.getChannels());
-                property.setChannels(channels);
-                updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-            } else {
-                updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
-                IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
-                        .id(property.getName())
-                        .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-                updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
+                deleteById(propertyName);
             }
+            updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
+            IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
+                    .id(property.getName())
+                    .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
+            updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the updating/saving of the property
@@ -195,10 +191,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
                 Optional<XmlProperty> existingProperty = findById(property.getName());
                 if (existingProperty.isPresent()) {
-                    List<XmlChannel> channels = existingProperty.get().getChannels();
-                    channels.removeAll(property.getChannels());
-                    channels.addAll(property.getChannels());
-                    property.setChannels(channels);
                     updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
                 } else {
                     IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
@@ -222,7 +214,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         createdPropertyIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_PROPERTY_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdPropertyIds);
             }
         } catch (Exception e) {
@@ -257,6 +248,22 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
             if (response.isExists()) {
                 XmlProperty property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlProperty.class);
+                if(withChannels) {
+                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+                    params.add(propertyId,"*");
+                    List<XmlChannel> chans = channelRepository.search(params);
+                    chans.forEach(chan -> chan.setTags(new ArrayList<XmlTag>()));
+                    XmlProperty p = null;
+                    for(XmlChannel chan: chans) {
+                        for(XmlProperty prop: chan.getProperties())
+                        {
+                            if(prop.getName().equals(propertyId))
+                                p = prop;
+                        }
+                        chan.setProperties(Arrays.asList(p));
+                    }
+                    property.setChannels(chans);
+                }
                 return Optional.of(property);
             }
         } catch (IOException e) {
@@ -360,19 +367,27 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @param property - property to be deleted
      */
     @Override
-    public void deleteById(String property) {
+    public void deleteById(String propertyName) {
         RestHighLevelClient client = esService.getIndexClient();
-        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property);
+        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
 
         try {
             DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
             Result result = response.getResult();
             if (!result.equals(Result.DELETED)) 
-                throw new Exception();                    
+                throw new Exception();
+         // delete property from channels
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            params.add(propertyName,"*");
+            List<XmlChannel> chans = channelRepository.search(params);
+            if(!chans.isEmpty()) {
+                chans.forEach(chan -> chan.removeProperty(new XmlProperty(propertyName, "")));
+                channelRepository.indexAll(chans);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to delete property: " + property, null);
+                    "Failed to delete property: " + propertyName, null);
         }
     }
 

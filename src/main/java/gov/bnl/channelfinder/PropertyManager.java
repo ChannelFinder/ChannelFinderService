@@ -6,6 +6,7 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.PROPERTY_RESOURCE_URI;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -77,12 +78,23 @@ public class PropertyManager {
     public XmlProperty read(@PathVariable("propertyName") String propertyName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         propertyManagerAudit.info("getting property: " + propertyName);
-        Optional<XmlProperty> foundProperty = propertyRepository.findById(propertyName);
-        if (foundProperty.isPresent()) {
-            return foundProperty.get();
+
+        if(withChannels) {
+            Optional<XmlProperty> foundProperty = propertyRepository.findById(propertyName,true);
+            if (foundProperty.isPresent()) {
+                return foundProperty.get();
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The property with the name " + propertyName + " does not exist");
+            }
         } else {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "The property with the name " + propertyName + " does not exist");
+            Optional<XmlProperty> foundProperty = propertyRepository.findById(propertyName);
+            if (foundProperty.isPresent()) {
+                return foundProperty.get();
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The property with the name " + propertyName + " does not exist");
+            }
         }
     }
 
@@ -128,7 +140,13 @@ public class PropertyManager {
 
             if(!property.getChannels().isEmpty()) {
                 // update the listed channels in the property's payload with the new property
-                channelRepository.saveAll(property.getChannels());
+                Iterable<XmlChannel> chans = channelRepository.saveAll(property.getChannels());
+                // TODO validate the above result
+                List<XmlChannel> chanList = new ArrayList<XmlChannel>();
+                for(XmlChannel chan: chans) {
+                    chanList.add(chan);
+                }
+                createdProperty.setChannels(chanList);
             }
             return createdProperty;
         } else
@@ -143,7 +161,7 @@ public class PropertyManager {
      * @return the list of properties created
      */
     @PutMapping()
-    public Iterable<XmlProperty> create(@RequestBody List<XmlProperty> properties) {
+    public Iterable<XmlProperty> create(@RequestBody Iterable<XmlProperty> properties) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
@@ -164,6 +182,14 @@ public class PropertyManager {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
                     } 
+                }         
+            }
+
+            // delete existing property
+            for(XmlProperty property: properties) {
+                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+                boolean present = existingProperty.isPresent();
+                if(present) {
                     // delete existing property
                     propertyRepository.deleteById(property.getName());
                 }         
@@ -178,8 +204,9 @@ public class PropertyManager {
                 channels.addAll(property.getChannels());
             });
             if(!channels.isEmpty()) {
-                channelRepository.saveAll(channels);
+                Iterable<XmlChannel> chans = channelRepository.saveAll(channels);
             }
+            // TODO should return created props with properly organized saved channels, but it would be very complicated...
             return createdProperties;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -217,8 +244,12 @@ public class PropertyManager {
                 // add property to channel
                 XmlChannel channel = channelRepository.findById(channelName).get();
                 channel.addProperty(existingProperty.get());
-                channelRepository.save(channel);
-                return existingProperty.get();
+                XmlChannel taggedChannel = channelRepository.save(channel);
+                XmlProperty addedProperty = existingProperty.get();
+                taggedChannel.setTags(new ArrayList<XmlTag>());
+                taggedChannel.setProperties(new ArrayList<XmlProperty>());
+                addedProperty.setChannels(Arrays.asList(taggedChannel));
+                return addedProperty;
             } else {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + propertyName + " does not exist");
@@ -248,17 +279,19 @@ public class PropertyManager {
             validatePropertyRequest(property);
 
             // check if authorized owner
-            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName(),true);
             boolean present = existingProperty.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this property: " + property, null);
             }
+            List<XmlChannel> chans = new ArrayList<XmlChannel>();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
                 } 
+                chans = existingProperty.get().getChannels();
             } 
 
             // update property
@@ -266,8 +299,50 @@ public class PropertyManager {
 
             if(!property.getChannels().isEmpty()) {
                 // update the listed channels in the property's payload with the updated property
-                channelRepository.saveAll(property.getChannels());
+                List<XmlChannel> propChannels = property.getChannels().stream().map(ch -> {
+                    XmlChannel propChannel = new XmlChannel(ch.getName(), ch.getOwner(), ch.getProperties(), new ArrayList<XmlTag>());
+                    return propChannel;
+                }).collect(Collectors.toList());                
+                // update the listed channels in the tag's payloads with the new tag
+                Iterable<XmlChannel> channels = channelRepository.saveAll(propChannels);
+                // TODO validate the above result
+                List<XmlChannel> chanList = new ArrayList<XmlChannel>();
+                XmlProperty p = null;
+                for(XmlChannel chan: channels) {
+                    chan.setTags(new ArrayList<XmlTag>());
+                    for(XmlProperty prop: chan.getProperties())
+                    {
+                        if(prop.getName().equals(propertyName))
+                            p = prop;
+                    }
+                    chan.setProperties(Arrays.asList(p));
+                    chanList.add(chan);
+                }
+                updatedProperty.setChannels(chanList);
             }
+
+            // update 
+            if(!chans.isEmpty()) {
+                List<XmlChannel> chanList = new ArrayList<XmlChannel>();
+                boolean updated;
+                for(XmlChannel chan: chans) {
+                    updated = false;
+                    for(XmlChannel updatedChan: updatedProperty.getChannels()) {
+                        if(chan.getName().equals(updatedChan.getName()))
+                        {
+                            updated = true;
+                            break;
+                        }
+                    }
+                    if(!updated) {
+                        XmlProperty prop = new XmlProperty(property.getName(),property.getOwner(),chan.getProperties().get(0).getValue());
+                        prop.setChannels(Arrays.asList(chan));
+                        chan.setProperties(Arrays.asList(prop));
+                        chanList.add(chan);
+                    }
+                }
+                channelRepository.saveAll(chanList);
+            }     
             return updatedProperty;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -284,7 +359,7 @@ public class PropertyManager {
      * @return the updated properties
      */
     @PostMapping()
-    public Iterable<XmlProperty> update(@RequestBody List<XmlProperty> properties) {
+    public Iterable<XmlProperty> update(@RequestBody Iterable<XmlProperty> properties) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
@@ -308,18 +383,50 @@ public class PropertyManager {
                 }               
             }
 
-            // update tags
-            Iterable<XmlProperty> createdProperties = propertyRepository.saveAll(properties);
-
             // update the listed channels in the properties' payloads with the updated properties
             List<XmlChannel> channels = new ArrayList<>();
-            properties.forEach(property -> {
-                channels.addAll(property.getChannels());
-            });
+            for(XmlProperty property: properties) {
+                List<XmlChannel> propChannels = property.getChannels().stream().map(ch -> {
+                    XmlChannel propChannel = new XmlChannel(ch.getName(), ch.getOwner(), ch.getProperties(), new ArrayList<XmlTag>());
+                    return propChannel;
+                }).collect(Collectors.toList()); 
+                channels.addAll(propChannels);
+
+                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName(),true);
+                if(existingProperty.isPresent()) {
+                    List<XmlChannel> chans = existingProperty.get().getChannels();
+                    if(!chans.isEmpty()) {
+                        List<XmlChannel> chanList = new ArrayList<XmlChannel>();
+                        boolean updated;
+                        for(XmlChannel chan: chans) {
+                            updated = false;
+                            for(XmlChannel updatedChan: propChannels) {
+                                if(chan.getName().equals(updatedChan.getName()))
+                                {
+                                    updated = true;
+                                    break;
+                                }
+                            }
+                            if(!updated) {
+                                XmlProperty prop = new XmlProperty(property.getName(),property.getOwner(),chan.getProperties().get(0).getValue());
+                                prop.setChannels(Arrays.asList(chan));
+                                chan.setProperties(Arrays.asList(prop));
+                                chanList.add(chan);
+                            }
+                        }
+                        channels.addAll(chanList);
+                    }     
+                }
+            }
+
+            // update tags
+            Iterable<XmlProperty> updatedProperties = propertyRepository.saveAll(properties);
+
             if(!channels.isEmpty()) {
                 channelRepository.saveAll(channels);
             }
-            return createdProperties;
+            // TODO should return updated props with properly organized saved channels, but it would be very complicated...
+            return properties;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these properties: " + properties, null);
@@ -410,11 +517,11 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(XmlProperty property) {
+    public void validatePropertyRequest(XmlProperty property) {
         // 1 
-        if (property.getName() == null) {
+        if (property.getName() == null || property.getName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The property name cannot be null " + property.toString(), null);
+                    "The property name cannot be null or empty " + property.toString(), null);
         }
         // 2
         if (property.getOwner() == null || property.getOwner().isEmpty()) {
@@ -432,8 +539,8 @@ public class PropertyManager {
             })) {
 
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "The channel with the name " + channel.getName()
-                                    + " does not include a valid instance to the property " + property);
+                        "The channel with the name " + channel.getName()
+                        + " does not include a valid instance to the property " + property);
             }
         });
 
@@ -448,7 +555,7 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(List<XmlProperty> properties) {
+    public void validatePropertyRequest(Iterable<XmlProperty> properties) {
         for(XmlProperty property: properties) {
             validatePropertyRequest(property);
         }
@@ -463,9 +570,8 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(String channelName) {
-        Optional<XmlChannel> ch = channelRepository.findById(channelName);
-        if(!ch.isPresent()) {
+    public void validatePropertyRequest(String channelName) {
+        if(!channelRepository.existsById(channelName)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");
         }

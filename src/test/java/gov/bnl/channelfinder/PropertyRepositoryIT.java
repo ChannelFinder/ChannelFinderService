@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +15,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
@@ -29,6 +32,9 @@ public class PropertyRepositoryIT {
     @Autowired
     PropertyRepository propertyRepository;
 
+    @Autowired
+    ChannelRepository channelRepository;
+    
     // set up
     XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
     XmlProperty updateTestProperty = new XmlProperty("testProperty","updateTestOwner");
@@ -120,8 +126,18 @@ public class PropertyRepositoryIT {
         // verify the property was found as expected
         assertEquals("Failed to find the property",createdProperty,foundProperty.get());
 
+        testProperty.setValue("test");
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(testProperty),new ArrayList<XmlTag>());
+        XmlChannel createdChannel = channelRepository.index(channel);
+        
+        foundProperty = propertyRepository.findById(createdProperty.getName(),true);
+        createdProperty.setChannels(Arrays.asList(channel));
+        // verify the property was found as expected
+        assertEquals("Failed to find the property",createdProperty,foundProperty.get());
+        
         // clean up
         propertyRepository.deleteById(createdProperty.getName());
+        channelRepository.deleteById(createdChannel.getName());
     }
 
     /**
@@ -148,11 +164,10 @@ public class PropertyRepositoryIT {
         List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
         try {
             Set<XmlProperty> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
-            Thread.sleep(2000);
             Set<XmlProperty> listedProperties = Sets.newHashSet(propertyRepository.findAll());
             // verify the tag was created as expected
             assertEquals("Failed to list all created tags", createdProperties, listedProperties);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             // clean up
@@ -202,9 +217,22 @@ public class PropertyRepositoryIT {
     @Test
     public void deleteXmlTag() {
         XmlProperty createdProperty = propertyRepository.index(testProperty);
+        createdProperty.setValue("testValue");
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(createdProperty),null);
+        XmlChannel createdChannel = channelRepository.index(channel);
 
         propertyRepository.deleteById(createdProperty.getName());
         // verify the property was deleted as expected
         assertNotEquals("Failed to delete property",testProperty,propertyRepository.findById(testProperty.getName()));
+        
+        XmlChannel foundChannel = channelRepository.findById("testChannel").get();
+        // verify the property was deleted from channels as expected
+        assertTrue("Failed to remove property from channel",foundChannel.getProperties().isEmpty());
+        
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        params.add("testProperty","*");
+        List<XmlChannel> chans = channelRepository.search(params);
+        // verify the property was deleted from channels as expected
+        assertTrue("Failed to remove property from channel",chans.isEmpty());
     }
 }

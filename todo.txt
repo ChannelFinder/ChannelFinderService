@@ -1,11 +1,10 @@
  fix channelrepositorysearchIT 
  fix findall tests 
- fix save tests from the tag/prop repo ITs
  code authenticationIT
  implement testing for non auth errors
  implement a limit on changing ownership to groups the user belongs to
- implement all the refresh indices needed
  implement anything else from question list that isnt yet implemented
  figure out what to do and what would happen if 2 items have same name
  deal with the possible hack of changing owners or whatev in payloads
  get cfpy tests to pass
+ update docs

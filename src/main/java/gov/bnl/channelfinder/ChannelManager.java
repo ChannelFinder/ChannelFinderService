@@ -38,7 +38,6 @@ import gov.bnl.channelfinder.AuthorizationService.ROLES;
 @EnableAutoConfiguration
 public class ChannelManager {
 
-    // private SecurityContext securityContext;
     static Logger channelManagerAudit = Logger.getLogger(ChannelManager.class.getName() + ".audit");
     static Logger log = Logger.getLogger(ChannelManager.class.getName());
 
@@ -79,6 +78,7 @@ public class ChannelManager {
     @GetMapping("/{channelName}")
     public XmlChannel read(@PathVariable("channelName") String channelName) {
         channelManagerAudit.info("getting channel: " + channelName);
+
         Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
         if (foundChannel.isPresent())
             return foundChannel.get();
@@ -105,7 +105,7 @@ public class ChannelManager {
             validateChannelRequest(channel);
 
             // check if authorized owner
-            Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
             boolean present = existingChannel.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -134,7 +134,7 @@ public class ChannelManager {
      * @return the list of channels created
      */
     @PutMapping
-    public Iterable<XmlChannel> create(@RequestBody List<XmlChannel> channels) {
+    public Iterable<XmlChannel> create(@RequestBody Iterable<XmlChannel> channels) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             // Validate request parameters
@@ -153,18 +153,25 @@ public class ChannelManager {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
                     } 
-                    channelRepository.deleteById(channel.getName());
                 } 
-
             }
 
-            channels.stream().forEach(log -> {
+            // delete existing channels
+            for(XmlChannel channel: channels) {
+                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+                boolean present = existingChannel.isPresent();
+                if(present) {
+                    // delete existing channel
+                    channelRepository.deleteById(channel.getName());
+                } 
+            }
+
+            channels.forEach(log -> {
                 channelManagerAudit.info("PUT" + log.toLog());
             });
 
             // create new channels
             return channelRepository.indexAll(channels);
-            // return Lists.newArrayList(channelRepository.indexAll(data));
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
@@ -216,7 +223,7 @@ public class ChannelManager {
      * @result the updated channels
      */
     @PostMapping()
-    public Iterable<XmlChannel> update(@RequestBody List<XmlChannel> channels) {
+    public Iterable<XmlChannel> update(@RequestBody Iterable<XmlChannel> channels) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
@@ -244,8 +251,6 @@ public class ChannelManager {
 
             // update channels
             return channelRepository.saveAll(channels);
-            //return Lists.newArrayList(channelRepository.saveAll(data));
-
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
@@ -300,11 +305,11 @@ public class ChannelManager {
      * 
      * @param data
      */
-    private void validateChannelRequest(XmlChannel channel) {
+    public void validateChannelRequest(XmlChannel channel) {
         // 1 
-        if (channel.getName() == null) {
+        if (channel.getName() == null || channel.getName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The channel name cannot be null " + channel.toString(), null);
+                    "The channel name cannot be null or empty " + channel.toString(), null);
         }
         // 2
         if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
@@ -314,8 +319,7 @@ public class ChannelManager {
         // 3 
         List <String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
         for(String tagName:tagNames) {
-            Optional<XmlTag> tag = tagRepository.findById(tagName);
-            if(!tag.isPresent()) {
+            if(!tagRepository.existsById(tagName)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
@@ -323,11 +327,13 @@ public class ChannelManager {
         // 3 
         List <String> propertyNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
         for(String propertyName:propertyNames) {
-            Optional<XmlProperty> property = propertyRepository.findById(propertyName);
-            if(!property.isPresent()) {
+            if(!propertyRepository.existsById(propertyName)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The property with the name " + propertyName + " does not exist");
-            }
+            } //else if(property.get().getValue() == null || property.get().getValue().isEmpty()) {
+            //                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            //                        "The property with the name " + propertyName + " is null or empty");
+            //            }
         }
 
     }
@@ -340,7 +346,7 @@ public class ChannelManager {
      * 
      * @param data
      */
-    private void validateChannelRequest(List<XmlChannel> channels) {
+    public void validateChannelRequest(Iterable<XmlChannel> channels) {
         for(XmlChannel channel: channels) {
             validateChannelRequest(channel);
         }

@@ -49,6 +49,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.ScoreSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.CrudRepository;
@@ -89,7 +90,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             /// verify the creation of the channel
             Result result = indexResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
@@ -107,7 +107,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the created channels
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> Iterable<S> indexAll(List<XmlChannel> channels) {
+    public <S extends XmlChannel> Iterable<S> indexAll(Iterable<XmlChannel> channels) {
         RestHighLevelClient client = esService.getIndexClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
@@ -131,7 +131,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         createdChannelIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
@@ -157,36 +156,37 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             Optional<XmlChannel> existingChannel = findById(channelName);
             boolean present = existingChannel.isPresent();
             if(present) {
-                updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName);
-
                 List<XmlTag> tags = existingChannel.get().getTags();
                 tags.removeAll(channel.getTags());
                 tags.addAll(channel.getTags());
                 channel.setTags(tags);
 
-                List<XmlProperty> properties = existingChannel.get().getProperties();
-                properties.removeAll(channel.getProperties());
-                properties.addAll(channel.getProperties());
+                List<XmlProperty> properties = channel.getProperties();
+                List<String> propNames = new ArrayList<String>();
+                for(XmlProperty prop: properties) {
+                    propNames.add(prop.getName());
+                }
+                for(XmlProperty prop: existingChannel.get().getProperties()) {
+                    if(!propNames.contains(prop.getName())) {
+                        properties.add(prop);
+                    }
+                }
+                properties.removeIf(prop -> (prop.getValue().isEmpty() || prop.getValue() == null || prop.getValue().equals("")));
                 channel.setProperties(properties);
 
-                updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-            } else {
-                updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-                        .id(channel.getName())
-                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-                updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
-            }
+                deleteById(channelName);
+            } 
+            updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+                    .id(channel.getName())
+                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+            updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
             /// verify the creation of the channel
             Result result = updateResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
                 // client.get(, options)
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
-                findById(channelName);
-                Thread.sleep(2000);
-                findById(channelName);
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
@@ -225,9 +225,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     tags.addAll(channel.getTags());
                     channel.setTags(tags);
 
-                    List<XmlProperty> properties = existingChannel.get().getProperties();
-                    properties.removeAll(channel.getProperties());
-                    properties.addAll(channel.getProperties());
+                    List<XmlProperty> properties = channel.getProperties();
+                    List<String> propNames = new ArrayList<String>();
+                    for(XmlProperty prop: properties) {
+                        propNames.add(prop.getName());
+                    }
+                    for(XmlProperty prop: existingChannel.get().getProperties()) {
+                        if(!propNames.contains(prop.getName())) {
+                            properties.add(prop);
+                        }
+                    }
+                    properties.removeIf(prop -> (prop.getValue().isEmpty() || prop.getValue() == null || prop.getValue().equals("")));
                     channel.setProperties(properties);
 
                     updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
@@ -253,7 +261,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         createdChannelIds.add(bulkItemResponse.getId());
                     }
                 }
-                client.indices().refresh(new RefreshRequest(ES_CHANNEL_INDEX), RequestOptions.DEFAULT);
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
@@ -524,7 +531,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 searchSourceBuilder.from(from);
             }
             searchSourceBuilder.query(qb);
-            searchSourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC));
+            searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
             searchRequest.types(ES_CHANNEL_TYPE);
             searchRequest.source(searchSourceBuilder);
 

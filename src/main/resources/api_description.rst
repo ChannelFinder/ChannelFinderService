@@ -259,14 +259,15 @@ restrictions.)
 
 Method: POST    Payload: List of Properties  Required Role: PropertyMod
 
-Add the properties in the payload to the directory. If a payload property contains an embedded
-<channels> list, the property is added to all channels in that list. In this case, the value for each property
-instance is taken from the property definition inside the channel on the embedded channel list. The
-property is set exclusively on all channels in the embedded list, removing it from all channels that are
-not included on the list. Existing property values are replaced by the payload data.
+Add properties in the payload to all channels in the payload data. If the properties of the payload contain
+an embedded <channels> list, the property is added to all channels in that list. In this case, the value for
+each property instance is taken from the property definition inside the channel in the embedded channel
+list. Existing property values are replaced by the payload data. If the payload property owner
+is different from the current values, the database owner is changed.
 
-For all properties that are to be replaced or added, the authenticated user is required to be a member of
-their owner group. (Administrator role overrides this restriction.)
+The authenticated user must belong to the group that owns the property. If the operation changes the
+ownership, the user must belong to both the old and the new group. (Administrator role overrides these
+restrictions.)
 
 **Remove Property from Single Channel**
 

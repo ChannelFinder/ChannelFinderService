@@ -14,6 +14,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
@@ -28,6 +30,9 @@ public class TagRepositoryIT {
 
     @Autowired
     TagRepository tagRepository;
+    
+    @Autowired
+    ChannelRepository channelRepository;
 
     // set up
     XmlTag testTag = new XmlTag("testTag","testOwner");
@@ -117,9 +122,18 @@ public class TagRepositoryIT {
         Optional<XmlTag> foundTag = tagRepository.findById(createdTag.getName());
         // verify the tag was found as expected
         assertEquals("Failed to find the tag",createdTag,foundTag.get());
+        
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",null,Arrays.asList(createdTag));
+        XmlChannel createdChannel = channelRepository.index(channel);
+        
+        foundTag = tagRepository.findById(createdTag.getName(),true);
+        createdTag.setChannels(Arrays.asList(new XmlChannel(channel.getName(),channel.getOwner())));
+        // verify the tag was found as expected
+        assertEquals("Failed to find the tag",createdTag,foundTag.get());
 
         // clean up
         tagRepository.deleteById(createdTag.getName());
+        channelRepository.deleteById(createdChannel.getName());
     }
 
     /**
@@ -146,11 +160,10 @@ public class TagRepositoryIT {
         List<XmlTag> testTags = Arrays.asList(testTag, testTag1);
         try {
             Set<XmlTag> createdTags = Sets.newHashSet(tagRepository.indexAll(testTags));
-            Thread.sleep(2000);
             Set<XmlTag> listedTags = Sets.newHashSet(tagRepository.findAll());
             // verify the tag was created as expected
             assertEquals("Failed to list all created tags", createdTags, listedTags);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             // clean up
@@ -200,10 +213,22 @@ public class TagRepositoryIT {
     @Test
     public void deleteXmlTag() {
         XmlTag createdTag = tagRepository.index(testTag);
-
+        XmlChannel channel = new XmlChannel("testChannel","testOwner",null,Arrays.asList(createdTag));
+        XmlChannel createdChannel = channelRepository.index(channel);
+        
         tagRepository.deleteById(createdTag.getName());
         // verify the tag was deleted as expected
         assertNotEquals("Failed to delete tag",testTag,tagRepository.findById(testTag.getName()));
+        
+        XmlChannel foundChannel = channelRepository.findById("testChannel").get();
+        // verify the tag was deleted from channels as expected
+        assertTrue("Failed to remove tag from channel",foundChannel.getTags().isEmpty());
+        
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        params.add("~tag","testChannel");
+        List<XmlChannel> chans = channelRepository.search(params);
+        // verify the tag was deleted from channels as expected
+        assertTrue("Failed to remove tag from channel",chans.isEmpty());
     }
 
 }
