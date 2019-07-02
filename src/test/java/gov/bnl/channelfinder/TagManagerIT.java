@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
@@ -55,7 +57,7 @@ public class TagManagerIT {
     @Test // might actually work but messed up by full database
     public void listXmlTags() {
         List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        List<XmlChannel> createdChannels = (List<XmlChannel>) channelRepository.indexAll(testChannels);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTag1.setChannels(testChannels);
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
         Iterable<XmlTag> createdTags = tagManager.create(testTags);
@@ -135,7 +137,7 @@ public class TagManagerIT {
     @Test
     public void createXmlTag() {
         List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        List<XmlChannel> createdChannels = (List<XmlChannel>) channelRepository.indexAll(testChannels);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTagC.setChannels(testChannels);
         testTagC1.setChannels(testChannels);
         updateTestTagC.setChannels(testChannels);
@@ -212,7 +214,7 @@ public class TagManagerIT {
     @Test
     public void createXmlTags() {
         List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        List<XmlChannel> createdChannels = (List<XmlChannel>) channelRepository.indexAll(testChannels);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTagC.setChannels(testChannels);
         testTagC1.setChannels(testChannels);
         testTagC2.setChannels(testChannels);
@@ -257,9 +259,9 @@ public class TagManagerIT {
      * update a tag 
      */
     @Test
-    public void updateTagTest() {
+    public void updateXmlTag() {
         List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        List<XmlChannel> createdChannels = (List<XmlChannel>) channelRepository.indexAll(testChannels);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTagC.setChannels(testChannels);
         testTagC1.setChannels(Arrays.asList(testChannel));;
         testTagC2.setChannels(Arrays.asList(testChannel1));
@@ -309,7 +311,7 @@ public class TagManagerIT {
         result.setChannels(testChannels);
         // verify the tag was updated as expected
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag,updateTestTagC,result,updateTestTagC.getName()));
-        
+
         // _ -> 1
         testTagC.setChannels(new ArrayList<XmlChannel>());
         tagRepository.index(testTagC);
@@ -318,7 +320,7 @@ public class TagManagerIT {
         updatedTag = tagManager.update(testTagC.getName(), updateTestTagC);
         // verify the tag was updated as expected
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag,updateTestTagC,updateTestTagC,updateTestTagC.getName()));
-        
+
         // 1 -> 0,1
         updateTestTagC.setChannels(testChannels);
         updatedTag = tagManager.update(testTagC.getName(), updateTestTagC);
@@ -335,7 +337,7 @@ public class TagManagerIT {
         updatedTag1 = tagManager.update(testTagC.getName(), updateTestTagC);
         // verify the tag was updated as expected
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag1,updateTestTagC,updatedTag,updatedTag1.getName()));
-                
+
         updatedTag2 = tagManager.update(testTagC.getName(), testTagC2);
         result = new XmlTag(testTagC2.getName(),testTagC2.getOwner());
         result.setChannels(testChannels);
@@ -358,10 +360,225 @@ public class TagManagerIT {
      * update multiple tags 
      */
     @Test
-    public void updateTagsTest() {
+    public void updateXmlTags() {
+        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        testTagC.setChannels(testChannels);
+        testTagC1.setChannels(Arrays.asList(testChannel));;
+        testTagC2.setChannels(Arrays.asList(testChannel));
+        updateTestTagC.setChannels(testChannels);
+        List<XmlTag> testTags = Arrays.asList(testTag,testTag1,testTag2,testTagC,testTagC1,updateTestTag,updateTestTagC,testTagC2);
+
+        List<XmlTag> tags = Arrays.asList(testTag,testTagC);
+        tagManager.create(tags);
+
+        List<XmlTag> updateTags = Arrays.asList(updateTestTag,testTag1,updateTestTagC,testTagC1);
+        Iterable<XmlTag> updatedTags = tagManager.update(updateTags);
+        List<String> updateTagNames = new ArrayList<String>();        
+        updateTags.forEach(tag -> updateTagNames.add(tag.getName()));
+        // verify the tags were updated as expected
+        assertTrue("Failed to update the tag",updatedTagsCorrectly(updatedTags,updateTags,updateTags,updateTagNames));
+
+
+        updateTestTag.setChannels(Arrays.asList(testChannel));
+        tagManager.update(updateTestTag.getName(),updateTestTag);
+        updateTestTag.setChannels(new ArrayList<XmlChannel>());
+        testTag1.setChannels(Arrays.asList(testChannel));
+        testTagC2.setChannels(Arrays.asList(testChannel1));
+        testTag2.setChannels(testChannels);
+        tagManager.update(testTag2.getName(),testTag2);
+        testTagC1.setChannels(testChannels);
+
+        updateTags = Arrays.asList(updateTestTagC,updateTestTag,testTag1,testTagC2,testTag2,testTagC1);
+        updatedTags = tagManager.update(updateTags);
+        List<String> updateTagNames1 = new ArrayList<String>();        
+        updateTags.forEach(tag -> updateTagNames1.add(tag.getName()));
+
+        updateTestTag.setChannels(Arrays.asList(testChannel));
+        testTagC2.setChannels(testChannels);
+        testTag2.setChannels(testChannels);
+        List<XmlTag> goalTags = Arrays.asList(updateTestTagC,updateTestTag,testTag1,testTagC2,testTag2,testTagC1);  
+        // verify the tags were updated as expected
+        assertTrue("Failed to update the tag",updatedTagsCorrectly(updatedTags,updateTags,goalTags,updateTagNames1));
+
+        // clean up 
+        for(XmlTag tag: testTags) {
+            try {
+                tagManager.remove(tag.getName());
+            } catch(Exception e) {}
+        }
+        createdChannels.forEach(createdChannel -> {
+            channelRepository.deleteById(createdChannel.getName());
+        });
+    }
+
+    /**
+     * delete a single tag 
+     */
+    @Test
+    public void deleteXmlTag() {
+        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        testTag1.setChannels(testChannels);
+        List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
+        Iterable<XmlTag> createdTags = tagManager.create(testTags);
+
+        tagManager.remove(testTag.getName());
+        // verify the tag was deleted as expected
+        assertTrue("Failed to delete the tag",!tagRepository.existsById(testTag.getName()));
+
+        tagManager.remove(testTag1.getName());
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        params.add("~tag",testTag1.getName());
+        // verify the tag was deleted as expected
+        assertTrue("Failed to delete the tag",!tagRepository.existsById(testTag1.getName()));
+        assertEquals("Failed to delete the tag from channels",new ArrayList<XmlChannel>(),channelRepository.search(params));
+
+        // clean up 
+        createdChannels.forEach(createdChannel -> {
+            channelRepository.deleteById(createdChannel.getName());
+        });
+    }
+
+    /**
+     * delete a single tag from a single channel 
+     */
+    @Test
+    public void deleteXmlTagFromChannel() {
+        XmlChannel createdChannel = channelRepository.index(testChannel);
+        testTag1.setChannels(Arrays.asList(testChannel));
+        XmlTag createdTag = tagManager.create(testTag.getName(),testTag);
+
+        tagManager.removeSingle(testTag.getName(),testChannel.getName());
+        // verify the tag was not deleted, as expected
+        assertTrue("Failed to not delete the tag",tagRepository.existsById(testTag.getName()));
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        params.add("~tag",testTag.getName());
+        // verify the tag was deleted from the channel as expected
+        assertEquals("Failed to delete the tag from channel",new ArrayList<XmlChannel>(),channelRepository.search(params));
+
+        // clean up 
+        channelRepository.deleteById(createdChannel.getName());
+    }
+    
+    /**
+     * validate a tag request
+     */
+    @Test
+    public void validateXmlTagRequest() {
+        XmlChannel createdChannel = channelRepository.index(testChannel);
+        testTag1.setChannels(Arrays.asList(testChannel));
+        
+        try {
+            // verify the tag request is valid
+            tagManager.validateTagRequest(createdChannel.getName());
+            assertTrue("",true);
+        } catch (Exception e) {
+            assertTrue(e.getMessage(),false);
+        }
+        
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest("fakeChannel");
+            assertTrue("Validated an invalid channel",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
+        try {
+            // verify the tag request is valid
+            tagManager.validateTagRequest(testTag);
+            assertTrue("",true);
+        } catch (Exception e) {
+            assertTrue(e.getMessage(),false);
+        }
+        
+        try {
+            // verify the tag request is valid
+            tagManager.validateTagRequest(testTag1);
+            assertTrue("",true);
+        } catch (Exception e) {
+            assertTrue(e.getMessage(),false);
+        }
+        
+        testTag.setName(null);
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest(testTag);
+            assertTrue("Validated an invalid tag name",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
+        testTag.setName("");
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest(testTag);
+            assertTrue("Validated an invalid tag name",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
+        testTag.setName("testTag");
+        testTag.setOwner(null);
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest(testTag);
+            assertTrue("Validated an invalid tag owner",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
+        testTag.setOwner("");
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest(testTag);
+            assertTrue("Validated an invalid tag owner",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
+        testTag.setOwner("tagOwner");
+        testTag.setChannels(Arrays.asList(testChannel1));
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest(testTag);
+            assertTrue("Validated an invalid channel",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
+        testTag.setChannels(Arrays.asList(testChannel,testChannel1));
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest(testTag);
+            assertTrue("Validated an invalid channel",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
+        testTag.setChannels(Arrays.asList(testChannel));
+        try {
+            // verify the tag request is valid
+            tagManager.validateTagRequest(Arrays.asList(testTag,testTag1,testTagC));
+            assertTrue("",true);
+        } catch (Exception e) {
+            assertTrue(e.getMessage(),false);
+        }
+        
+        testTag.setName("");
+        try {
+            // verify the tag request is invalid
+            tagManager.validateTagRequest(Arrays.asList(testTag,testTag1,testTagC));
+            assertTrue("Validated an invalid tag",false);
+        } catch (Exception e) {
+            assertTrue("",true);
+        }
+        
         
     }
-      
+
     public static boolean tagCompare(XmlTag tag1, XmlTag tag2) {
         if(!(tag1.getName().equals(tag2.getName())) || !(tag1.getOwner().equals(tag2.getOwner()))) 
             return false;
@@ -369,13 +586,43 @@ public class TagManagerIT {
             return false;
         return true;
     }
-    
-    public boolean updatedTagCorrectly(XmlTag returnedTag,XmlTag passedInTag,XmlTag resultTag,String tagToFind) {
+
+    public boolean updatedTagCorrectly(XmlTag returnedTag,XmlTag passedInTag,XmlTag goalTag,String tagToFind) {
         if(!tagCompare(returnedTag,passedInTag))
             return false;
-        if(!tagCompare(resultTag,tagRepository.findById(tagToFind,true).get()))
+        if(!tagCompare(goalTag,tagRepository.findById(tagToFind,true).get()))
             return false;
         return true;
     }
 
+    private boolean updatedTagsCorrectly(Iterable<XmlTag> returnedTags, List<XmlTag> passedInTags, List<XmlTag> goalTags,List<String> tagsToFind) {
+        for(XmlTag tag: returnedTags) {
+            boolean correct = false;
+            for(XmlTag passedTag: passedInTags) {
+                if(tagCompare(tag,passedTag)) {
+                    correct = true;
+                    break;
+                }
+            }
+            if(!correct)
+                return false;
+        }
+
+        List<XmlTag> foundTags = new ArrayList<XmlTag>();
+        for(String tagName: tagsToFind) {
+            foundTags.add(tagRepository.findById(tagName,true).get());           
+        }
+        for(XmlTag tag: goalTags) {
+            boolean correct = false;
+            for(XmlTag foundTag: foundTags) {
+                if(tagCompare(tag,foundTag)) {
+                    correct =true;
+                    break;
+                }
+            }
+            if(!correct)
+                return false;
+        }
+        return true;
+    }
 }

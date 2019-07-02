@@ -305,11 +305,11 @@ public class ChannelManager {
      * 
      * @param data
      */
-    private void validateChannelRequest(XmlChannel channel) {
+    public void validateChannelRequest(XmlChannel channel) {
         // 1 
-        if (channel.getName() == null) {
+        if (channel.getName() == null || channel.getName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The channel name cannot be null " + channel.toString(), null);
+                    "The channel name cannot be null or empty " + channel.toString(), null);
         }
         // 2
         if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
@@ -319,8 +319,7 @@ public class ChannelManager {
         // 3 
         List <String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
         for(String tagName:tagNames) {
-            Optional<XmlTag> tag = tagRepository.findById(tagName);
-            if(!tag.isPresent()) {
+            if(!tagRepository.existsById(tagName)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
@@ -328,8 +327,7 @@ public class ChannelManager {
         // 3 
         List <String> propertyNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
         for(String propertyName:propertyNames) {
-            Optional<XmlProperty> property = propertyRepository.findById(propertyName);
-            if(!property.isPresent()) {
+            if(!propertyRepository.existsById(propertyName)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The property with the name " + propertyName + " does not exist");
             } //else if(property.get().getValue() == null || property.get().getValue().isEmpty()) {
@@ -348,7 +346,7 @@ public class ChannelManager {
      * 
      * @param data
      */
-    private void validateChannelRequest(Iterable<XmlChannel> channels) {
+    public void validateChannelRequest(Iterable<XmlChannel> channels) {
         for(XmlChannel channel: channels) {
             validateChannelRequest(channel);
         }

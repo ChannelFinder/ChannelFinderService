@@ -485,11 +485,11 @@ public class TagManager {
      * 
      * @param data
      */
-    private void validateTagRequest(XmlTag testTag) {
+    public void validateTagRequest(XmlTag testTag) {
         // 1 
-        if (testTag.getName() == null) {
+        if (testTag.getName() == null || testTag.getName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null " + testTag.toString(), null);
+                    "The tag name cannot be null or empty " + testTag.toString(), null);
         }
         // 2
         if (testTag.getOwner() == null || testTag.getOwner().isEmpty()) {
@@ -499,8 +499,7 @@ public class TagManager {
         // 3
         List <String> channelNames = testTag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
         for(String channelName:channelNames) {
-            Optional<XmlChannel> ch = channelRepository.findById(channelName);
-            if(!ch.isPresent()) {
+            if(!channelRepository.existsById(channelName)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The channel with the name " + channelName + " does not exist");
             }
@@ -516,7 +515,7 @@ public class TagManager {
      * 
      * @param data
      */
-    private void validateTagRequest(Iterable<XmlTag> tags) {
+    public void validateTagRequest(Iterable<XmlTag> tags) {
         for(XmlTag tag: tags) {
             validateTagRequest(tag);
         }
@@ -530,9 +529,8 @@ public class TagManager {
      * 
      * @param data
      */
-    private void validateTagRequest(String channelName) {
-        Optional<XmlChannel> ch = channelRepository.findById(channelName);
-        if(!ch.isPresent()) {
+    public void validateTagRequest(String channelName) {
+        if(!channelRepository.existsById(channelName)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");
         }

@@ -517,11 +517,11 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(XmlProperty property) {
+    public void validatePropertyRequest(XmlProperty property) {
         // 1 
-        if (property.getName() == null) {
+        if (property.getName() == null || property.getName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The property name cannot be null " + property.toString(), null);
+                    "The property name cannot be null or empty " + property.toString(), null);
         }
         // 2
         if (property.getOwner() == null || property.getOwner().isEmpty()) {
@@ -555,7 +555,7 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(Iterable<XmlProperty> properties) {
+    public void validatePropertyRequest(Iterable<XmlProperty> properties) {
         for(XmlProperty property: properties) {
             validatePropertyRequest(property);
         }
@@ -570,9 +570,8 @@ public class PropertyManager {
      * 
      * @param data
      */
-    private void validatePropertyRequest(String channelName) {
-        Optional<XmlChannel> ch = channelRepository.findById(channelName);
-        if(!ch.isPresent()) {
+    public void validatePropertyRequest(String channelName) {
+        if(!channelRepository.existsById(channelName)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");
         }
