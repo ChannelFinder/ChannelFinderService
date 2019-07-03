@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,8 +41,6 @@ public class TagManagerIT {
     ChannelRepository channelRepository;
 
     // set up
-    XmlChannel testChannel = new XmlChannel("testChannel","testOwner");
-    XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner");
     XmlTag testTag = new XmlTag("testTag","testOwner");
     XmlTag testTag1 = new XmlTag("testTag1","testOwner1");
     XmlTag testTag2 = new XmlTag("testTag2","testOwner2");   
@@ -56,8 +56,6 @@ public class TagManagerIT {
      */
     @Test // might actually work but messed up by full database
     public void listXmlTags() {
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTag1.setChannels(testChannels);
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
         Iterable<XmlTag> createdTags = tagManager.create(testTags);
@@ -67,15 +65,7 @@ public class TagManagerIT {
             tag.setChannels(new ArrayList<XmlChannel>());
         }
         // verify the tags were listed as expected
-        assertEquals("Failed to list all tags",createdTags,tagList);        
-
-        // clean up
-        createdTags.forEach(createdTag -> {
-            tagManager.remove(createdTag.getName());
-        }); 
-        createdChannels.forEach(createdChannel -> {
-            channelRepository.deleteById(createdChannel.getName());
-        });
+        assertEquals("Failed to list all tags",createdTags,tagList);                
     }
 
     /**
@@ -83,12 +73,9 @@ public class TagManagerIT {
      */
     @Test
     public void readXmlTag() {
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTag1.setChannels(testChannels);
         XmlTag createdTag = tagManager.create(testTag.getName(),testTag);
         XmlTag createdTag1 = tagManager.create(testTag1.getName(),testTag1);
-
 
         XmlTag readTag = tagManager.read(createdTag.getName(), false);
         // verify the tag was read as expected
@@ -122,13 +109,6 @@ public class TagManagerIT {
         } catch(ResponseStatusException e) {
             assertTrue(true);
         }
-
-        // clean up
-        tagManager.remove(createdTag.getName());
-        tagManager.remove(createdTag1.getName());
-        createdChannels.forEach(createdChannel -> {
-            channelRepository.deleteById(createdChannel.getName());
-        });
     }
 
     /**
@@ -136,8 +116,6 @@ public class TagManagerIT {
      */
     @Test
     public void createXmlTag() {
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTagC.setChannels(testChannels);
         testTagC1.setChannels(testChannels);
         updateTestTagC.setChannels(testChannels);
@@ -197,15 +175,6 @@ public class TagManagerIT {
             assertTrue("Failed to create/find the tag w/ channels",false);
         }
         assertFalse("Failed to replace the old tag", tagRepository.existsById(testTagC.getName()));
-
-        for(XmlTag tag: testTags) {
-            try {
-                tagManager.remove(tag.getName());
-            } catch(Exception e) {}
-        }
-        createdChannels.forEach(createdChannel -> {
-            channelRepository.deleteById(createdChannel.getName());
-        });
     }
 
     /**
@@ -213,8 +182,6 @@ public class TagManagerIT {
      */
     @Test
     public void createXmlTags() {
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTagC.setChannels(testChannels);
         testTagC1.setChannels(testChannels);
         testTagC2.setChannels(testChannels);
@@ -227,14 +194,6 @@ public class TagManagerIT {
         // verify the tags were created as expected
         assertTrue("Failed to create the tags",Iterables.elementsEqual(testTags, createdTags));  
         assertFalse("Failed to replace the tag", testTag.equals(tagRepository.findById(testTag.getName()).get()));
-
-        // clean up
-        testTags.forEach(tag -> {
-            tagManager.remove(tag.getName());
-        }); 
-        createdChannels.forEach(createdChannel -> {
-            channelRepository.deleteById(createdChannel.getName());
-        });
     }
 
     /**
@@ -242,17 +201,12 @@ public class TagManagerIT {
      */
     @Test
     public void addSingleXmlTag() {
-        channelRepository.index(testChannel);
         tagRepository.index(testTag);
         List<XmlTag> tag = Arrays.asList(testTag);
 
-        tagManager.addSingle(testTag.getName(), testChannel.getName());
+        tagManager.addSingle(testTag.getName(), "testChannel");
         //verify the tag was added as expected
-        assertEquals("Failed to add tag",tag,channelRepository.findById(testChannel.getName()).get().getTags());
-
-        // clean up
-        tagManager.remove(testTag.getName());
-        channelRepository.deleteById(testChannel.getName());
+        assertEquals("Failed to add tag",tag,channelRepository.findById("testChannel").get().getTags());
     }
 
     /**
@@ -260,11 +214,9 @@ public class TagManagerIT {
      */
     @Test
     public void updateXmlTag() {
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTagC.setChannels(testChannels);
-        testTagC1.setChannels(Arrays.asList(testChannel));;
-        testTagC2.setChannels(Arrays.asList(testChannel1));
+        testTagC1.setChannels(Arrays.asList(testChannels.get(0)));;
+        testTagC2.setChannels(Arrays.asList(testChannels.get(1)));
         updateTestTagC.setChannels(testChannels);
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1,testTag2,testTagC,testTagC1,updateTestTag,updateTestTagC,testTagC2);
 
@@ -294,18 +246,18 @@ public class TagManagerIT {
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag1,testTagC1,testTagC1,testTagC1.getName()));
 
         // 0 -> -
-        testTagC.setChannels(Arrays.asList(testChannel));
+        testTagC.setChannels(Arrays.asList(testChannels.get(0)));
         channelRepository.indexAll(testChannels);
         tagManager.create(testTagC.getName(),testTagC);
         updateTestTagC.setChannels(new ArrayList<XmlChannel>());
         updatedTag = tagManager.update(testTagC.getName(), updateTestTagC);
         XmlTag result = new XmlTag(updateTestTagC.getName(),updateTestTagC.getOwner());
-        result.setChannels(Arrays.asList(testChannel));
+        result.setChannels(Arrays.asList(testChannels.get(0)));
         // verify the tag was updated as expected
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag,updateTestTagC,result,updateTestTagC.getName()));
 
         // 0 -> 1
-        updateTestTagC.setChannels(Arrays.asList(testChannel1));
+        updateTestTagC.setChannels(Arrays.asList(testChannels.get(1)));
         updatedTag = tagManager.update(testTagC.getName(), updateTestTagC);
         result = new XmlTag(updateTestTagC.getName(),updateTestTagC.getOwner());
         result.setChannels(testChannels);
@@ -316,7 +268,7 @@ public class TagManagerIT {
         testTagC.setChannels(new ArrayList<XmlChannel>());
         tagRepository.index(testTagC);
         channelRepository.indexAll(testChannels);
-        updateTestTagC.setChannels(Arrays.asList(testChannel1));
+        updateTestTagC.setChannels(Arrays.asList(testChannels.get(1)));
         updatedTag = tagManager.update(testTagC.getName(), updateTestTagC);
         // verify the tag was updated as expected
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag,updateTestTagC,updateTestTagC,updateTestTagC.getName()));
@@ -333,7 +285,7 @@ public class TagManagerIT {
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag,updateTestTagC,updateTestTagC,updateTestTagC.getName()));
 
         // 0,1 -> 0
-        updateTestTagC.setChannels(Arrays.asList(testChannel));
+        updateTestTagC.setChannels(Arrays.asList(testChannels.get(0)));
         updatedTag1 = tagManager.update(testTagC.getName(), updateTestTagC);
         // verify the tag was updated as expected
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag1,updateTestTagC,updatedTag,updatedTag1.getName()));
@@ -344,16 +296,6 @@ public class TagManagerIT {
         // verify the tag was updated as expected
         assertTrue("Failed to update the tag",updatedTagCorrectly(updatedTag2,testTagC2,result,updatedTag2.getName()));
         assertFalse("Failed to replace the old tag", tagRepository.existsById(testTagC.getName()));
-
-        // clean up 
-        for(XmlTag tag: testTags) {
-            try {
-                tagManager.remove(tag.getName());
-            } catch(Exception e) {}
-        }
-        createdChannels.forEach(createdChannel -> {
-            channelRepository.deleteById(createdChannel.getName());
-        });
     }
 
     /**
@@ -361,11 +303,9 @@ public class TagManagerIT {
      */
     @Test
     public void updateXmlTags() {
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTagC.setChannels(testChannels);
-        testTagC1.setChannels(Arrays.asList(testChannel));;
-        testTagC2.setChannels(Arrays.asList(testChannel));
+        testTagC1.setChannels(Arrays.asList(testChannels.get(0)));;
+        testTagC2.setChannels(Arrays.asList(testChannels.get(0)));
         updateTestTagC.setChannels(testChannels);
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1,testTag2,testTagC,testTagC1,updateTestTag,updateTestTagC,testTagC2);
 
@@ -379,12 +319,11 @@ public class TagManagerIT {
         // verify the tags were updated as expected
         assertTrue("Failed to update the tag",updatedTagsCorrectly(updatedTags,updateTags,updateTags,updateTagNames));
 
-
-        updateTestTag.setChannels(Arrays.asList(testChannel));
+        updateTestTag.setChannels(Arrays.asList(testChannels.get(0)));
         tagManager.update(updateTestTag.getName(),updateTestTag);
         updateTestTag.setChannels(new ArrayList<XmlChannel>());
-        testTag1.setChannels(Arrays.asList(testChannel));
-        testTagC2.setChannels(Arrays.asList(testChannel1));
+        testTag1.setChannels(Arrays.asList(testChannels.get(0)));
+        testTagC2.setChannels(Arrays.asList(testChannels.get(1)));
         testTag2.setChannels(testChannels);
         tagManager.update(testTag2.getName(),testTag2);
         testTagC1.setChannels(testChannels);
@@ -394,22 +333,12 @@ public class TagManagerIT {
         List<String> updateTagNames1 = new ArrayList<String>();        
         updateTags.forEach(tag -> updateTagNames1.add(tag.getName()));
 
-        updateTestTag.setChannels(Arrays.asList(testChannel));
+        updateTestTag.setChannels(Arrays.asList(testChannels.get(0)));
         testTagC2.setChannels(testChannels);
         testTag2.setChannels(testChannels);
         List<XmlTag> goalTags = Arrays.asList(updateTestTagC,updateTestTag,testTag1,testTagC2,testTag2,testTagC1);  
         // verify the tags were updated as expected
         assertTrue("Failed to update the tag",updatedTagsCorrectly(updatedTags,updateTags,goalTags,updateTagNames1));
-
-        // clean up 
-        for(XmlTag tag: testTags) {
-            try {
-                tagManager.remove(tag.getName());
-            } catch(Exception e) {}
-        }
-        createdChannels.forEach(createdChannel -> {
-            channelRepository.deleteById(createdChannel.getName());
-        });
     }
 
     /**
@@ -417,8 +346,6 @@ public class TagManagerIT {
      */
     @Test
     public void deleteXmlTag() {
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
         testTag1.setChannels(testChannels);
         List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
         Iterable<XmlTag> createdTags = tagManager.create(testTags);
@@ -433,11 +360,6 @@ public class TagManagerIT {
         // verify the tag was deleted as expected
         assertTrue("Failed to delete the tag",!tagRepository.existsById(testTag1.getName()));
         assertEquals("Failed to delete the tag from channels",new ArrayList<XmlChannel>(),channelRepository.search(params));
-
-        // clean up 
-        createdChannels.forEach(createdChannel -> {
-            channelRepository.deleteById(createdChannel.getName());
-        });
     }
 
     /**
@@ -445,11 +367,11 @@ public class TagManagerIT {
      */
     @Test
     public void deleteXmlTagFromChannel() {
-        XmlChannel createdChannel = channelRepository.index(testChannel);
-        testTag1.setChannels(Arrays.asList(testChannel));
+        XmlChannel createdChannel = channelRepository.index(testChannels.get(0));
+        testTag1.setChannels(Arrays.asList(testChannels.get(0)));
         XmlTag createdTag = tagManager.create(testTag.getName(),testTag);
 
-        tagManager.removeSingle(testTag.getName(),testChannel.getName());
+        tagManager.removeSingle(testTag.getName(),testChannels.get(0).getName());
         // verify the tag was not deleted, as expected
         assertTrue("Failed to not delete the tag",tagRepository.existsById(testTag.getName()));
 
@@ -457,19 +379,16 @@ public class TagManagerIT {
         params.add("~tag",testTag.getName());
         // verify the tag was deleted from the channel as expected
         assertEquals("Failed to delete the tag from channel",new ArrayList<XmlChannel>(),channelRepository.search(params));
-
-        // clean up 
-        channelRepository.deleteById(createdChannel.getName());
     }
-    
+
     /**
      * validate a tag request
      */
     @Test
     public void validateXmlTagRequest() {
-        XmlChannel createdChannel = channelRepository.index(testChannel);
-        testTag1.setChannels(Arrays.asList(testChannel));
-        
+        XmlChannel createdChannel = channelRepository.index(testChannels.get(0));
+        testTag1.setChannels(Arrays.asList(testChannels.get(0)));
+
         try {
             // verify the tag request is valid
             tagManager.validateTagRequest(createdChannel.getName());
@@ -477,7 +396,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue(e.getMessage(),false);
         }
-        
+
         try {
             // verify the tag request is invalid
             tagManager.validateTagRequest("fakeChannel");
@@ -485,7 +404,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue("",true);
         }
-        
+
         try {
             // verify the tag request is valid
             tagManager.validateTagRequest(testTag);
@@ -493,7 +412,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue(e.getMessage(),false);
         }
-        
+
         try {
             // verify the tag request is valid
             tagManager.validateTagRequest(testTag1);
@@ -501,7 +420,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue(e.getMessage(),false);
         }
-        
+
         testTag.setName(null);
         try {
             // verify the tag request is invalid
@@ -510,7 +429,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue("",true);
         }
-        
+
         testTag.setName("");
         try {
             // verify the tag request is invalid
@@ -519,7 +438,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue("",true);
         }
-        
+
         testTag.setName("testTag");
         testTag.setOwner(null);
         try {
@@ -529,7 +448,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue("",true);
         }
-        
+
         testTag.setOwner("");
         try {
             // verify the tag request is invalid
@@ -538,9 +457,10 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue("",true);
         }
-        
+
         testTag.setOwner("tagOwner");
-        testTag.setChannels(Arrays.asList(testChannel1));
+        XmlChannel chan = new XmlChannel("fakeChan","fakeOwner");
+        testTag.setChannels(Arrays.asList(chan));
         try {
             // verify the tag request is invalid
             tagManager.validateTagRequest(testTag);
@@ -548,8 +468,8 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue("",true);
         }
-        
-        testTag.setChannels(Arrays.asList(testChannel,testChannel1));
+
+        testTag.setChannels(Arrays.asList(testChannels.get(0),chan));
         try {
             // verify the tag request is invalid
             tagManager.validateTagRequest(testTag);
@@ -557,8 +477,8 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue("",true);
         }
-        
-        testTag.setChannels(Arrays.asList(testChannel));
+
+        testTag.setChannels(Arrays.asList(testChannels.get(0)));
         try {
             // verify the tag request is valid
             tagManager.validateTagRequest(Arrays.asList(testTag,testTag1,testTagC));
@@ -566,7 +486,7 @@ public class TagManagerIT {
         } catch (Exception e) {
             assertTrue(e.getMessage(),false);
         }
-        
+
         testTag.setName("");
         try {
             // verify the tag request is invalid
@@ -574,9 +494,39 @@ public class TagManagerIT {
             assertTrue("Validated an invalid tag",false);
         } catch (Exception e) {
             assertTrue("",true);
-        }
-        
-        
+        }        
+    }
+
+    
+    
+    // Helper operations to create and clean up the resources needed for successful
+    // testing of the TagManager operations
+
+    private final List<XmlChannel> testChannels = Arrays.asList(
+            new XmlChannel("testChannel", "testOwner"),
+            new XmlChannel("testChannel1", "testOwner"));
+
+    private final List<XmlTag> allTestTags = Arrays.asList(
+            testTag,testTag1,testTag2,testTagC,testTagC1,testTagC2,updateTestTag,updateTestTagC,updateTestTag1);
+
+    @Before
+    public void setup() {
+        channelRepository.indexAll(testChannels);
+    }
+
+    @After
+    public void cleanup() {
+        // clean up
+        testChannels.forEach(channel -> { 
+            try {
+                channelRepository.deleteById(channel.getName());
+            } catch (Exception e) {}
+        });
+        allTestTags.forEach(tag -> {
+            try {
+                tagRepository.deleteById(tag.getName());
+            } catch (Exception e) {}
+        });
     }
 
     public static boolean tagCompare(XmlTag tag1, XmlTag tag2) {

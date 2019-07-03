@@ -28,17 +28,18 @@ public class PropertyManagerIT {
 
     @Autowired
     TagRepository tagRepository;
-    @Autowired
-    ChannelRepository channelRepository;
+    
     @Autowired
     PropertyRepository propertyRepository;
-
+    
+    @Autowired
+    ChannelRepository channelRepository;
 
     private final List<XmlProperty> testProperties = Arrays.asList(
             new XmlProperty("test-property0", "test-property-owner"),
             new XmlProperty("test-property1", "test-property-owner"),
             new XmlProperty("test-property2", "test-property-owner"));
-
+    
     /**
      * Test the basic operations of create, read, updated, and delete
      */
