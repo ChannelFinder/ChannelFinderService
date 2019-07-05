@@ -33,7 +33,7 @@ properties and tags, as JSON documents.
 
 #### API reference guide
 
-https://github.com/shroffk/ChannelFinder-SpringBoot/blob/master/src/main/resources/api_description.rst
+https://github.com/ChannelFinder/ChannelFinder-SpringBoot/blob/master/src/main/resources/api_description.rst
 
 #### Installation
 

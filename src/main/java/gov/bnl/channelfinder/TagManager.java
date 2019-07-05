@@ -66,7 +66,7 @@ public class TagManager {
     public XmlTag read(@PathVariable("tagName") String tagName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         tagManagerAudit.info("getting tag: " + tagName);
-        
+
         if(withChannels) {
             Optional<XmlTag> foundTag = tagRepository.findById(tagName,true);
             if(foundTag.isPresent()) {
@@ -120,19 +120,14 @@ public class TagManager {
                 // delete existing tag
                 tagRepository.deleteById(tagName);
             } 
-            
+
             // create new tag
             XmlTag createdTag = tagRepository.index(tag);            
-            
+
             if(!tag.getChannels().isEmpty()) {                
-                List<XmlChannel> taggedChannels = tag.getChannels().stream().map(ch -> {
-                    XmlChannel taggedChannel = new XmlChannel(ch.getName(), ch.getOwner());
-                    taggedChannel.addTag(createdTag);
-                    return taggedChannel;
-                }).collect(Collectors.toList());                
+                tag.getChannels().forEach(chan -> chan.addTag(createdTag));               
                 // update the listed channels in the tag's payloads with the new tag
-                Iterable<XmlChannel> chans = channelRepository.saveAll(taggedChannels);
-                // TODO validate the above result
+                Iterable<XmlChannel> chans = channelRepository.saveAll(tag.getChannels());
                 List<XmlChannel> chanList = new ArrayList<XmlChannel>();
                 for(XmlChannel chan: chans) {
                     chan.setTags(new ArrayList<XmlTag>());
@@ -176,7 +171,7 @@ public class TagManager {
                     }                
                 } 
             }
-            
+
             // delete existing tags
             for(XmlTag tag: tags) {
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
@@ -186,21 +181,31 @@ public class TagManager {
                     tagRepository.deleteById(tag.getName());                
                 } 
             }
-            
+
             // create new tags
             Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
 
             // update the listed channels in the tags' payloads with new tags
             List<XmlChannel> channels = new ArrayList<>();
+
+            boolean repeatedChannel = false;
             for(XmlTag tag: tags) {
-                XmlTag t = new XmlTag(tag.getName(),tag.getOwner());
-                List<XmlChannel> taggedChannels = tag.getChannels().stream().map(ch -> {
-                    XmlChannel taggedChannel = new XmlChannel(ch.getName(), ch.getOwner());
-                    taggedChannel.addTag(t);
-                    return taggedChannel;
-                }).collect(Collectors.toList());     
-                channels.addAll(taggedChannels);
+                tag.getChannels().forEach(chan -> chan.addTag(new XmlTag(tag.getName(),tag.getOwner())));                
+                for(XmlChannel addingChan: tag.getChannels()) {
+                    repeatedChannel = false;
+                    for(XmlChannel addedChan: channels) {
+                        if(addingChan.getName().equals(addedChan.getName())) {
+                            repeatedChannel = true;
+                            addedChan.addTag(new XmlTag(tag.getName(),tag.getOwner()));
+                            break;
+                        }
+                    }
+                    if(!repeatedChannel) {
+                        channels.add(addingChan);
+                    }
+                }
             }
+
             if(!channels.isEmpty()) {
                 Iterable<XmlChannel> chans = channelRepository.saveAll(channels);
             }
@@ -299,14 +304,9 @@ public class TagManager {
 
             // update the listed channels in the tag's payload with the updated tag
             if(!tag.getChannels().isEmpty()) {                
-                List<XmlChannel> taggedChannels = tag.getChannels().stream().map(ch -> {
-                    XmlChannel taggedChannel = new XmlChannel(ch.getName(), ch.getOwner());
-                    taggedChannel.addTag(updatedTag);
-                    return taggedChannel;
-                }).collect(Collectors.toList());                
+                tag.getChannels().forEach(chan -> chan.addTag(updatedTag));                              
                 // update the listed channels in the tag's payloads with the new tag
-                Iterable<XmlChannel> channels = channelRepository.saveAll(taggedChannels);
-                // TODO validate the above result
+                Iterable<XmlChannel> channels = channelRepository.saveAll(tag.getChannels());
                 List<XmlChannel> chanList = new ArrayList<XmlChannel>();
                 for(XmlChannel chan: channels) {
                     chan.setTags(new ArrayList<XmlTag>());
@@ -314,10 +314,10 @@ public class TagManager {
                 }
                 updatedTag.setChannels(chanList);
             }
-            
-            // update 
+
+            // update channels of existing tag
             if(!chans.isEmpty()) {
-                chans.forEach(chan -> chan.setTags(Arrays.asList(updatedTag)));
+                chans.forEach(chan -> chan.addTag(updatedTag));
                 channelRepository.saveAll(chans);
             }
             return updatedTag;        
@@ -361,21 +361,40 @@ public class TagManager {
             }
 
             // update the listed channels in the tags' payloads with the updated tags
+            boolean repeatedChannel = false;
             List<XmlChannel> channels = new ArrayList<>();
             for(XmlTag tag: tags) {
-                XmlTag t = new XmlTag(tag.getName(),tag.getOwner());
-                List<XmlChannel> taggedChannels = tag.getChannels().stream().map(ch -> {
-                    XmlChannel taggedChannel = new XmlChannel(ch.getName(), ch.getOwner());
-                    taggedChannel.addTag(t);
-                    return taggedChannel;
-                }).collect(Collectors.toList());     
-                channels.addAll(taggedChannels);
-
+                tag.getChannels().forEach(chan -> chan.addTag(new XmlTag(tag.getName(),tag.getOwner())));                
+                for(XmlChannel addingChan: tag.getChannels()) {
+                    repeatedChannel = false;
+                    for(XmlChannel addedChan: channels) {
+                        if(addingChan.getName().equals(addedChan.getName())) {
+                            repeatedChannel = true;
+                            addedChan.addTag(new XmlTag(tag.getName(),tag.getOwner()));
+                            break;
+                        }
+                    }
+                    if(!repeatedChannel) {
+                        channels.add(addingChan);
+                    }
+                }
+            
+                List<XmlChannel> chanList = new ArrayList<XmlChannel>();               
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName(),true);
                 if(existingTag.isPresent()) {
-                    taggedChannels = existingTag.get().getChannels();
-                    taggedChannels.forEach(chan -> chan.addTag(t));
-                    channels.addAll(taggedChannels);
+                    for(XmlChannel addingChan: existingTag.get().getChannels()) {
+                        repeatedChannel = false;
+                        for(XmlChannel addedChan: channels) {
+                            if(addingChan.getName().equals(addedChan.getName())) {
+                                repeatedChannel = true;
+                                break;
+                            }
+                        }
+                        if(!repeatedChannel) {
+                            addingChan.addTag(new XmlTag(tag.getName(),tag.getOwner()));
+                            channels.add(addingChan);
+                        }
+                    }
                 }
             }
 
