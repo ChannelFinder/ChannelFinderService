@@ -1,9 +1,6 @@
 package gov.bnl.channelfinder;
 
 import static gov.bnl.channelfinder.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -11,10 +8,6 @@ import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 
-import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
@@ -105,12 +98,12 @@ public class ChannelManager {
             validateChannelRequest(channel);
 
             // check if authorized owner
-            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
-            boolean present = existingChannel.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
             }
+            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
+            boolean present = existingChannel.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -142,12 +135,12 @@ public class ChannelManager {
 
             // check if authorized owner
             for(XmlChannel channel: channels) {
-                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
-                boolean present = existingChannel.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
                 }
+                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+                boolean present = existingChannel.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -195,12 +188,12 @@ public class ChannelManager {
             validateChannelRequest(channel);
 
             // check if authorized owner
-            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
-            boolean present = existingChannel.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
             }
+            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
+            boolean present = existingChannel.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -231,12 +224,12 @@ public class ChannelManager {
             validateChannelRequest(channels);   
 
             for(XmlChannel channel: channels) {
-                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
-                boolean present = existingChannel.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
                 }
+                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+                boolean present = existingChannel.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

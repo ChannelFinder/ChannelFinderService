@@ -1,22 +1,14 @@
 package gov.bnl.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
 import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
@@ -114,12 +106,12 @@ public class TagManager {
             validateTagRequest(tag);
 
             // check if authorized owner
-            Optional<XmlTag> existingTag = tagRepository.findById(tagName);
-            boolean present = existingTag.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
+            Optional<XmlTag> existingTag = tagRepository.findById(tagName);
+            boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -128,6 +120,7 @@ public class TagManager {
                 // delete existing tag
                 tagRepository.deleteById(tagName);
             } 
+            
             // create new tag
             XmlTag createdTag = tagRepository.index(tag);            
             
@@ -148,7 +141,6 @@ public class TagManager {
                 createdTag.setChannels(chanList);
             }
             return createdTag;
-
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
@@ -171,12 +163,12 @@ public class TagManager {
 
             // check if authorized owner
             for(XmlTag tag: tags) {
-                Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
-                boolean present = existingTag.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
                 } 
+                Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
+                boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -287,13 +279,13 @@ public class TagManager {
             validateTagRequest(tag);
 
             // check if authorized owner
-            Optional<XmlTag> existingTag = tagRepository.findById(tagName,true);
-            boolean present = existingTag.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
             List<XmlChannel> chans = new ArrayList<XmlChannel>();
+            Optional<XmlTag> existingTag = tagRepository.findById(tagName,true);
+            boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -354,12 +346,12 @@ public class TagManager {
 
             // check if authorized owner
             for(XmlTag tag:tags) {
-                Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
-                boolean present = existingTag.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
                 } 
+                Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
+                boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

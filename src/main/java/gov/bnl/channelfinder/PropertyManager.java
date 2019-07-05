@@ -1,26 +1,17 @@
 package gov.bnl.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
 import static gov.bnl.channelfinder.CFResourceDescriptors.PROPERTY_RESOURCE_URI;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -120,12 +111,12 @@ public class PropertyManager {
             validatePropertyRequest(property);
 
             // check if authorized owner
-            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
-            boolean present = existingProperty.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this property: " + property, null);
             }
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+            boolean present = existingProperty.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -171,12 +162,12 @@ public class PropertyManager {
 
             // check if authorized owner
             for(XmlProperty property: properties) {
-                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
-                boolean present = existingProperty.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this property: " + property, null);
                 }
+                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+                boolean present = existingProperty.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -279,13 +270,13 @@ public class PropertyManager {
             validatePropertyRequest(property);
 
             // check if authorized owner
-            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName(),true);
-            boolean present = existingProperty.isPresent();
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this property: " + property, null);
             }
             List<XmlChannel> chans = new ArrayList<XmlChannel>();
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName(),true);
+            boolean present = existingProperty.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -369,12 +360,12 @@ public class PropertyManager {
 
             // check if authorized owner
             for(XmlProperty property: properties) {
-                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
-                boolean present = existingProperty.isPresent();
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this property: " + property, null);
                 }
+                Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+                boolean present = existingProperty.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
