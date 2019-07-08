@@ -62,9 +62,9 @@ public class AuthorizationService {
 
     public boolean isAuthorizedOwner(Authentication authentication, XmlTag data) {
         ArrayList<String> auth = new ArrayList<String>();
-        Collection auths = authentication.getAuthorities();
-        for(Object a: auths)
-            auth.add(((GrantedAuthority)(a)).getAuthority());
+        Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
+        for(GrantedAuthority a: auths)
+            auth.add(a.getAuthority());
         
         if(!Collections.disjoint(auth,ROLES.CF_ADMIN.groups))
             return true;
@@ -75,9 +75,9 @@ public class AuthorizationService {
 
     public boolean isAuthorizedOwner(Authentication authentication, XmlProperty data) {
         ArrayList<String> auth = new ArrayList<String>();
-        Collection auths = authentication.getAuthorities();
-        for(Object a: auths)
-            auth.add(((GrantedAuthority)(a)).getAuthority());
+        Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
+        for(GrantedAuthority a: auths)
+            auth.add(a.getAuthority());
         
         if(!Collections.disjoint(auth,ROLES.CF_ADMIN.groups))
             return true;
@@ -88,9 +88,9 @@ public class AuthorizationService {
 
     public boolean isAuthorizedOwner(Authentication authentication, XmlChannel data) {
         ArrayList<String> auth = new ArrayList<String>();
-        Collection auths = authentication.getAuthorities();
-        for(Object a: auths)
-            auth.add(((GrantedAuthority)(a)).getAuthority());
+        Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
+        for(GrantedAuthority a: auths)
+            auth.add(a.getAuthority());
         
         if(!Collections.disjoint(auth,ROLES.CF_ADMIN.groups))
             return true;
@@ -101,9 +101,9 @@ public class AuthorizationService {
 
     public boolean isAuthorizedRole(Authentication authentication, ROLES expectedRole) {
         ArrayList<String> auth = new ArrayList<String>();
-        Collection auths = authentication.getAuthorities();
-        for(Object a: auths)
-            auth.add(((GrantedAuthority)(a)).getAuthority());
+        Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
+        for(GrantedAuthority a: auths)
+            auth.add(a.getAuthority());
 
         if(!Collections.disjoint(auth,ROLES.CF_ADMIN.groups))
             return true;
