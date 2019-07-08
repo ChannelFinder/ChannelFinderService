@@ -1,10 +1,8 @@
  fix channelrepositorysearchIT 
- fix findall tests 
- code authenticationIT
- implement testing for non auth errors
+ set up a different elastic index for testing, which should also fix findall tests 
  implement a limit on changing ownership to groups the user belongs to
- implement anything else from question list that isnt yet implemented
  figure out what to do and what would happen if 2 items have same name
- deal with the possible hack of changing owners or whatev in payloads
+ add logging everywhere
+ take out threadsleeps in chanreposearchIT? 
+ implement capabilities to return list of nonexisting items in validation
  get cfpy tests to pass
- update docs
