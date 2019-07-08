@@ -318,12 +318,18 @@ public class TagManagerIT {
         updateTestTag.setChannels(Arrays.asList(testChannels.get(0)));
         tagManager.update(updateTestTag.getName(),copy(updateTestTag));
         updateTestTag.setChannels(new ArrayList<XmlChannel>());
+        
         testTag1.setChannels(Arrays.asList(testChannels.get(0)));
+        
         testTagC2.setChannels(Arrays.asList(testChannels.get(0)));
         tagManager.create(testTagC2.getName(),testTagC2);
+        testTagC2.setChannels(Arrays.asList(testChannels.get(1)));
+        
         testTag2.setChannels(testChannels);
         tagManager.update(testTag2.getName(),copy(testTag2));
+        
         testTagC1.setChannels(testChannels);
+        
 
         tags = Arrays.asList(updateTestTagC,updateTestTag,testTag1,testTagC2,testTag2,testTagC1);
         tagsRequest = copy(tags);  

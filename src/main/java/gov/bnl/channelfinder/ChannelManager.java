@@ -151,9 +151,7 @@ public class ChannelManager {
 
             // delete existing channels
             for(XmlChannel channel: channels) {
-                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
-                boolean present = existingChannel.isPresent();
-                if(present) {
+                if(channelRepository.existsById(channel.getName())) {
                     // delete existing channel
                     channelRepository.deleteById(channel.getName());
                 } 
