@@ -403,7 +403,7 @@ public class TagManagerIT {
 
         try {
             // verify the tag request is valid
-            tagManager.validateTagRequest(createdChannel.getName());
+            tagManager.validateTagWithChannelRequest(createdChannel.getName());
             assertTrue("",true);
         } catch (Exception e) {
             assertTrue(e.getMessage(),false);
@@ -411,7 +411,7 @@ public class TagManagerIT {
 
         try {
             // verify the tag request is invalid
-            tagManager.validateTagRequest("fakeChannel");
+            tagManager.validateTagWithChannelRequest("fakeChannel");
             assertTrue("Validated an invalid channel",false);
         } catch (Exception e) {
             assertTrue("",true);
