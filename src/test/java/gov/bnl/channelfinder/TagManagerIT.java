@@ -6,10 +6,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,18 +53,26 @@ public class TagManagerIT {
     /**
      * list all tags
      */
-    @Test // might actually work but messed up by full database
+    @Test // if there are existing tags in database before running test it will fail
     public void listXmlTags() {
-        testTag1.setChannels(testChannels);
-        List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
+        testTagC.setChannels(testChannels);
+        List<XmlTag> testTags = Arrays.asList(testTag,testTagC);
         Iterable<XmlTag> createdTags = tagManager.create(testTags);
+        ArrayList<XmlTag> createdTagsArrayList = new ArrayList<XmlTag>();
 
         Iterable<XmlTag> tagList = tagManager.list();
+        ArrayList<XmlTag> tagArrayList = new ArrayList<XmlTag>();
+
         for(XmlTag tag: createdTags) {
             tag.setChannels(new ArrayList<XmlChannel>());
+            createdTagsArrayList.add(tag);
         }
+        for(XmlTag tag: tagList) {
+            tagArrayList.add(tag);
+        }
+        
         // verify the tags were listed as expected
-        assertEquals("Failed to list all tags",createdTags,tagList);                
+        assertTrue("Failed to list all tags",tagArrayList.containsAll(createdTagsArrayList) && createdTagsArrayList.containsAll(tagArrayList));
     }
 
     /**
@@ -70,9 +80,9 @@ public class TagManagerIT {
      */
     @Test
     public void readXmlTag() {
-        testTag1.setChannels(testChannels);
+        testTagC.setChannels(testChannels);
         XmlTag createdTag = tagManager.create(testTag.getName(),testTag);
-        XmlTag createdTag1 = tagManager.create(testTag1.getName(),testTag1);
+        XmlTag createdTag1 = tagManager.create(testTagC.getName(),testTagC);
 
         XmlTag readTag = tagManager.read(createdTag.getName(), false);
         // verify the tag was read as expected
@@ -83,9 +93,9 @@ public class TagManagerIT {
         assertEquals("Failed to read the tag w/ channels",createdTag,readTag);
 
         readTag = tagManager.read(createdTag1.getName(), false);
-        testTag1.setChannels(new ArrayList<XmlChannel>());
+        testTagC.setChannels(new ArrayList<XmlChannel>());
         // verify the tag was read as expected
-        assertEquals("Failed to read the tag",testTag1,readTag);
+        assertEquals("Failed to read the tag",testTagC,readTag);
 
         readTag = tagManager.read(createdTag1.getName(), true);
         // verify the tag was read as expected
@@ -318,18 +328,18 @@ public class TagManagerIT {
         updateTestTag.setChannels(Arrays.asList(testChannels.get(0)));
         tagManager.update(updateTestTag.getName(),copy(updateTestTag));
         updateTestTag.setChannels(new ArrayList<XmlChannel>());
-        
+
         testTag1.setChannels(Arrays.asList(testChannels.get(0)));
-        
+
         testTagC2.setChannels(Arrays.asList(testChannels.get(0)));
         tagManager.create(testTagC2.getName(),testTagC2);
         testTagC2.setChannels(Arrays.asList(testChannels.get(1)));
-        
+
         testTag2.setChannels(testChannels);
         tagManager.update(testTag2.getName(),copy(testTag2));
-        
+
         testTagC1.setChannels(testChannels);
-        
+
 
         tags = Arrays.asList(updateTestTagC,updateTestTag,testTag1,testTagC2,testTag2,testTagC1);
         tagsRequest = copy(tags);  
@@ -499,8 +509,8 @@ public class TagManagerIT {
         }        
     }
 
-    
-    
+
+
     // Helper operations to create and clean up the resources needed for successful
     // testing of the TagManager operations
 
@@ -578,7 +588,7 @@ public class TagManagerIT {
         }
         return true;
     }
-    
+
     public XmlTag copy(XmlTag tag) {
         XmlTag copy = new XmlTag(tag.getName(),tag.getOwner());
         List<XmlChannel> channels = new ArrayList<XmlChannel>();
@@ -586,7 +596,7 @@ public class TagManagerIT {
         copy.setChannels(channels);
         return copy;
     }
-    
+
     public List<XmlTag> copy(List<XmlTag> tags) {
         List<XmlTag> copy = new ArrayList<XmlTag>();
         tags.forEach(tag -> copy.add(copy(tag)));

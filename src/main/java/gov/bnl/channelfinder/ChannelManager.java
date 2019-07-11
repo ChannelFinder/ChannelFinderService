@@ -317,14 +317,18 @@ public class ChannelManager {
         }
         // 3 
         List <String> propertyNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
+        List <String> propertyValues = channel.getProperties().stream().map(XmlProperty::getValue).collect(Collectors.toList());
         for(String propertyName:propertyNames) {
             if(!propertyRepository.existsById(propertyName)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The property with the name " + propertyName + " does not exist");
-            } //else if(property.get().getValue() == null || property.get().getValue().isEmpty()) {
-            //                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-            //                        "The property with the name " + propertyName + " is null or empty");
-            //            }
+            } 
+        }
+        for(String propertyValue:propertyValues) {
+            if(propertyValue == null || propertyValue.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "The property with the name " + propertyNames.get(propertyValues.indexOf(propertyValue)) + " has value " + propertyValue + " is null or empty");
+            }
         }
 
     }
