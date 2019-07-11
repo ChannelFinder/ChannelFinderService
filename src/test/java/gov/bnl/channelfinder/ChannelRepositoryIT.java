@@ -64,7 +64,7 @@ public class ChannelRepositoryIT {
     public void indexXmlChannel() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
 
         XmlChannel createdChannel = channelRepository.index(testChannel);
         // verify the channel was created as expected
@@ -87,8 +87,8 @@ public class ChannelRepositoryIT {
     public void indexXmlChannels() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
         List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
 
         Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
@@ -114,9 +114,9 @@ public class ChannelRepositoryIT {
     public void saveXmlChannel() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel updateTestChannel = new XmlChannel("testChannel","updateTestOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel updateTestChannel1 = new XmlChannel("updateTestChannel1","updateTestOwner1",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        XmlChannel updateTestChannel = new XmlChannel("testChannel","updateTestOwner",testProperties,testTags);
+        XmlChannel updateTestChannel1 = new XmlChannel("updateTestChannel1","updateTestOwner1",testProperties,testTags);
         XmlChannel createdChannel = channelRepository.index(testChannel);
 
         XmlChannel updatedTestChannel = channelRepository.save(updateTestChannel);
@@ -145,10 +145,10 @@ public class ChannelRepositoryIT {
     public void saveXmlChannels() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel updateTestChannel = new XmlChannel("testChannel","updateTestOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel updateTestChannel1 = new XmlChannel("testChannel1","updateTestOwner1",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
+        XmlChannel updateTestChannel = new XmlChannel("testChannel","updateTestOwner",testProperties,testTags);
+        XmlChannel updateTestChannel1 = new XmlChannel("testChannel1","updateTestOwner1",testProperties,testTags);
         List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
         List<XmlChannel> updateTestChannels = Arrays.asList(updateTestChannel,updateTestChannel1);
         Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
@@ -176,7 +176,7 @@ public class ChannelRepositoryIT {
     public void findXmlChannel() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
 
         Optional<XmlChannel> notFoundChannel = channelRepository.findById(testChannel.getName());
         // verify the channel was not found as expected
@@ -208,7 +208,7 @@ public class ChannelRepositoryIT {
     public void testChannelExists() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel", "testOwner", (List<XmlProperty>) createdProperties, (List<XmlTag>) createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel", "testOwner", testProperties, testTags);
         XmlChannel createdChannel = channelRepository.index(testChannel);
 
         // verify the channel exists as expected
@@ -227,8 +227,8 @@ public class ChannelRepositoryIT {
     public void testChannelsExist() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
         List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
         Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
 
@@ -249,8 +249,8 @@ public class ChannelRepositoryIT {
     public void findAllXmlChannels() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
         List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
         Set<XmlChannel> createdChannels = Sets.newHashSet(channelRepository.indexAll(testChannels));
 
@@ -277,8 +277,8 @@ public class ChannelRepositoryIT {
     public void findXmlChannels() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
         List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
         List<String> channelNames = Arrays.asList(testChannel.getName(),testChannel1.getName());
         Iterable<XmlChannel> notFoundChannels= null;
@@ -321,7 +321,7 @@ public class ChannelRepositoryIT {
     public void deleteXmlTag() {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",(List<XmlProperty>)createdProperties,(List<XmlTag>)createdTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
         XmlChannel createdChannel = channelRepository.index(testChannel);
         
         channelRepository.deleteById(createdChannel.getName());

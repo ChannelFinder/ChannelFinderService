@@ -370,6 +370,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     public void deleteById(String propertyName) {
         RestHighLevelClient client = esService.getIndexClient();
         DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
+        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         try {
             DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);

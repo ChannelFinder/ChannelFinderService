@@ -365,6 +365,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     public void deleteById(String tagName) {
         RestHighLevelClient client = esService.getIndexClient();
         DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
+        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         try {
             DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);

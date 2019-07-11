@@ -415,6 +415,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         RestHighLevelClient client = esService.getIndexClient();
 
         DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel);
+        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         try {
             DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);

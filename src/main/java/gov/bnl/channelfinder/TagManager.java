@@ -188,7 +188,7 @@ public class TagManager {
             List<XmlChannel> channels = new ArrayList<>();
             boolean repeatedChannel = false;
             for(XmlTag tag: tags) {
-                tag.getChannels().forEach(chan -> chan.addTag(new XmlTag(tag.getName(),tag.getOwner())));
+                tag.getChannels().forEach(chan -> chan.addTag(new XmlTag(tag.getName(),tag.getOwner())));                
                 for(XmlChannel addingChan: tag.getChannels()) {
                     repeatedChannel = false;
                     for(XmlChannel addedChan: channels) {
@@ -232,7 +232,7 @@ public class TagManager {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
             // Validate request parameters
-            validateTagChannelRequest(channelName);
+            validateTagRequest(channelName);
 
             // check if authorized owner
             Optional<XmlTag> existingTag = tagRepository.findById(tagName);
@@ -481,12 +481,53 @@ public class TagManager {
     }
 
     /**
-     * Checks if all tags have
+     * Check that the existing tag and the tag in the request body match
+     * 
+     * @param existing
+     * @param request
+     * @return
+     */
+    boolean validateTag(XmlTag existing, XmlTag request) {
+        return existing.getName().equals(request.getName());
+    }
+
+    /**
+     * Checks if
+     * 1. the tag name is not null and matches the name in the body
+     * 2. the tag owner is not null or empty
+     * 3. all the listed channels exist
+     * 
+     * @param data
+     */
+    public void validateTagRequest(XmlTag testTag) {
+        // 1 
+        if (testTag.getName() == null || testTag.getName().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The tag name cannot be null or empty " + testTag.toString(), null);
+        }
+        // 2
+        if (testTag.getOwner() == null || testTag.getOwner().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "The tag owner cannot be null or empty " + testTag.toString(), null);
+        }
+        // 3
+        List <String> channelNames = testTag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
+        for(String channelName:channelNames) {
+            if(!channelRepository.existsById(channelName)) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "The channel with the name " + channelName + " does not exist");
+            }
+        }
+
+    }
+
+    /**
+     * Checks if
      * 1. the tag names are not null
      * 2. the tag owners are not null or empty
      * 3. all the channels exist
      * 
-     * @param tags the list of tags to be verified
+     * @param data
      */
     public void validateTagRequest(Iterable<XmlTag> tags) {
         for(XmlTag tag: tags) {
@@ -496,38 +537,13 @@ public class TagManager {
 
     /**
      * Checks if
-     * 1. the tag name is not null and matches the name in the body
+     * 1. the tag name is not null
      * 2. the tag owner is not null or empty
-     * 3. all the listed channels exist
+     * 3. all the channel exist
      * 
-     * @param tag the requested tag to be validates
+     * @param data
      */
-    public void validateTagRequest(XmlTag tag) {
-        // 1 
-        if (tag.getName() == null || tag.getName().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null or empty " + tag.toString(), null);
-        }
-        // 2
-        if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag owner cannot be null or empty " + tag.toString(), null);
-        }
-        // 3
-        List <String> channelNames = tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
-        for(String channelName:channelNames) {
-            if(!channelRepository.existsById(channelName)) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The channel with the name " + channelName + " does not exist");
-            }
-        }
-    }
-
-    /**
-     * Checks if the channel exist
-     * @param channelName the channel name
-     */
-    public void validateTagChannelRequest(String channelName) {
+    public void validateTagRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");

@@ -1,5 +1,7 @@
 package gov.bnl.channelfinder;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -19,74 +21,137 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.google.common.collect.Iterables;
+
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 public class ChannelManagerIT {
 
     @Autowired
-    ChannelManager channelManager;
-
-    @Autowired
     TagRepository tagRepository;
+    
     @Autowired
     PropertyRepository propertyRepository;
+    
+    @Autowired
+    ChannelRepository channelRepository;
+
+    @Autowired
+    ChannelManager channelManager;
+    
+    // set up
+    XmlChannel testChannel0 = new XmlChannel("testChannel0","testChannelOwner0");
+    XmlChannel testChannel1 = new XmlChannel("testChannel1","testChannelOwner1");
+    XmlChannel testChannel2 = new XmlChannel("testChannel2","testChannelOwner2");
 
     /**
-     * Test the basic operations of create, read, updated, and delete
+     * read a single channel
      */
     @Test
-    public void basicChannelCRUDOperations() {
-        XmlChannel testChannel = new XmlChannel("test-channel0", "test-channel-owner");
-        testChannel.addTag(testTags.get(0));
-        XmlProperty prop0 = testProperties.get(0);
-        prop0.setValue("test-prop0-value");
-        testChannel.addProperty(prop0);
+    public void readXmlChannel() {
+        testChannel0.setTags(testTags);
+        testChannel0.setProperties(testProperties);
+        XmlChannel createdChannel = channelManager.create(testChannel0.getName(),testChannel0);
+
+        XmlChannel readChannel = channelManager.read(createdChannel.getName());
+        // verify the channel was read as expected
+        assertEquals("Failed to read the tag",createdChannel,readChannel);        
+
         try {
-            // Create a channel
-            XmlChannel createdChannel = channelManager.create(testChannel.getName(), testChannel);
-            assertTrue("failed to create test channel", createdChannel != null && testChannel.equals(createdChannel));
-            // Read a channel
-            XmlChannel foundChannel = channelManager.read(testChannel.getName());
-            assertTrue("failed to find by id the test channel", foundChannel != null && testChannel.equals(foundChannel));
-            // update the channel
-            // 1. with a new tag
-            testChannel.addTag(testTags.get(1));
-            XmlChannel updatedChannel = channelManager.update(testChannel.getName(), testChannel);
-            assertTrue("failed to update test channel with additional tag", updatedChannel != null && testChannel.equals(updatedChannel));
-            // 2. with a new property
-            XmlProperty prop1 = testProperties.get(1);
-            prop1.setValue("test-prop1-value");
-            testChannel.addProperty(prop1);
-            XmlChannel updatedChannel2 = channelManager.update(testChannel.getName(), testChannel);
-            assertTrue("failed to update test channel with additional tag", updatedChannel2 != null && testChannel.equals(updatedChannel2));
-            // 3. with a new property value
-            XmlProperty updatedProp1 = testProperties.get(1);
-            updatedProp1.setValue("test-prop1-updated-value");
-            testChannel.addProperty(updatedProp1);
-            XmlChannel updatedChannel3 = channelManager.update(testChannel.getName(), testChannel);
-            assertTrue("failed to update test channel with additional tag", updatedChannel3 != null && testChannel.equals(updatedChannel3));
-
-            // delete channel
-            channelManager.remove(testChannel.getName());
-            try {
-                channelManager.read(testChannel.getName());
-                fail("expected exception : ResponseStatusException:404 NOT_FOUND  was not thrown");
-              } catch (ResponseStatusException e) {
-                
-              }
-
-        } finally {
-            // ensure that the test channel is removed
-            try {
-                channelManager.remove(testChannel.getName());
-            }
-            catch (Exception e) {
-                
-            }
+            // verify the channel failed to be read, as expected
+            readChannel = channelManager.read("fakeChannel");
+            assertTrue("Failed to throw an error",false);
+        } catch(ResponseStatusException e) {
+            assertTrue(true);
         }
     }
 
+    /**
+     * create a single channel
+     */
+    @Test
+    public void createXmlChannel() {
+        testChannel0.setTags(testTags);
+        testChannel0.setProperties(testProperties);
+        testChannel1.setTags(testTags);
+        testChannel1.setProperties(testProperties);
+        
+        XmlChannel createdChannel0 = channelManager.create(testChannel2.getName(),testChannel0);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel0,createdChannel0); 
+        
+        XmlChannel createdChannel1 = channelManager.create(testChannel1.getName(),testChannel1);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel1,createdChannel1);
+        
+        testChannel0.setOwner("newOwner");
+        createdChannel0 = channelManager.create(testChannel0.getName(),testChannel0);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel0,createdChannel0);
+        
+        createdChannel1 = channelManager.create(testChannel0.getName(),testChannel1);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel1,createdChannel1);
+        // verify the old channel was deleted as expected
+        if(channelRepository.existsById(testChannel0.getName()))
+            assertTrue(true);
+        else {
+            fail("Failed to remove the old channel");
+        }
+    }
+    
+    /**
+     * create multiple channels
+     */
+    @Test
+    public void createXmlChannels() {
+        testChannel0.setTags(testTags);
+        testChannel0.setProperties(testProperties);
+        testChannel1.setTags(testTags);
+        testChannel1.setProperties(testProperties);
+        
+        XmlChannel createdChannel0 = channelManager.create(testChannel0.getName(),testChannel0);
+
+        Iterable<XmlChannel> createdChannels = channelManager.create(Arrays.asList(testChannel0,testChannel1,testChannel2));
+        // verify the channels were created as expected
+        assertTrue("Failed to create the channels",Iterables.elementsEqual(testChannels, createdChannels));  
+    }
+
+    /**
+     * update a single channel
+     */
+    @Test
+    public void updateXmlChannel() {
+        testChannel0.setTags(testTags);
+        testChannel0.setProperties(testProperties);
+        testChannel1.setTags(testTags);
+        testChannel1.setProperties(testProperties);
+        
+        XmlChannel createdChannel0 = channelManager.create(testChannel2.getName(),testChannel0);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel0,createdChannel0); 
+        
+        XmlChannel createdChannel1 = channelManager.create(testChannel1.getName(),testChannel1);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel1,createdChannel1);
+        
+        testChannel0.setOwner("newOwner");
+        createdChannel0 = channelManager.create(testChannel0.getName(),testChannel0);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel0,createdChannel0);
+        
+        createdChannel1 = channelManager.create(testChannel0.getName(),testChannel1);
+        // verify the channel was created as expected
+        assertEquals("Failed to create the tag",testChannel1,createdChannel1);
+        // verify the old channel was deleted as expected
+        if(channelRepository.existsById(testChannel0.getName()))
+            assertTrue(true);
+        else {
+            fail("Failed to remove the old channel");
+        }
+    }
+    
     /**
      * Test the basic operations of create, read, updated, and delete on a list of channels
      */
@@ -146,16 +211,20 @@ public class ChannelManagerIT {
         });
 
     }
-    // Helper operations to create and clean up the resources needed for successful testing of the ChannelManager operations
-    private final List<XmlTag> testTags = Arrays.asList(new XmlTag("test-tag0", "test-tag-owner"),
-                                                        new XmlTag("test-tag1", "test-tag-owner"),
-                                                        new XmlTag("test-tag2", "test-tag-owner"));
+    // Helper operations to create and clean up the resources needed for successful
+    // testing of the ChannelManager operations
+    
+    private final List<XmlTag> testTags = Arrays.asList(new XmlTag("testTag0", "testTagOwner0"),
+                                                        new XmlTag("testTag1", "testTagOwner1"),
+                                                        new XmlTag("testTag2", "testTagOwner2"));
 
     private final List<XmlProperty> testProperties = Arrays.asList(
-                                                        new XmlProperty("test-property0", "test-property-owner"),
-                                                        new XmlProperty("test-property1", "test-property-owner"),
-                                                        new XmlProperty("test-property2", "test-property-owner"));
+                                                        new XmlProperty("testProperty0", "testPropertyOwner0"),
+                                                        new XmlProperty("testProperty1", "testPropertyOwner1"),
+                                                        new XmlProperty("testProperty2", "testPropertyOwner2"));
 
+    private final List<XmlChannel> testChannels = Arrays.asList(
+            testChannel0,testChannel1,testChannel2);
     @Before
     public void setup() {
         tagRepository.indexAll(testTags);
@@ -166,10 +235,19 @@ public class ChannelManagerIT {
     public void cleanup() {
         // clean up
         testTags.forEach(createdTag -> {
-            tagRepository.deleteById(createdTag.getName());
+            try {
+                tagRepository.deleteById(createdTag.getName());
+            } catch (Exception e) {}
         });
         testProperties.forEach(createdProperty -> {
-            propertyRepository.deleteById(createdProperty.getName());
+            try {
+                propertyRepository.deleteById(createdProperty.getName());
+            } catch (Exception e) {}
+        });
+        testChannels.forEach(createdChannel -> {
+            try {
+                channelRepository.deleteById(createdChannel.getName());
+            } catch (Exception e) {}            
         });
     }
 }
