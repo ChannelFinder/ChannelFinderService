@@ -217,7 +217,7 @@ public class TagManagerIT {
     }
 
     /**
-     * update a tag 
+     * update a single tag 
      */
     @Test
     public void updateXmlTag() {
