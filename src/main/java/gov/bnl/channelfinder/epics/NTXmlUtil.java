@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.activation.UnsupportedDataTypeException;
-
 import org.epics.nt.NTTable;
 import org.epics.pvdata.pv.BooleanArrayData;
 import org.epics.pvdata.pv.PVBooleanArray;
@@ -85,7 +83,7 @@ public class NTXmlUtil {
             }
             return channels;
         } else {
-            throw new UnsupportedDataTypeException();
+            throw new Exception(result.toString() +" is not compatible with NTTable");
         }
     }
 }

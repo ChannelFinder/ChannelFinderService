@@ -1,20 +1,11 @@
 package gov.bnl.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -41,10 +32,10 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -52,11 +43,16 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import gov.bnl.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
 import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 
 @Repository
+@Configuration
 public class TagRepository implements CrudRepository<XmlTag, String> {
+
+    @Value("${elasticsearch.tag.index:cf_tags}")
+    private String ES_TAG_INDEX;
+    @Value("${elasticsearch.tag.type:cf_tag}")
+    private String ES_TAG_TYPE;
 
     @Autowired
     ElasticSearchClient esService;
@@ -365,6 +361,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     public void deleteById(String tagName) {
         RestHighLevelClient client = esService.getIndexClient();
         DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
+        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         try {
             DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);

@@ -4,7 +4,9 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -169,7 +171,7 @@ public class TagManager {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
-                    }                
+                    }
                 } 
             }
 
@@ -177,7 +179,7 @@ public class TagManager {
             for(XmlTag tag: tags) {
                 if(tagRepository.existsById(tag.getName())) {
                     // delete existing tag
-                    tagRepository.deleteById(tag.getName());                
+                    tagRepository.deleteById(tag.getName());
                 } 
             }
 
@@ -185,33 +187,26 @@ public class TagManager {
             Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
 
             // update the listed channels in the tags' payloads with new tags
-            List<XmlChannel> channels = new ArrayList<>();
-            boolean repeatedChannel = false;
-            for(XmlTag tag: tags) {
-                tag.getChannels().forEach(chan -> chan.addTag(new XmlTag(tag.getName(),tag.getOwner())));                
-                for(XmlChannel addingChan: tag.getChannels()) {
-                    repeatedChannel = false;
-                    for(XmlChannel addedChan: channels) {
-                        if(addingChan.getName().equals(addedChan.getName())) {
-                            repeatedChannel = true;
-                            addedChan.addTag(new XmlTag(tag.getName(),tag.getOwner()));
-                            break;
-                        }
-                    }
-                    if(!repeatedChannel) {
-                        channels.add(addingChan);
+            Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
+            for (XmlTag tag : tags) {
+                for (XmlChannel channel : tag.getChannels()) {
+                    if (channels.get(channel.getName()) != null) {
+                        channels.get(channel.getName()).addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                    } else {
+                        channel.addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                        channels.put(channel.getName(), channel);
                     }
                 }
             }
 
             if(!channels.isEmpty()) {
-                Iterable<XmlChannel> chans = channelRepository.saveAll(channels);
+                Iterable<XmlChannel> chans = channelRepository.saveAll(channels.values());
             }
             // TODO should return created tags with properly organized saved channels, but it would be very complicated...
-            return tags;    
+            return tags;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);      
+                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);
     }
 
     /**
@@ -232,7 +227,7 @@ public class TagManager {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
             // Validate request parameters
-            validateTagRequest(channelName);
+            validateTagWithChannelRequest(channelName);
 
             // check if authorized owner
             Optional<XmlTag> existingTag = tagRepository.findById(tagName);
@@ -481,37 +476,40 @@ public class TagManager {
     }
 
     /**
-     * Check that the existing tag and the tag in the request body match
+     * Checks if all the tags included satisfy the following conditions
+     * 1. the tag names are not null
+     * 2. the tag owners are not null or empty
+     * 3. all the channels exist
      * 
-     * @param existing
-     * @param request
-     * @return
+     * @param tags the list of tags to be validated
      */
-    boolean validateTag(XmlTag existing, XmlTag request) {
-        return existing.getName().equals(request.getName());
+    public void validateTagRequest(Iterable<XmlTag> tags) {
+        for(XmlTag tag: tags) {
+            validateTagRequest(tag);
+        }
     }
 
     /**
-     * Checks if
+     * Checks if tag satisfies the following conditions
      * 1. the tag name is not null and matches the name in the body
      * 2. the tag owner is not null or empty
      * 3. all the listed channels exist
      * 
-     * @param data
+     * @param tag the tag to be validates
      */
-    public void validateTagRequest(XmlTag testTag) {
+    public void validateTagRequest(XmlTag tag) {
         // 1 
-        if (testTag.getName() == null || testTag.getName().isEmpty()) {
+        if (tag.getName() == null || tag.getName().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null or empty " + testTag.toString(), null);
+                    "The tag name cannot be null or empty " + tag.toString(), null);
         }
         // 2
-        if (testTag.getOwner() == null || testTag.getOwner().isEmpty()) {
+        if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag owner cannot be null or empty " + testTag.toString(), null);
+                    "The tag owner cannot be null or empty " + tag.toString(), null);
         }
         // 3
-        List <String> channelNames = testTag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
+        List <String> channelNames = tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
         for(String channelName:channelNames) {
             if(!channelRepository.existsById(channelName)) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -522,28 +520,10 @@ public class TagManager {
     }
 
     /**
-     * Checks if
-     * 1. the tag names are not null
-     * 2. the tag owners are not null or empty
-     * 3. all the channels exist
-     * 
-     * @param data
+     * Checks if channel with name "channelName" exists
+     * @param channelName
      */
-    public void validateTagRequest(Iterable<XmlTag> tags) {
-        for(XmlTag tag: tags) {
-            validateTagRequest(tag);
-        }
-    }
-
-    /**
-     * Checks if
-     * 1. the tag name is not null
-     * 2. the tag owner is not null or empty
-     * 3. all the channel exist
-     * 
-     * @param data
-     */
-    public void validateTagRequest(String channelName) {
+    public void validateTagWithChannelRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");

@@ -37,6 +37,8 @@ public class Application  implements ApplicationRunner {
 
     public static void main(String[] args){
         // Set the java truststore used by channelfinder
+//        args = new String[1];
+//        args[0] = "--cleanup=10";
         configureTruststore();
         SpringApplication.run(Application.class, args);
     }

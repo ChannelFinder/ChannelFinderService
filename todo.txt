@@ -5,4 +5,4 @@
  add logging everywhere
  take out threadsleeps in chanreposearchIT? 
  implement capabilities to return list of nonexisting items in validation
- get cfpy tests to pass
+ implement property/channelmanagerITs

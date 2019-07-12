@@ -1,12 +1,5 @@
 package gov.bnl.channelfinder.example;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_TYPE;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_TAG_TYPE;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,6 +87,13 @@ public class PopulateService {
 
     @Autowired
     ElasticSearchClient esService;
+
+    private String ES_CHANNEL_INDEX;
+    private String ES_CHANNEL_TYPE;
+    private String ES_TAG_INDEX;
+    private String ES_TAG_TYPE;
+    private String ES_PROPERTY_INDEX;
+    private String ES_PROPERTY_TYPE;
 
     static ObjectMapper mapper = new ObjectMapper();
 
