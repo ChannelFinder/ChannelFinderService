@@ -517,7 +517,7 @@ public class PropertyManager {
      * 2. the property owner is not null or empty
      * 3. all the listed channels exist and have the property with a non null & non empty value
      * 
-     * @param data
+     * @param property
      */
     public void validatePropertyRequest(XmlProperty property) {
         // 1 
@@ -532,12 +532,14 @@ public class PropertyManager {
         }
         // 3
         property.getChannels().stream().forEach((channel) -> {
+            // Check if all the channels exists 
             if(!channelRepository.existsById(channel.getName())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "The channel with the name " + channel.getName() + " does not exist");
             }
-            if(!channel.getProperties().stream().anyMatch((t) -> {
-                return t.getName().equals(property.getName()) && t.getValue() != null && !t.getValue().isEmpty();
+            // Check if the channel data has the reuested property attached with a non null - non empty value
+            if(!channel.getProperties().stream().anyMatch((p) -> {
+                return p.getName().equals(property.getName()) && p.getValue() != null && !p.getValue().isEmpty();
             })) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "The channel with the name " + channel.getName()

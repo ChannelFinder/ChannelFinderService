@@ -4,7 +4,9 @@ import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -169,7 +171,7 @@ public class TagManager {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
-                    }                
+                    }
                 } 
             }
 
@@ -177,7 +179,7 @@ public class TagManager {
             for(XmlTag tag: tags) {
                 if(tagRepository.existsById(tag.getName())) {
                     // delete existing tag
-                    tagRepository.deleteById(tag.getName());                
+                    tagRepository.deleteById(tag.getName());
                 } 
             }
 
@@ -185,33 +187,26 @@ public class TagManager {
             Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
 
             // update the listed channels in the tags' payloads with new tags
-            List<XmlChannel> channels = new ArrayList<>();
-            boolean repeatedChannel = false;
-            for(XmlTag tag: tags) {
-                tag.getChannels().forEach(chan -> chan.addTag(new XmlTag(tag.getName(),tag.getOwner())));                
-                for(XmlChannel addingChan: tag.getChannels()) {
-                    repeatedChannel = false;
-                    for(XmlChannel addedChan: channels) {
-                        if(addingChan.getName().equals(addedChan.getName())) {
-                            repeatedChannel = true;
-                            addedChan.addTag(new XmlTag(tag.getName(),tag.getOwner()));
-                            break;
-                        }
-                    }
-                    if(!repeatedChannel) {
-                        channels.add(addingChan);
+            Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
+            for (XmlTag tag : tags) {
+                for (XmlChannel channel : tag.getChannels()) {
+                    if (channels.get(channel.getName()) != null) {
+                        channels.get(channel.getName()).addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                    } else {
+                        channel.addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                        channels.put(channel.getName(), channel);
                     }
                 }
             }
 
             if(!channels.isEmpty()) {
-                Iterable<XmlChannel> chans = channelRepository.saveAll(channels);
+                Iterable<XmlChannel> chans = channelRepository.saveAll(channels.values());
             }
             // TODO should return created tags with properly organized saved channels, but it would be very complicated...
-            return tags;    
+            return tags;
         } else
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);      
+                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);
     }
 
     /**
