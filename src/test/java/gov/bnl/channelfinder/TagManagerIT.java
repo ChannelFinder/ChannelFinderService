@@ -210,39 +210,45 @@ public class TagManagerIT {
         }
         assertFalse("Failed to replace the old tag", tagRepository.existsById(testTag0WithChannels.getName()));
     }
-//
-//    /**
-//     * create multiple tags
-//     */
-//    @Test
-//    public void createXmlTags() {
-//        
-//        testTagC.setChannels(testChannels);
-//        testTagC1.setChannels(testChannels);
-//        testTagC2.setChannels(testChannels);
-//
-//        List<XmlTag> testTags = Arrays.asList(testTag1,testTag2,testTagC,testTagC1,updateTestTag,testTagC2);
-//
-//        XmlTag createdTag = tagManager.create(testTag.getName(),copy(testTag));
-//
-//        Iterable<XmlTag> createdTags = tagManager.create((testTags));
-//        // verify the tags were created as expected
-//        assertTrue("Failed to create the tags",Iterables.elementsEqual(testTags, createdTags));  
-//        assertFalse("Failed to replace the tag", testTag.equals(tagRepository.findById(testTag.getName()).get()));
-//    }
-//
-//    /**
-//     * add a single tag to a single channel
-//     */
-//    @Test
-//    public void addSingleXmlTag() {
-//        tagRepository.index(testTag);
-//        List<XmlTag> tag = Arrays.asList(testTag);
-//
-//        tagManager.addSingle(testTag.getName(), "testChannel0");
-//        //verify the tag was added as expected
-//        assertEquals("Failed to add tag",tag,channelRepository.findById("testChannel0").get().getTags());
-//    }
+
+    /**
+     * create multiple tags
+     */
+    @Test
+    public void createXmlTags() {
+
+        XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
+        XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
+        XmlTag testTag2 = new XmlTag("testTag2", "testOwner");
+
+        XmlTag testTag0WithChannels = new XmlTag("testTag0WithChannels", "testOwner");
+        testTag0WithChannels.setChannels(testChannels);
+        XmlTag testTag1WithChannels = new XmlTag("testTag1WithChannels", "testOwner");
+        testTag1WithChannels.setChannels(testChannels);
+        XmlTag testTag2WithChannels = new XmlTag("testTag2WithChannels", "testOwner");
+        testTag2WithChannels.setChannels(testChannels);
+
+        List<XmlTag> testTags = Arrays.asList(testTag0, testTag1, testTag2, testTag0WithChannels, testTag1WithChannels, testTag2WithChannels);
+        cleanupTestTags = testTags;
+
+        Iterable<XmlTag> createdTags = tagManager.create((testTags));
+        // verify the tags were created as expected
+        assertTrue("Failed to create the tags", Iterables.elementsEqual(testTags, createdTags));
+    }
+
+    /**
+     * add a single tag to a single channel
+     */
+    @Test
+    public void addSingleXmlTag() {
+        XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
+        tagRepository.index(testTag0);
+        List<XmlTag> tag = Arrays.asList(testTag0);
+
+        tagManager.addSingle(testTag0.getName(), "testChannel0");
+        // verify the tag was added as expected
+        assertEquals("Failed to add tag", tag, channelRepository.findById("testChannel0").get().getTags());
+    }
 //
 //    /**
 //     * update a tag 
@@ -380,46 +386,55 @@ public class TagManagerIT {
 //        // verify the tags were updated as expected
 //        assertTrue("Failed to update the tag",updatedTagsCorrectly(returnedTags,tagsRequest,expectedTags));
 //    }
-//
-//    /**
-//     * delete a single tag 
-//     */
-//    @Test
-//    public void deleteXmlTag() {
-//        testTag1.setChannels(testChannels);
-//        List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
-//        Iterable<XmlTag> createdTags = tagManager.create(testTags);
-//
-//        tagManager.remove(testTag.getName());
-//        // verify the tag was deleted as expected
-//        assertTrue("Failed to delete the tag",!tagRepository.existsById(testTag.getName()));
-//
-//        tagManager.remove(testTag1.getName());
-//        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
-//        params.add("~tag",testTag1.getName());
-//        // verify the tag was deleted as expected
-//        assertTrue("Failed to delete the tag",!tagRepository.existsById(testTag1.getName()));
-//        assertEquals("Failed to delete the tag from channels",new ArrayList<XmlChannel>(),channelRepository.search(params));
-//    }
-//
-//    /**
-//     * delete a single tag from a single channel 
-//     */
-//    @Test
-//    public void deleteXmlTagFromChannel() {
-//        XmlChannel createdChannel = channelRepository.index(testChannels.get(0));
-//        testTag1.setChannels(Arrays.asList(testChannels.get(0)));
-//        XmlTag createdTag = tagManager.create(testTag.getName(),testTag);
-//
-//        tagManager.removeSingle(testTag.getName(),testChannels.get(0).getName());
-//        // verify the tag was not deleted, as expected
-//        assertTrue("Failed to not delete the tag",tagRepository.existsById(testTag.getName()));
-//
-//        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
-//        params.add("~tag",testTag.getName());
-//        // verify the tag was deleted from the channel as expected
-//        assertEquals("Failed to delete the tag from channel",new ArrayList<XmlChannel>(),channelRepository.search(params));
-//    }
+
+    /**
+     * delete a single tag 
+     */
+    @Test
+    public void deleteXmlTag() {
+        XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
+        XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
+        testTag1.setChannels(testChannels);
+
+        List<XmlTag> testTags = Arrays.asList(testTag0,testTag1);
+        cleanupTestTags = testTags;
+        Iterable<XmlTag> createdTags = tagManager.create(testTags);
+
+        tagManager.remove(testTag0.getName());
+        // verify the tag was deleted as expected
+        assertTrue("Failed to delete the tag", !tagRepository.existsById(testTag0.getName()));
+
+        tagManager.remove(testTag1.getName());
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        params.add("~tag", testTag1.getName());
+        // verify the tag was deleted and removed from all associated channels
+        assertTrue("Failed to delete the tag", !tagRepository.existsById(testTag1.getName()));
+        assertEquals("Failed to delete the tag from channels",
+                new ArrayList<XmlChannel>(), channelRepository.search(params));
+    }
+
+    /**
+     * delete a single tag from a single channel 
+     */
+    @Test
+    public void deleteXmlTagFromChannel() {
+
+        XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
+        testTag1.setChannels(testChannels);
+
+        XmlTag createdTag = tagManager.create(testTag1.getName(),testTag1);
+
+        tagManager.removeSingle(testTag1.getName(),testChannels.get(0).getName());
+        // verify the tag was only removed from the single test channel
+        assertTrue("Failed to not delete the tag", tagRepository.existsById(testTag1.getName()));
+
+        // Verify the tag is removed from the testChannel0
+        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+        searchParameters.add("~tag", testTag1.getName());
+        assertFalse("Failed to delete the tag from channel", channelRepository.search(searchParameters).stream().anyMatch(ch -> {
+            return ch.getName().equals(testChannels.get(0).getName());
+        }));
+    }
 //
 //    /**
 //     * validate a tag request
@@ -600,7 +615,7 @@ public class TagManagerIT {
 
         List<XmlTag> foundTags = new ArrayList<XmlTag>();
         for(String tagName: tagsRequest.stream().map(tag -> tag.getName()).collect(Collectors.toList())) {
-            foundTags.add(tagRepository.findById(tagName,true).get());           
+            foundTags.add(tagRepository.findById(tagName,true).get());
         }
         for(XmlTag tag: expectedTags) {
             correct = false;
