@@ -317,7 +317,8 @@ public class TagManager {
                     chan.setProperties(new ArrayList<XmlProperty>());
                     chanList.add(chan);
                 }
-                updatedTag.setChannels(chanList);
+                if(!chanList.isEmpty())
+                    updatedTag.setChannels(chanList);
             }
 
             return updatedTag;        
