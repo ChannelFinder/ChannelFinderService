@@ -1,10 +1,6 @@
 package gov.bnl.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_INDEX;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_CHANNEL_TYPE;
-import static gov.bnl.channelfinder.CFResourceDescriptors.ES_PROPERTY_INDEX;
 import static gov.bnl.channelfinder.ChannelManager.channelManagerAudit;
-import static gov.bnl.channelfinder.ChannelManager.log;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
@@ -19,7 +15,6 @@ import java.util.Optional;
 
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -48,13 +43,13 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.sort.ScoreSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
@@ -65,7 +60,14 @@ import gov.bnl.channelfinder.XmlProperty.OnlyXmlProperty;
 import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 
 @Repository
+@Configuration
 public class ChannelRepository implements CrudRepository<XmlChannel, String> {
+
+    @Value("${elasticsearch.channel.index:channelfinder}")
+    private String ES_CHANNEL_INDEX;
+    @Value("${elasticsearch.channel.type:cf_channel}")
+    private String ES_CHANNEL_TYPE;
+
 
     @Autowired
     ElasticSearchClient esService;

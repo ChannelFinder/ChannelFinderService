@@ -243,11 +243,14 @@ public class TagManagerIT {
     public void addSingleXmlTag() {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         tagRepository.index(testTag0);
-        List<XmlTag> tag = Arrays.asList(testTag0);
+        cleanupTestTags = Arrays.asList(testTag0);
 
         tagManager.addSingle(testTag0.getName(), "testChannel0");
         // verify the tag was added as expected
-        assertEquals("Failed to add tag", tag, channelRepository.findById("testChannel0").get().getTags());
+        assertTrue("Failed to add tag",
+                channelRepository.findById("testChannel0").get().getTags().stream().anyMatch(t -> {
+                    return t.getName().equals(testTag0.getName());
+                }));
     }
 //
 //    /**
@@ -552,8 +555,6 @@ public class TagManagerIT {
 //        }        
 //    }
 
-    
-    
     // Helper operations to create and clean up the resources needed for successful
     // testing of the TagManager operations
 
@@ -574,12 +575,18 @@ public class TagManagerIT {
         testChannels.forEach(channel -> { 
             try {
                 channelRepository.deleteById(channel.getName());
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                
+            }
         });
         cleanupTestTags.forEach(tag -> {
             try {
-                tagRepository.deleteById(tag.getName());
-            } catch (Exception e) {}
+                if (tagRepository.existsById(tag.getName())) {
+                    tagRepository.deleteById(tag.getName());
+                }
+            } catch (Exception e) {
+                
+            }
         });
     }
 
