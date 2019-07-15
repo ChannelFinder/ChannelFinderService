@@ -467,9 +467,9 @@ public class TagManagerIT {
      */
     @Test
     public void deleteXmlTagFromChannel() {
-
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         testTag1.setChannels(testChannels);
+        cleanupTestTags = Arrays.asList(testTag1);
 
         XmlTag createdTag = tagManager.create(testTag1.getName(),testTag1);
 

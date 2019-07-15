@@ -164,7 +164,7 @@ public class PropertyRepositoryIT {
         try {
             Set<XmlProperty> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
             Set<XmlProperty> listedProperties = Sets.newHashSet(propertyRepository.findAll());
-            // verify the tag was created as expected
+            // verify the properties were listed as expected
             assertEquals("Failed to list all created tags", createdProperties, listedProperties);
         } catch (Exception e) {
             e.printStackTrace();
