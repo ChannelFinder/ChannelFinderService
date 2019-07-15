@@ -502,10 +502,12 @@ public class TagManagerIT {
     @After
     public void cleanup() {
         // clean up
-        testChannels.forEach(channel -> { 
-             if (channelRepository.existsById(channel.getName())) {
+        testChannels.forEach(channel -> {
+            try {
                 channelRepository.deleteById(channel.getName());
-             }
+            } catch (Exception e) {
+                System.out.println("Failed to clean up channel: " + channel.getName());
+            }
         });
         cleanupTestTags.forEach(tag -> {
             if (tagRepository.existsById(tag.getName())) {
