@@ -52,7 +52,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     @Value("${elasticsearch.property.index:cf_properties}")
     private String ES_PROPERTY_INDEX;
-    @Value("${elasticsearch.property.index:cf_property}")
+    @Value("${elasticsearch.property.type:cf_property}")
     private String ES_PROPERTY_TYPE;
 
     @Autowired
