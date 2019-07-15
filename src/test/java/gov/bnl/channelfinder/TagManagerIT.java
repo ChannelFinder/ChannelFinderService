@@ -444,9 +444,9 @@ public class TagManagerIT {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         testTag1.setChannels(testChannels);
-
         List<XmlTag> testTags = Arrays.asList(testTag0,testTag1);
         cleanupTestTags = testTags;
+        
         Iterable<XmlTag> createdTags = tagManager.create(testTags);
 
         tagManager.remove(testTag0.getName());
@@ -503,19 +503,13 @@ public class TagManagerIT {
     public void cleanup() {
         // clean up
         testChannels.forEach(channel -> { 
-            try {
+             if (channelRepository.existsById(channel.getName())) {
                 channelRepository.deleteById(channel.getName());
-            } catch (Exception e) {
-                
-            }
+             }
         });
         cleanupTestTags.forEach(tag -> {
-            try {
-                if (tagRepository.existsById(tag.getName())) {
-                    tagRepository.deleteById(tag.getName());
-                }
-            } catch (Exception e) {
-                
+            if (tagRepository.existsById(tag.getName())) {
+                tagRepository.deleteById(tag.getName());
             }
         });
     }
