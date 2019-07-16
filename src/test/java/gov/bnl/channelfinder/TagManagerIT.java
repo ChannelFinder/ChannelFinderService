@@ -136,7 +136,7 @@ public class TagManagerIT {
      * Rename a simple tag
      */
     @Test
-    public void renameTag() {
+    public void renameXmlTag() {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         cleanupTestTags = Arrays.asList(testTag0, testTag1);
@@ -153,13 +153,11 @@ public class TagManagerIT {
      */
     @Test
     public void createXmlTag2() {
-
         XmlTag testTag0WithChannels = new XmlTag("testTag0WithChannels", "testOwner");
         testTag0WithChannels.setChannels(testChannels);
         cleanupTestTags = Arrays.asList(testTag0WithChannels);
 
         XmlTag createdTag = tagManager.create(testTag0WithChannels.getName(), copy(testTag0WithChannels));
-
         try {
             XmlTag foundTag = tagRepository.findById(testTag0WithChannels.getName(), true).get();
             assertTrue("Failed to create the tag w/ channels", tagCompare(testTag0WithChannels, foundTag));

@@ -78,7 +78,7 @@ public class PropertyManagerIT {
     @Test
     public void readXmlProperty() {
         XmlProperty testProperty0 = new XmlProperty("testProperty0","testOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner");
         testProperty1.setChannels(Arrays.asList(
                 new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<XmlTag>())));
         cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
@@ -132,8 +132,53 @@ public class PropertyManagerIT {
 
         // Create a simple property
         XmlProperty createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
-        assertEquals("Failed to create the tag", testProperty0, createdProperty);
+        assertEquals("Failed to create the property", testProperty0, createdProperty);
 
+//        XmlTag createdTag1 = tagManager.create("fakeTag", copy(testTag1));
+//        // verify the tag was created as expected
+//        assertEquals("Failed to create the tag",testTag1,createdTag1);
+
+        // Update the test property with a new owner
+        XmlProperty updatedTestProperty0 = new XmlProperty("testProperty0", "updateTestOwner");
+        createdProperty = propertyManager.create(testProperty0.getName(), updatedTestProperty0);
+        assertEquals("Failed to create the property", updatedTestProperty0, createdProperty);
+    }
+    
+    /**
+     * Rename a simple property
+     */
+    @Test
+    public void renameXmlProperty() {
+        XmlProperty testProperty0 = new XmlProperty("testProperty0","testOwner");
+        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner");
+        cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
+        
+        XmlProperty createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
+        createdProperty = propertyManager.create(testProperty0.getName(), testProperty1);
+        // verify that the old property "testProperty0" was replaced with the new "testProperty1"
+        assertEquals("Failed to create the property", testProperty1, createdProperty);
+        // verify that the old property is no longer present
+        assertFalse("Failed to replace the old property", tagRepository.existsById(testProperty0.getName()));
+    }
+    
+    /**
+     * create a simple property with channels
+     */
+    @Test
+    public void createXmlProperty2() {
+        XmlProperty testProperty0WithChannels = new XmlProperty("testProperty0WithChannels","testOwner");
+        testProperty1.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<XmlTag>())));
+        cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
+
+        XmlProperty createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
+        try {
+            XmlProperty foundProperty = propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
+            assertEquals("Failed to create the property w/ channels", testProperty0WithChannels, foundProperty)
+        } catch (Exception e) {
+            assertTrue("Failed to create/find the property w/ channels", false);
+        }
+        
 //        XmlTag createdTag1 = tagManager.create("fakeTag", copy(testTag1));
 //        // verify the tag was created as expected
 //        assertEquals("Failed to create the tag",testTag1,createdTag1);
@@ -145,12 +190,12 @@ public class PropertyManagerIT {
     }
     
     /**
-     * Rename a simple property
+     * Rename a simple property with channels
      */
     @Test
-    public void renameTag() {
+    public void renameXmlProperty2() {
         XmlProperty testProperty0 = new XmlProperty("testProperty0","testOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner");
         cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
         
         XmlProperty createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
@@ -160,8 +205,6 @@ public class PropertyManagerIT {
         // verify that the old property is no longer present
         assertFalse("Failed to replace the old property", tagRepository.existsById(testProperty0.getName()));
     }
-    
-    
     
     
     
