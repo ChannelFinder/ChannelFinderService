@@ -315,7 +315,8 @@ public class PropertyManager {
                     chan.setProperties(Arrays.asList(p));
                     chanList.add(chan);
                 }
-                updatedProperty.setChannels(chanList);
+                if(!chanList.isEmpty())
+                    updatedProperty.setChannels(chanList);
             }
 
             // update channels of existing property

@@ -49,7 +49,6 @@ public class TagManagerIT {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         testTag1.setChannels(testChannels);
-
         cleanupTestTags = Arrays.asList(testTag0, testTag1);
 
         List<XmlTag> testTags = Arrays.asList(testTag0, testTag1);
@@ -72,7 +71,6 @@ public class TagManagerIT {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         testTag1.setChannels(testChannels);
-
         cleanupTestTags = Arrays.asList(testTag0, testTag1);
 
         XmlTag createdTag0 = tagManager.create(testTag0.getName(), testTag0);
@@ -80,19 +78,19 @@ public class TagManagerIT {
 
         // verify the created tags are read as expected
         // Retrieve the testTag0 without channels
-        XmlTag retrivedTag = tagManager.read(createdTag0.getName(), false);
-        assertEquals("Failed to read the tag", createdTag0, retrivedTag);
+        XmlTag retrievedTag = tagManager.read(createdTag0.getName(), false);
+        assertEquals("Failed to read the tag", createdTag0, retrievedTag);
         // Retrieve the testTag0 with channels
-        retrivedTag = tagManager.read(createdTag0.getName(), true);
-        assertEquals("Failed to read the tag w/ channels", createdTag0, retrivedTag);
+        retrievedTag = tagManager.read(createdTag0.getName(), true);
+        assertEquals("Failed to read the tag w/ channels", createdTag0, retrievedTag);
 
         // Retrieve the testTag1 without channels
-        retrivedTag = tagManager.read(createdTag1.getName(), false);
+        retrievedTag = tagManager.read(createdTag1.getName(), false);
         testTag1.setChannels(new ArrayList<XmlChannel>());
-        assertEquals("Failed to read the tag", testTag1, retrivedTag);
+        assertEquals("Failed to read the tag", testTag1, retrievedTag);
         // Retrieve the testTag1 with channels
-        retrivedTag = tagManager.read(createdTag1.getName(), true);
-        assertEquals("Failed to read the tag w/ channels", createdTag1, retrivedTag);
+        retrievedTag = tagManager.read(createdTag1.getName(), true);
+        assertEquals("Failed to read the tag w/ channels", createdTag1, retrievedTag);
     }
 
     /**
@@ -105,7 +103,7 @@ public class TagManagerIT {
     }
 
     /**
-     * attempt to read a single non existent tag
+     * attempt to read a single non existent tag with channels
      */
     @Test(expected = ResponseStatusException.class)
     public void readNonExistingXmlTag2() {
@@ -142,7 +140,6 @@ public class TagManagerIT {
     public void renameTag() {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
-
         cleanupTestTags = Arrays.asList(testTag0, testTag1);
 
         XmlTag createdTag = tagManager.create(testTag0.getName(), testTag1);
@@ -515,9 +512,9 @@ public class TagManagerIT {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         testTag1.setChannels(testChannels);
-
         List<XmlTag> testTags = Arrays.asList(testTag0,testTag1);
         cleanupTestTags = testTags;
+        
         Iterable<XmlTag> createdTags = tagManager.create(testTags);
 
         tagManager.remove(testTag0.getName());
@@ -538,9 +535,9 @@ public class TagManagerIT {
      */
     @Test
     public void deleteXmlTagFromChannel() {
-
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         testTag1.setChannels(testChannels);
+        cleanupTestTags = Arrays.asList(testTag1);
 
         XmlTag createdTag = tagManager.create(testTag1.getName(),testTag1);
 
