@@ -115,7 +115,7 @@ public class PropertyManager {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this property: " + property, null);
             }
-            Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
+            Optional<XmlProperty> existingProperty = propertyRepository.findById(propertyName);
             boolean present = existingProperty.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
@@ -225,10 +225,11 @@ public class PropertyManager {
      * 
      * @param propertyName - name of tag to be created
      * @param channelName - channel to update <tt>tag</tt> to
+     * @param property - property payload with value
      * @return added property
      */
     @PutMapping("/{propertyName}/{chName}")
-    public XmlProperty addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName) {
+    public XmlProperty addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName, @RequestBody XmlProperty property) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();

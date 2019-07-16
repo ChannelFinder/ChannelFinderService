@@ -18,8 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 @RunWith(SpringRunner.class)
@@ -38,17 +41,6 @@ public class PropertyManagerIT {
 
     @Autowired
     ChannelRepository channelRepository;
-
-    // set up
-    XmlProperty testProperty0 = new XmlProperty("testProperty0","testOwner");
-    XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
-    XmlProperty testProperty2 = new XmlProperty("testProperty2","testOwner2");   
-    XmlProperty testPropertyC = new XmlProperty("testPropertyC","testOwnerC");    
-    XmlProperty testPropertyC1 = new XmlProperty("testPropertyC1","testOwnerC1");    
-    XmlProperty testPropertyC2 = new XmlProperty("testPropertyC2","testOwnerC2");    
-    XmlProperty updateTestProperty = new XmlProperty("updateTestProperty","updateTestOwner");  
-    XmlProperty updateTestPropertyC = new XmlProperty("updateTestPropertyC","updateTestOwner");
-    XmlProperty updateTestPropertyC1 = new XmlProperty("updateTestPropertyC1","updateTestOwner1");
 
     /**
      * list all properties
@@ -167,14 +159,15 @@ public class PropertyManagerIT {
     @Test
     public void createXmlProperty2() {
         XmlProperty testProperty0WithChannels = new XmlProperty("testProperty0WithChannels","testOwner");
-        testProperty1.setChannels(Arrays.asList(
-                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<XmlTag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
+        testProperty0WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
+        cleanupTestProperties = Arrays.asList(testProperty0WithChannels);
 
-        XmlProperty createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
+        XmlProperty createdProperty = propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         try {
             XmlProperty foundProperty = propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
-            assertEquals("Failed to create the property w/ channels", testProperty0WithChannels, foundProperty)
+            assertEquals("Failed to create the property w/ channels. Expected " + testProperty0WithChannels.toLog() + " found " 
+                    + foundProperty.toLog(), testProperty0WithChannels, foundProperty);
         } catch (Exception e) {
             assertTrue("Failed to create/find the property w/ channels", false);
         }
@@ -184,9 +177,15 @@ public class PropertyManagerIT {
 //        assertEquals("Failed to create the tag",testTag1,createdTag1);
 
         // Update the test property with a new owner
-        XmlProperty updatedTestProperty0 = new XmlProperty("testProperty0", "updateTestOwner");
-        createdProperty = propertyManager.create(testProperty0.getName(), updatedTestProperty0);
-        assertEquals("Failed to create the tag", updatedTestProperty0, createdProperty);
+        XmlProperty updatedTestProperty0WithChannels = new XmlProperty("testProperty0WithChannels", "updateTestOwner");
+        createdProperty = propertyManager.create(testProperty0WithChannels.getName(), updatedTestProperty0WithChannels);
+        try {
+            XmlProperty foundProperty = propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
+            assertEquals("Failed to create the property w/ channels. Expected " + updatedTestProperty0WithChannels.toLog() + " found " 
+                    + foundProperty.toLog(), updatedTestProperty0WithChannels, foundProperty);
+        } catch (Exception e) {
+            assertTrue("Failed to create/find the property w/ channels", false);
+        }
     }
     
     /**
@@ -194,19 +193,92 @@ public class PropertyManagerIT {
      */
     @Test
     public void renameXmlProperty2() {
+        XmlProperty testProperty0WithChannels = new XmlProperty("testProperty0WithChannels","testOwner");
+        testProperty0WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
+        XmlProperty testProperty1WithChannels = new XmlProperty("testProperty1WithChannels","testOwner");
+        testProperty1WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
+        cleanupTestProperties = Arrays.asList(testProperty0WithChannels,testProperty1WithChannels);
+        
+        // Create the testProperty0WithChannels
+        XmlProperty createdProperty = propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        // update the testProperty0WithChannels with testProperty1WithChannels
+        createdProperty = propertyManager.create(testProperty0WithChannels.getName(), testProperty1WithChannels);
+        try {
+            XmlProperty foundProperty = propertyRepository.findById(testProperty1WithChannels.getName(), true).get();
+            assertEquals("Failed to create the property w/ channels", testProperty1WithChannels, foundProperty);
+        } catch (Exception e) {
+            assertTrue("Failed to create/find the property w/ channels", false);
+        }
+        assertFalse("Failed to replace the old property", propertyRepository.existsById(testProperty0WithChannels.getName()));
+    }    
+    
+    /**
+     * create multiple properties
+     */
+    @Test
+    public void createXmlProperties() {
         XmlProperty testProperty0 = new XmlProperty("testProperty0","testOwner");
         XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner");
-        cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
+        XmlProperty testProperty2 = new XmlProperty("testProperty2","testOwner");
+
+        XmlProperty testProperty0WithChannels = new XmlProperty("testProperty0WithChannels","testOwner");
+        testProperty0WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
+        XmlProperty testProperty1WithChannels = new XmlProperty("testProperty1WithChannels","testOwner");
+        testProperty1WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
+        XmlProperty testProperty2WithChannels = new XmlProperty("testProperty2WithChannels","testOwner");
+        testProperty2WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty2WithChannels.getName(),testProperty2WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
         
-        XmlProperty createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
-        createdProperty = propertyManager.create(testProperty0.getName(), testProperty1);
-        // verify that the old property "testProperty0" was replaced with the new "testProperty1"
-        assertEquals("Failed to create the property", testProperty1, createdProperty);
-        // verify that the old property is no longer present
-        assertFalse("Failed to replace the old property", tagRepository.existsById(testProperty0.getName()));
+        List<XmlProperty> testProperties = Arrays.asList(testProperty0,testProperty1,testProperty2,testProperty0WithChannels,testProperty1WithChannels,testProperty2WithChannels);        
+        cleanupTestProperties = testProperties;
+        
+        Iterable<XmlProperty> createdProperties = propertyManager.create(testProperties);
+        List<XmlProperty> foundProperties = new ArrayList<XmlProperty>();
+        testProperties.forEach(prop -> foundProperties.add(propertyRepository.findById(prop.getName(),true).get()));
+        testProperty0WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
+        testProperty1WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));
+        testProperty2WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty2WithChannels.getName(),testProperty2WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));    
+        assertEquals("Failed to create the properties", testProperties, foundProperties);
     }
     
+    /**
+     * create by overriding multiple properties
+     */
+    @Test
+    public void createXmlPropertiesWithOverride() {
+        XmlProperty testProperty0 = new XmlProperty("testProperty0","testOwner");
+        XmlProperty testProperty0WithChannels = new XmlProperty("testProperty0WithChannels","testOwner");
+        testProperty0WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));      
+        List<XmlProperty> testProperties = Arrays.asList(testProperty0,testProperty0WithChannels);        
+        cleanupTestProperties = testProperties;
     
+        //Create a set of original properties to be overriden
+        propertyManager.create(testProperties);
+        // Now update the test properties
+        testProperty0.setOwner("testOwner-updated");
+        testProperty0WithChannels.setChannels(Collections.emptyList());
+        
+        List<XmlProperty> updatedTestProperties = Arrays.asList(testProperty0,testProperty0WithChannels);        
+        propertyManager.create(updatedTestProperties);
+        List<XmlProperty> foundProperties = new ArrayList<XmlProperty>();
+        testProperties.forEach(prop -> foundProperties.add(propertyRepository.findById(prop.getName(),true).get()));
+        // verify the properties were created as expected
+        assertTrue("Failed to create the properties", Iterables.elementsEqual(updatedTestProperties, foundProperties));
+
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+        params.add("testProperty0WithChannels", "*");
+        // verify the property was removed from the old channels
+        assertEquals("Failed to delete the property from channels",
+                new ArrayList<XmlChannel>(), channelRepository.search(params));
+    }
     
     
     
