@@ -12,6 +12,7 @@ package gov.bnl.channelfinder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -120,7 +121,8 @@ public class XmlTag {
         if (this.channels == null) {
             return this.getName() + "(" + this.getOwner() + ")";
         } else {
-            return this.getName() + "(" + this.getOwner() + ")" + (this.channels);
+            return this.getName() + "(" + this.getOwner() + ")" + " [ "
+                    + (this.channels.stream().map(XmlChannel::toLog).collect(Collectors.joining(","))) + " ] ";
         }
     }
 
