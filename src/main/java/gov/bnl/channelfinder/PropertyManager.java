@@ -236,6 +236,10 @@ public class PropertyManager {
             propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
             // Validate request parameters
             validatePropertyRequest(channelName);
+            if(!propertyName.equals(property.getName()) || property.getValue().isEmpty() || property.getValue() == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "The payload property " + property.toString() + " either does not match uri name or has a bad value");
+            }
 
             // check if authorized owner
             Optional<XmlProperty> existingProperty = propertyRepository.findById(propertyName);
@@ -247,9 +251,10 @@ public class PropertyManager {
                 } 
                 // add property to channel
                 XmlChannel channel = channelRepository.findById(channelName).get();
-                channel.addProperty(existingProperty.get());
+                XmlProperty prop = existingProperty.get();
+                channel.addProperty(new XmlProperty(prop.getName(),prop.getOwner(),property.getValue()));
                 XmlChannel taggedChannel = channelRepository.save(channel);
-                XmlProperty addedProperty = existingProperty.get();
+                XmlProperty addedProperty = new XmlProperty(prop.getName(),prop.getOwner(),property.getValue());
                 taggedChannel.setTags(new ArrayList<XmlTag>());
                 taggedChannel.setProperties(new ArrayList<XmlProperty>());
                 addedProperty.setChannels(Arrays.asList(taggedChannel));
@@ -339,7 +344,8 @@ public class PropertyManager {
                         chanList.add(chan);
                     }
                 }
-                channelRepository.saveAll(chanList);
+                if(!chanList.isEmpty())
+                    channelRepository.saveAll(chanList);
             }     
             return updatedProperty;
         } else
@@ -567,12 +573,7 @@ public class PropertyManager {
     }
 
     /**
-     * Checks if
-     * 1. the property name is not null and matches the name in the body
-     * 2. the property owner is not null or empty
-     * 3. the property value is not null or empty
-     * 4. all the listed channels exist
-     * 
+     * Checks if the channel exists
      * @param data
      */
     public void validatePropertyRequest(String channelName) {

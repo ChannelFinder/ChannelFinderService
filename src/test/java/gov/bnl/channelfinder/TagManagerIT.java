@@ -134,10 +134,10 @@ public class TagManagerIT {
     }
 
     /**
-     * Rename a simple tag
+     * Rename a simple tag using create
      */
     @Test
-    public void renameXmlTag() {
+    public void renameByCreateXmlTag() {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
         cleanupTestTags = Arrays.asList(testTag0, testTag1);
@@ -195,14 +195,14 @@ public class TagManagerIT {
     }
     
     /**
-     * Rename a single tag with channels
+     * Rename a single tag with channels using create
      */
     @Test
-    public void renameXmlTag2() {
+    public void renameByCreateXmlTag2() {
         XmlTag testTag0WithChannels = new XmlTag("testTag0WithChannels", "testOwner");
         testTag0WithChannels.setChannels(testChannels);
         XmlTag testTag1WithChannels = new XmlTag("testTag1WithChannels", "testOwner");
-        testTag0WithChannels.setChannels(testChannels);
+        testTag1WithChannels.setChannels(testChannels);
         cleanupTestTags = Arrays.asList(testTag0WithChannels, testTag1WithChannels);
         
         // Create the testTag0WithChannels
@@ -239,8 +239,9 @@ public class TagManagerIT {
         cleanupTestTags = testTags;
 
         Iterable<XmlTag> createdTags = tagManager.create(copy(testTags));
-        // TODO verify the tags were created as expected
-//        assertTrue("Failed to create the tags", Iterables.elementsEqual(testTags, createdTags));
+        List<XmlTag> foundTags = new ArrayList<XmlTag>();
+        testTags.forEach(tag -> foundTags.add(tagRepository.findById(tag.getName(),true).get()));
+        assertEquals("Failed to create the tags", testTags, foundTags);
     }
 
     /**
@@ -256,7 +257,7 @@ public class TagManagerIT {
         List<XmlTag> testTags = Arrays.asList(testTag0, testTag0WithChannels);
         cleanupTestTags = testTags;
 
-        //Create a set of original tags to be overriden
+        // Create a set of original tags to be overriden
         tagManager.create("testTag0", copy(testTag0));
         tagManager.create("testTag0WithChannels", copy(testTag0WithChannels));
         // Now update the test tags
@@ -322,6 +323,49 @@ public class TagManagerIT {
         returnedTag = tagManager.update(testTag0WithChannels.getName(), copy(testTag0WithChannels));
         assertTrue("Failed to update tag " + testTag0WithChannels, returnedTag.equals(testTag0WithChannels));
         assertTrue("Failed to update tag " + testTag0WithChannels, testTag0WithChannels.equals(tagRepository.findById(testTag0WithChannels.getName(), true).get()));
+    }
+    
+    /**
+     * Rename a tag using update
+     */
+    @Test
+    public void renameByUpdateXmlTag() {
+        XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
+        XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
+        XmlTag testTag0WithChannels = new XmlTag("testTag0WithChannels", "testOwner");
+        testTag0WithChannels.setChannels(testChannels);
+        XmlTag testTag1WithChannels = new XmlTag("testTag1WithChannels", "testOwner");
+        testTag1WithChannels.setChannels(testChannels);
+        cleanupTestTags = Arrays.asList(testTag0, testTag1, testTag0WithChannels, testTag1WithChannels);
+
+        // Create the original tags
+        XmlTag createdTag = tagManager.create(testTag0.getName(), testTag0);
+        XmlTag createdTagWithChannels = tagManager.create(testTag0WithChannels.getName(), testTag0WithChannels);
+        // update the tags with new names, 0 -> 1
+        XmlTag updatedTag = tagManager.update(testTag0.getName(), testTag1);
+        XmlTag updatedTagWithChannels = tagManager.update(testTag0WithChannels.getName(), testTag1WithChannels);
+
+        // verify that the old tag "testTag0" was replaced with the new "testTag1"
+        try {
+            XmlTag foundTag = tagRepository.findById(testTag1.getName()).get();
+            assertTrue("Failed to update the tag", tagCompare(updatedTag, foundTag));
+        } catch (Exception e) {
+            assertTrue("Failed to update/find the tag", false);
+        }        
+        // verify that the old tag is no longer present
+        assertFalse("Failed to replace the old tag", tagRepository.existsById(testTag0.getName()));       
+        
+        // verify that the old tag "testTag0WithChannels" was replaced with the new "testTag1WithChannels"
+        try {
+            XmlTag foundTag = tagRepository.findById(testTag1WithChannels.getName(), true).get();
+            assertTrue("Failed to update the tag w/ channels", tagCompare(updatedTagWithChannels, foundTag));
+        } catch (Exception e) {
+            assertTrue("Failed to update/find the tag w/ channels", false);
+        }
+        // verify that the old tag is no longer present
+        assertFalse("Failed to replace the old tag", tagRepository.existsById(testTag0WithChannels.getName()));
+        
+        // TODO add test for failure case
     }
 
     /**
