@@ -572,7 +572,7 @@ public class TagManagerIT {
     public void updateMultipleTags2() {
         // A test tag with only name and owner
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
-        // A test tag with name, owner, and a single test channel
+        // A test tag with name, owner, and test channels
         XmlTag testTag0WithChannels = new XmlTag("testTag0WithChannels", "testOwner");
         testTag0WithChannels.setChannels(testChannels);
         cleanupTestTags = Arrays.asList(testTag0, testTag0WithChannels);
@@ -591,7 +591,7 @@ public class TagManagerIT {
     }
     
     /**
-     * update a tag's name and owner on its channels
+     * update tags' names and owners on their channels
      */
     @Test
     public void updateMultipleXmlTagsOnChan() {
