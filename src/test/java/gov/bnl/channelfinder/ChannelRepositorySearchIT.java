@@ -67,8 +67,6 @@ public class ChannelRepositorySearchIT {
         List<String> channelNames = Arrays
                 .asList(populateService.getChannelList().toArray(new String[populateService.getChannelList().size()]));
 
-        // Need to add a sleep to ensure the indexed documents in all the indices are refreshed
-        Thread.sleep(10000);
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         // Search for a single unique channel
         searchParameters.add("~name", channelNames.get(0));
@@ -112,10 +110,6 @@ public class ChannelRepositorySearchIT {
      */
     @Test
     public void searchTagTest() throws InterruptedException {
-        // Need to add a sleep to ensure the indexed documents in all the indices are
-        // refreshed
-        Thread.sleep(10000);
-
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         // search for channels based on a tag
         for (int i = 0; i < 5; i++) {
@@ -137,10 +131,6 @@ public class ChannelRepositorySearchIT {
      */
     @Test
     public void searchPropertyTest() throws InterruptedException {
-        // Need to add a sleep to ensure the indexed documents in all the indices are
-        // refreshed
-        Thread.sleep(10000);
-
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         // search for channels based on a tag
         for (int i = 0; i < 5; i++) {

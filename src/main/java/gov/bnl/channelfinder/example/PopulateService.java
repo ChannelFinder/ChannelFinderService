@@ -21,6 +21,7 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -82,7 +83,7 @@ public class PopulateService {
     static List<Integer> val_bucket = Arrays.asList(0, 1, 2, 5, 10, 20, 50, 100, 200, 500);
 
     // A static list of props, tags, channels handled by this class which must be cleaned up on closure.
-    Set<XmlProperty> prop_list = new HashSet<>();
+    static Set<XmlProperty> prop_list = new HashSet<>();
     Set<XmlTag> tag_list = new HashSet<>();
     Set<String> channel_list = new HashSet<>();
 
@@ -93,55 +94,25 @@ public class PopulateService {
     private String ES_CHANNEL_INDEX;
     @Value("${elasticsearch.channel.type:cf_channel}")
     private String ES_CHANNEL_TYPE;
-    @Value("${elasticsearch.property.index:cf_properties}")
-    private String ES_PROPERTY_INDEX;
-    @Value("${elasticsearch.property.type:cf_property}")
-    private String ES_PROPERTY_TYPE;
     @Value("${elasticsearch.tag.index:cf_tags}")
     private String ES_TAG_INDEX;
     @Value("${elasticsearch.tag.type:cf_tag}")
     private String ES_TAG_TYPE;
+    @Value("${elasticsearch.property.index:cf_properties}")
+    private String ES_PROPERTY_INDEX;
+    @Value("${elasticsearch.property.type:cf_property}")
+    private String ES_PROPERTY_TYPE;
+
 
     static ObjectMapper mapper = new ObjectMapper();
 
 
     static int index = 0;
+
     static List<Integer> tokens_1000 = new ArrayList<>();
     static List<Integer> tokens_500 = new ArrayList<>();
-
-    public synchronized void cleanupDB() {
-        RestHighLevelClient client = esService.getIndexClient();
-        try {
-            BulkRequest bulkRequest = new BulkRequest();
-            for (String channelName : channel_list) {
-                bulkRequest.add(new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName));
-            }
-            for (XmlTag tag : tag_list) {
-                bulkRequest.add(new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName()));
-            }
-            for (XmlProperty property : prop_list) {
-                bulkRequest.add(new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName()));
-            }
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            if (bulkResponse.hasFailures()) {
-                log.warning(bulkResponse.buildFailureMessage());
-            }
-        } catch (Exception e) {
-            log.log(Level.WARNING, e.getMessage(), e);
-        }
-    }
-
-    public synchronized void createDB(int cells) {
-        numberOfCells = cells;
-        createDB();
-    }
-
-    public Set<String> getChannelList(){
-        return channel_list;
-    }
-
-    public synchronized void createDB() {
-        // Create a list of properties
+    // Create a list of properties
+    static {
         for (int i = 10; i < 70; i++) {
             prop_list.add(new XmlProperty("prop" + String.format("%03d", i), powner));
         }
@@ -161,6 +132,42 @@ public class PopulateService {
             }
             index++;
         });
+    }
+
+    public synchronized void cleanupDB() {
+        RestHighLevelClient client = esService.getIndexClient();
+        try {
+            BulkRequest bulkRequest = new BulkRequest();
+            for (String channelName : channel_list) {
+                bulkRequest.add(new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName));
+            }
+            for (XmlTag tag : tag_list) {
+                bulkRequest.add(new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName()));
+            }
+            for (XmlProperty property : prop_list) {
+                bulkRequest.add(new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName()));
+            }
+            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+            if (bulkResponse.hasFailures()) {
+                log.warning(bulkResponse.buildFailureMessage());
+            }
+        } catch (Exception e) {
+            log.log(Level.WARNING, e.getMessage(), e);
+        }
+    }
+
+    public synchronized void createDB(int cells) {
+        numberOfCells = cells;
+        createDB();
+    }
+
+    public Set<String> getChannelList(){
+        return channel_list;
+    }
+
+    public synchronized void createDB() {
+
 
         long start = System.currentTimeMillis();
         Collection<Boolean> finalResult = new ArrayList<>();
@@ -205,6 +212,7 @@ public class PopulateService {
                         .source(mapper.writeValueAsBytes(tag), XContentType.JSON));
                 bulkRequest.add(updateRequest);
             }
+            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
             if (bulkResponse.hasFailures()) {
                 log.info(bulkResponse.buildFailureMessage());
@@ -271,6 +279,7 @@ public class PopulateService {
             }
             String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
             start = System.currentTimeMillis();
+            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
             String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
             log.info("Insterted SR cell " + cell + " " + prepare + " " + execute);
@@ -331,6 +340,7 @@ public class PopulateService {
             }
             String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
             start = System.currentTimeMillis();
+            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
             BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
             String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
             log.info("Insterted BO cell " + cell + " " + prepare + " " + execute);
@@ -478,8 +488,7 @@ public class PopulateService {
             for (Entry<Integer, List<Integer>> entry : tokens.entrySet()) {
                 // pop val from the tokens
                 Integer val = entry.getValue().remove(ThreadLocalRandom.current().nextInt(entry.getValue().size()));
-                channel.getProperties()
-                        .add(new XmlProperty("group" + String.valueOf(entry.getKey()), powner, String.valueOf(val)));
+                channel.getProperties().add(new XmlProperty("group" + String.valueOf(entry.getKey()), powner, String.valueOf(val)));
                 channel.getTags().add(new XmlTag("group" + String.valueOf(entry.getKey()) + "_" + val, towner));
             }
 
