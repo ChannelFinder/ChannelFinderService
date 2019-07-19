@@ -26,6 +26,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -88,12 +89,18 @@ public class PopulateService {
     @Autowired
     ElasticSearchClient esService;
 
+    @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
+    @Value("${elasticsearch.channel.type:cf_channel}")
     private String ES_CHANNEL_TYPE;
-    private String ES_TAG_INDEX;
-    private String ES_TAG_TYPE;
+    @Value("${elasticsearch.property.index:cf_properties}")
     private String ES_PROPERTY_INDEX;
+    @Value("${elasticsearch.property.type:cf_property}")
     private String ES_PROPERTY_TYPE;
+    @Value("${elasticsearch.tag.index:cf_tags}")
+    private String ES_TAG_INDEX;
+    @Value("${elasticsearch.tag.type:cf_tag}")
+    private String ES_TAG_TYPE;
 
     static ObjectMapper mapper = new ObjectMapper();
 

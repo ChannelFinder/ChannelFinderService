@@ -389,7 +389,6 @@ public class TagManager {
                         }
                         if(!repeatedChannel) {
                             addingChan.setTags(Arrays.asList(new XmlTag(tag.getName(),tag.getOwner())));
-                            addingChan.setOwner(tag.getOwner());
                             channels.add(addingChan);
                         }
                     }

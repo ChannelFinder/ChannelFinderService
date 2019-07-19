@@ -421,7 +421,6 @@ public class PropertyManager {
                         if(!updated) {
                             XmlProperty prop = new XmlProperty(property.getName(),property.getOwner(),chan.getProperties().get(0).getValue());
                             chan.setProperties(Arrays.asList(prop));
-                            chan.setOwner(property.getOwner());
                             channels.add(chan);
                         }
                     }
