@@ -415,6 +415,13 @@ public class PropertyManager {
                             if(chan.getName().equals(updatedChan.getName()))
                             {
                                 updated = true;
+                                List<XmlProperty> chanTags = updatedChan.getProperties();
+                                chanTags.forEach(chanProperty -> {
+                                    if(chanProperty.getName().equals(property.getName())) {
+                                        chanProperty.setOwner(property.getOwner());
+                                    }}
+                                        );
+                                updatedChan.setProperties(chanTags);
                                 break;
                             }
                         }

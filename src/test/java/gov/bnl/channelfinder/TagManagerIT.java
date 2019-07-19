@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -645,8 +646,10 @@ public class TagManagerIT {
         // check if tags attached to channels are correct
         // test tag of channel0
         assertTrue("The tags attached to the channel " + testChannels.get(0).toString() + " doesn't match the expected tags",channelRepository.findById(testChannels.get(0).getName()).get().getTags().equals(expectedTags));
-        // test tag of channel1
-        assertTrue("The tags attached to the channel " + testChannels.get(1).toString() + " doesn't match the expected tags",channelRepository.findById(testChannels.get(1).getName()).get().getTags().equals(expectedTags));
+        // test tag of channel1 (tags need to be sorted because they are not sorted when gotten from channel)
+        List<XmlTag> sortedTags = channelRepository.findById(testChannels.get(1).getName()).get().getTags();
+        sortedTags.sort(Comparator.comparing(XmlTag:: getName));
+        assertTrue("The tags attached to the channel " + testChannels.get(1).toString() + " doesn't match the expected tags",sortedTags.equals(expectedTags));
         // test tag of channelX
         assertTrue("The tags attached to the channel " + testChannelX.toString() + " doesn't match the expected tags",channelRepository.findById(testChannelX.getName()).get().getTags().equals(expectedTags));
         

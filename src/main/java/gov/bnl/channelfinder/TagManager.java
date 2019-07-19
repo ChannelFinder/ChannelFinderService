@@ -374,7 +374,7 @@ public class TagManager {
                         channels.add(addingChan);
                     }
                 }
-                
+
                 // gather the channels with the existing tags
                 List<XmlChannel> chanList = new ArrayList<XmlChannel>();               
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName(),true);
@@ -384,6 +384,13 @@ public class TagManager {
                         for(XmlChannel addedChan: channels) {
                             if(addingChan.getName().equals(addedChan.getName())) {
                                 repeatedChannel = true;
+                                List<XmlTag> chanTags = addedChan.getTags();
+                                chanTags.forEach(chanTag -> {
+                                    if(chanTag.getName().equals(tag.getName())) {
+                                        chanTag.setOwner(tag.getOwner());
+                                    }}
+                                        );
+                                addedChan.setTags(chanTags);
                                 break;
                             }
                         }
