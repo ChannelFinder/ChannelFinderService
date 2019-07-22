@@ -151,7 +151,7 @@ public class PropertyManagerIT {
     }
 
     /**
-     * create a simple property with channels
+     * create a single property with channels
      */
     @Test
     public void createXmlProperty2() {
@@ -186,7 +186,7 @@ public class PropertyManagerIT {
     }
 
     /**
-     * Rename a simple property with channels using create
+     * Rename a single property with channels using create
      */
     @Test
     public void renameByCreateXmlProperty2() {
@@ -760,15 +760,5 @@ public class PropertyManagerIT {
                 propertyRepository.deleteById(property.getName());
             } 
         });
-    }
-
-    public XmlProperty copy(XmlProperty property, String value) {
-        XmlProperty copy = new XmlProperty(property.getName(),property.getOwner());
-        XmlProperty propwval = new XmlProperty(property.getName(),property.getOwner(),value);
-        List<XmlChannel> channels = new ArrayList<XmlChannel>();
-        property.getChannels().forEach(chan -> channels.add(new XmlChannel(chan.getName(),chan.getOwner())));
-        channels.forEach(chan -> chan.addProperty(propwval));
-        copy.setChannels(channels);
-        return copy;
     }
 }
