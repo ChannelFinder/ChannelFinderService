@@ -161,7 +161,7 @@ public class ChannelManagerIT {
             XmlChannel foundChannel = channelRepository.findById(testChannel1.getName()).get();
             assertEquals("Failed to create the channel", testChannel1, foundChannel);
         } catch (Exception e) {
-            assertTrue("Failed to create/find the property w/ channels", false);
+            assertTrue("Failed to create/find the channel", false);
         }        
         // verify that the old channel is no longer present
         assertFalse("Failed to replace the old channel", channelRepository.existsById(testChannel0.getName()));
@@ -209,44 +209,110 @@ public class ChannelManagerIT {
         List<XmlChannel> foundChannels = new ArrayList<XmlChannel>();
         testChannels.forEach(chan -> foundChannels.add(channelRepository.findById(chan.getName()).get()));
         // verify the channels were created as expected
-        assertTrue("Failed to create the properties", Iterables.elementsEqual(updatedTestChannels, foundChannels));
+        assertTrue("Failed to create the channels", Iterables.elementsEqual(updatedTestChannels, foundChannels));
+    }
+    
+    /**
+     * update a channel
+     */
+    @Test
+    public void updateXmlChannel() {
+        testProperties.forEach(prop -> prop.setValue("value"));
+        // A test channel with only name and owner
+        XmlChannel testChannel0 = new XmlChannel("testChannel0", "testOwner");
+        // A test channel with name, owner, tags and props
+        XmlChannel testChannel1 = new XmlChannel("testChannel1", "testOwner",testProperties,testTags);
+        cleanupTestChannels = Arrays.asList(testChannel0,testChannel1);
+        
+        // Update on a non-existing channel should result in the creation of that channel
+        // 1. Test a simple channel 
+        XmlChannel returnedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+        assertTrue("Failed to update channel " + testChannel0, returnedChannel.equals(testChannel0));
+        assertTrue("Failed to update channel " + testChannel0, testChannel0.equals(channelRepository.findById(testChannel0.getName()).get()));
+        // 2. Test a channel with tags and props
+        returnedChannel = channelManager.update(testChannel1.getName(), testChannel1);
+        assertTrue("Failed to update channel " + testChannel1, returnedChannel.equals(testChannel1));
+        assertTrue("Failed to update channel " + testChannel1, testChannel1.equals(channelRepository.findById(testChannel1.getName()).get()));
+
+        // Update the channel owner
+        testChannel0.setOwner("newTestOwner");
+        returnedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+        assertTrue("Failed to update channel " + testChannel0, returnedChannel.equals(testChannel0));
+        assertTrue("Failed to update channel " + testChannel0, testChannel0.equals(channelRepository.findById(testChannel0.getName()).get()));
+        testChannel1.setOwner("newTestOwner");
+        returnedChannel = channelManager.update(testChannel1.getName(), testChannel1);
+        assertTrue("Failed to update channel " + testChannel1, returnedChannel.equals(testChannel1));
+        assertTrue("Failed to update channel " + testChannel1, testChannel1.equals(channelRepository.findById(testChannel1.getName()).get()));
+    }
+    
+    /**
+     * Rename a channel using update
+     */
+    @Test
+    public void renameByUpdateXmlChannel() {
+        testProperties.forEach(prop -> prop.setValue("value"));
+        XmlChannel testChannel0 = new XmlChannel("testChannel0", "testOwner");
+        XmlChannel testChannel1 = new XmlChannel("testChannel1", "testOwner");
+        XmlChannel testChannel2 = new XmlChannel("testChannel2", "testOwner",testProperties,testTags);
+        XmlChannel testChannel3 = new XmlChannel("testChannel3", "testOwner",testProperties,testTags);
+        cleanupTestChannels = Arrays.asList(testChannel0,testChannel1,testChannel2,testChannel3);
+        
+        // Create the testChannels
+        XmlChannel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+        XmlChannel createdChannelWithItems = channelManager.create(testChannel2.getName(), testChannel2);
+        // update the testChannels
+        createdChannel = channelManager.update(testChannel0.getName(), testChannel1);
+        createdChannelWithItems = channelManager.update(testChannel2.getName(), testChannel3);
+        
+        // verify that the old channels were replaced by the new ones
+        try {
+            XmlChannel foundChannel = channelRepository.findById(testChannel1.getName()).get();
+            assertEquals("Failed to create the channel", testChannel1, foundChannel);
+        } catch (Exception e) {
+            assertTrue("Failed to create/find the channel", false);
+        }        
+        // verify that the old channel is no longer present
+        assertFalse("Failed to replace the old channel", channelRepository.existsById(testChannel0.getName()));
+        
+        try {
+            XmlChannel foundChannel = channelRepository.findById(testChannel3.getName()).get();
+            assertEquals("Failed to create the channel", testChannel3, foundChannel);
+        } catch (Exception e) {
+            assertTrue("Failed to create/find the channel", false);
+        }        
+        // verify that the old channel is no longer present
+        assertFalse("Failed to replace the old channel", channelRepository.existsById(testChannel2.getName()));
+        
+        // TODO add test for failure case
+    }
+    
+    /**
+     * update a channel by adding tags and adding properties and changing properties
+     */
+    @Test
+    public void updateXmlChannelItems() {
+        testProperties.forEach(prop -> prop.setValue("value"));
+        XmlChannel testChannel0 = new XmlChannel("testChannel0", "testOwner",
+                Arrays.asList(testProperties.get(0),testProperties.get(1)),Arrays.asList(testTags.get(0),testTags.get(1)));
+        cleanupTestChannels = Arrays.asList(testChannel0);
+        
+        // Create the testChannel
+        XmlChannel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+        
+        // set up the new testChannel
+        testProperties.get(1).setValue("newValue");
+        testChannel0 = new XmlChannel("testChannel0", "testOwner",
+                Arrays.asList(testProperties.get(1),testProperties.get(2)),Arrays.asList(testTags.get(1),testTags.get(2)));
+        
+        // update the testChannel
+        XmlChannel updatedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+        
+        XmlChannel expectedChannel = new XmlChannel("testChannel0", "testOwner",testProperties,testTags);
+        assertEquals("Did not update channel correctly, expected " + expectedChannel.toString() + " but actual was " + channelRepository.findById("testChannel0").toString(),expectedChannel,channelRepository.findById("testChannel0"));
     }
     
     
-//    /**
-//     * update a single channel
-//     */
-//    @Test
-//    public void updateXmlChannel() {
-//        testChannel0.setTags(testTags);
-//        testChannel0.setProperties(testProperties);
-//        testChannel1.setTags(testTags);
-//        testChannel1.setProperties(testProperties);
-//
-//        XmlChannel createdChannel0 = channelManager.create(testChannel2.getName(), testChannel0);
-//        // verify the channel was created as expected
-//        assertEquals("Failed to create the tag", testChannel0, createdChannel0);
-//
-//        XmlChannel createdChannel1 = channelManager.create(testChannel1.getName(), testChannel1);
-//        // verify the channel was created as expected
-//        assertEquals("Failed to create the tag", testChannel1, createdChannel1);
-//
-//        testChannel0.setOwner("newOwner");
-//        createdChannel0 = channelManager.create(testChannel0.getName(), testChannel0);
-//        // verify the channel was created as expected
-//        assertEquals("Failed to create the tag", testChannel0, createdChannel0);
-//
-//        createdChannel1 = channelManager.create(testChannel0.getName(), testChannel1);
-//        // verify the channel was created as expected
-//        assertEquals("Failed to create the tag", testChannel1, createdChannel1);
-//        // verify the old channel was deleted as expected
-//        if (channelRepository.existsById(testChannel0.getName()))
-//            assertTrue(true);
-//        else {
-//            fail("Failed to remove the old channel");
-//        }
-//    }
-
+    
     /**
      * Test the basic operations of create, read, updated, and delete on a list of
      * channels
