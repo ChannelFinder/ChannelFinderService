@@ -311,68 +311,75 @@ public class ChannelManagerIT {
         assertEquals("Did not update channel correctly, expected " + expectedChannel.toString() + " but actual was " + channelRepository.findById("testChannel0").toString(),expectedChannel,channelRepository.findById("testChannel0"));
     }
     
-    
-    
     /**
-     * Test the basic operations of create, read, updated, and delete on a list of
-     * channels
+     * update multiple channels
+     * first update non-existing channels which should create them
+     * second update the newly created channels which should change them
      */
     @Test
-    public void basicChannelsCRUDOperations() {
-        List<XmlChannel> testChannels = new ArrayList<XmlChannel>();
-        for (int i = 0; i < 3; i++) {
-            XmlChannel testChannel = new XmlChannel("test-channel" + i, "test-channel-owner");
-            testChannel.addTag(testTags.get(i));
-            XmlProperty prop = testProperties.get(i);
-            prop.setValue("test-prop" + i + "-value");
-            testChannel.addProperty(prop);
-            testChannels.add(testChannel);
-        }
-        // Create a list of channels
-        List<XmlChannel> createdChannels = Lists.newArrayList(channelManager.create(testChannels));
-        assertTrue("failed to create test channel", createdChannels != null && testChannels.equals(createdChannels));
-        // Find a list of channels
-        LinkedMultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
-        searchParameters.add("~name", "test-channel?");
-        List<XmlChannel> foundChannels = channelManager.query(searchParameters);
-        assertTrue("failed to create test channel expected 3 channels found " + foundChannels.size(),
-                foundChannels != null && foundChannels.containsAll(testChannels));
-        // Update a list of channels
-        // 1. with new tags and properties
-        // Add test-tag0 and test-property0 to all channels
-        testChannels.forEach(channel -> {
-            channel.addTag(testTags.get(0));
-            XmlProperty prop = testProperties.get(0);
-            prop.setValue("test-prop0-value");
-            channel.addProperty(prop);
-        });
-        List<XmlChannel> updatedChannels = Lists.newArrayList(channelManager.update(testChannels));
-        assertTrue("failed to update test channels, it was expected that all channels with have test-tag0",
-                updatedChannels.stream().allMatch(channel -> {
-                    return channel.getTags().contains(testTags.get(0));
-                }));
-        XmlProperty expectedProperty = testProperties.get(0);
-        expectedProperty.setValue("test-prop0-value");
-        assertTrue("failed to update test channels, it was expected that all channels with have test-property0",
-                updatedChannels.stream().allMatch(channel -> {
-                    return channel.getProperties().contains(expectedProperty);
-                }));
+    public void updateMultipleXmlChannels() {
+        testProperties.forEach(prop -> prop.setValue("value"));
+        // A test channel with only name and owner
+        XmlChannel testChannel0 = new XmlChannel("testChannel0", "testOwner");
+        // A test channel with name, owner, tags and props
+        XmlChannel testChannel1 = new XmlChannel("testChannel1", "testOwner",testProperties,testTags);
+        List<XmlChannel> testChannels = Arrays.asList(testChannel0,testChannel1);
+        cleanupTestChannels = testChannels;
+        
+        // Update on non-existing channels should result in the creation of those channels
+        Iterable<XmlChannel> returnedChannels = channelManager.update(testChannels);
+        // 1. Test a simple channel 
+        assertTrue("Failed to update channel " + testChannel0, testChannel0.equals(channelRepository.findById(testChannel0.getName()).get()));
+        // 2. Test a channel with tags and props
+        assertTrue("Failed to update channel " + testChannel1, testChannel1.equals(channelRepository.findById(testChannel1.getName()).get()));
 
-        // 2. with new property values
-        // Delete a list of channels
-        testChannels.forEach(channel -> {
-            channelManager.remove(channel.getName());
-        });
-        testChannels.forEach(channel -> {
-            try {
-                channelManager.read(channel.getName());
-                fail("failed to delete channel " + channel.getName());
-            } catch (ResponseStatusException e) {
-
-            }
-        });
-
+        // Update the channel owner
+        testChannel0.setOwner("newTestOwner");
+        testChannel1.setOwner("newTestOwner");
+        returnedChannels = channelManager.update(testChannels);
+        assertTrue("Failed to update channel " + testChannel0, testChannel0.equals(channelRepository.findById(testChannel0.getName()).get()));
+        assertTrue("Failed to update channel " + testChannel1, testChannel1.equals(channelRepository.findById(testChannel1.getName()).get()));
     }
+    
+    /**
+     * update multiple channels by adding tags and adding properties and changing properties
+     */
+    @Test
+    public void updateMultipleXmlChannelsWithItems() {
+        testProperties.forEach(prop -> prop.setValue("value"));
+        XmlChannel testChannel0 = new XmlChannel("testChannel0", "testOwner",
+                Arrays.asList(testProperties.get(0),testProperties.get(1)),Arrays.asList(testTags.get(0),testTags.get(1)));
+        cleanupTestChannels = Arrays.asList(testChannel0);
+        
+        // Create the testChannel
+        XmlChannel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+        
+        // set up the new testChannel
+        testProperties.get(1).setValue("newValue");
+        testChannel0 = new XmlChannel("testChannel0", "testOwner",
+                Arrays.asList(testProperties.get(1),testProperties.get(2)),Arrays.asList(testTags.get(1),testTags.get(2)));
+        
+        // update the testChannel
+        XmlChannel updatedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+        
+        XmlChannel expectedChannel = new XmlChannel("testChannel0", "testOwner",testProperties,testTags);
+        assertEquals("Did not update channel correctly, expected " + expectedChannel.toString() + " but actual was " + channelRepository.findById("testChannel0").toString(),expectedChannel,channelRepository.findById("testChannel0"));
+    }
+    
+    /**
+     * delete a channel
+     */
+    @Test
+    public void deleteXmlChannel() {
+    XmlChannel testChannel0 = new XmlChannel("testChannel0", "testOwner");
+    cleanupTestChannels = Arrays.asList(testChannel0);
+
+    channelManager.create(testChannel0.getName(),testChannel0);    
+    channelManager.remove(testChannel0.getName());
+    // verify the channel was deleted as expected
+    assertTrue("Failed to delete the channel", !channelRepository.existsById(testChannel0.getName()));
+    }
+    
     // Helper operations to create and clean up the resources needed for successful
     // testing of the ChannelManager operations
 

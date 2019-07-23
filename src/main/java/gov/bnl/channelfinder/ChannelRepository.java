@@ -158,6 +158,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             Optional<XmlChannel> existingChannel = findById(channelName);
             boolean present = existingChannel.isPresent();
             if(present) {
+                //List<XmlTag> tags = new ArrayList<XmlTag>();
                 List<XmlTag> tags = channel.getTags();
                 List<String> tagNames = new ArrayList<String>();
                 tags.forEach(tag -> tagNames.add(tag.getName()));
