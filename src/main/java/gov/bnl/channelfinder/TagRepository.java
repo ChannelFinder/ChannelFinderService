@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -31,6 +33,8 @@ import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -48,6 +52,7 @@ import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 @Repository
 @Configuration
 public class TagRepository implements CrudRepository<XmlTag, String> {
+    static Logger log = Logger.getLogger(TagRepository.class.getName());
 
     @Value("${elasticsearch.tag.index:cf_tags}")
     private String ES_TAG_INDEX;
@@ -59,7 +64,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     
     @Autowired
     ChannelRepository channelRepository;
-    
+
     ObjectMapper objectMapper = new ObjectMapper().addMixIn(XmlTag.class, OnlyXmlTag.class);
 
     /**
@@ -83,7 +88,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 return (S) findById(tag.getName()).get();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to index tag " + tag.toLog(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to index tag: " + tag, null);
         }
@@ -124,7 +129,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 return (Iterable<S>) findAllById(createdTagIds);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to index tags " + tags, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to index tags: " + tags, null);      
         }
@@ -161,7 +166,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 return (S) findById(tag.getName()).get();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to update/save tag:" + tag.toLog(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update/save tag: " + tag, null);
         }
@@ -216,7 +221,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 return (Iterable<S>) findAllById(createdTagIds);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to update/save tags" + tags, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update/save tags: " + tags, null);
         }
@@ -258,7 +263,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 return Optional.of(tag);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to find tag " + tagId, e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Failed to find tag: " + tagId, null);
         }
@@ -275,7 +280,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         try {
             return client.exists(getRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to check if tag " + id +  " exists", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to check if tag exists by id: " + id, null); 
         }
@@ -297,6 +302,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
         // TODO use of scroll will be necessary
         searchSourceBuilder.size(10000);
+        searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
         searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
 
         try {
@@ -309,7 +315,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 return result;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to find all tags", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to find all tags", null);
         }
@@ -340,9 +346,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             }
             return foundTags;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to find tags: " + tagIds, e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find all tags: " + tagIds, null);
+                    "Failed to find tags: " + tagIds, null);
         }
     }
 
@@ -378,7 +384,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 channelRepository.indexAll(chans);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to delete tag: " + tagName, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to delete tag: " + tagName, null);
         }

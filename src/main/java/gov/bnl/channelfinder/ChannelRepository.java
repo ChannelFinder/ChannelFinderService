@@ -222,19 +222,21 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
                 Optional<XmlChannel> existingChannel = findById(channel.getName());
                 if (existingChannel.isPresent()) {
-                    List<XmlTag> tags = existingChannel.get().getTags();
-                    tags.removeAll(channel.getTags());
-                    tags.addAll(channel.getTags());
+                    List<XmlTag> tags = channel.getTags();
+                    List<String> tagNames = new ArrayList<String>();
+                    tags.forEach(tag -> tagNames.add(tag.getName()));
+                    for(XmlTag oldTag: existingChannel.get().getTags()) {
+                        if(!tagNames.contains(oldTag.getName()))
+                            tags.add(oldTag);
+                    }
                     channel.setTags(tags);
-
+                    
                     List<XmlProperty> properties = channel.getProperties();
                     List<String> propNames = new ArrayList<String>();
-                    for(XmlProperty prop: properties) {
-                        propNames.add(prop.getName());
-                    }
-                    for(XmlProperty prop: existingChannel.get().getProperties()) {
-                        if(!propNames.contains(prop.getName())) {
-                            properties.add(prop);
+                    properties.forEach(prop -> propNames.add(prop.getName()));
+                    for(XmlProperty oldProp: existingChannel.get().getProperties()) {
+                        if(!propNames.contains(oldProp.getName())) {
+                            properties.add(oldProp);
                         }
                     }
                     properties.removeIf(prop -> (prop.getValue().isEmpty() || prop.getValue() == null || prop.getValue().equals("")));

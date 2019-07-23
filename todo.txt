@@ -1,8 +1,6 @@
  fix channelrepositorysearchIT 
- set up a different elastic index for testing, which should also fix findall tests 
- implement a limit on changing ownership to groups the user belongs to
- figure out what to do and what would happen if 2 items have same name
  add logging everywhere
- take out threadsleeps in chanreposearchIT? 
  implement capabilities to return list of nonexisting items in validation
- implement property/channelmanagerITs
+ implement validation check for name change to ensure either uri name matches or is existing
+ implement channelmanagerITs
+ finish fixing cfpy issue
