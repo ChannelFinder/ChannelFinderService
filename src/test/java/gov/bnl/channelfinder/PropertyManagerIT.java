@@ -261,20 +261,28 @@ public class PropertyManagerIT {
         propertyManager.create(testProperties);
         // Now update the test properties
         testProperty0.setOwner("testOwner-updated");
-        testProperty0WithChannels.setChannels(Collections.emptyList());
-
+        testProperty0WithChannels.setOwner("testOwner-updated");
+        testProperty0WithChannels.setChannels(Arrays.asList(
+                new XmlChannel(testChannels.get(1).getName(),testChannels.get(1).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));      
+        
         List<XmlProperty> updatedTestProperties = Arrays.asList(testProperty0,testProperty0WithChannels);        
         propertyManager.create(updatedTestProperties);
+       
+        // set owner back to original since it shouldn't change
+        testProperty0.setOwner("testOwner");
+        testProperty0WithChannels.setOwner("testOwner"); 
+        
         List<XmlProperty> foundProperties = new ArrayList<XmlProperty>();
         testProperties.forEach(prop -> foundProperties.add(propertyRepository.findById(prop.getName(),true).get()));
         // verify the properties were created as expected
         assertTrue("Failed to create the properties", Iterables.elementsEqual(updatedTestProperties, foundProperties));
 
+        testChannels.get(1).setProperties(Arrays.asList(new XmlProperty("testProperty0WithChannels","testOwner","value")));
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("testProperty0WithChannels", "*");
         // verify the property was removed from the old channels
         assertEquals("Failed to delete the property from channels",
-                new ArrayList<XmlChannel>(), channelRepository.search(params));
+                Arrays.asList(testChannels.get(1)), channelRepository.search(params));
     }
 
     /**
@@ -571,33 +579,6 @@ public class PropertyManagerIT {
         assertTrue("Failed to update property " + testProperty0WithChannels, foundProperty.equals(testProperty0WithChannels));  
     }
 
-    /**
-     * Update multiple existing properties
-     */
-    @Test
-    public void updateMultipleProperties2() {
-        // A test property with only name and owner
-        XmlProperty testProperty0 = new XmlProperty("testProperty0", "testOwner");
-        // A test property with name, owner, and test channels
-        XmlProperty testProperty0WithChannels = new XmlProperty("testProperty0WithChannels","testOwner");
-        testProperty0WithChannels.setChannels(Arrays.asList(
-                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>()),      
-                new XmlChannel(testChannels.get(1).getName(),testChannels.get(1).getOwner(),Arrays.asList(new XmlProperty(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<XmlTag>())));      
-        cleanupTestProperties = Arrays.asList(testProperty0,testProperty0WithChannels);
-
-        propertyManager.create(Arrays.asList(testProperty0,testProperty0WithChannels));
-
-        testProperty0.setOwner("newOwner");
-        testProperty0WithChannels.setOwner("newOwner");
-        propertyManager.update(Arrays.asList(testProperty0,testProperty0WithChannels));
-
-        // Query ChannelFinder and verify updated channels and properties
-        XmlProperty foundProperty = propertyRepository.findById(testProperty0.getName(), true).get();
-        assertTrue("Failed to update property " + testProperty0, foundProperty.equals(testProperty0));
-        foundProperty = propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
-        assertTrue("Failed to update property " + testProperty0WithChannels, foundProperty.equals(testProperty0WithChannels));  
-    }
-    
     /**
      * update properties' names and owners and values on their channels
      */

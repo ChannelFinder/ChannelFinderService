@@ -155,16 +155,10 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            // Validate request parameters
-            validateTagRequest(tags);
+            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));            
 
             // check if authorized owner
-            for(XmlTag tag: tags) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
-                }
+            for(XmlTag tag: tags) {       
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(present) {
@@ -172,8 +166,17 @@ public class TagManager {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
                     }
-                } 
+                    tag.setOwner(existingTag.get().getOwner());
+                } else {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                    }
+                }
             }
+            
+            // Validate request parameters
+            validateTagRequest(tags);
 
             // delete existing tags
             for(XmlTag tag: tags) {
@@ -337,25 +340,28 @@ public class TagManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            // Validate request parameters
-            validateTagRequest(tags);
-
+            
             // check if authorized owner
-            for(XmlTag tag:tags) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
-                } 
+            for(XmlTag tag:tags) {                
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
-                    }               
-                }          
+                    }     
+                    tag.setOwner(existingTag.get().getOwner());
+                } else {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                    }
+                }
             }
-
+            
+            // Validate request parameters
+            validateTagRequest(tags);
+            
             // update the listed channels in the tags' payloads with new tags
             Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
             for (XmlTag tag : tags) {

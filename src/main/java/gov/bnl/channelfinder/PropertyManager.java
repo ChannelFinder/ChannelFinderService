@@ -158,15 +158,9 @@ public class PropertyManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
             propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            // Validate request parameters
-            validatePropertyRequest(properties);
 
             // check if authorized owner
             for(XmlProperty property: properties) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this property: " + property, null);
-                }
                 Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
                 boolean present = existingProperty.isPresent();
                 if(present) {
@@ -174,8 +168,17 @@ public class PropertyManager {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
                     } 
-                }         
+                    property.setOwner(existingProperty.get().getOwner());
+                } else {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this property: " + property, null);
+                    }
+                }
             }
+
+            // Validate request parameters
+            validatePropertyRequest(properties);
 
             // delete existing property
             for(XmlProperty property: properties) {
@@ -363,15 +366,9 @@ public class PropertyManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
             propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            // Validate request parameters
-            validatePropertyRequest(properties);
 
             // check if authorized owner
             for(XmlProperty property: properties) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this property: " + property, null);
-                }
                 Optional<XmlProperty> existingProperty = propertyRepository.findById(property.getName());
                 boolean present = existingProperty.isPresent();
                 if(present) {
@@ -379,9 +376,18 @@ public class PropertyManager {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
                     }
+                    property.setOwner(existingProperty.get().getOwner());
+                } else {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this property: " + property, null);
+                    }
                 }
             }
 
+            // Validate request parameters
+            validatePropertyRequest(properties);
+            
             // prepare the list of channels which need to be updated with the new properties
             Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
 
