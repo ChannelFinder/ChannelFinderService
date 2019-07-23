@@ -267,8 +267,8 @@ public class TagManagerIT {
 
         List<XmlTag> updatedTestTags = Arrays.asList(testTag0, testTag0WithChannels);
         Iterable<XmlTag> createdTags = tagManager.create(copy(updatedTestTags));
-        // verify the tags were created as expected
-        assertTrue("Failed to create the tags", Iterables.elementsEqual(updatedTestTags, createdTags));
+        // verify the tags were updated as expected
+        assertTrue("Failed to update the tags", Iterables.elementsEqual(updatedTestTags, createdTags));
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag", testTag0WithChannels.getName());
