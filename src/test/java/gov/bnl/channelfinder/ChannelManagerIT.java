@@ -8,6 +8,7 @@ import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.assertj.core.util.Lists;
@@ -308,7 +309,17 @@ public class ChannelManagerIT {
         XmlChannel updatedChannel = channelManager.update(testChannel0.getName(), testChannel0);
         
         XmlChannel expectedChannel = new XmlChannel("testChannel0", "testOwner",testProperties,testTags);
-        assertEquals("Did not update channel correctly, expected " + expectedChannel.toString() + " but actual was " + channelRepository.findById("testChannel0").toString(),expectedChannel,channelRepository.findById("testChannel0"));
+        XmlChannel foundChannel = channelRepository.findById("testChannel0").get();
+        foundChannel.getTags().sort((XmlTag o1, XmlTag o2) -> {
+            return o1.getName().compareTo(o2.getName());
+        });
+        foundChannel.getProperties().sort((XmlProperty o1, XmlProperty o2) -> {
+            return o1.getName().compareTo(o2.getName());
+        });
+        assertEquals(
+                "Did not update channel correctly, expected " + expectedChannel.toLog() + " but actual was "
+                        + foundChannel.toLog(),
+                expectedChannel, foundChannel);
     }
     
     /**
@@ -361,9 +372,17 @@ public class ChannelManagerIT {
         
         // update the testChannel
         XmlChannel updatedChannel = channelManager.update(testChannel0.getName(), testChannel0);
-        
-        XmlChannel expectedChannel = new XmlChannel("testChannel0", "testOwner",testProperties,testTags);
-        assertEquals("Did not update channel correctly, expected " + expectedChannel.toString() + " but actual was " + channelRepository.findById("testChannel0").toString(),expectedChannel,channelRepository.findById("testChannel0"));
+
+        XmlChannel expectedChannel = new XmlChannel("testChannel0", "testOwner", testProperties, testTags);
+        XmlChannel foundChannel = channelRepository.findById("testChannel0").get();
+        foundChannel.getTags().sort((XmlTag o1, XmlTag o2) -> {
+            return o1.getName().compareTo(o2.getName());
+        });
+        foundChannel.getProperties().sort((XmlProperty o1, XmlProperty o2) -> {
+            return o1.getName().compareTo(o2.getName());
+        });
+        assertEquals("Did not update channel correctly, expected " + expectedChannel.toLog() + " but actual was "
+                + foundChannel.toLog(), expectedChannel, foundChannel);
     }
     
     /**

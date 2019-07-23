@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.Optional;
 
 import org.apache.lucene.search.join.ScoreMode;
@@ -158,27 +159,28 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             Optional<XmlChannel> existingChannel = findById(channelName);
             boolean present = existingChannel.isPresent();
             if(present) {
-                //List<XmlTag> tags = new ArrayList<XmlTag>();
-                List<XmlTag> tags = channel.getTags();
-                List<String> tagNames = new ArrayList<String>();
-                tags.forEach(tag -> tagNames.add(tag.getName()));
-                for(XmlTag oldTag: existingChannel.get().getTags()) {
-                    if(!tagNames.contains(oldTag.getName()))
-                        tags.add(oldTag);
+                List<String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
+                // Add the old tags on the channel update request to ensure that old tags are preserved
+                for (XmlTag oldTag : existingChannel.get().getTags()) {
+                    if (!tagNames.contains(oldTag.getName()))
+                        channel.addTag(oldTag);
                 }
-                channel.setTags(tags);
 
+                // Add the old properties on the channel update request to ensure that old properties are preserved
                 List<XmlProperty> properties = channel.getProperties();
-                List<String> propNames = new ArrayList<String>();
-                properties.forEach(prop -> propNames.add(prop.getName()));
-                for(XmlProperty prop: existingChannel.get().getProperties()) {
-                    if(!propNames.contains(prop.getName())) {
-                        properties.add(prop);
+                List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
+
+                for(XmlProperty oldProp: existingChannel.get().getProperties()) {
+                    if(!propNames.contains(oldProp.getName())) {
+                        channel.addProperty(oldProp);
                     }
                 }
-                properties.removeIf(prop -> (prop.getValue().isEmpty() || prop.getValue() == null || prop.getValue().equals("")));
-                channel.setProperties(properties);
 
+                // If there are properties with null or empty values, they are to be removed from the channel
+                channel.setProperties(channel.getProperties().stream().filter(
+                        prop -> (!prop.getValue().isEmpty() && prop.getValue() != null && !prop.getValue().equals("")))
+                        .collect(Collectors.toList()));
+                // In case of a rename, the old channel should be removed
                 deleteById(channelName);
             } 
             updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
@@ -188,7 +190,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
             updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
             UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the channel
+            // verify the creation of the channel
             Result result = updateResponse.getResult();
             if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
                 // client.get(, options)
