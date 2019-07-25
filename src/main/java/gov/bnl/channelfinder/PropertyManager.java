@@ -529,7 +529,7 @@ public class PropertyManager {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "The channel with the name " + channel.getName() + " does not exist");
             }
-            // Check if the channel data has the reuested property attached with a non null - non empty value
+            // Check if the channel data has the requested property attached with a non null - non empty value
             if(!channel.getProperties().stream().anyMatch((p) -> {
                 return p.getName().equals(property.getName()) && p.getValue() != null && !p.getValue().isEmpty();
             })) {
