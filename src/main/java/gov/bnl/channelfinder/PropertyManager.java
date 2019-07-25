@@ -169,6 +169,7 @@ public class PropertyManager {
                                 "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
                     } 
                     property.setOwner(existingProperty.get().getOwner());
+                    property.getChannels().forEach(chan -> chan.getProperties().get(0).setOwner(existingProperty.get().getOwner()));
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -197,7 +198,7 @@ public class PropertyManager {
             for(XmlProperty property: properties) {
                 for(XmlChannel ch: property.getChannels()) {
                     if(channels.containsKey(ch.getName())) {
-                        channels.get(ch.getName()).addProperty(property);
+                        channels.get(ch.getName()).addProperties(ch.getProperties());
                     } else {
                         channels.put(ch.getName(), ch);
                     }
@@ -377,6 +378,7 @@ public class PropertyManager {
                                 "User does not have the proper authorization to perform an operation on this property: " + existingProperty, null);
                     }
                     property.setOwner(existingProperty.get().getOwner());
+                    property.getChannels().forEach(chan -> chan.getProperties().get(0).setOwner(existingProperty.get().getOwner()));
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -387,18 +389,27 @@ public class PropertyManager {
 
             // Validate request parameters
             validatePropertyRequest(properties);
-            
+
             // prepare the list of channels which need to be updated with the new properties
             Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
 
             for(XmlProperty property: properties) {
+                if(propertyRepository.existsById(property.getName())) {
+                    for(XmlChannel ch: propertyRepository.findById(property.getName(),true).get().getChannels()) {
+                        if(channels.containsKey(ch.getName())) {
+                            channels.get(ch.getName()).addProperties(ch.getProperties());;
+                        } else {
+                            channels.put(ch.getName(), ch);
+                        }
+                    }
+                }
                 for(XmlChannel ch: property.getChannels()) {
                     if(channels.containsKey(ch.getName())) {
                         channels.get(ch.getName()).addProperties(ch.getProperties());;
                     } else {
                         channels.put(ch.getName(), ch);
                     }
-                }
+                }                
             }
 
             // update properties

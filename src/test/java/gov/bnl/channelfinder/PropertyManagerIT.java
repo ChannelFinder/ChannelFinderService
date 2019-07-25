@@ -580,7 +580,7 @@ public class PropertyManagerIT {
     }
 
     /**
-     * update properties' names and owners and values on their channels
+     * update properties' names and values and attempt to change owners on their channels
      */
     @Test
     public void updateMultipleXmlPropertiesOnChan() {
@@ -612,16 +612,16 @@ public class PropertyManagerIT {
         // update both properties
         propertyManager.update(Arrays.asList(testProperty0WithChannels,testProperty1WithChannels));
         // create expected properties
-        XmlProperty expectedProperty0 = new XmlProperty("testProperty0WithChannels", "updateTestOwner");
+        XmlProperty expectedProperty0 = new XmlProperty("testProperty0WithChannels", "testOwner");
         expectedProperty0.setChannels(Arrays.asList(
-                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value0")),new ArrayList<XmlTag>()),
-                new XmlChannel(testChannels.get(1).getName(),testChannels.get(1).getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"newValue1")),new ArrayList<XmlTag>()),
-                new XmlChannel(testChannelX.getName(),testChannelX.getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"newValueX")),new ArrayList<XmlTag>())));      
-        XmlProperty expectedProperty1 = new XmlProperty("testProperty1WithChannels", "updateTestOwner");
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(expectedProperty0.getName(),expectedProperty0.getOwner(),"value0")),new ArrayList<XmlTag>()),
+                new XmlChannel(testChannels.get(1).getName(),testChannels.get(1).getOwner(),Arrays.asList(new XmlProperty(expectedProperty0.getName(),expectedProperty0.getOwner(),"newValue1")),new ArrayList<XmlTag>()),
+                new XmlChannel(testChannelX.getName(),testChannelX.getOwner(),Arrays.asList(new XmlProperty(expectedProperty0.getName(),expectedProperty0.getOwner(),"newValueX")),new ArrayList<XmlTag>())));      
+        XmlProperty expectedProperty1 = new XmlProperty("testProperty1WithChannels", "testOwner");
         expectedProperty1.setChannels(Arrays.asList(
-                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"newValue0")),new ArrayList<XmlTag>()),
-                new XmlChannel(testChannels.get(1).getName(),testChannels.get(1).getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value1")),new ArrayList<XmlTag>()),
-                new XmlChannel(testChannelX.getName(),testChannelX.getOwner(),Arrays.asList(new XmlProperty(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"newValueX")),new ArrayList<XmlTag>())));      
+                new XmlChannel(testChannels.get(0).getName(),testChannels.get(0).getOwner(),Arrays.asList(new XmlProperty(expectedProperty1.getName(),expectedProperty1.getOwner(),"newValue0")),new ArrayList<XmlTag>()),
+                new XmlChannel(testChannels.get(1).getName(),testChannels.get(1).getOwner(),Arrays.asList(new XmlProperty(expectedProperty1.getName(),expectedProperty1.getOwner(),"value1")),new ArrayList<XmlTag>()),
+                new XmlChannel(testChannelX.getName(),testChannelX.getOwner(),Arrays.asList(new XmlProperty(expectedProperty1.getName(),expectedProperty1.getOwner(),"newValueX")),new ArrayList<XmlTag>())));      
 
         // verify that the properties were updated
         try {
@@ -637,23 +637,23 @@ public class PropertyManagerIT {
             assertTrue("Failed to update/find the property" + expectedProperty1.toString(), false);
         }
         
-        expectedProperty0 = new XmlProperty("testProperty0WithChannels", "updateTestOwner", "value0");
-        expectedProperty1 = new XmlProperty("testProperty1WithChannels", "updateTestOwner", "newValue0");
+        expectedProperty0 = new XmlProperty("testProperty0WithChannels", "testOwner", "value0");
+        expectedProperty1 = new XmlProperty("testProperty1WithChannels", "testOwner", "newValue0");
         List<XmlProperty> expectedProperties = Arrays.asList(expectedProperty0,expectedProperty1);
         // test property of channel0
-        assertTrue("The property attached to the channel " + testChannels.get(0).toString() + " doesn't match the new property",channelRepository.findById(testChannels.get(0).getName()).get().getProperties().get(0).equals(expectedProperties));
+        assertTrue("The property attached to the channel " + testChannels.get(0).toString() + " doesn't match the new property",channelRepository.findById(testChannels.get(0).getName()).get().getProperties().equals(expectedProperties));
 
-        expectedProperty0 = new XmlProperty("testProperty0WithChannels", "updateTestOwner", "newValue1");
-        expectedProperty1 = new XmlProperty("testProperty1WithChannels", "updateTestOwner", "value1");        
+        expectedProperty0 = new XmlProperty("testProperty0WithChannels", "testOwner", "newValue1");
+        expectedProperty1 = new XmlProperty("testProperty1WithChannels", "testOwner", "value1");        
         expectedProperties = Arrays.asList(expectedProperty0,expectedProperty1);
         // test property of channel1
-        assertTrue("The property attached to the channel " + testChannels.get(1).toString() + " doesn't match the new property",channelRepository.findById(testChannels.get(1).getName()).get().getProperties().get(0).equals(expectedProperties));
+        assertTrue("The property attached to the channel " + testChannels.get(1).toString() + " doesn't match the new property",channelRepository.findById(testChannels.get(1).getName()).get().getProperties().equals(expectedProperties));
 
-        expectedProperty0 = new XmlProperty("testProperty0WithChannels", "updateTestOwner", "newValueX");
-        expectedProperty1 = new XmlProperty("testProperty1WithChannels", "updateTestOwner", "newValueX");        
+        expectedProperty0 = new XmlProperty("testProperty0WithChannels", "testOwner", "newValueX");
+        expectedProperty1 = new XmlProperty("testProperty1WithChannels", "testOwner", "newValueX");        
         expectedProperties = Arrays.asList(expectedProperty0,expectedProperty1);
         // test property of channelX
-        assertTrue("The property attached to the channel " + testChannelX.toString() + " doesn't match the new property",channelRepository.findById(testChannelX.getName()).get().getProperties().get(0).equals(expectedProperties));
+        assertTrue("The property attached to the channel " + testChannelX.toString() + " doesn't match the new property",channelRepository.findById(testChannelX.getName()).get().getProperties().equals(expectedProperties));
 
         // clean extra channel
         channelRepository.deleteById(testChannelX.getName());

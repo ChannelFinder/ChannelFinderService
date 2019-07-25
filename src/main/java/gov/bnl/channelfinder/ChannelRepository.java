@@ -169,7 +169,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 // Add the old properties on the channel update request to ensure that old properties are preserved
                 List<XmlProperty> properties = channel.getProperties();
                 List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
-
                 for(XmlProperty oldProp: existingChannel.get().getProperties()) {
                     if(!propNames.contains(oldProp.getName())) {
                         channel.addProperty(oldProp);
@@ -177,9 +176,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 }
 
                 // If there are properties with null or empty values, they are to be removed from the channel
-                channel.setProperties(channel.getProperties().stream().filter(
-                        prop -> (!prop.getValue().isEmpty() && prop.getValue() != null && !prop.getValue().equals("")))
-                        .collect(Collectors.toList()));
+                properties.removeIf(prop -> prop.getValue() == null);
+                properties.removeIf(prop -> prop.getValue().isEmpty());
                 // In case of a rename, the old channel should be removed
                 deleteById(channelName);
             } 
@@ -227,24 +225,25 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
                 Optional<XmlChannel> existingChannel = findById(channel.getName());
                 if (existingChannel.isPresent()) {
-                    List<XmlTag> tags = channel.getTags();
-                    List<String> tagNames = new ArrayList<String>();
-                    tags.forEach(tag -> tagNames.add(tag.getName()));
-                    for(XmlTag oldTag: existingChannel.get().getTags()) {
-                        if(!tagNames.contains(oldTag.getName()))
-                            tags.add(oldTag);
+                    List<String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
+                    // Add the old tags on the channel update request to ensure that old tags are preserved
+                    for (XmlTag oldTag : existingChannel.get().getTags()) {
+                        if (!tagNames.contains(oldTag.getName()))
+                            channel.addTag(oldTag);
                     }
-                    channel.setTags(tags);
-                    
+
+                    // Add the old properties on the channel update request to ensure that old properties are preserved
                     List<XmlProperty> properties = channel.getProperties();
-                    List<String> propNames = new ArrayList<String>();
-                    properties.forEach(prop -> propNames.add(prop.getName()));
+                    List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
                     for(XmlProperty oldProp: existingChannel.get().getProperties()) {
                         if(!propNames.contains(oldProp.getName())) {
-                            properties.add(oldProp);
+                            channel.addProperty(oldProp);
                         }
                     }
-                    properties.removeIf(prop -> (prop.getValue().isEmpty() || prop.getValue() == null || prop.getValue().equals("")));
+
+                    // If there are properties with null or empty values, they are to be removed from the channel
+                    properties.removeIf(prop -> prop.getValue() == null);
+                    properties.removeIf(prop -> prop.getValue().isEmpty());
                     channel.setProperties(properties);
 
                     updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
