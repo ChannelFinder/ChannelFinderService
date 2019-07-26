@@ -318,7 +318,7 @@ public class ChannelManager {
      * Checks if
      * 1. the channel name is not null and matches the name in the body
      * 2. the channel owner is not null or empty
-     * 3. all the listed tags/props exist
+     * 3. all the listed tags/props exist and prop value is not null or empty
      * 
      * @param data
      */

@@ -103,6 +103,20 @@ public class TagValidationIT {
      */
     @Test
     public void validateXmlTagRequest() {
+        XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
+        try {
+            tagManager.validateTagRequest(testTag1);
+            assertTrue(true);
+        } catch (Exception e) {
+            assertTrue("Failed to validate with valid parameters",false);
+        }
+    }
+    
+    /**
+     * Attempt to XmlTag request with other valid parameters
+     */
+    @Test
+    public void validateXmlTagRequest2() {
         channelRepository.indexAll(Arrays.asList(new XmlChannel("testChannel0", "testOwner")));
 
         XmlTag testTag1 = new XmlTag("testTag1", "testOwner");
