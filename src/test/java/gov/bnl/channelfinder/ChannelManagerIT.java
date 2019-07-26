@@ -360,30 +360,41 @@ public class ChannelManagerIT {
         testProperties.forEach(prop -> prop.setValue("value"));
         XmlChannel testChannel0 = new XmlChannel("testChannel0", "testOwner",
                 Arrays.asList(testProperties.get(0),testProperties.get(1)),Arrays.asList(testTags.get(0),testTags.get(1)));
-        cleanupTestChannels = Arrays.asList(testChannel0);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1", "testOwner",
+                Arrays.asList(testProperties.get(0),testProperties.get(2)),Arrays.asList(testTags.get(0),testTags.get(2)));
+        List<XmlChannel> testChannels = Arrays.asList(testChannel0,testChannel1);
+        cleanupTestChannels = testChannels;
         
         // Create the testChannel
-        XmlChannel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+        Iterable<XmlChannel> createdChannels = channelManager.create(testChannels);
         
         // set up the new testChannel
-        testProperties.get(1).setValue("newValue");
+        testProperties.forEach(prop -> prop.setValue("newValue"));
         testChannel0 = new XmlChannel("testChannel0", "testOwner",
-                Arrays.asList(testProperties.get(1),testProperties.get(2)),Arrays.asList(testTags.get(1),testTags.get(2)));
+                Arrays.asList(testProperties.get(0),testProperties.get(2)),Arrays.asList(testTags.get(0),testTags.get(2)));
+        testChannel1 = new XmlChannel("testChannel1", "testOwner",
+                Arrays.asList(testProperties.get(0),testProperties.get(1)),Arrays.asList(testTags.get(0),testTags.get(1)));
+        testChannels = Arrays.asList(testChannel0,testChannel1);
         
         // update the testChannel
-        XmlChannel updatedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+        Iterable<XmlChannel> updatedChannels = channelManager.update(testChannels);
 
-        XmlChannel expectedChannel = new XmlChannel("testChannel0", "testOwner", testProperties, testTags);
-        XmlChannel foundChannel = channelRepository.findById("testChannel0").get();
-        foundChannel.getTags().sort((XmlTag o1, XmlTag o2) -> {
-            return o1.getName().compareTo(o2.getName());
-        });
-        foundChannel.getProperties().sort((XmlProperty o1, XmlProperty o2) -> {
-            return o1.getName().compareTo(o2.getName());
-        });
-        assertEquals("Did not update channel correctly, expected " + expectedChannel.toLog() + " but actual was "
-                + foundChannel.toLog(), expectedChannel, foundChannel);
-    }
+        // set up the expected testChannels
+        testChannel0 = new XmlChannel("testChannel0", "testOwner", 
+                Arrays.asList(testProperties.get(0),new XmlProperty("testProperty1", "testPropertyOwner1","value"),testProperties.get(2)), testTags);
+        testChannel1 = new XmlChannel("testChannel1", "testOwner", 
+                Arrays.asList(testProperties.get(0), testProperties.get(1), new XmlProperty("testProperty2", "testPropertyOwner2","value")), testTags);
+        Iterable<XmlChannel> expectedChannels = Arrays.asList(testChannel0,testChannel1);
+        
+        Iterable<XmlChannel> foundChannels = channelRepository.findAllById(Arrays.asList("testChannel0","testChannel1"));
+        foundChannels.forEach(chan -> chan.getTags().sort((XmlTag o1, XmlTag o2) -> {
+            return o1.getName().compareTo(o2.getName());}));        
+        foundChannels.forEach(chan -> chan.getProperties().sort((XmlProperty o1, XmlProperty o2) -> {
+            return o1.getName().compareTo(o2.getName());}));
+        
+        assertEquals("Did not update channel correctly, expected " + testChannel0.toLog() + " and " + testChannel1.toLog() + " but actual was "
+                + foundChannels.iterator().next().toLog() + " and " + foundChannels.iterator().next().toLog(), expectedChannels, foundChannels);
+        }
     
     /**
      * delete a channel

@@ -167,7 +167,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 }
 
                 // Add the old properties on the channel update request to ensure that old properties are preserved
-                List<XmlProperty> properties = channel.getProperties();
                 List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
                 for(XmlProperty oldProp: existingChannel.get().getProperties()) {
                     if(!propNames.contains(oldProp.getName())) {
@@ -176,8 +175,11 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 }
 
                 // If there are properties with null or empty values, they are to be removed from the channel
+                List<XmlProperty> properties = channel.getProperties();
                 properties.removeIf(prop -> prop.getValue() == null);
                 properties.removeIf(prop -> prop.getValue().isEmpty());
+                channel.setProperties(properties);
+                
                 // In case of a rename, the old channel should be removed
                 deleteById(channelName);
             } 
@@ -233,15 +235,15 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     }
 
                     // Add the old properties on the channel update request to ensure that old properties are preserved
-                    List<XmlProperty> properties = channel.getProperties();
                     List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
                     for(XmlProperty oldProp: existingChannel.get().getProperties()) {
                         if(!propNames.contains(oldProp.getName())) {
                             channel.addProperty(oldProp);
                         }
                     }
-
+                    
                     // If there are properties with null or empty values, they are to be removed from the channel
+                    List<XmlProperty> properties = channel.getProperties();
                     properties.removeIf(prop -> prop.getValue() == null);
                     properties.removeIf(prop -> prop.getValue().isEmpty());
                     channel.setProperties(properties);
