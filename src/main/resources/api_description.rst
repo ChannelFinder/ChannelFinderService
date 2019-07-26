@@ -147,7 +147,7 @@ Create or completely replace the existing channel name with the payload data. If
 
 Method: PUT     Payload: List of Channels	 Required Role: ChannelMod
 
-Add the channels in the payload to the directory. Existing channels are replaced by the payload data. For all channels that are to be replaced or added, the authenticated user is required to be a member of their owner group. (Administrator role overrides this restriction.)
+Add the channels in the payload to the directory. Existing channels are replaced by the payload data but owners will not be changed. For all channels that are to be replaced or added, the authenticated user is required to be a member of their owner group. (Administrator role overrides this restriction.)
 
 **Update Channel**
 
@@ -232,7 +232,7 @@ Add the properties in the payload to the directory. If a payload property contai
 <channels> list, the property is added to all channels in that list. In this case, the value for each property
 instance is taken from the property definition inside the channel on the embedded channel list. The
 property is set exclusively on all channels in the embedded list, removing it from all channels that are
-not included on the list. Existing property values are replaced by the payload data.
+not included on the list. Existing property values are replaced by the payload data but owners will not be changed.
 
 For all properties that are to be replaced or added, the authenticated user is required to be a member of
 their owner group. (Administrator role overrides this restriction.)
@@ -263,10 +263,9 @@ Add properties in the payload to all channels in the payload data. If the proper
 an embedded <channels> list, the property is added to all channels in that list. In this case, the value for
 each property instance is taken from the property definition inside the channel in the embedded channel
 list. Existing property values are replaced by the payload data. If the payload property owner
-is different from the current values, the database owner is changed.
+is different from the current values, the owners will not be changed.
 
-The authenticated user must belong to the group that owns the property. If the operation changes the
-ownership, the user must belong to both the old and the new group. (Administrator role overrides these
+The authenticated user must belong to the group that owns the property. (Administrator role overrides these
 restrictions.)
 
 **Remove Property from Single Channel**
