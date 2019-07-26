@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -74,6 +75,7 @@ public class TagManager {
             if(foundTag.isPresent()) {
                 return foundTag.get();
             } else {
+                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
@@ -82,6 +84,7 @@ public class TagManager {
             if(foundTag.isPresent()) {
                 return foundTag.get();
             } else {
+                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
@@ -109,6 +112,7 @@ public class TagManager {
 
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
@@ -116,8 +120,9 @@ public class TagManager {
             boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
                 } 
                 // delete existing tag
                 tagRepository.deleteById(tagName);
@@ -140,8 +145,9 @@ public class TagManager {
             }
             return createdTag;
         } else
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
     }
 
     /**
@@ -163,18 +169,20 @@ public class TagManager {
                 boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
                     }
                     tag.setOwner(existingTag.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
                     }
                 }
             }
-            
+
             // Validate request parameters
             validateTagRequest(tags);
 
@@ -207,9 +215,11 @@ public class TagManager {
             }
             // TODO should return created tags with properly organized saved channels, but it would be very complicated...
             return tags;
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on these tags: " + tags, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these tags: " + tags, null);
+        }
     }
 
     /**
@@ -237,8 +247,9 @@ public class TagManager {
             boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
                 } 
                 // add tag to channel
                 XmlChannel channel = channelRepository.findById(channelName).get();
@@ -250,12 +261,15 @@ public class TagManager {
                 addedTag.setChannels(Arrays.asList(taggedChannel));
                 return addedTag;
             } else {
+                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
+        }
     }
 
     /**
@@ -281,6 +295,7 @@ public class TagManager {
 
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
@@ -289,8 +304,9 @@ public class TagManager {
             boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
                 } 
                 chans = existingTag.get().getChannels();
             } 
@@ -320,9 +336,11 @@ public class TagManager {
             }
 
             return updatedTag;        
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
+        }
     }
 
     /**
@@ -340,28 +358,30 @@ public class TagManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
-            
+
             // check if authorized owner
             for(XmlTag tag:tags) {                
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                                "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+                                "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
                     }     
                     tag.setOwner(existingTag.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
                     }
                 }
             }
-            
+
             // Validate request parameters
             validateTagRequest(tags);
-            
+
             // update the listed channels in the tags' payloads with new tags
             Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
             for (XmlTag tag : tags) {
@@ -384,9 +404,11 @@ public class TagManager {
             }
             // TODO should return updated tags with properly organized saved channels, but it would be very complicated...
             return tags;
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on these tags: " + tags, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these tag: " + tags, null);
+        }
     }
 
     /**
@@ -406,16 +428,20 @@ public class TagManager {
                     // delete tag
                     tagRepository.deleteById(tagName);
                 } else {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
                 }
             } else {
+                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
+        }
     }
 
     /**
@@ -440,19 +466,25 @@ public class TagManager {
                         channel.removeTag(new XmlTag(tagName, ""));
                         channelRepository.index(channel);
                     } else {
+                        log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                                 "The channel with the name " + channelName + " does not exist");
                     }
-                } else
+                } else {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this tag: " + tagName, null); 
+                }
             } else {
+                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);       
+        }
     }
 
     /**
@@ -480,11 +512,13 @@ public class TagManager {
     public void validateTagRequest(XmlTag tag) {
         // 1 
         if (tag.getName() == null || tag.getName().isEmpty()) {
+            log.log(Level.SEVERE, "The tag name cannot be null or empty " + tag.toLog(), new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The tag name cannot be null or empty " + tag.toString(), null);
         }
         // 2
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
+            log.log(Level.SEVERE, "The tag owner cannot be null or empty " + tag.toLog(), new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The tag owner cannot be null or empty " + tag.toString(), null);
         }
@@ -492,6 +526,7 @@ public class TagManager {
         List <String> channelNames = tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
         for(String channelName:channelNames) {
             if(!channelRepository.existsById(channelName)) {
+                log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The channel with the name " + channelName + " does not exist");
             }
@@ -505,6 +540,7 @@ public class TagManager {
      */
     public void validateTagWithChannelRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {
+            log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");
         }

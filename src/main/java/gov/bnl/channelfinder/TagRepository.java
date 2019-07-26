@@ -61,7 +61,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
     @Autowired
     ElasticSearchClient esService;
-    
+
     @Autowired
     ChannelRepository channelRepository;
 

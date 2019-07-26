@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.DocWriteResponse.Result;
@@ -63,6 +65,7 @@ import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 @Repository
 @Configuration
 public class ChannelRepository implements CrudRepository<XmlChannel, String> {
+    static Logger log = Logger.getLogger(ChannelRepository.class.getName());
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
@@ -96,7 +99,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to index channel: " + channel.toLog(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to index channel: " + channel, null);
         }
@@ -137,7 +140,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to index channels: " + channels, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to index channels: " + channels, null);
         }
@@ -179,7 +182,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 properties.removeIf(prop -> prop.getValue() == null);
                 properties.removeIf(prop -> prop.getValue().isEmpty());
                 channel.setProperties(properties);
-                
+
                 // In case of a rename, the old channel should be removed
                 deleteById(channelName);
             } 
@@ -197,7 +200,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return (S) findById(channel.getName()).get();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to update/save channel: " + channel.toLog(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update/save channel: " + channel, null);
         }
@@ -241,7 +244,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                             channel.addProperty(oldProp);
                         }
                     }
-                    
+
                     // If there are properties with null or empty values, they are to be removed from the channel
                     List<XmlProperty> properties = channel.getProperties();
                     properties.removeIf(prop -> prop.getValue() == null);
@@ -274,7 +277,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return (Iterable<S>) findAllById(createdChannelIds);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to update/save channels: " + channels, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to update/save channels: " + channels, null);
         }
@@ -297,7 +300,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return Optional.of(channel);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to find channel: " + channelId, e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Failed to find channel: " + channelId, null);
         }
@@ -372,7 +375,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return result;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to find all channels", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to find all channels", null);
         }
@@ -403,7 +406,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             }
             return foundChannels;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to find all channels: " + channelIds, e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Failed to find all channels: " + channelIds, null);
         }
@@ -418,13 +421,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * delete the given channel by channel name
      * 
-     * @param channel - channel to be deleted
+     * @param channelName - channel to be deleted
      */
     @Override
-    public void deleteById(String channel) {
+    public void deleteById(String channelName) {
         RestHighLevelClient client = esService.getIndexClient();
 
-        DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel);
+        DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName);
         request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
 
         try {
@@ -434,9 +437,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 throw new Exception();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to delete channel: " + channelName, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to delete channel: " + channel, null);
+                    "Failed to delete channel: " + channelName, null);
         }
     }
 
@@ -559,7 +562,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 try {
                     result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
                     throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                             "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
                 }
@@ -571,6 +574,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             //                    + qbResult.getHits().getTotalHits() + " channels");
             return result;
         } catch (Exception e) {
+            log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
         }
