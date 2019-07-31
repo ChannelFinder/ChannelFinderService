@@ -3,6 +3,7 @@ package gov.bnl.channelfinder;
 import static gov.bnl.channelfinder.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -75,9 +76,11 @@ public class ChannelManager {
         Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
         if (foundChannel.isPresent())
             return foundChannel.get();
-        else
+        else {
+            log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "The channel with the name " + channelName + " does not exist");
+        }
     }
 
     /**
@@ -99,6 +102,7 @@ public class ChannelManager {
 
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
+                log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channel.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
             }
@@ -106,18 +110,25 @@ public class ChannelManager {
             boolean present = existingChannel.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+                            "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get(), null);
                 } 
                 // delete existing channel
                 channelRepository.deleteById(channelName);
             } 
 
+            // reset owners of attached tags/props back to existing owners
+            channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
+            channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
+
             // create new channel
             return channelRepository.index(channel);
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channelName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
+        }
     }
 
     /**
@@ -129,25 +140,30 @@ public class ChannelManager {
     @PutMapping
     public Iterable<XmlChannel> create(@RequestBody Iterable<XmlChannel> channels) {
         // check if authorized role
-        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
-            // Validate request parameters
-            validateChannelRequest(channels);
-
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {           
             // check if authorized owner
             for(XmlChannel channel: channels) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
-                }
+
                 Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
                 boolean present = existingChannel.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                                "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+                                "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get(), null);
                     } 
-                } 
+                    channel.setOwner(existingChannel.get().getOwner());
+                } else {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channel.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
+                    }
+                }
             }
+
+            // Validate request parameters
+            validateChannelRequest(channels);
 
             // delete existing channels
             for(XmlChannel channel: channels) {
@@ -157,15 +173,23 @@ public class ChannelManager {
                 } 
             }
 
+            // reset owners of attached tags/props back to existing owners
+            for(XmlChannel channel: channels) {
+                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));            
+                channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
+            }
+
             channels.forEach(log -> {
                 channelManagerAudit.info("PUT" + log.toLog());
             });
 
             // create new channels
             return channelRepository.indexAll(channels);
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channels, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
+        }
     }
 
     /**
@@ -187,6 +211,7 @@ public class ChannelManager {
 
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
+                log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channel.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
             }
@@ -194,16 +219,23 @@ public class ChannelManager {
             boolean present = existingChannel.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
+                            "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get(), null);
                 }
             } 
 
+            // reset owners of attached tags/props back to existing owners
+            channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
+            channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
+
             // update channel
             return channelRepository.save(channelName,channel);
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channelName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
+        }
     }
 
     /**
@@ -218,33 +250,46 @@ public class ChannelManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
-            // Validate request parameters
-            validateChannelRequest(channels);   
 
-            for(XmlChannel channel: channels) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
-                }
+            for(XmlChannel channel: channels) {                
                 Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
                 boolean present = existingChannel.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                                "User does not have the proper authorization to perform an operation on this channel: " + existingChannel, null);
-                    } 
-                }            
+                                "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get(), null);
+                    }
+                    channel.setOwner(existingChannel.get().getOwner());
+                } else {
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
+                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channel.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                                "User does not have the proper authorization to perform an operation on this channel: " + channel, null);
+                    }
+                }
             }
+
+            // Validate request parameters
+            validateChannelRequest(channels);   
 
             start = System.currentTimeMillis();
             channelManagerAudit.info("|" + servletContext.getContextPath() + "|POST|validation : "
                     + (System.currentTimeMillis() - start));
 
+            // reset owners of attached tags/props back to existing owners
+            for(XmlChannel channel: channels) {
+                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));            
+                channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
+            }
+
             // update channels
             return channelRepository.saveAll(channels);
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channels, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on these channels: " + channels, null);
+        }
     }
 
     /**
@@ -265,16 +310,20 @@ public class ChannelManager {
                     // delete channel
                     channelRepository.deleteById(channelName);
                 } else {
+                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channelName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
                 }
             } else {
+                log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the channel " + channelName + " does not exist");
             }
-        } else
+        } else {
+            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channelName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                     "User does not have the proper authorization to perform an operation on this channel: " + channelName, null);
+        }
     }
 
     /**
@@ -292,18 +341,20 @@ public class ChannelManager {
      * Checks if
      * 1. the channel name is not null and matches the name in the body
      * 2. the channel owner is not null or empty
-     * 3. all the listed tags/props exist
+     * 3. all the listed tags/props exist and prop value is not null or empty
      * 
      * @param data
      */
     public void validateChannelRequest(XmlChannel channel) {
         // 1 
         if (channel.getName() == null || channel.getName().isEmpty()) {
+            log.log(Level.SEVERE, "The channel name cannot be null or empty " + channel.toLog(), new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The channel name cannot be null or empty " + channel.toString(), null);
         }
         // 2
         if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
+            log.log(Level.SEVERE, "The channel owner cannot be null or empty " + channel.toLog(), new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "The channel owner cannot be null or empty " + channel.toString(), null);
         }
@@ -311,6 +362,7 @@ public class ChannelManager {
         List <String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
         for(String tagName:tagNames) {
             if(!tagRepository.existsById(tagName)) {
+                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The tag with the name " + tagName + " does not exist");
             }
@@ -320,12 +372,14 @@ public class ChannelManager {
         List <String> propertyValues = channel.getProperties().stream().map(XmlProperty::getValue).collect(Collectors.toList());
         for(String propertyName:propertyNames) {
             if(!propertyRepository.existsById(propertyName)) {
+                log.log(Level.SEVERE, "The property with the name " + propertyName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "The property with the name " + propertyName + " does not exist");
             } 
         }
         for(String propertyValue:propertyValues) {
             if(propertyValue == null || propertyValue.isEmpty()) {
+                log.log(Level.SEVERE, "The property with the name " + propertyNames.get(propertyValues.indexOf(propertyValue)) + " has value " + propertyValue + " is null or empty", new ResponseStatusException(HttpStatus.BAD_REQUEST));
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "The property with the name " + propertyNames.get(propertyValues.indexOf(propertyValue)) + " has value " + propertyValue + " is null or empty");
             }

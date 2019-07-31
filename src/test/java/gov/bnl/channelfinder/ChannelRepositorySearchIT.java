@@ -1,16 +1,10 @@
 package gov.bnl.channelfinder;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -19,13 +13,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.transaction.BeforeTransaction;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import gov.bnl.channelfinder.example.PopulateService;
 
@@ -49,14 +38,18 @@ public class ChannelRepositorySearchIT {
     PopulateService populateService;
 
     @Before
-    public void setup() {
+    public void setup() throws InterruptedException {
         populateService.createDB(1);
+        Thread.sleep(10000);
     }
 
     @After
-    public void cleanup() {
+    public void cleanup() throws InterruptedException {
         populateService.cleanupDB();
+        Thread.sleep(10000);
     }
+
+    final List<Integer> val_bucket = Arrays.asList(1, 2, 5, 10, 20, 50, 100, 200, 500);
 
     /**
      * Test searching for channels based on name
@@ -100,17 +93,7 @@ public class ChannelRepositorySearchIT {
         searchParameters.add("~name", "SR*,BR*");
         result = channelRepository.search(searchParameters);
         assertTrue("Expected 1500 but got " + result.size(), result.size() == 1500);
-    }
-
-    final List<Integer> val_bucket = Arrays.asList(1, 2, 5, 10, 20, 50, 100, 200, 500);
-
-    /**
-     * Query for channels based on tags
-     * @throws InterruptedException 
-     */
-    @Test
-    public void searchTagTest() throws InterruptedException {
-        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+        
         // search for channels based on a tag
         for (int i = 0; i < 5; i++) {
 
@@ -120,18 +103,10 @@ public class ChannelRepositorySearchIT {
             searchParameters.add("~name", "SR*");
             searchParameters.add("~tag", "group"+id+"_"+val_bucket.get(index));
 
-            List<XmlChannel> result = channelRepository.search(searchParameters);
+            result = channelRepository.search(searchParameters);
             assertTrue("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), result.size() == val_bucket.get(index));
         }
-    }
-
-    /**
-     * Query for channels based on properties
-     * @throws InterruptedException 
-     */
-    @Test
-    public void searchPropertyTest() throws InterruptedException {
-        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+        
         // search for channels based on a tag
         for (int i = 0; i < 5; i++) {
 
@@ -141,11 +116,11 @@ public class ChannelRepositorySearchIT {
             searchParameters.add("~name", "SR*");
             searchParameters.add("group"+id, String.valueOf(val_bucket.get(index)));
 
-            List<XmlChannel> result = channelRepository.search(searchParameters);
+            result = channelRepository.search(searchParameters);
             assertTrue("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), result.size() == val_bucket.get(index));
         }
     }
-    
+
     private String maptoString(MultiValueMap<String, String> searchParameters) {
         StringBuffer sb = new StringBuffer();
         searchParameters.entrySet().forEach(e -> {

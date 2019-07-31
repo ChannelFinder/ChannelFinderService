@@ -247,13 +247,16 @@ public class TagManagerIT {
 
     /**
      * create by overriding multiple tags
+     * 
+     * attempting to change owners will have no effect
+     * changing channels will have an effect
      */
     @Test
     public void createXmlTagsWithOverride() {
         XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
         
         XmlTag testTag0WithChannels = new XmlTag("testTag0WithChannels", "testOwner");
-        testTag0WithChannels.setChannels(testChannels);
+        testTag0WithChannels.setChannels(Arrays.asList(testChannels.get(0)));
        
         List<XmlTag> testTags = Arrays.asList(testTag0, testTag0WithChannels);
         cleanupTestTags = testTags;
@@ -263,18 +266,28 @@ public class TagManagerIT {
         tagManager.create("testTag0WithChannels", copy(testTag0WithChannels));
         // Now update the test tags
         testTag0.setOwner("testOwner-updated");
-        testTag0WithChannels.setChannels(Collections.emptyList());
+        testTag0WithChannels.setOwner("testOwner-updated");
+        testTag0WithChannels.setChannels(Arrays.asList(testChannels.get(1)));
 
         List<XmlTag> updatedTestTags = Arrays.asList(testTag0, testTag0WithChannels);
         Iterable<XmlTag> createdTags = tagManager.create(copy(updatedTestTags));
-        // verify the tags were created as expected
-        assertTrue("Failed to create the tags", Iterables.elementsEqual(updatedTestTags, createdTags));
+        
+        // set owner back to original since it shouldn't change
+        testTag0.setOwner("testOwner");
+        testTag0WithChannels.setOwner("testOwner");        
+        // verify the tags were updated as expected    
+        XmlTag foundTag = tagRepository.findById(testTag0.getName(), true).get();
+        assertTrue("Failed to update tag " + testTag0, foundTag.equals(testTag0));
+        foundTag = tagRepository.findById(testTag0WithChannels.getName(), true).get();
+        assertTrue("Failed to update tag " + testTag0WithChannels, foundTag.equals(testTag0WithChannels));
 
+        testTag0WithChannels.setChannels(new ArrayList<XmlChannel>());
+        testChannels.get(1).setTags(Arrays.asList(testTag0WithChannels));
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag", testTag0WithChannels.getName());
         // verify the tag was removed from the old channels
-        assertEquals("Failed to delete the tag from channels",
-                new ArrayList<XmlChannel>(), channelRepository.search(params));    
+        assertEquals("Failed to change the channels the tag is attached to correctly",
+                Arrays.asList(testChannels.get(1)), channelRepository.search(params));    
     }
     
     /**
@@ -566,32 +579,7 @@ public class TagManagerIT {
     }
 
     /**
-     * Update multiple existing tags, while ensuring existing channels remain unaffected
-     */
-    @Test
-    public void updateMultipleTags2() {
-        // A test tag with only name and owner
-        XmlTag testTag0 = new XmlTag("testTag0", "testOwner");
-        // A test tag with name, owner, and test channels
-        XmlTag testTag0WithChannels = new XmlTag("testTag0WithChannels", "testOwner");
-        testTag0WithChannels.setChannels(testChannels);
-        cleanupTestTags = Arrays.asList(testTag0, testTag0WithChannels);
-
-        Iterable<XmlTag> createdTag = tagManager.create(Arrays.asList(copy(testTag0), copy(testTag0WithChannels)));
-
-        testTag0.setOwner("newOwner");
-        testTag0WithChannels.setOwner("newOwner");
-        createdTag = tagManager.update(Arrays.asList(copy(testTag0), copy(testTag0WithChannels)));
-
-        // Query ChannelFinder and verify updated channels and tags
-        XmlTag foundTag = tagRepository.findById(testTag0.getName(), true).get();
-        assertTrue("Failed to update tag " + testTag0, foundTag.equals(testTag0));
-        foundTag = tagRepository.findById(testTag0WithChannels.getName(), true).get();
-        assertTrue("Failed to update tag " + testTag0WithChannels, foundTag.equals(testTag0WithChannels));
-    }
-    
-    /**
-     * update tags' names and owners on their channels
+     * update tags' names and attempt to change owners on their channels
      */
     @Test
     public void updateMultipleXmlTagsOnChan() {
@@ -615,12 +603,12 @@ public class TagManagerIT {
         // update both tags
         tagManager.update(Arrays.asList(testTag0WithChannels,testTag1WithChannels));
         // create expected tags
-        XmlTag expectedTag0 = new XmlTag("testTag0WithChannels", "updateTestOwner");
+        XmlTag expectedTag0 = new XmlTag("testTag0WithChannels", "testOwner");
         expectedTag0.setChannels(Arrays.asList(
                 new XmlChannel("testChannel0", "testOwner"),
                 new XmlChannel("testChannel1", "testOwner"),
                 new XmlChannel("testChannelX","testOwner")));
-        XmlTag expectedTag1 = new XmlTag("testTag1WithChannels", "updateTestOwner");
+        XmlTag expectedTag1 = new XmlTag("testTag1WithChannels", "testOwner");
         expectedTag1.setChannels(Arrays.asList(
                 new XmlChannel("testChannel0", "testOwner"),
                 new XmlChannel("testChannel1", "testOwner"),
@@ -640,11 +628,12 @@ public class TagManagerIT {
             assertTrue("Failed to update/find the tag " + expectedTag1.toString(), false);
         }  
         
-        expectedTag0 = new XmlTag("testTag0WithChannels", "updateTestOwner");
-        expectedTag1 = new XmlTag("testTag1WithChannels", "updateTestOwner");
+        expectedTag0 = new XmlTag("testTag0WithChannels", "testOwner");
+        expectedTag1 = new XmlTag("testTag1WithChannels", "testOwner");
         List<XmlTag> expectedTags = Arrays.asList(expectedTag0,expectedTag1);
         // check if tags attached to channels are correct
         // test tag of channel0
+        channelRepository.findById(testChannels.get(0).getName()).get().getTags();
         assertTrue("The tags attached to the channel " + testChannels.get(0).toString() + " doesn't match the expected tags",channelRepository.findById(testChannels.get(0).getName()).get().getTags().equals(expectedTags));
         // test tag of channel1 (tags need to be sorted because they are not sorted when gotten from channel)
         List<XmlTag> sortedTags = channelRepository.findById(testChannels.get(1).getName()).get().getTags();
