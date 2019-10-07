@@ -40,7 +40,7 @@ public class Application  implements ApplicationRunner {
         configureTruststore();
         SpringApplication.run(Application.class, args);
     }
-
+//init
     /**
      * Set the default ssl trust store
      */
