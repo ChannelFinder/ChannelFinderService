@@ -31,18 +31,23 @@ import org.elasticsearch.action.get.MultiGetRequest.Item;
 import org.elasticsearch.action.get.MultiGetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
@@ -535,43 +540,82 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     break;
                 }
             }
-
-            performance.append("|prepare: " + (System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
+            
+            final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
             SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
+            searchRequest.scroll(scroll);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.size(size);
-            if (from >= 0) {
-                searchSourceBuilder.from(from);
-            }
             searchSourceBuilder.query(qb);
-            searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
-            searchRequest.types(ES_CHANNEL_TYPE);
             searchRequest.source(searchSourceBuilder);
 
-            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            performance.append(
-                    "|query:(" + searchResponse.getHits().getTotalHits() + ")" + (System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
+            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT); 
+            String scrollId = searchResponse.getScrollId();
+            SearchHit[] searchHits = searchResponse.getHits().getHits();
+
             final ObjectMapper mapper = new ObjectMapper();
             mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
             mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
-            start = System.currentTimeMillis();
             List<XmlChannel> result = new ArrayList<XmlChannel>();
-            searchResponse.getHits().forEach(hit -> {
-                try {
-                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
-                } catch (IOException e) {
-                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
-                }
-            });
 
-            performance.append("|parse:" + (System.currentTimeMillis() - start));
-            //            log.info(user + "|" + uriInfo.getPath() + "|GET|OK" + performance.toString() + "|total:"
-            //                    + (System.currentTimeMillis() - totalStart) + "|" + r.getStatus() + "|returns "
-            //                    + qbResult.getHits().getTotalHits() + " channels");
+            while (searchHits != null && searchHits.length > 0) { 
+                SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
+                scrollRequest.scroll(scroll);
+                searchResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+                scrollId = searchResponse.getScrollId();
+                searchHits = searchResponse.getHits().getHits();      
+
+                searchResponse.getHits().forEach(hit -> {
+                    try {
+                        result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
+                    } catch (IOException e) {
+                        log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
+                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                          "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+                    }
+                });           
+            }
+
+            ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
+            clearScrollRequest.addScrollId(scrollId);
+            ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+            boolean succeeded = clearScrollResponse.isSucceeded();
+            
+//            performance.append("|prepare: " + (System.currentTimeMillis() - start));
+//            start = System.currentTimeMillis();
+//            SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
+//            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//            searchSourceBuilder.size(size);
+//            if (from >= 0) {
+//                searchSourceBuilder.from(from);
+//            }
+//            searchSourceBuilder.query(qb);
+//            searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
+//            searchRequest.types(ES_CHANNEL_TYPE);
+//            searchRequest.source(searchSourceBuilder);
+//
+//            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+//            performance.append(
+//                    "|query:(" + searchResponse.getHits().getTotalHits() + ")" + (System.currentTimeMillis() - start));
+//            start = System.currentTimeMillis();
+//            final ObjectMapper mapper = new ObjectMapper();
+//            mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
+//            mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
+//            start = System.currentTimeMillis();
+//            List<XmlChannel> result = new ArrayList<XmlChannel>();
+//            searchResponse.getHits().forEach(hit -> {
+//                try {
+//                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
+//                } catch (IOException e) {
+//                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
+//                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+//                            "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+//                }
+//            });
+//
+//            performance.append("|parse:" + (System.currentTimeMillis() - start));
+//            //            log.info(user + "|" + uriInfo.getPath() + "|GET|OK" + performance.toString() + "|total:"
+//            //                    + (System.currentTimeMillis() - totalStart) + "|" + r.getStatus() + "|returns "
+//            //                    + qbResult.getHits().getTotalHits() + " channels");
             return result;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
