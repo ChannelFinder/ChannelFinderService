@@ -547,15 +547,26 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
             searchSourceBuilder.query(qb);
             searchRequest.source(searchSourceBuilder);
-
+           
             SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT); 
             String scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
 
+            System.out.println(searchHits.length);
             final ObjectMapper mapper = new ObjectMapper();
             mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
             mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
             List<XmlChannel> result = new ArrayList<XmlChannel>();
+            
+            searchResponse.getHits().forEach(hit -> {
+                try {
+                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
+                } catch (Exception e) {
+                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
+//                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+//                      "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+                }
+            });   
 
             while (searchHits != null && searchHits.length > 0) { 
                 SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId); 
@@ -567,10 +578,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 searchResponse.getHits().forEach(hit -> {
                     try {
                         result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
-                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                          "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+//                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+//                          "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
                     }
                 });           
             }

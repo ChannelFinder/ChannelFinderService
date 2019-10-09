@@ -38,8 +38,8 @@ public class Application  implements ApplicationRunner {
     public static void main(String[] args){
         // Set the java truststore used by channelfinder
         configureTruststore();
-      args = new String[1];
-      args[0] = "--demo-data=100";
+//        args = new String[1];
+//        args[0] = "--demo-data=20";
         SpringApplication.run(Application.class, args);
     }
 
