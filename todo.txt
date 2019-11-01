@@ -1,7 +1,0 @@
- fix channelrepositorysearchIT 
- add error logging everywhere
- implement capabilities to return list of nonexisting items in validation
- implement validation check for name change to ensure either uri name matches or is existing
- implement channelmanagerIT
- finish fixing cfpy issue
- update docs

@@ -135,7 +135,7 @@ Note that a number of special characters need to be escaped in URL expressions â
 
 **Create/Replace Channel**
 
-.../channels/<name>
+**.../channels/<name>**
 
 Method: PUT     Payload: Single Channel      Required Role: ChannelMod
 
@@ -143,7 +143,7 @@ Create or completely replace the existing channel name with the payload data. If
 
 **Create/Replace Multiple Channels**
 
-.../channels
+**.../channels**
 
 Method: PUT     Payload: List of Channels	 Required Role: ChannelMod
 
@@ -151,7 +151,7 @@ Add the channels in the payload to the directory. Existing channels are replaced
 
 **Update Channel**
 
-.../channels/<name>
+**.../channels/<name>**
 
 Method: POST    Payload: Single Channel      Required Role: ChannelMod
 
@@ -197,7 +197,7 @@ Return the list of all properties in the directory.
 
 **Create/Replace a Property**
 
-.../properties/<name>
+**.../properties/<name>**
 
 Method: PUT     Payload: Single Property     Required Role: PropertyMod
 
@@ -212,7 +212,7 @@ this restriction.)
 
 **Add Property to a Single Channel** 
 
-.../properties/<property_name>/<channel_name>
+**.../properties/<property_name>/<channel_name>**
 
 Method: PUT     Payload: Single Property     Required Role: PropertyMod
 
@@ -224,7 +224,7 @@ this restriction.)
 
 **Create/Replace Properties**
 
-.../properties
+**.../properties**
 
 Method: PUT    Payload: List of Properties   Required Role: PropertyMod
 
@@ -239,7 +239,7 @@ their owner group. (Administrator role overrides this restriction.)
 
 **Add Property to Multiple Channels**
 
-.../properties/<name>
+**.../properties/<name>**
 
 Method: POST     Payload: Single Property    Required Role: PropertyMod
 
@@ -255,7 +255,7 @@ restrictions.)
 
 **Add Multiple Properties**
 
-.../properties
+**.../properties**
 
 Method: POST    Payload: List of Properties  Required Role: PropertyMod
 
@@ -324,7 +324,7 @@ restriction.)
 
 **Add Tag to Single Channel**
 
-.../tags/<tag_name>/<channel_name>
+**.../tags/<tag_name>/<channel_name>**
 
 Method: PUT     Payload: Single Tag          Required Role: TagMod
 
@@ -335,7 +335,7 @@ restriction.)
 
 **Create/Replace Tags**
 
-.../tags/<name>
+**.../tags/<name>**
 
 Method: PUT     Payload: List of Tag         Required Role: TagMod
 
@@ -348,7 +348,7 @@ owner group. (Administrator role overrides this restriction.)
 
 **Add Tag to Multiple Channels**
 
-.../tags/<name>
+**.../tags/<name>**
 
 Method: POST     Payload: Single Tag	     Required Role: TagMod
 
@@ -362,7 +362,7 @@ restrictions.)
 
 **Add Multiple Tags**
 
-.../tags
+**.../tags**
 
 Method: POST 	Payload: List of Tags	     Required Role: TagMod
 
@@ -394,3 +394,26 @@ Remove tag with the given name from all channels.
 
 The authenticated user must belong to the group that owns the tag. (Administrator role overrides this
 restriction.)
+
+Scroll Resources
+-----------------
+*Normal channel queries use pagination(with a 10,000 doc limit); use scroll for queries with long results(10,000+ docs).*
+*Note that scroll size may be increased, but if increased above certain limits will likely require increasing the heap size(which can be set as a VM or command-line argument).
+
+**Query Channels** 
+
+**.../search?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...**
+
+Method: GET		Returns: Scroll		Required Role: None
+
+Return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
+
+Parameters for this should be the same as used in the normal channel query.
+
+**Continue Channels Query**
+
+**.../search/<scroll id>**
+ 
+Method: GET    Returns: Scroll    Required Role: None
+
+Return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
