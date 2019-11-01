@@ -178,7 +178,6 @@ public class ChannelScroll {
             scrollId = searchResponse.getScrollId();
             SearchHit[] searchHits = searchResponse.getHits().getHits();
 
-            System.out.println(searchHits.length);
             final ObjectMapper mapper = new ObjectMapper();
             mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
             mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
