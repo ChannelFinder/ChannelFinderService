@@ -73,7 +73,7 @@ mvn spring-boot:run
 java -jar ChannelFinder-4.0.0.jar
 ```
 
-The above command with start the channelfinder service with the default settings and an embedded ldap server. The users and roles for this server are definded in the cf.ldif file.
+The above command will start the channelfinder service with the default settings and an embedded ldap server. The users and roles for this server are defined in the cf.ldif file.
 
 #### Start up options  
 
