@@ -50,34 +50,66 @@ The service's web descriptor defines four roles that are used in authorization, 
 •  PropertyMod: Needed for all operations that create, modify, or delete properties, or to modify property values.
 •  TagMod: Needed for all operations that create, modify, or delete tags.
 
-XML Representation
+XML and JSON Representation
 ------------------
 
 Table 1 and Table 2 show the XML and JSON representations of directory entries, i.e. the payload format of the web service transactions.
-[{"name":"originalChannelName","owner":"cf-channels","properties":[{"name":"originalProp","owner":"cf-properties","value":"originalValue","channels":[]}],"tags":[{"name":"originalTag","owner":"cf-tags","channels":[]}]}]
-Table 1: XML Representation of Directory Data (Channels)
-[
-    {
-        "name": "originalChannelName",
-        "owner": "cf-channels",
-        "properties": [
-            {
-                "name": "originalProp",
-                "owner": "cf-properties",
-                "value": "originalValue",
-                "channels": []
-            }
-        ],
-        "tags": [
-            {
-                "name": "originalTag",
-                "owner": "cf-tags",
-                "channels": []
-            }
-        ]
-    }
-]
+
+ .. code-block::
+ 
+    <?xml version="1.0" encoding="UTF-8"?>
+    <root>
+      <element>
+        <name>originalChannelName</name>
+        <owner>cf-channels</owner>
+        <properties>
+          <element>
+            <channels />
+            <name>originalProp</name>
+            <owner>cf-properties</owner>
+            <value>originalValue</value>
+          </element>
+        </properties>
+        <tags>
+          <element>
+            <channels />
+            <name>originalTag</name>
+            <owner>cf-tags</owner>
+          </element>
+        </tags>
+      </element>
+    </root>  
+  
+
+Table 1: XML Representation of Directory Data (Channels)  
+
+ .. code-block:: JSON  
+ 
+    [
+        {
+            "name": "originalChannelName",
+            "owner": "cf-channels",
+            "properties": [
+                {
+                    "name": "originalProp",
+                    "owner": "cf-properties",
+                    "value": "originalValue",
+                    "channels": []
+                }
+            ],
+            "tags": [
+                {
+                    "name": "originalTag",
+                    "owner": "cf-tags",
+                    "channels": []
+                }
+            ]
+        }
+    ]
+
+
 Table 2: JSON Representation of Directory Data (Channels)
+
 Payload data for properties and tags is the same as when part of a channel. Property and tag payloads may embed a <channels> list. This allows the operation that creates a tag to also attach the tag to a set of channels, and the operation that creates a property to set the property on the embedded list of channels. In the latter case the property's by-instance values are taken from the matching <property> item inside the property's channel list.
 
 Web Service URLs and Operations
