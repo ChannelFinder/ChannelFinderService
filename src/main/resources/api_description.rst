@@ -1,4 +1,6 @@
 ChannelFinder – Enhanced Directory Service
+==========================================
+
 API Description
 ===============
 
@@ -148,6 +150,29 @@ Special keywords, e.g. “~tag” and “~name” for tag and channel name match
 The patterns may contain file glob wildcard characters, i.e. “?” for a single character and “*” for any number of characters.
 
 If called without URL parameters, the operation lists all channels in the directory.
+
+**Search Parameters**
+
++---------------+-----------------------------------------------------------------------+
+|Keyword        | Descriptions                                                          |
++===============+=======================================================================+
+| **Text search**                                                                       |
++---------------+-----------------------------------------------------------------------+
+|*~name*        | search for channels with channel name matching the search pattern     | 
++---------------+-----------------------------------------------------------------------+
+|*~tag*         | search for channels with tag name matching the search pattern         |
++---------------+-----------------------------------------------------------------------+
+|*propertyName* | search for channels with given property with value maching the pattern|
++---------------+-----------------------------------------------------------------------+
++---------------+-----------------------------------------------------------------------+
+| **Pagination**                                                                        |
++---------------+-----------------------------------------------------------------------+
+|*~size*        | Limit search to the given size                                        |
++---------------+-----------------------------------------------------------------------+
+|*~from*        | Used with size, limit the search to the given search starting         | 
+|               | from given page                                                       |
++---------------+-----------------------------------------------------------------------+
+
 
 **Examples:**
 
