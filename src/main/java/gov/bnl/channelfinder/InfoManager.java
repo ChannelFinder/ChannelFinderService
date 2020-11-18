@@ -52,15 +52,17 @@ public class InfoManager {
         Map<String, String> elasticInfo = new LinkedHashMap<String, String>();
         try {
             MainResponse response = client.info(RequestOptions.DEFAULT);
-
+            
+            elasticInfo.put("status", "Connected");
             elasticInfo.put("clusterName", response.getClusterName().value());
             elasticInfo.put("clusterUuid", response.getClusterUuid());
             Version version = response.getVersion();
             elasticInfo.put("version", version.toString());
-            cfServiceInfo.put("elastic", elasticInfo);
         } catch (IOException e) {
             Application.logger.log(Level.WARNING, "Failed to create ChannelFinder service info resource.", e);
+            elasticInfo.put("status", "Failed to connect to elastic " + e.getLocalizedMessage());
         }
+        cfServiceInfo.put("elastic", elasticInfo);
         try {
             return objectMapper.writeValueAsString(cfServiceInfo);
         } catch (JsonProcessingException e) {
