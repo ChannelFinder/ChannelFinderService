@@ -2,7 +2,7 @@
 import sys, os
 from recommonmark.parser import CommonMarkParser
 
-project = u'Olog Service'
+project = u'ChannelFinder Service'
 copyright = u'Copyright (c) 2010-2020 Brookhaven National Laboratory \n Copyright (c) 2010-2020 Helmholtz-Zentrum Berlin für Materialien und Energie GmbH \n All rights reserved. Use is subject to license terms and conditions.'
 version = '1.0'
 release = '1.0.0'
