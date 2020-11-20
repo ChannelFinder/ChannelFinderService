@@ -459,7 +459,7 @@ Scroll Resources
 
 **Query Channels** 
 
-**.../search?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...**
+**.../scroll?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...**
 
 Method: GET		Returns: Scroll		Required Role: None
 
@@ -469,7 +469,7 @@ Parameters for this should be the same as used in the normal channel query.
 
 **Continue Channels Query**
 
-**.../search/<scroll id>**
+**.../scroll/<scroll id>**
  
 Method: GET    Returns: Scroll    Required Role: None
 
