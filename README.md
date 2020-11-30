@@ -22,7 +22,7 @@ Its intended use is within control systems, namely the EPICS Control system, for
 
 #### API reference guide
 
-https://github.com/ChannelFinder/ChannelFinder-SpringBoot/blob/master/src/main/resources/api_description.rst
+https://channelfinder.readthedocs.io/en/latest/
 
 #### Installation
 

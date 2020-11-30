@@ -193,7 +193,7 @@ public class ChannelScroll {
                 }
             });   
 
-            if(searchHits.length < 100) {
+            if(searchHits.length < size) {
                 ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
                 clearScrollRequest.addScrollId(scrollId);
                 ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
