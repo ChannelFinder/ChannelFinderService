@@ -71,6 +71,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     private String ES_CHANNEL_INDEX;
     @Value("${elasticsearch.channel.type:cf_channel}")
     private String ES_CHANNEL_TYPE;
+    
+    @Value("${elasticsearch.query.size:10000}")
+    private int size;
 
 
     @Autowired
@@ -482,7 +485,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
         try {
             BoolQueryBuilder qb = boolQuery();
-            int size = 10000;
             int from = 0;
             for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
                 switch (parameter.getKey()) {
