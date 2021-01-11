@@ -35,7 +35,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -109,7 +108,6 @@ public class ChannelScroll {
             
             if(scrollId == null) {
                 BoolQueryBuilder qb = boolQuery();
-                int from = 0;
                 for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
                     switch (parameter.getKey()) {
                     case "~name":
@@ -136,14 +134,6 @@ public class ChannelScroll {
                         });
                         if (maxSize.isPresent()) {
                             size = Integer.valueOf(maxSize.get());
-                        }
-                        break;
-                    case "~from":
-                        Optional<String> maxFrom = parameter.getValue().stream().max((o1, o2) -> {
-                            return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
-                        });
-                        if (maxFrom.isPresent()) {
-                            from = Integer.valueOf(maxFrom.get());
                         }
                         break;
                     default:
