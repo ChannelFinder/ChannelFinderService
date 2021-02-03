@@ -73,7 +73,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     private String ES_CHANNEL_TYPE;
     
     @Value("${elasticsearch.query.size:10000}")
-    private int size;
+    private int defaultMaxSize;
 
 
     @Autowired
@@ -482,6 +482,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
         RestHighLevelClient client = esService.getSearchClient();
         start = System.currentTimeMillis();
+        Integer size = defaultMaxSize;
 
         try {
             BoolQueryBuilder qb = boolQuery();
