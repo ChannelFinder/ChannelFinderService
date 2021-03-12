@@ -488,7 +488,14 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             BoolQueryBuilder qb = boolQuery();
             int from = 0;
             for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
-                switch (parameter.getKey()) {
+                String key = parameter.getKey().trim();
+
+                boolean isNot = key.endsWith("!");
+                if (isNot) {
+                    key = key.substring(0, key.length() - 1);
+                }
+
+                switch (key) {
                 case "~name":
                     for (String value : parameter.getValue()) {
                         DisMaxQueryBuilder nameQuery = disMaxQuery();
@@ -504,7 +511,12 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         for (String pattern : value.split("[\\|,;]")) {
                             tagQuery.add(wildcardQuery("tags.name", pattern.trim()));
                         }
-                        qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
+
+                        if (isNot) {
+                            qb.mustNot(nestedQuery("tags", tagQuery, ScoreMode.None));
+                        } else {
+                            qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
+                        }
                     }
                     break;
                 case "~size":
@@ -529,8 +541,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         for (String pattern : value.split("[\\|,;]")) {
                             propertyQuery
                             .add(nestedQuery("properties",
-                                    boolQuery().must(matchQuery("properties.name", parameter.getKey().trim()))
-                                    .must(wildcardQuery("properties.value", pattern.trim())),
+                                    isNot ? boolQuery().must(matchQuery("properties.name", key)).mustNot(wildcardQuery("properties.value", pattern.trim()))
+                                            : boolQuery().must(matchQuery("properties.name", key)).must(wildcardQuery("properties.value", pattern.trim())),
                                     ScoreMode.None));
                         }
                     }
