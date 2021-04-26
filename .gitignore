@@ -3,3 +3,6 @@
 /bin/
 /.project
 /.classpath
+.pydevproject
+*.iml
+**/site/sphinx/build/*
