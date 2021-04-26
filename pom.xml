@@ -159,6 +159,44 @@
 			</plugin>
 		</plugins>
 	</build>
+	<profiles>
+	  <!-- profile for and the website from the .rst files -->
+	  <profile>
+	    <id>sphinx</id>
+	    <build>
+	      <plugins>
+	          <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-site-plugin</artifactId>
+	            <version>3.7.1</version>
+	          </plugin>
+	          <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-project-info-reports-plugin</artifactId>
+	            <version>3.0.0</version>
+	          </plugin>          
+	          <!-- Generate the documentation for the Phoebus -->
+	          <plugin>
+	            <groupId>kr.motd.maven</groupId>
+	            <artifactId>sphinx-maven-plugin</artifactId>
+	            <version>2.10.0</version>
+	            <configuration>
+	              <sourceDirectory>${basedir}/src/site/sphinx</sourceDirectory>
+	              <outputDirectory>${basedir}/src/site/sphinx/build/html</outputDirectory>
+	            </configuration>
+	            <executions>
+	              <execution>
+	                <phase>package</phase>
+	                <goals>
+	                  <goal>generate</goal>
+	                </goals>
+	              </execution>
+	            </executions>
+	          </plugin>
+	        </plugins>
+	      </build>
+	    </profile>
+	</profiles>
 	<repositories>
 		<repository>
 			<id>snapshots-repo</id>
