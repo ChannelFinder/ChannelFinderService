@@ -28,6 +28,8 @@ https://channelfinder.readthedocs.io/en/latest/
 
 ChannelFinder is a Java EE5 REST-style web service. The directory data is held in a ElasticSearch index.
 
+Collected installation recipes and notes may be found on [wiki pages](https://github.com/ChannelFinder/ChannelFinder-SpringBoot/wiki).
+
 * Prerequisites
 
   * JDK 8 or newer
@@ -41,28 +43,64 @@ ChannelFinder is a Java EE5 REST-style web service. The directory data is held i
   <Alternatively:> Install the elastic server from your distribution using a package manager.  
   
   **Create the elastic indexes and set up their mapping**  
-  The `mapping_definitions.sh` script (which is available under `src/main/resources/`) contains the curl commands to setup the 3 elastic indexes associated with channelfinder. 
+  The [`mapping_definitions.sh`](src/main/resources/mapping_definitions.sh)
+  script (which is available under `src/main/resources/`) contains the curl commands
+  to setup the 3 elastic indexes associated with channelfinder. 
 
 * Build 
 ```
+# Debian 10
+sudo apt-get install openjdk-11-jdk maven git curl wget
+wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.3.2.deb
+sudo dpkg -i elasticsearch-6.3.2.deb
+sudo systemctl start elasticsearch
+
+# checkout and build channelfinder service source
+git clone https://github.com/ChannelFinder/ChannelFinder-SpringBoot.git
+cd ChannelFinder-SpringBoot
 mvn clean install
+
+# one time elasticsearch server setup
+./src/main/resources/mapping_definitions.sh
 ``` 
 
 #### Start the service  
 
-1. Using spring boot  
+* Using spring boot via Maven
 
 ```
 mvn spring-boot:run
 ```
 
-2. Using the jar
+* or using the jar
 
 ```
-java -jar ChannelFinder-4.0.0.jar
+java -jar target/ChannelFinder-4.0.0.jar
 ```
 
-The above command will start the channelfinder service with the default settings and an embedded ldap server. The users and roles for this server are defined in the cf.ldif file.
+The above command will start the channelfinder service on port 8080 with the default settings,
+which use embedded ldap server with users and roles defined in the [`cf.ldif`](src/main/resources/cf.ldif) file.
+Note that `cf.ldif` contains **default credentials** and should only be used during testing and evaluation.
+
+#### Verification
+
+To check that the server is running correctly.
+
+```
+$ curl http://localhost:8080/ChannelFinder
+{
+  "name" : "ChannelFinder Service",
+  "version" : "4.0.0",
+  "elastic" : {
+    "status" : "Connected",
+    "clusterName" : "elasticsearch",
+    "clusterUuid" : "sA2L_cpoRD-H46c_Mya3mA",
+    "version" : "6.3.2"
+  }
+}
+$ curl http://localhost:8080/ChannelFinder/resources/tags
+[]
+```
 
 #### Start up options  
 
