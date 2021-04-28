@@ -100,6 +100,14 @@ $ curl http://localhost:8080/ChannelFinder
 }
 $ curl http://localhost:8080/ChannelFinder/resources/tags
 []
+$ curl --basic -u admin:1234 -H 'Content-Type: application/json' \
+  -X PUT -d '{"name":"foo", "owner":"admin"}' \
+  http://localhost:8080/ChannelFinder/resources/tags/foo
+...
+$ curl http://localhost:8080/ChannelFinder/resources/tags
+[{"name":"foo","owner":"admin","channels":[]}]
+$ curl --basic -u admin:1234 -X DELETE \
+  http://localhost:8080/ChannelFinder/resources/tags/foo
 ```
 
 #### Start up options  
