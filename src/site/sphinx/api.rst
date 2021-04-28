@@ -17,10 +17,10 @@ Channel names, tags, property names, and owner (group) names are all case insens
 Service Type
 ------------
 
-The ChannelFinder service is implemented as a REST style web service, which – in this context – means:- 
+The ChannelFinder service is implemented as a REST style web service, which – in this context – means: 
 
-•  The URL specifies the data element that the operation works upon.
-•  The HTTP method specifies the type of operation.
+| •  The URL specifies the data element that the operation works upon.
+| •  The HTTP method specifies the type of operation.
 
 | GET: retrieve or query, does not modify data
 | PUT: create or update, replacing the addressed element
@@ -47,10 +47,13 @@ No authentication or encryption is required to query the service.
 All operations that modify the directory require authentication and authorization to succeed. To avoid compromising authentication data, encrypted transport is available. Standard framework-supplied web server techniques are used.
 For each authenticated user the user's group memberships are also received through LDAP.
 The service's web descriptor defines four roles that are used in authorization, listed here ordered by decreasing rights. Each level includes all prior levels.
-•  Administrator: Overrides all ownership restrictions.
-•  ChannelMod: Needed for all operations that create, modify, or delete channels.
-•  PropertyMod: Needed for all operations that create, modify, or delete properties, or to modify property values.
-•  TagMod: Needed for all operations that create, modify, or delete tags.
+
+| •  Administrator: Overrides all ownership restrictions.
+| •  ChannelMod: Needed for all operations that create, modify, or delete channels.
+| •  PropertyMod: Needed for all operations that create, modify, or delete properties, or to modify property values.
+| •  TagMod: Needed for all operations that create, modify, or delete tags.
+
+The Roles are defined in the roles mapping section in the applications.properties.
 
 XML and JSON Representation
 ------------------
@@ -62,20 +65,20 @@ Table 1 and Table 2 show the XML and JSON representations of directory entries, 
     <?xml version="1.0" encoding="UTF-8"?>
     <root>
       <element>
-        <name>originalChannelName</name>
+        <name>ChannelName</name>
         <owner>cf-channels</owner>
         <properties>
           <element>
             <channels />
-            <name>originalProp</name>
+            <name>PropertyName</name>
+            <value>PropertyValue</value>
             <owner>cf-properties</owner>
-            <value>originalValue</value>
           </element>
         </properties>
         <tags>
           <element>
             <channels />
-            <name>originalTag</name>
+            <name>Tag</name>
             <owner>cf-tags</owner>
           </element>
         </tags>
@@ -89,19 +92,19 @@ Table 1: XML Representation of Directory Data (Channels)
  
     [
         {
-            "name": "originalChannelName",
+            "name": "ChannelName",
             "owner": "cf-channels",
             "properties": [
                 {
-                    "name": "originalProp",
+                    "name": "PropertyName",
+                    "value": "PropertyValue",
                     "owner": "cf-properties",
-                    "value": "originalValue",
                     "channels": []
                 }
             ],
             "tags": [
                 {
-                    "name": "originalTag",
+                    "name": "Tag",
                     "owner": "cf-tags",
                     "channels": []
                 }
@@ -116,6 +119,14 @@ Payload data for properties and tags is the same as when part of a channel. Prop
 
 Web Service URLs and Operations
 -------------------------------
+
+The ChannelFinder service REST API is descriped below, each HTTP request URL has to be appended with the service URL
+
+**http://<channelfinder_host>:<port>/ChannelFinder/resources**
+
+e.g.
+
+**http://<channelfinder_host>:<port>/ChannelFinder/resources/channels/my_test_channel**
 
 Channel Resources
 -----------------
