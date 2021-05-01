@@ -394,7 +394,7 @@ Create/Replace a Property
 
 **.../properties/<name>**
 
-Method: PUT     Payload: :ref:`pay-single-prop`     Required Role: :ref`role-property-mod`
+Method: PUT     Payload: :ref:`pay-single-prop`     Required Role: :ref:`role-property-mod`
 
 Create or completely replace the existing property name with the payload data. If the payload contains
 an embedded <channels> list, the property is added to all channels in that list. In this case, the value for
@@ -410,7 +410,7 @@ Add Property to a Single Channel
 
 **.../properties/<property_name>/<channel_name>**
 
-Method: PUT     Payload: :ref:`pay-single-prop`     Required Role: :ref`role-property-mod`
+Method: PUT     Payload: :ref:`pay-single-prop`     Required Role: :ref:`role-property-mod`
 
 Add property with the given property_name to the channel with the given channel_name. An existing
 property value is replaced by the payload data.
@@ -423,7 +423,7 @@ Create/Replace Properties
 
 **.../properties**
 
-Method: PUT    Payload: :ref:`pay-list-of-properties`   Required Role: :ref`role-property-mod`
+Method: PUT    Payload: :ref:`pay-list-of-properties`   Required Role: :ref:`role-property-mod`
 
 Add the properties in the payload to the directory. If a payload property contains an embedded
 <channels> list, the property is added to all channels in that list. In this case, the value for each property
@@ -439,7 +439,7 @@ Add Property to Multiple Channels
 
 **.../properties/<name>**
 
-Method: POST     Payload: :ref:`pay-single-prop`    Required Role: :ref`role-property-mod`
+Method: POST     Payload: :ref:`pay-single-prop`    Required Role: :ref:`role-property-mod`
 
 Add property with the given name to all channels in the payload data. If the payload contains an
 embedded <channels> list, the property is added to all channels in that list. In this case, the value for
@@ -456,7 +456,7 @@ Add Multiple Properties
 
 **.../properties**
 
-Method: POST    Payload: :ref:`pay-list-of-properties`  Required Role: :ref`role-property-mod`
+Method: POST    Payload: :ref:`pay-list-of-properties`  Required Role: :ref:`role-property-mod`
 
 Add properties in the payload to all channels in the payload data. If the properties of the payload contain
 an embedded <channels> list, the property is added to all channels in that list. In this case, the value for
@@ -472,7 +472,7 @@ Remove Property from Single Channel
 
 **.../properties/<property_name>/<channel_name>**
 
-Method: DELETE						         Required Role: :ref`role-property-mod`
+Method: DELETE						         Required Role: :ref:`role-property-mod`
 
 Remove property with the given property_name from the channel with the given channel_name.
 
@@ -484,7 +484,7 @@ Remove Property
 
 **.../properties/<name>**
 
-Method: DELETE						         Required Role: :ref`role-property-mod`
+Method: DELETE						         Required Role: :ref:`role-property-mod`
 
 Remove property with the given name from all channels.
 
