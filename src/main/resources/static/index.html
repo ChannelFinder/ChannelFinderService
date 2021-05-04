@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+<meta http-equiv="Content-Type" charset="UTF-8" />
+<title>ChannelFinder Admin</title>
+<link rel="stylesheet" type="text/css" href="/cfmanage.css">
+<script src="/cf.js"></script>
+<script src="/cfmanage.js"></script>
+</head>
+<body>
+
+<div class="cf-pane">
+<h3>Service Info</h5>
+<p id="servinfo">Querying...</p>
+</div>
+
+<div class="cf-pane">
+<h3>Test query</h5>
+
+<p>
+Channel name pattern with wildcards followed by "tag" or "prop=value".
+<form method="get" action="#" onsubmit="doQuery(); return false">
+<input type="text" placeholder="eg. *" id="querytxt">
+<input type="submit" value="Execute">
+</form>
+</p>
+
+<p><ul class="cf-list" id="queryresult"></ul></p>
+</div>
+
+<div class="cf-pane">
+<p>Owner: <input type="text" min="1" placeholder="Owner name" id="ownertxt"> Used when creating channels/tags/properties</p>
+</div>
+
+<div class="cf-pane">
+<h3>Channel Managment</h5>
+
+<p>Channels list</p>
+<p>
+<textarea cols="60" rows="5" id="chanlist" placeholder="Channel names.  One per line"></textarea>
+<p>
+</p>
+<button type="button" onclick="createChannels()">Create Channels</button>
+<button type="button" onclick="deleteChannels()">Delete Channels</button>
+</p>
+<p>Apply Tag/Prop:
+<input type="text" min="1" placeholder="tag or property name=value" id="chantagprop">
+<button type="button" onclick="tagChannels()">Add</button>
+<button type="button" onclick="untagChannels()">Remove</button>
+</p>
+<p class="cf-error" id="chanerr"></p>
+</div>
+
+<div class="cf-pane">
+<h3>Tag/Property Managment</h5>
+
+<p>Tag/Prop:
+<input type="text" min="1" placeholder="tag or property name" id="tagproptxt">
+<button type="button" onclick="addTagProp('tag')">Create Tag</button>
+<button type="button" onclick="addTagProp('property')">Create Property</button>
+<p class="cf-error" id="tagproperr"></p>
+</p>
+
+<p>Tags:</p>
+<p><ul class="cf-list" id="taglist"></ul></p>
+
+<p>Properties:</p>
+<p><ul class="cf-list" id="proplist"></ul></p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+html {
+    font-size: 100%;
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+body {
+    background-color: #ddd;
+}
+
+.cf-pane {
+    padding: 1ex;
+    border-radius: 1ex;
+    margin-bottom: 1ex;
+    background-color: #f1fcff;
+    background: linear-gradient(45deg, #f1fcff, #daebf0);
+}
+
+.cf-chan {
+    padding: 0.1ex;
+    border-radius: 0.5ex;
+    background-color: lightgreen;
+}
+
+.cf-tagprop {
+    padding: 0.1ex;
+    border-radius: 0.5ex;
+    background-color: lightblue;
+}
+
+.cf-value {
+    padding: 0.1ex;
+    border-radius: 0.5ex;
+    background-color: aquamarine;
+}
+
+.cf-owner {
+    padding: 0.1ex;
+    border-radius: 0.5ex;
+    background-color: lightcyan;
+}
+
+.cf-error {
+    color: red;
+}
+
+button, input[type=submit] {
+    border-radius: 0.5ex;
+}
+
+.cf-list {
+    list-style-type: disclosure-closed;
+}
+
+.cf-list li {
+    padding-bottom: 0.3ex;
+}
+
+.tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip .tooltext {
+  visibility: hidden;
+  width: 120px;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+ 
+  position: absolute;
+  z-index: 1;
+}
+.tooltip:hover .tooltext {
+  visibility: visible;
+}
