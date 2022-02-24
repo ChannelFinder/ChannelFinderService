@@ -56,8 +56,8 @@ sudo dpkg -i elasticsearch-6.3.2.deb
 sudo systemctl start elasticsearch
 
 # checkout and build channelfinder service source
-git clone https://github.com/ChannelFinder/ChannelFinder-SpringBoot.git
-cd ChannelFinder-SpringBoot
+git clone https://github.com/ChannelFinder/ChannelFinderService.git
+cd ChannelFinderService
 mvn clean install
 
 # one time elasticsearch server setup
