@@ -4,6 +4,8 @@
 package gov.bnl.channelfinder;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 import java.util.logging.Level;
 
 /*
@@ -24,12 +26,17 @@ import javax.servlet.ServletContextListener;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.transport.TransportClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author Kunal Shroff {@literal <shroffk@bnl.gov>}
@@ -51,10 +58,24 @@ public class ElasticSearchClient implements ServletContextListener {
     private String host;
     @Value("${elasticsearch.http.port:9200}")
     private int port;
+    
+    @Value("${elasticsearch.tag.index:cf_tags}")
+    private String ES_TAG_INDEX;
+    @Value("${elasticsearch.tag.type:cf_tag}")
+    private String ES_TAG_TYPE;
+    @Value("${elasticsearch.property.index:cf_properties}")
+    private String ES_PROPERTY_INDEX;
+    @Value("${elasticsearch.property.type:cf_property}")
+    private String ES_PROPERTY_TYPE;
+    @Value("${elasticsearch.channel.index:channelfinder}")
+    private String ES_CHANNEL_INDEX;
+    @Value("${elasticsearch.channel.type:cf_channel}")
+    private String ES_CHANNEL_TYPE;
 
     public RestHighLevelClient getSearchClient() {
         if(searchClient == null) {
             searchClient = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
+            elasticIndexValidation(searchClient);
         }
         return searchClient;
     }
@@ -62,6 +83,7 @@ public class ElasticSearchClient implements ServletContextListener {
     public RestHighLevelClient getIndexClient() {
         if(indexClient == null) {
             indexClient = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
+            elasticIndexValidation(indexClient);
         }
         return indexClient;
     }
@@ -76,6 +98,7 @@ public class ElasticSearchClient implements ServletContextListener {
     public RestHighLevelClient getNewClient() {
         try {
             RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
+            elasticIndexValidation(client);
             return client;
         } catch (ElasticsearchException e) {
             log.log(Level.SEVERE, "failed to create elastic client", e.getDetailedMessage());
@@ -83,6 +106,64 @@ public class ElasticSearchClient implements ServletContextListener {
         }
     }
 
+
+    /**
+     * Checks for the existence of the elastic indices needed for channelfinder and creates
+     * them with the appropriate mapping is they are missing.
+     * 
+     * @param indexClient the elastic client instance used to validate and create
+     *                    channelfinder indices
+     */
+	private synchronized void elasticIndexValidation(RestHighLevelClient indexClient) {
+		// Create/migrate the tag index
+		try {
+			if (!indexClient.indices().exists(new GetIndexRequest().indices(ES_TAG_INDEX), RequestOptions.DEFAULT)) {
+				CreateIndexRequest createRequest = new CreateIndexRequest(ES_TAG_INDEX);
+				ObjectMapper mapper = new ObjectMapper();
+				InputStream is = ElasticSearchClient.class.getResourceAsStream("/tag_mapping.json");
+				Map<String, String> jsonMap = mapper.readValue(is, Map.class);
+				createRequest.mapping(ES_TAG_TYPE, jsonMap);
+
+				indexClient.indices().create(createRequest, RequestOptions.DEFAULT);
+				log.info("Successfully created index: " + ES_TAG_INDEX);
+			}
+		} catch (IOException e) {
+			log.log(Level.WARNING, "Failed to create index " + ES_TAG_INDEX, e);
+		}
+		// Create/migrate the properties index
+		try {
+			if (!indexClient.indices().exists(new GetIndexRequest().indices(ES_PROPERTY_INDEX),
+					RequestOptions.DEFAULT)) {
+				CreateIndexRequest createRequest = new CreateIndexRequest(ES_PROPERTY_INDEX);
+				ObjectMapper mapper = new ObjectMapper();
+				InputStream is = ElasticSearchClient.class.getResourceAsStream("/properties_mapping.json");
+				Map<String, String> jsonMap = mapper.readValue(is, Map.class);
+				createRequest.mapping(ES_PROPERTY_TYPE, jsonMap);
+
+				indexClient.indices().create(createRequest, RequestOptions.DEFAULT);
+				log.info("Successfully created index: " + ES_PROPERTY_INDEX);
+			}
+		} catch (IOException e) {
+			log.log(Level.WARNING, "Failed to create index " + ES_PROPERTY_INDEX, e);
+		}
+		// Create/migrate the channel index
+		try {
+			if (!indexClient.indices().exists(new GetIndexRequest().indices(ES_CHANNEL_INDEX),
+					RequestOptions.DEFAULT)) {
+				CreateIndexRequest createRequest = new CreateIndexRequest(ES_CHANNEL_INDEX);
+				ObjectMapper mapper = new ObjectMapper();
+				InputStream is = ElasticSearchClient.class.getResourceAsStream("/channel_mapping.json");
+				Map<String, String> jsonMap = mapper.readValue(is, Map.class);
+				createRequest.mapping(ES_CHANNEL_TYPE, jsonMap);
+
+				indexClient.indices().create(createRequest, RequestOptions.DEFAULT);
+				log.info("Successfully created index: " + ES_CHANNEL_INDEX);
+			}
+		} catch (IOException e) {
+			log.log(Level.WARNING, "Failed to create index " + ES_CHANNEL_INDEX, e);
+		}
+    }
+    
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         log.info("Initializing a new Transport clients.");

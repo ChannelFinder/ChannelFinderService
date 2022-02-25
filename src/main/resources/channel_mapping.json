@@ -1,0 +1,38 @@
+{
+	"properties": {
+		"name": {
+			"type": "keyword"
+		},
+		"owner": {
+			"type": "keyword"
+		},
+		"script": {
+			"type": "keyword"
+		},
+		"properties": {
+			"type": "nested",
+			"properties": {
+				"name": {
+					"type": "keyword"
+				},
+				"owner": {
+					"type": "keyword"
+				},
+				"value": {
+					"type": "keyword"
+				}
+			}
+		},
+		"tags": {
+			"type": "nested",
+			"properties": {
+				"name": {
+					"type": "keyword"
+				},
+				"owner": {
+					"type": "keyword"
+				}
+			}
+		}
+	}
+}

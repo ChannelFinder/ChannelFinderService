@@ -42,11 +42,6 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
   following the instructions for your platform.\
   <Alternatively:> Install the elastic server from your distribution using a package manager.  
   
-  **Create the elastic indexes and set up their mapping**  
-  The [`mapping_definitions.sh`](src/main/resources/mapping_definitions.sh)
-  script (which is available under `src/main/resources/`) contains the curl commands
-  to setup the 3 elastic indexes associated with channelfinder. 
-
 * Build 
 ```
 # Debian 10
@@ -60,8 +55,6 @@ git clone https://github.com/ChannelFinder/ChannelFinderService.git
 cd ChannelFinderService
 mvn clean install
 
-# one time elasticsearch server setup
-./src/main/resources/mapping_definitions.sh
 ``` 
 
 #### Start the service  
