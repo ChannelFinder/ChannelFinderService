@@ -5,6 +5,7 @@ package gov.bnl.channelfinder;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -28,6 +29,8 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -71,6 +74,10 @@ public class ElasticSearchClient implements ServletContextListener {
     private String ES_CHANNEL_INDEX;
     @Value("${elasticsearch.channel.type:cf_channel}")
     private String ES_CHANNEL_TYPE;
+       
+
+    @Value("${elasticsearch.query.size}")
+    private String ES_QUERY_SIZE;
 
     public RestHighLevelClient getSearchClient() {
         if(searchClient == null) {
@@ -106,7 +113,6 @@ public class ElasticSearchClient implements ServletContextListener {
         }
     }
 
-
     /**
      * Checks for the existence of the elastic indices needed for channelfinder and creates
      * them with the appropriate mapping is they are missing.
@@ -115,6 +121,7 @@ public class ElasticSearchClient implements ServletContextListener {
      *                    channelfinder indices
      */
 	private synchronized void elasticIndexValidation(RestHighLevelClient indexClient) {
+		
 		// Create/migrate the tag index
 		try {
 			if (!indexClient.indices().exists(new GetIndexRequest().indices(ES_TAG_INDEX), RequestOptions.DEFAULT)) {
@@ -161,6 +168,20 @@ public class ElasticSearchClient implements ServletContextListener {
 			}
 		} catch (IOException e) {
 			log.log(Level.WARNING, "Failed to create index " + ES_CHANNEL_INDEX, e);
+		}
+		
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("index.max_result_window", ES_QUERY_SIZE);
+
+		try {
+			UpdateSettingsRequest updateSettings = new UpdateSettingsRequest(ES_TAG_INDEX, ES_PROPERTY_INDEX,
+					ES_CHANNEL_INDEX);
+			updateSettings.settings(map);
+			AcknowledgedResponse updateSettingsResponse = indexClient.indices().putSettings(updateSettings,
+					RequestOptions.DEFAULT);
+		} catch (IOException e) {
+			log.log(Level.WARNING, "Failed to set max_result_window setting on indices", e);
 		}
     }
     
