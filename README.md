@@ -38,7 +38,8 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
 
 * setup elastic search  
   **Install**  
-  Download and install elasticsearch (verision 6.3) from [elastic.com](https://www.elastic.co/downloads/past-releases/elasticsearch-6-3-1)  
+  Download and install elasticsearch (verision 6.3) from [elastic.com](https://www.elastic.co/downloads/past-releases/elasticsearch-6-3-1)
+  ( [other releases](https://www.elastic.co/downloads/past-releases#elasticsearch) )
   following the instructions for your platform.\
   <Alternatively:> Install the elastic server from your distribution using a package manager.  
   
