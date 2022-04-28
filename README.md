@@ -128,4 +128,8 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--demo-data=1"
 mvn spring-boot:run -Dspring-boot.run.arguments="--cleanup=1"
 ```
 
+#### ChannelFinder data managment
+
+The [cf-manager](https://github.com/ChannelFinder/cf-manager) project provides tools to perform operations on large queries ( potentially the entire directory ).
+Some examples of these operations include running checks to validate the pv names or producing reports about the number of active PVs, a list of IOC names, etc..
 
