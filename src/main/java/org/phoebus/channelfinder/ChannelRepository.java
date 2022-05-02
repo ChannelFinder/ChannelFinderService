@@ -1,11 +1,11 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
-import static gov.bnl.channelfinder.ChannelManager.channelManagerAudit;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.nestedQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
+import static org.phoebus.channelfinder.ChannelManager.channelManagerAudit;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +48,8 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.phoebus.channelfinder.XmlProperty.OnlyXmlProperty;
+import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -58,9 +60,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import gov.bnl.channelfinder.XmlProperty.OnlyXmlProperty;
-import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 
 @Repository
 @Configuration

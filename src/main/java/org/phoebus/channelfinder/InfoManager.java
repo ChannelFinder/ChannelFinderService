@@ -1,6 +1,6 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.CF_SERVICE_INFO;
+import static org.phoebus.channelfinder.CFResourceDescriptors.CF_SERVICE_INFO;
 
 import java.io.IOException;
 import java.util.HashMap;

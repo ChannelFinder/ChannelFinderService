@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder.epics;
+package org.phoebus.channelfinder.epics;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,10 +13,9 @@ import org.epics.pvdata.pv.PVStringArray;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.ScalarType;
 import org.epics.pvdata.pv.StringArrayData;
-
-import gov.bnl.channelfinder.XmlChannel;
-import gov.bnl.channelfinder.XmlProperty;
-import gov.bnl.channelfinder.XmlTag;
+import org.phoebus.channelfinder.XmlChannel;
+import org.phoebus.channelfinder.XmlProperty;
+import org.phoebus.channelfinder.XmlTag;
 
 public class NTXmlUtil {
 

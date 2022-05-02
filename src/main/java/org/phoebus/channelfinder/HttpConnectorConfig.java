@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
 import org.apache.catalina.connector.Connector;
 import org.springframework.beans.factory.annotation.Value;

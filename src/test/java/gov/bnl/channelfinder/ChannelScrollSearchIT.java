@@ -8,13 +8,17 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.ChannelScroll;
+import org.phoebus.channelfinder.ElasticSearchClient;
+import org.phoebus.channelfinder.PropertyRepository;
+import org.phoebus.channelfinder.TagRepository;
+import org.phoebus.channelfinder.XmlScroll;
+import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import gov.bnl.channelfinder.example.PopulateService;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelScroll.class)

@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder.epics;
+package org.phoebus.channelfinder.epics;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,15 +29,14 @@ import org.epics.pvdata.pv.PVString;
 import org.epics.pvdata.pv.PVStringArray;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.ScalarType;
+import org.phoebus.channelfinder.ChannelRepository;
+import org.phoebus.channelfinder.XmlChannel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import gov.bnl.channelfinder.ChannelRepository;
-import gov.bnl.channelfinder.XmlChannel;
 
 /**
  * A pva RPC service for channelfinder
@@ -54,7 +53,7 @@ import gov.bnl.channelfinder.XmlChannel;
  *
  */
 @Service
-@ComponentScan(basePackages="gov.bnl.channelfinder")
+@ComponentScan(basePackages="org.phoebus.channelfinder")
 public class ChannelFinderEpicsService {
 
     private static Logger log = Logger.getLogger(ChannelFinderEpicsService.class.getCanonicalName());

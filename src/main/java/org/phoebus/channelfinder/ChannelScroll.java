@@ -1,11 +1,11 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.SCROLL_RESOURCE_URI;
 import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
 import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 import static org.elasticsearch.index.query.QueryBuilders.nestedQuery;
 import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
+import static org.phoebus.channelfinder.CFResourceDescriptors.SCROLL_RESOURCE_URI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +28,8 @@ import org.elasticsearch.index.query.DisMaxQueryBuilder;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.phoebus.channelfinder.XmlProperty.OnlyXmlProperty;
+import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -42,9 +44,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import gov.bnl.channelfinder.XmlProperty.OnlyXmlProperty;
-import gov.bnl.channelfinder.XmlTag.OnlyXmlTag;
 
 @CrossOrigin
 @RestController

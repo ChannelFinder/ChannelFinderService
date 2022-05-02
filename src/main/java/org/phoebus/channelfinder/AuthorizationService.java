@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -8,7 +8,7 @@
  * All rights reserved. Use is subject to license terms.
  * #L%
  */
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -26,10 +27,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.util.FileCopyUtils;
 
-import gov.bnl.channelfinder.example.PopulateService;
-
 @EnableAutoConfiguration
-@ComponentScan(basePackages="gov.bnl.channelfinder")
+@ComponentScan(basePackages="org.phoebus.channelfinder")
 @SpringBootApplication
 public class Application  implements ApplicationRunner {
 

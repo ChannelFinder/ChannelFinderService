@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 /**
  * #%L
  * ChannelFinder Directory Service
@@ -12,6 +12,7 @@ package gov.bnl.channelfinder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -19,115 +20,93 @@ import javax.xml.bind.annotation.XmlType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
- * Property object that can be represented as JSON in payload data.
+ * Tag object that can be represented as XML/JSON in payload data.
  *
  * @author Ralph Lange {@literal <ralph.lange@gmx.de>}
  */
-@XmlRootElement(name="property")
-@XmlType (propOrder={"name","owner","value","channels"})
-public class XmlProperty {
+@XmlRootElement(name="tag")
+@XmlType (propOrder={"name","owner","channels"})
+public class XmlTag {
     private String name = null;
     private String owner = null;
-    private String value = null;
     private List<XmlChannel> channels = new ArrayList<XmlChannel>();
 
     /**
-     * Creates a new instance of XmlProperty.
+     * Creates a new instance of XmlTag.
      *
      */
-    public XmlProperty() {
+    public XmlTag() {
     }
 
     /**
-     * Creates a new instance of XmlProperty.
+     * Creates a new instance of XmlTag.
      *
-     * @param name property name
-     * @param owner property owner
+     * @param name name of new tag
      */
-    public XmlProperty(String name, String owner) {
-        this.owner = owner;
+    public XmlTag(String name) {
         this.name = name;
     }
 
     /**
-     * Creates a new instance of XmlProperty.
+     * Creates a new instance of XmlTag.
      *
-     * @param name property name
-     * @param owner property owner
-     * @param value property value
+     * @param name name of new tag
+     * @param owner owner of new tag
      */
-    public XmlProperty(String name, String owner, String value) {
-        this.value = value;
-        this.owner = owner;
+    public XmlTag(String name, String owner) {
         this.name = name;
+        this.owner = owner;
     }
 
     /**
-     * Getter for property name.
+     * Getter for tag name.
      *
-     * @return property name
+     * @return tag name
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Setter for property name.
+     * Setter for tag name.
      *
-     * @param name property name
+     * @param name tag name
      */
     public void setName(String name) {
         this.name = name;
     }
 
     /**
-     * Getter for property value.
+     * Getter for tag owner.
      *
-     * @return property value
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /**
-     * Setter for property value.
-     *
-     * @param value property value
-     */
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    /**
-     * Getter for property owner.
-     *
-     * @return property owner
+     * @return tag owner
      */
     public String getOwner() {
         return owner;
     }
 
     /**
-     * Setter for property owner.
+     * Setter for tag owner.
      *
-     * @param owner property owner
+     * @param owner tag owner
      */
     public void setOwner(String owner) {
         this.owner = owner;
     }
 
     /**
-     * Get the list of channels associated with this property
-     * @return {@link List} of channels
+     * Getter for tag's XmlChannels.
+     *
+     * @return XmlChannels object
      */
     public List<XmlChannel> getChannels() {
         return channels;
     }
 
     /**
-     * set the channels associated with this property
-     * 
-     * @param channels - list of channels
+     * Setter for tag's XmlChannels.
+     *
+     * @param channels XmlChannels object
      */
     public void setChannels(List<XmlChannel> channels) {
         this.channels = channels;
@@ -139,11 +118,11 @@ public class XmlProperty {
      * @return string representation for log
      */
     public String toLog() {
-         if (this.channels == null) {
+        if (this.channels == null) {
             return this.getName() + "(" + this.getOwner() + ")";
         } else {
-            return this.getName() + "(" + this.getOwner() + ")"
-                    + (this.channels);
+            return this.getName() + "(" + this.getOwner() + ")" + " [ "
+                    + (this.channels.stream().map(XmlChannel::toLog).collect(Collectors.joining(","))) + " ] ";
         }
     }
 
@@ -154,7 +133,6 @@ public class XmlProperty {
         result = prime * result + ((channels == null) ? 0 : channels.hashCode());
         result = prime * result + ((name == null) ? 0 : name.hashCode());
         result = prime * result + ((owner == null) ? 0 : owner.hashCode());
-        result = prime * result + ((value == null) ? 0 : value.hashCode());
         return result;
     }
 
@@ -166,7 +144,7 @@ public class XmlProperty {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        XmlProperty other = (XmlProperty) obj;
+        XmlTag other = (XmlTag) obj;
         if (channels == null) {
             if (other.channels != null)
                 return false;
@@ -182,37 +160,19 @@ public class XmlProperty {
                 return false;
         } else if (!owner.equals(other.owner))
             return false;
-        if (value == null) {
-            if (other.value != null)
-                return false;
-        } else if (!value.equals(other.value))
-            return false;
         return true;
     }
 
     /**
      * A filter to be used with the jackson mapper to ignore the embedded
-     * xmlchannels in the property object
+     * xmlchannels in the tag object
      * 
      * @author Kunal Shroff
      *
      */
-    abstract class OnlyXmlProperty {
+    abstract class OnlyXmlTag {
         @JsonIgnore
         private List<XmlChannel> channels;
     }
 
-    /**
-     * A filter to be used with the jackson mapper to ignore the embedded
-     * xmlchannels and value in the property object
-     * 
-     * @author Kunal Shroff
-     *
-     */
-    abstract class OnlyNameOwnerXmlProperty {
-        @JsonIgnore
-        private String value;
-        @JsonIgnore
-        private List<XmlChannel> channels;
-    }
 }

@@ -1,6 +1,6 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
-import static gov.bnl.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
+import static org.phoebus.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
@@ -27,8 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
-import gov.bnl.channelfinder.AuthorizationService.ROLES;
 
 @CrossOrigin
 @RestController

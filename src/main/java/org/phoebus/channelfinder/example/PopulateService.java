@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder.example;
+package org.phoebus.channelfinder.example;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,17 +26,16 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.phoebus.channelfinder.ElasticSearchClient;
+import org.phoebus.channelfinder.XmlChannel;
+import org.phoebus.channelfinder.XmlProperty;
+import org.phoebus.channelfinder.XmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import gov.bnl.channelfinder.ElasticSearchClient;
-import gov.bnl.channelfinder.XmlChannel;
-import gov.bnl.channelfinder.XmlProperty;
-import gov.bnl.channelfinder.XmlTag;
 /**
  * An class for creating the example database.
  *

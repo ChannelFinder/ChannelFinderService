@@ -3,12 +3,16 @@ package gov.bnl.channelfinder;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.AuthorizationService;
+import org.phoebus.channelfinder.XmlChannel;
+import org.phoebus.channelfinder.XmlProperty;
+import org.phoebus.channelfinder.XmlTag;
+import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
-import gov.bnl.channelfinder.AuthorizationService.ROLES;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(AuthorizationService.class)

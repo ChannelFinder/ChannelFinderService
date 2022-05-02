@@ -153,7 +153,7 @@
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib</classpathPrefix>
-							<mainClass>gov.bnl.channelfinder.Application</mainClass>
+							<mainClass>org.phoebus.channelfinder.Application</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.io.InputStream;

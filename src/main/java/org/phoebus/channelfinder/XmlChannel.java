@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 /**
  * #%L
  * ChannelFinder Directory Service
