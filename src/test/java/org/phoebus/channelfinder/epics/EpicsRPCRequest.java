@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder.epics;
+package org.phoebus.channelfinder.epics;
 
 import java.util.List;
 

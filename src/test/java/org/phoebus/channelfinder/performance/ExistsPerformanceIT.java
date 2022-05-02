@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder.performance;
+package org.phoebus.channelfinder.performance;
 
 import static org.junit.Assert.assertTrue;
 

@@ -1,4 +1,4 @@
-package gov.bnl.channelfinder;
+package org.phoebus.channelfinder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
