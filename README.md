@@ -32,7 +32,7 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
 
 * Prerequisites
 
-  * JDK 8 or newer
+  * JDK 11
   * Elastic version 6.3
   * <For authN/authZ using LDAP:> LDAP server, e.g. OpenLDAP
 
