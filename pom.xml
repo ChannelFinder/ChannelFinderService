@@ -4,7 +4,7 @@
 
 	<artifactId>ChannelFinder</artifactId>
 	<groupId>org.phoebus</groupId>
-	<version>4.0.1</version>
+	<version>4.0.2-SNAPSHOT</version>
 
 	<description>A RESTful directory services for a list channels</description>
 	<url>https://channelfinder.readthedocs.io/</url>
@@ -18,7 +18,7 @@
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/ChannelFinder/ChannelFinderService</developerConnection>
-		<tag>ChannelFinder-4.0.1</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<properties>
