@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>ChannelFinder</artifactId>
@@ -17,10 +19,21 @@
 	</licenses>
 
 	<scm>
+		<url>https://github.com/ChannelFinder/ChannelFinderService</url>
+		<connection>scm:git:https://github.com/ChannelFinder/ChannelFinderService</connection>
 		<developerConnection>scm:git:https://github.com/ChannelFinder/ChannelFinderService</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 
+
+	<developers>
+		<developer>
+			<name>Kunal Shroff</name>
+			<email>kunalshroff9@gmail.com</email>
+			<organization>Brookhaven National Lab</organization>
+			<organizationUrl>https://github.com/shroffk</organizationUrl>
+		</developer>
+	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<spring.boot-version>2.1.1.RELEASE</spring.boot-version>
