@@ -8,10 +8,25 @@
 	<groupId>org.phoebus</groupId>
 	<version>4.0.0</version>
 
+	<description>A RESTful directory services for a list channels</description>
+	<url>https://channelfinder.readthedocs.io/</url>
+
+	<licenses>
+		<license>
+			<name>Eclipse Public License 1.0</name>
+			<url>https://www.eclipse.org/legal/epl-v10.html</url>
+		</license>
+	</licenses>
+
+	<scm>
+		<developerConnection>scm:git:https://github.com/ChannelFinder/ChannelFinderService</developerConnection>
+		<tag>HEAD</tag>
+	</scm>
+
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<spring.boot-version>2.1.1.RELEASE</spring.boot-version>
-  		<elasticsearch.version>6.8.4</elasticsearch.version>
+		<elasticsearch.version>6.8.4</elasticsearch.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -161,76 +176,76 @@
 		</plugins>
 	</build>
 	<profiles>
-	  <!-- profile for and the website from the .rst files -->
-	  <profile>
-	    <id>sphinx</id>
-	    <build>
-	      <plugins>
-	          <plugin>
-	            <groupId>org.apache.maven.plugins</groupId>
-	            <artifactId>maven-site-plugin</artifactId>
-	            <version>3.7.1</version>
-	          </plugin>
-	          <plugin>
-	            <groupId>org.apache.maven.plugins</groupId>
-	            <artifactId>maven-project-info-reports-plugin</artifactId>
-	            <version>3.0.0</version>
-	          </plugin>          
-	          <!-- Generate the documentation for the Phoebus -->
-	          <plugin>
-	            <groupId>kr.motd.maven</groupId>
-	            <artifactId>sphinx-maven-plugin</artifactId>
-	            <version>2.10.0</version>
-	            <configuration>
-	              <sourceDirectory>${basedir}/src/site/sphinx</sourceDirectory>
-	              <outputDirectory>${basedir}/src/site/sphinx/build/html</outputDirectory>
-	            </configuration>
-	            <executions>
-	              <execution>
-	                <phase>package</phase>
-	                <goals>
-	                  <goal>generate</goal>
-	                </goals>
-	              </execution>
-	            </executions>
-	          </plugin>
-	        </plugins>
-	      </build>
-	    </profile>
-	    
-        <!-- Release profile -->
-        <profile>
-            <id>releases</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
-                        <extensions>true</extensions>
-                        <configuration>
-                            <serverId>phoebus-releases</serverId>
-                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>false</autoReleaseAfterClose>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
+		<!-- profile for and the website from the .rst files -->
+		<profile>
+			<id>sphinx</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-site-plugin</artifactId>
+						<version>3.7.1</version>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-project-info-reports-plugin</artifactId>
+						<version>3.0.0</version>
+					</plugin>
+					<!-- Generate the documentation for the Phoebus -->
+					<plugin>
+						<groupId>kr.motd.maven</groupId>
+						<artifactId>sphinx-maven-plugin</artifactId>
+						<version>2.10.0</version>
+						<configuration>
+							<sourceDirectory>${basedir}/src/site/sphinx</sourceDirectory>
+							<outputDirectory>${basedir}/src/site/sphinx/build/html</outputDirectory>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>package</phase>
+								<goals>
+									<goal>generate</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<!-- Release profile -->
+		<profile>
+			<id>releases</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.sonatype.plugins</groupId>
+						<artifactId>nexus-staging-maven-plugin</artifactId>
+						<version>1.6.8</version>
+						<extensions>true</extensions>
+						<configuration>
+							<serverId>phoebus-releases</serverId>
+							<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+							<autoReleaseAfterClose>false</autoReleaseAfterClose>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<version>3.0.1</version>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 	<repositories>
 		<repository>
