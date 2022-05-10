@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>ChannelFinder</artifactId>
 	<groupId>org.phoebus</groupId>
-	<version>4.0.3-SNAPSHOT</version>
+	<version>4.0.3</version>
 
 	<description>A RESTful directory services for a list channels</description>
 	<url>https://channelfinder.readthedocs.io/</url>
@@ -22,7 +20,7 @@
 		<url>https://github.com/ChannelFinder/ChannelFinderService</url>
 		<connection>scm:git:https://github.com/ChannelFinder/ChannelFinderService</connection>
 		<developerConnection>scm:git:https://github.com/ChannelFinder/ChannelFinderService</developerConnection>
-		<tag>HEAD</tag>
+		<tag>ChannelFinder-4.0.3</tag>
 	</scm>
 
 
