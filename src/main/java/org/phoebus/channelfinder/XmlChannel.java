@@ -123,7 +123,7 @@ public class XmlChannel {
 
     /**
      * Add the given tag to the list of tags associated with this channel
-     * If the tag already exists then it is replaced with <tt>tag</tt>
+     * If the tag already exists then it is replaced with <code>tag</code>
      * @param tag the tag to be added to the channel
      */
     public void addTag(XmlTag tag) {
@@ -187,7 +187,6 @@ public class XmlChannel {
     /**
      * Creates a compact string representation for the log.
      *
-     * @param data XmlChannel to create the string representation for
      * @return string representation
      */
     public String toLog() {

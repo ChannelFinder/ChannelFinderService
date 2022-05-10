@@ -49,7 +49,6 @@ public class TagManager {
 
     /**
      * GET method for retrieving the list of tags in the database.
-     * @param map 
      *
      * @return list of all tags
      */
@@ -59,11 +58,12 @@ public class TagManager {
     }
 
     /**
-     * GET method for retrieving the tag with the path parameter <tt>tagName</tt>
+     * GET method for retrieving the tag with the path parameter <code>tagName</code>
      * 
      * To get all its channels use the parameter "withChannels"
      *
      * @param tagName - tag name to search for
+     * @param withChannels - channels with the tag tagName
      * @return found tag
      */
     @GetMapping("/{tagName}")
@@ -94,8 +94,8 @@ public class TagManager {
 
     /**
      * PUT method to create and <b>exclusively</b> update the tag identified by the
-     * path parameter <tt>name</tt> to all channels identified in the payload
-     * structure <tt>data</tt>. Setting the owner attribute in the XML root element
+     * path parameter <code>name</code> to all channels identified in the payload
+     * structure <code>data</code>. Setting the owner attribute in the XML root element
      * is mandatory.
      * 
      * @param tagName - name of tag to be created
@@ -154,7 +154,7 @@ public class TagManager {
     /**
      * PUT method for creating multiple tags.
      * 
-     * @param testTags - XmlTags to be created
+     * @param tags - XmlTags to be created
      * @return the list of tags created
      */
     @PutMapping()
@@ -224,14 +224,14 @@ public class TagManager {
     }
 
     /**
-     * PUT method for adding the tag identified by <tt>tag</tt> to the single
-     * channel <tt>chan</tt> (both path parameters).
+     * PUT method for adding the tag identified by <code>tag</code> to the single
+     * channel <code>chan</code> (both path parameters).
      * 
      * TODO: could be simplified with multi index update and script which can use
      * wildcards thus removing the need to explicitly define the entire tag
      * 
      * @param tagName - name of tag to be added to channel
-     * @param channelName - channel to update <tt>tag</tt> to
+     * @param channelName - channel to update <code>tag</code> to
      * @return added tag
      */
     @PutMapping("/{tagName}/{chName}")
@@ -275,14 +275,14 @@ public class TagManager {
 
     /**
      * POST method to update the tag identified by the path parameter
-     * <tt>name</tt>, adding it to all channels identified by the channels inside
-     * the payload structure <tt>data</tt>. Setting the owner attribute in the XML
+     * <code>name</code>, adding it to all channels identified by the channels inside
+     * the payload structure <code>data</code>. Setting the owner attribute in the XML
      * root element is mandatory.
      * 
      * TODO: Optimize the bulk channel update
      *
      * @param tagName - name of tag to be updated
-     * @param tag - XmlTag with list of channels to addSingle the tag <tt>name</tt> to
+     * @param tag - XmlTag with list of channels to addSingle the tag <code>name</code> to
      * @return the updated tag
      */
     @PostMapping("/{tagName}")
@@ -414,7 +414,7 @@ public class TagManager {
 
     /**
      * DELETE method for deleting the tag identified by the path parameter
-     * <tt>tagName</tt> from all channels.
+     * <code>tagName</code> from all channels.
      *
      * @param tagName - name of tag to remove
      */
@@ -446,11 +446,11 @@ public class TagManager {
     }
 
     /**
-     * DELETE method for deleting the tag identified by <tt>tagName</tt> from the
-     * channel <tt>channelName</tt> (both path parameters).
+     * DELETE method for deleting the tag identified by <code>tagName</code> from the
+     * channel <code>channelName</code> (both path parameters).
      *
      * @param tagName - name of tag to remove
-     * @param channelName - channel to remove <tt>tagName</tt> from
+     * @param channelName - channel to remove <code>tagName</code> from
      */
     @DeleteMapping("/{tagName}/{channelName}")
     public void removeSingle(@PathVariable("tagName") final String tagName, @PathVariable("channelName") String channelName) {
@@ -537,7 +537,7 @@ public class TagManager {
 
     /**
      * Checks if channel with name "channelName" exists
-     * @param channelName
+     * @param channelName check channel exists
      */
     public void validateTagWithChannelRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {

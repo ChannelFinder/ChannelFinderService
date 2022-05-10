@@ -56,7 +56,8 @@ public class ChannelManager {
      * GET method for retrieving a collection of Channel instances, based on a
      * multi-parameter query specifying patterns for tags, property values, and
      * channel names to match against.
-     *
+     * 
+     * @param allRequestParams query parameters
      * @return list of all channels
      */
     @GetMapping
@@ -66,7 +67,7 @@ public class ChannelManager {
 
     /**
      * GET method for retrieving an instance of Channel identified by
-     * <tt>channelName</tt>.
+     * <code>channelName</code>.
      *
      * @param channelName - channel name to search for
      * @return found channel
@@ -91,7 +92,7 @@ public class ChannelManager {
      * supplied, which will replace the existing set of properties.
      *
      * @param channelName - name of channel to be created 
-     * @param channel - new data (properties/tags) for channel <tt>chan</tt>
+     * @param channel - new data (properties/tags) for channel <code>chan</code>
      * @return the created channel
      */
     @PutMapping("/{channelName}")
@@ -199,7 +200,7 @@ public class ChannelManager {
      * payload into an existing channel.
      *
      * @param channelName - name of channel to add
-     * @param channel - new XmlChannel data (properties/tags) to be merged into channel <tt>channelName</tt>
+     * @param channel - new XmlChannel data (properties/tags) to be merged into channel <code>channelName</code>
      * @return the updated channel         
      */
     @PostMapping("/{channelName}")
@@ -245,7 +246,7 @@ public class ChannelManager {
      * payload into existing channels.
      *
      * @param channels - XmlChannels to be updated
-     * @result the updated channels
+     * @return the updated channels
      */
     @PostMapping()
     public Iterable<XmlChannel> update(@RequestBody Iterable<XmlChannel> channels) {
@@ -296,7 +297,7 @@ public class ChannelManager {
 
     /**
      * DELETE method for deleting a channel instance identified by path parameter
-     * <tt>channelName</tt>.
+     * <code>channelName</code>.
      *
      * @param channelName - name of channel to remove
      */
@@ -345,7 +346,7 @@ public class ChannelManager {
      * 2. the channel owner is not null or empty
      * 3. all the listed tags/props exist and prop value is not null or empty
      * 
-     * @param data
+     * @param channel channel to be validated
      */
     public void validateChannelRequest(XmlChannel channel) {
         // 1 
@@ -395,7 +396,7 @@ public class ChannelManager {
      * 2. the tag owners are not null or empty
      * 3. all the channels exist
      * 
-     * @param data
+     * @param channels list of channels to be validated
      */
     public void validateChannelRequest(Iterable<XmlChannel> channels) {
         for(XmlChannel channel: channels) {

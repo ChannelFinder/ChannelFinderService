@@ -61,11 +61,12 @@ public class PropertyManager {
     }
 
     /**
-     * GET method for retrieving the property with the path parameter <tt>propertyName</tt> 
+     * GET method for retrieving the property with the path parameter <code>propertyName</code> 
      * 
      * To get all its channels use the parameter "withChannels"
      *
      * @param propertyName - property name to search for
+     * @param withChannels - get the channels with the property
      * @return found property
      */
     @GetMapping("/{propertyName}")
@@ -96,14 +97,14 @@ public class PropertyManager {
 
     /**
      * PUT method for creating and <b>exclusively</b> adding the property
-     * identified by the path parameter <tt>propertyName</tt> to all channels
-     * identified by the payload structure <tt>property</tt>. Setting the owner
+     * identified by the path parameter <code>propertyName</code> to all channels
+     * identified by the payload structure <code>property</code>. Setting the owner
      * attribute in the XML root element is mandatory. Values for the properties
      * are taken from the payload.
      *
      *
      * @param propertyName - name of property to be created
-     * @param property - an XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
+     * @param property - an XmlProperty instance with the list of channels to add the property <code>propertyName</code> to
      * @return the created property
      */
     @PutMapping("/{propertyName}")
@@ -228,14 +229,14 @@ public class PropertyManager {
     }
 
     /**
-     * PUT method for adding the property identified by <tt>property</tt> to the single
-     * channel <tt>chan</tt> (both path parameters).
+     * PUT method for adding the property identified by <code>property</code> to the single
+     * channel <code>chan</code> (both path parameters).
      * 
      * TODO: could be simplified with multi index update and script which can use
      * wildcards thus removing the need to explicitly define the entire property
      * 
      * @param propertyName - name of tag to be created
-     * @param channelName - channel to update <tt>tag</tt> to
+     * @param channelName - channel to update <code>tag</code> to
      * @param property - property payload with value
      * @return added property
      */
@@ -286,12 +287,12 @@ public class PropertyManager {
 
     /**
      * POST method for updating the property identified by the path parameter
-     * <tt>propertyName</tt>, adding it to all channels identified by the payload structure
-     * <tt>property</tt>. Setting the owner attribute in the XML root element is
+     * <code>propertyName</code>, adding it to all channels identified by the payload structure
+     * <code>property</code>. Setting the owner attribute in the XML root element is
      * mandatory. Values for the properties are taken from the payload.
      *
      * @param propertyName - name of property to be updated
-     * @param property - a XmlProperty instance with the list of channels to add the property <tt>propertyName</tt> to
+     * @param property - a XmlProperty instance with the list of channels to add the property <code>propertyName</code> to
      * @return the updated property
      */
     @PostMapping("/{propertyName}")
@@ -453,7 +454,7 @@ public class PropertyManager {
 
     /**
      * DELETE method for deleting the property identified by the path parameter
-     * <tt>propertyName</tt> from all channels.
+     * <code>propertyName</code> from all channels.
      *
      * @param propertyName - name of property to remove
      */
@@ -485,11 +486,11 @@ public class PropertyManager {
     }
 
     /**
-     * DELETE method for deleting the property identified by <tt>propertyName</tt> from the
-     * channel <tt>channelName</tt> (both path parameters).
+     * DELETE method for deleting the property identified by <code>propertyName</code> from the
+     * channel <code>channelName</code> (both path parameters).
      *
      * @param propertyName - name of property to remove
-     * @param channelName - channel to remove <tt>propertyName</tt> from
+     * @param channelName - channel to remove <code>propertyName</code> from
      */
     @DeleteMapping("/{propertyName}/{channelName}")
     public void removeSingle(@PathVariable("propertyName") final String propertyName, @PathVariable("channelName") String channelName) {
@@ -542,9 +543,9 @@ public class PropertyManager {
      * Checks if
      * 1. the property name is not null and matches the name in the body
      * 2. the property owner is not null or empty
-     * 3. all the listed channels exist and have the property with a non null & non empty value
+     * 3. all the listed channels exist and have the property with a non null and non empty value
      * 
-     * @param property
+     * @param property validate property
      */
     public void validatePropertyRequest(XmlProperty property) {
         // 1 
@@ -587,7 +588,7 @@ public class PropertyManager {
      * 3. the property value is not null or empty
      * 4. all the listed channels exist
      * 
-     * @param data
+     * @param properties properties to be validated
      */
     public void validatePropertyRequest(Iterable<XmlProperty> properties) {
         for(XmlProperty property: properties) {
@@ -597,7 +598,7 @@ public class PropertyManager {
 
     /**
      * Checks if the channel exists
-     * @param data
+     * @param channelName check channel exists
      */
     public void validatePropertyRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {

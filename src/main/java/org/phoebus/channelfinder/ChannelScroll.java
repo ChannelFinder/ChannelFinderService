@@ -66,6 +66,7 @@ public class ChannelScroll {
      * multi-parameter query specifying patterns for tags, property values, and
      * channel names to match against.
      *
+     * @param allRequestParams search parameters
      * @return list of all channels
      */
     @GetMapping
@@ -78,6 +79,7 @@ public class ChannelScroll {
      * multi-parameter query specifying patterns for tags, property values, and
      * channel names to match against.
      *
+     * @param scrollId scroll Id
      * @return list of all channels
      */
     @GetMapping("/{scrollId}")
@@ -92,6 +94,10 @@ public class ChannelScroll {
      * 
      * The query result is sorted based on the channel name ~size - The number of
      * channels to be returned ~from - The starting index of the channel list
+     * 
+     * @param scrollId scroll ID
+     * @param searchParameters - search parameters for scrolling searches
+     * @return search scroll
      */
     public XmlScroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
 

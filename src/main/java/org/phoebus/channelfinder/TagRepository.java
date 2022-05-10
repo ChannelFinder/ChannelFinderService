@@ -69,6 +69,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     /**
      * create a new tag using the given XmlTag
      * 
+     * @param <S> extends XmlTag
      * @param tag - tag to be created
      * @return the created tag
      */
@@ -97,6 +98,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     /**
      * create new tags using the given XmlTags
      * 
+     * @param <S> extends XmlTag
      * @param tags - tags to be created
      * @return the created tags
      */
@@ -138,6 +140,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     /**
      * update/save tag using the given XmlTag
      * 
+     * @param <S> extends XmlTag
+     * @param tagName - name of tag to be created
      * @param tag - tag to be created
      * @return the updated/saved tag
      */
@@ -180,6 +184,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     /**
      * update/save tags using the given XmlTags
      * 
+     * @param <S> extends XmlTag
      * @param tags - tags to be created
      * @return the updated/saved tags
      */

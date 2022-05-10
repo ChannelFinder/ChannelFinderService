@@ -25,7 +25,7 @@ public class NTXmlUtil {
      * 
      * @param result - NTTable returned by the channelfinder service
      * @return list of channels
-     * @throws Exception
+     * @throws Exception failed to convert to NTTable
      */
     public static synchronized List<XmlChannel> parse(PVStructure result) throws Exception {
         if (NTTable.isCompatible(result)) {

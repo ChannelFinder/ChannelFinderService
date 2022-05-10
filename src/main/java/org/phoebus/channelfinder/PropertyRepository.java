@@ -70,6 +70,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     /**
      * create a new property using the given XmlProperty
      * 
+     * @param <S> extends XmlProperty
      * @param property - property to be created
      * @return the created property
      */
@@ -98,6 +99,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     /**
      * create new properties using the given XmlProperties
      * 
+     * @param <S> extends XmlProperty
      * @param properties - properties to be created
      * @return the created properties
      */
@@ -139,6 +141,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     /**
      * update/save property using the given XmlProperty
      * 
+     * @param <S> extends XmlProperty
+     * @param propertyName - name of property to be created
      * @param property - property to be created
      * @return the updated/saved property
      */
@@ -173,6 +177,10 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         return null;
     }
 
+    /**
+     * 
+     * @param <S> extends XmlProperty
+     */
     @Override
     public <S extends XmlProperty> S save(S property) {
         return save(property.getName(),property);
@@ -181,6 +189,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     /**
      * update/save properties using the given XmlProperties
      * 
+     * @param <S> extends XmlProperty
      * @param properties - properties to be created
      * @return the updated/saved properties
      */
@@ -369,7 +378,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     /**
      * delete the given property by property name
      * 
-     * @param property - property to be deleted
+     * @param propertyName - name of property to be deleted
      */
     @Override
     public void deleteById(String propertyName) {

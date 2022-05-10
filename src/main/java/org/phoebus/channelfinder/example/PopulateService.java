@@ -44,7 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * The channel names follow the following convention
  * {system}:{cell}-{device}-{signal}
  *
- * systems: SR(1000) & BR(500)
+ * systems: SR(1000) and BR(500)
  * cell: C001
  * device: Magnets, Powersupply, BPMs,...
  * signal: St or RB

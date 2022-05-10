@@ -83,6 +83,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * create a new channel using the given XmlChannel
      * 
+     * @param <S> extends XmlChannel
      * @param channel - channel to be created
      * @return the created channel
      */
@@ -111,6 +112,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * create new channels using the given XmlChannels
      * 
+     * @param <S> extends XmlChannel
      * @param channels - channels to be created
      * @return the created channels
      */
@@ -152,6 +154,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * update/save channel using the given XmlChannel
      * 
+     * @param <S> extends XmlChannel
+     * @param channelName - name of channel to be saved
      * @param channel - channel to be saved
      * @return the updated/saved channel
      */
@@ -209,6 +213,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         return null;
     }
 
+    /**
+     * 
+     * @param <S> extends XmlChannel
+     */
     @Override
     public <S extends XmlChannel> S save(S channel) {
         return save(channel.getName(),channel);
@@ -217,6 +225,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * update/save channels using the given XmlChannels
      * 
+     * @param <S> extends XmlChannel
      * @param channels - channels to be saved
      * @return the updated/saved channels
      */
@@ -472,6 +481,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * 
      * The query result is sorted based on the channel name ~size - The number of
      * channels to be returned ~from - The starting index of the channel list
+     * 
+     * @param searchParameters channel search parameters
+     * @return matching channels
      */
     public List<XmlChannel> search(MultiValueMap<String, String> searchParameters) {
 
