@@ -26,7 +26,7 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.phoebus.channelfinder.ElasticSearchClient;
+import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlProperty;
 import org.phoebus.channelfinder.XmlTag;
@@ -87,7 +87,7 @@ public class PopulateService {
     Set<String> channel_list = new HashSet<>();
 
     @Autowired
-    ElasticSearchClient esService;
+    ElasticConfig esService;
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
@@ -134,7 +134,7 @@ public class PopulateService {
     }
 
     public synchronized void cleanupDB() {
-        RestHighLevelClient client = esService.getIndexClient();
+        RestHighLevelClient client = esService.getNewClient();
         try {
             BulkRequest bulkRequest = new BulkRequest();
             for (String channelName : channel_list) {
@@ -191,7 +191,7 @@ public class PopulateService {
         prop_list.forEach((p)->{log.info(p.toLog());});
         tag_list.forEach((t)->{log.info(t.toLog());});
 
-        RestHighLevelClient client = esService.getIndexClient();
+        RestHighLevelClient client = esService.getNewClient();
         ObjectMapper mapper = new ObjectMapper();
         try {
             BulkRequest bulkRequest = new BulkRequest();
@@ -266,7 +266,7 @@ public class PopulateService {
         result.addAll(insert_bpms(tokens, channelCounter, 4, pre, "BLA", loc, cell, "large aperture BPM"));
 
         try {
-            RestHighLevelClient client = esService.getIndexClient();
+            RestHighLevelClient client = esService.getNewClient();
             long start = System.currentTimeMillis();
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlChannel channel : result) {
@@ -327,7 +327,7 @@ public class PopulateService {
         result.addAll(insert_bpms(tokens, channelCounter, 2, pre, "BLA", loc, cell, "beam position monitor"));
 
         try {
-            RestHighLevelClient client = esService.getIndexClient();
+            RestHighLevelClient client = esService.getNewClient();
             long start = System.currentTimeMillis();
             BulkRequest bulkRequest = new BulkRequest();
             for (XmlChannel channel : result) {

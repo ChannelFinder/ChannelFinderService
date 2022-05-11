@@ -31,6 +31,7 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.phoebus.channelfinder.XmlProperty.OnlyXmlProperty;
 import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+
 @CrossOrigin
 @RestController
 @RequestMapping(SCROLL_RESOURCE_URI)
@@ -58,8 +61,8 @@ public class ChannelScroll {
     private String ES_CHANNEL_TYPE;
 
     @Autowired
-    ElasticSearchClient esService;
-
+    @Qualifier("indexClient")
+    ElasticsearchClient client;
 
     /**
      * GET method for retrieving a collection of Channel instances, based on a
@@ -100,109 +103,110 @@ public class ChannelScroll {
      * @return search scroll
      */
     public XmlScroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
-
-        StringBuffer performance = new StringBuffer();
-        long start = System.currentTimeMillis();
-        long totalStart = System.currentTimeMillis();
-
-        RestHighLevelClient client = esService.getSearchClient();
-        start = System.currentTimeMillis();
-        try {
-            SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
-            SearchResponse searchResponse;
-            int size = 100;
-            final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(30L));
-            
-            if(scrollId == null) {
-                BoolQueryBuilder qb = boolQuery();
-                for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
-                    switch (parameter.getKey()) {
-                    case "~name":
-                        for (String value : parameter.getValue()) {
-                            DisMaxQueryBuilder nameQuery = disMaxQuery();
-                            for (String pattern : value.split("[\\|,;]")) {
-                                nameQuery.add(wildcardQuery("name", pattern.trim()));
-                            }
-                            qb.must(nameQuery);
-                        }
-                        break;
-                    case "~tag":
-                        for (String value : parameter.getValue()) {
-                            DisMaxQueryBuilder tagQuery = disMaxQuery();
-                            for (String pattern : value.split("[\\|,;]")) {
-                                tagQuery.add(wildcardQuery("tags.name", pattern.trim()));
-                            }
-                            qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
-                        }
-                        break;
-                    case "~size":
-                        Optional<String> maxSize = parameter.getValue().stream().max((o1, o2) -> {
-                            return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
-                        });
-                        if (maxSize.isPresent()) {
-                            size = Integer.valueOf(maxSize.get());
-                        }
-                        break;
-                    default:
-                        DisMaxQueryBuilder propertyQuery = disMaxQuery();
-                        for (String value : parameter.getValue()) {
-                            for (String pattern : value.split("[\\|,;]")) {
-                                propertyQuery
-                                .add(nestedQuery("properties",
-                                        boolQuery().must(matchQuery("properties.name", parameter.getKey().trim()))
-                                        .must(wildcardQuery("properties.value", pattern.trim())),
-                                        ScoreMode.None));
-                            }
-                        }
-                        qb.must(propertyQuery);
-                        break;
-                    }
-                }
-
-                searchRequest.scroll(scroll);
-                SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-                searchSourceBuilder.query(qb);
-                searchSourceBuilder.size(size);
-                searchRequest.source(searchSourceBuilder);
-                searchResponse = client.search(searchRequest, RequestOptions.DEFAULT); 
-
-            } else {
-                SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-                scrollRequest.scroll(scroll);
-                searchResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
-                }
-
-            scrollId = searchResponse.getScrollId();
-            SearchHit[] searchHits = searchResponse.getHits().getHits();
-
-            final ObjectMapper mapper = new ObjectMapper();
-            mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
-            mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
-            List<XmlChannel> result = new ArrayList<XmlChannel>();
-
-            searchResponse.getHits().forEach(hit -> {
-                try {
-                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
-                } catch (Exception e) {
-                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
-                    //                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    //                      "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
-                }
-            });   
-
-            if(searchHits.length < size) {
-                ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
-                clearScrollRequest.addScrollId(scrollId);
-                ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
-                boolean succeeded = clearScrollResponse.isSucceeded();
-            }
-            
-            XmlScroll scrollResult = new XmlScroll(scrollId, result);
-            return scrollResult;
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
-        }
+        return null;
+//
+//        StringBuffer performance = new StringBuffer();
+//        long start = System.currentTimeMillis();
+//        long totalStart = System.currentTimeMillis();
+//
+//        RestHighLevelClient client = esService.getSearchClient();
+//        start = System.currentTimeMillis();
+//        try {
+//            SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
+//            SearchResponse searchResponse;
+//            int size = 100;
+//            final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(30L));
+//            
+//            if(scrollId == null) {
+//                BoolQueryBuilder qb = boolQuery();
+//                for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
+//                    switch (parameter.getKey()) {
+//                    case "~name":
+//                        for (String value : parameter.getValue()) {
+//                            DisMaxQueryBuilder nameQuery = disMaxQuery();
+//                            for (String pattern : value.split("[\\|,;]")) {
+//                                nameQuery.add(wildcardQuery("name", pattern.trim()));
+//                            }
+//                            qb.must(nameQuery);
+//                        }
+//                        break;
+//                    case "~tag":
+//                        for (String value : parameter.getValue()) {
+//                            DisMaxQueryBuilder tagQuery = disMaxQuery();
+//                            for (String pattern : value.split("[\\|,;]")) {
+//                                tagQuery.add(wildcardQuery("tags.name", pattern.trim()));
+//                            }
+//                            qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
+//                        }
+//                        break;
+//                    case "~size":
+//                        Optional<String> maxSize = parameter.getValue().stream().max((o1, o2) -> {
+//                            return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
+//                        });
+//                        if (maxSize.isPresent()) {
+//                            size = Integer.valueOf(maxSize.get());
+//                        }
+//                        break;
+//                    default:
+//                        DisMaxQueryBuilder propertyQuery = disMaxQuery();
+//                        for (String value : parameter.getValue()) {
+//                            for (String pattern : value.split("[\\|,;]")) {
+//                                propertyQuery
+//                                .add(nestedQuery("properties",
+//                                        boolQuery().must(matchQuery("properties.name", parameter.getKey().trim()))
+//                                        .must(wildcardQuery("properties.value", pattern.trim())),
+//                                        ScoreMode.None));
+//                            }
+//                        }
+//                        qb.must(propertyQuery);
+//                        break;
+//                    }
+//                }
+//
+//                searchRequest.scroll(scroll);
+//                SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+//                searchSourceBuilder.query(qb);
+//                searchSourceBuilder.size(size);
+//                searchRequest.source(searchSourceBuilder);
+//                searchResponse = client.search(searchRequest, RequestOptions.DEFAULT); 
+//
+//            } else {
+//                SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+//                scrollRequest.scroll(scroll);
+//                searchResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+//                }
+//
+//            scrollId = searchResponse.getScrollId();
+//            SearchHit[] searchHits = searchResponse.getHits().getHits();
+//
+//            final ObjectMapper mapper = new ObjectMapper();
+//            mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
+//            mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
+//            List<XmlChannel> result = new ArrayList<XmlChannel>();
+//
+//            searchResponse.getHits().forEach(hit -> {
+//                try {
+//                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
+//                } catch (Exception e) {
+//                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
+//                    //                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+//                    //                      "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+//                }
+//            });   
+//
+//            if(searchHits.length < size) {
+//                ClearScrollRequest clearScrollRequest = new ClearScrollRequest(); 
+//                clearScrollRequest.addScrollId(scrollId);
+//                ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+//                boolean succeeded = clearScrollResponse.isSucceeded();
+//            }
+//            
+//            XmlScroll scrollResult = new XmlScroll(scrollId, result);
+//            return scrollResult;
+//        } catch (Exception e) {
+//            log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
+//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+//                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+//        }
     }
 }

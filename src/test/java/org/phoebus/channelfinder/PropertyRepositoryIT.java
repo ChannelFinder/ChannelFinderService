@@ -15,7 +15,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.phoebus.channelfinder.ChannelRepository;
-import org.phoebus.channelfinder.ElasticSearchClient;
+import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.PropertyRepository;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlProperty;
@@ -35,7 +35,7 @@ import com.google.common.collect.Sets;
 public class PropertyRepositoryIT {
 
     @Autowired
-    ElasticSearchClient esService;
+    ElasticConfig esService;
 
     @Autowired
     PropertyRepository propertyRepository;

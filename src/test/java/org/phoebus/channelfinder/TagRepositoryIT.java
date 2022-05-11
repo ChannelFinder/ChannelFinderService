@@ -15,7 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.phoebus.channelfinder.ChannelRepository;
-import org.phoebus.channelfinder.ElasticSearchClient;
+import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.TagRepository;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlTag;
@@ -34,7 +34,7 @@ import com.google.common.collect.Sets;
 public class TagRepositoryIT {
 
     @Autowired
-    ElasticSearchClient esService;
+    ElasticConfig esService;
 
     @Autowired
     TagRepository tagRepository;
