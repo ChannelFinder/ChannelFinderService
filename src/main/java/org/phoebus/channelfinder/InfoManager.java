@@ -3,16 +3,10 @@ package org.phoebus.channelfinder;
 import static org.phoebus.channelfinder.CFResourceDescriptors.CF_SERVICE_INFO;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Level;
 
-import org.elasticsearch.Version;
-import org.elasticsearch.action.main.MainResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
