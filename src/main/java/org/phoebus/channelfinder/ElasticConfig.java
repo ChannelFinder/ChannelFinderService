@@ -3,12 +3,6 @@
  */
 package org.phoebus.channelfinder;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-
 /*
  * #%L
  * ChannelFinder Directory Service
@@ -26,25 +20,12 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import org.apache.http.HttpHost;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
-import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.Request;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.ResponseException;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.transport.TransportClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
@@ -58,7 +39,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 
 @Configuration
 @ComponentScan(basePackages = { "org.phoebus.channelfinder" })
-@PropertySource("classpath:/application.properties")
+@PropertySource(value = "classpath:application.properties")
 public class ElasticConfig implements ServletContextListener {
 
     private static Logger log = Logger.getLogger(ElasticConfig.class.getCanonicalName());
@@ -109,34 +90,11 @@ public class ElasticConfig implements ServletContextListener {
             // Create the low-level client
             RestClient httpClient = RestClient.builder(new HttpHost(host, port)).build();
 
-            // Create the HLRC
-            RestHighLevelClient hlrc = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port)));
-
-            //elasticIndexValidation(hlrc);
-
             // Create the Java API Client with the same low level client
             ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper());
             indexClient = new ElasticsearchClient(transport);
         }
         return indexClient;
-    }
-
-    /**
-     * Returns a new {@link TransportClient} using the default settings
-     * **IMPORTANT** it is the responsibility of the caller to close this client
-     * 
-     * @return es transport client
-     */
-    @SuppressWarnings("resource")
-    public RestHighLevelClient getNewClient() {
-        try {
-            RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost(host, port, "http")));
-            //elasticIndexValidation(client);
-            return client;
-        } catch (ElasticsearchException e) {
-            log.log(Level.SEVERE, "failed to create elastic client", e.getDetailedMessage());
-            return null;
-        }
     }
 
     @Override

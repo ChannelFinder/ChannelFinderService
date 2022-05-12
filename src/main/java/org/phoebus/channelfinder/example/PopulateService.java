@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder.example;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -12,20 +11,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlProperty;
@@ -34,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * An class for creating the example database.
@@ -134,26 +121,26 @@ public class PopulateService {
     }
 
     public synchronized void cleanupDB() {
-        RestHighLevelClient client = esService.getNewClient();
-        try {
-            BulkRequest bulkRequest = new BulkRequest();
-            for (String channelName : channel_list) {
-                bulkRequest.add(new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName));
-            }
-            for (XmlTag tag : tag_list) {
-                bulkRequest.add(new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName()));
-            }
-            for (XmlProperty property : prop_list) {
-                bulkRequest.add(new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName()));
-            }
-            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            if (bulkResponse.hasFailures()) {
-                log.warning(bulkResponse.buildFailureMessage());
-            }
-        } catch (Exception e) {
-            log.log(Level.WARNING, e.getMessage(), e);
-        }
+//        RestHighLevelClient client = esService.getNewClient();
+//        try {
+//            BulkRequest bulkRequest = new BulkRequest();
+//            for (String channelName : channel_list) {
+//                bulkRequest.add(new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName));
+//            }
+//            for (XmlTag tag : tag_list) {
+//                bulkRequest.add(new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName()));
+//            }
+//            for (XmlProperty property : prop_list) {
+//                bulkRequest.add(new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName()));
+//            }
+//            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+//            if (bulkResponse.hasFailures()) {
+//                log.warning(bulkResponse.buildFailureMessage());
+//            }
+//        } catch (Exception e) {
+//            log.log(Level.WARNING, e.getMessage(), e);
+//        }
     }
 
     public synchronized void createDB(int cells) {
@@ -191,40 +178,40 @@ public class PopulateService {
         prop_list.forEach((p)->{log.info(p.toLog());});
         tag_list.forEach((t)->{log.info(t.toLog());});
 
-        RestHighLevelClient client = esService.getNewClient();
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            BulkRequest bulkRequest = new BulkRequest();
-            for (XmlProperty property : prop_list) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE,
-                        property.getName());
-                updateRequest.doc(mapper.writeValueAsBytes(property), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName())
-                        .source(mapper.writeValueAsBytes(property), XContentType.JSON));
-                bulkRequest.add(updateRequest);
-            }
-            for (XmlTag tag : tag_list) {
-
-                UpdateRequest updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
-                updateRequest.doc(mapper.writeValueAsBytes(tag), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName())
-                        .source(mapper.writeValueAsBytes(tag), XContentType.JSON));
-                bulkRequest.add(updateRequest);
-            }
-            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            if (bulkResponse.hasFailures()) {
-                log.info(bulkResponse.buildFailureMessage());
-            } else {
-                log.info("completed populating");
-            }
-        } catch (JsonProcessingException e) {
-            log.log(Level.WARNING, e.getMessage(), e);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            
-        }
+//        RestHighLevelClient client = esService.getNewClient();
+//        ObjectMapper mapper = new ObjectMapper();
+//        try {
+//            BulkRequest bulkRequest = new BulkRequest();
+//            for (XmlProperty property : prop_list) {
+//                UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE,
+//                        property.getName());
+//                updateRequest.doc(mapper.writeValueAsBytes(property), XContentType.JSON);
+//                updateRequest.upsert(new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName())
+//                        .source(mapper.writeValueAsBytes(property), XContentType.JSON));
+//                bulkRequest.add(updateRequest);
+//            }
+//            for (XmlTag tag : tag_list) {
+//
+//                UpdateRequest updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
+//                updateRequest.doc(mapper.writeValueAsBytes(tag), XContentType.JSON);
+//                updateRequest.upsert(new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName())
+//                        .source(mapper.writeValueAsBytes(tag), XContentType.JSON));
+//                bulkRequest.add(updateRequest);
+//            }
+//            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+//            if (bulkResponse.hasFailures()) {
+//                log.info(bulkResponse.buildFailureMessage());
+//            } else {
+//                log.info("completed populating");
+//            }
+//        } catch (JsonProcessingException e) {
+//            log.log(Level.WARNING, e.getMessage(), e);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            
+//        }
 //       log.info("completed populating");
     }
 
@@ -263,34 +250,34 @@ public class PopulateService {
 
         result.addAll(insert_bpms(tokens, channelCounter, 4, pre, "BSA", loc, cell, "small aperture BPM"));
         result.addAll(insert_bpms(tokens, channelCounter, 4, pre, "BHS", loc, cell, "high stability BPM"));
-        result.addAll(insert_bpms(tokens, channelCounter, 4, pre, "BLA", loc, cell, "large aperture BPM"));
+        return result.addAll(insert_bpms(tokens, channelCounter, 4, pre, "BLA", loc, cell, "large aperture BPM"));
 
-        try {
-            RestHighLevelClient client = esService.getNewClient();
-            long start = System.currentTimeMillis();
-            BulkRequest bulkRequest = new BulkRequest();
-            for (XmlChannel channel : result) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-                updateRequest.doc(mapper.writeValueAsBytes(channel), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName())
-                        .source(mapper.writeValueAsBytes(channel), XContentType.JSON));
-                bulkRequest.add(updateRequest);
-            }
-            String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
-            start = System.currentTimeMillis();
-            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
-            log.info("Insterted SR cell " + cell + " " + prepare + " " + execute);
-            if(bulkResponse.hasFailures()){
-                throw new Exception(bulkResponse.buildFailureMessage());
-            }
-            else{
-                return true;
-            }        
-        } catch (JsonProcessingException | ElasticsearchException e) {
-            throw new Exception(e);
-        }
+//        try {
+//            RestHighLevelClient client = esService.getNewClient();
+//            long start = System.currentTimeMillis();
+//            BulkRequest bulkRequest = new BulkRequest();
+//            for (XmlChannel channel : result) {
+//                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+//                updateRequest.doc(mapper.writeValueAsBytes(channel), XContentType.JSON);
+//                updateRequest.upsert(new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName())
+//                        .source(mapper.writeValueAsBytes(channel), XContentType.JSON));
+//                bulkRequest.add(updateRequest);
+//            }
+//            String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
+//            start = System.currentTimeMillis();
+//            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+//            String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
+//            log.info("Insterted SR cell " + cell + " " + prepare + " " + execute);
+//            if(bulkResponse.hasFailures()){
+//                throw new Exception(bulkResponse.buildFailureMessage());
+//            }
+//            else{
+//                return true;
+//            }        
+//        } catch (JsonProcessingException | ElasticsearchException e) {
+//            throw new Exception(e);
+//        }
     }
     
     private boolean insertBOCell(String cell) throws Exception {
@@ -326,32 +313,33 @@ public class PopulateService {
 
         result.addAll(insert_bpms(tokens, channelCounter, 2, pre, "BLA", loc, cell, "beam position monitor"));
 
-        try {
-            RestHighLevelClient client = esService.getNewClient();
-            long start = System.currentTimeMillis();
-            BulkRequest bulkRequest = new BulkRequest();
-            for (XmlChannel channel : result) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-                updateRequest.doc(mapper.writeValueAsBytes(channel), XContentType.JSON);
-                updateRequest.upsert(new IndexRequest("channelfinder", "channel", channel.getName())
-                        .source(mapper.writeValueAsBytes(channel), XContentType.JSON));
-                bulkRequest.add(updateRequest);
-            }
-            String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
-            start = System.currentTimeMillis();
-            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
-            log.info("Insterted BO cell " + cell + " " + prepare + " " + execute);
-            if(bulkResponse.hasFailures()){
-                throw new Exception(bulkResponse.buildFailureMessage());
-            }
-            else{
-                return true;
-            }        
-        } catch (JsonProcessingException | ElasticsearchException e) {
-            throw new Exception(e);
-        }
+//        try {
+//            RestHighLevelClient client = esService.getNewClient();
+//            long start = System.currentTimeMillis();
+//            BulkRequest bulkRequest = new BulkRequest();
+//            for (XmlChannel channel : result) {
+//                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
+//                updateRequest.doc(mapper.writeValueAsBytes(channel), XContentType.JSON);
+//                updateRequest.upsert(new IndexRequest("channelfinder", "channel", channel.getName())
+//                        .source(mapper.writeValueAsBytes(channel), XContentType.JSON));
+//                bulkRequest.add(updateRequest);
+//            }
+//            String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
+//            start = System.currentTimeMillis();
+//            bulkRequest.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+//            String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
+//            log.info("Insterted BO cell " + cell + " " + prepare + " " + execute);
+//            if(bulkResponse.hasFailures()){
+//                throw new Exception(bulkResponse.buildFailureMessage());
+//            }
+//            else{
+//                return true;
+//            }        
+//        } catch (JsonProcessingException | ElasticsearchException e) {
+//            throw new Exception(e);
+//        }
+        return false;
     }
 
     private Collection<XmlChannel> insert_big_magnets(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell,  int count, String prefix,
