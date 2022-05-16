@@ -12,6 +12,7 @@ import co.elastic.clients.elasticsearch._types.*;
 import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -84,36 +85,38 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlChannel> Iterable<S> indexAll(Iterable<XmlChannel> channels) {
-//        RestHighLevelClient client = esService.getNewClient();
-//        try {
-//            BulkRequest bulkRequest = new BulkRequest();
-//            for (XmlChannel channel : channels) {
-//                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-//                        .id(channel.getName())
-//                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-//                bulkRequest.add(indexRequest);
-//            }
-//
-//            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-//            // verify the creation of the channels
-//            if (bulkResponse.hasFailures()) {
-//                // Failed to create all the channels
-//            } else {
-//                List<String> createdChannelIds = new ArrayList<String>();
-//                for (BulkItemResponse bulkItemResponse : bulkResponse) {
-//                    Result result = bulkItemResponse.getResponse().getResult();
-//                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-//                        createdChannelIds.add(bulkItemResponse.getId());
-//                    }
-//                }
-//                return (Iterable<S>) findAllById(createdChannelIds);
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to index channels: " + channels, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to index channels: " + channels, null);
-//        }
+        BulkRequest.Builder br = new BulkRequest.Builder();
+
+        for (XmlChannel channel : channels) {
+            br.operations(op -> op
+                    .index(idx -> idx
+                            .index(ES_CHANNEL_INDEX)
+                            .id(channel.getName())
+                            .document(channel)
+                    )
+            );
+        }
+
+        BulkResponse result = null;
+        try {
+            result = client.bulk(br.build());
+            // Log errors, if any
+            if (result.errors()) {
+                log.severe("Bulk had errors");
+                for (BulkResponseItem item : result.items()) {
+                    if (item.error() != null) {
+                        log.severe(item.error().reason());
+                    }
+                }
+                // TODO cleanup? or throw exception?
+            } else {
+                return (Iterable<S>) channels;
+            }
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Failed to index channels " + channels, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channels: " + channels, null);
+
+        }
         return null;
     }
 
