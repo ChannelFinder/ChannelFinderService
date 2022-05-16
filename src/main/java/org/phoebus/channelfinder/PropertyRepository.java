@@ -1,19 +1,30 @@
 package org.phoebus.channelfinder;
 
+import java.io.IOException;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.Refresh;
+import co.elastic.clients.elasticsearch._types.Result;
+import co.elastic.clients.elasticsearch.core.ExistsRequest;
+import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.IndexRequest;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
 import org.phoebus.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 @Configuration
@@ -113,32 +124,23 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlProperty> S save(String propertyName, S property) {
-//        Re IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
-//                    .id(property.getName())
-//                    .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-//            updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
-//            updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            UpdateRestHighLevelClient client = esService.getNewClient();
-//        try {
-//            UpdateRequest updateRequest;
-//            Optional<XmlProperty> existingProperty = findById(propertyName);
-//            boolean present = existingProperty.isPresent();
-//            if(present) {
-//                deleteById(propertyName);
-//            }
-//            updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
-//           sponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
-//            /// verify the updating/saving of the property
-//            Result result = updateResponse.getResult();
-//            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-//                // client.get(, options)
-//                return (S) findById(property.getName()).get();
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to update/save property: " + property.toLog(), e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to update/save property: " + property, null);
-//        }
+
+        try {
+            IndexRequest request = IndexRequest.of(i -> i.index(ES_PROPERTY_INDEX)
+                                                         .id(propertyName)
+                                                         .document(property)
+                                                         .refresh(Refresh.True));
+
+            IndexResponse response = client.index(request);
+            /// verify the creation of the property
+            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+                log.config("Created property " + property);
+                return property;
+            }
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to index property " + property.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index property: " + property, null);
+        }
         return null;
     }
 
@@ -216,58 +218,41 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     /**
      * find property using the given property id
      * 
-     * @param propertyId - id of property to be found
+     * @param propertyName - id of property to be found
      * @param withChannels - whether channels should be included
      * @return the found property
      */
-    public Optional<XmlProperty> findById(String propertyId, boolean withChannels) {
-//        RestHighLevelClient client = esService.getSearchClient();
-//        GetRequest getRequest = new GetRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyId);
-//        try {
-//            GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
-//            if (response.isExists()) {
-//                XmlProperty property = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlProperty.class);
-//                if(withChannels) {
-//                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
-//                    params.add(propertyId,"*");
-//                    List<XmlChannel> chans = channelRepository.search(params);
-//                    chans.forEach(chan -> chan.setTags(new ArrayList<XmlTag>()));
-//                    XmlProperty p = null;
-//                    for(XmlChannel chan: chans) {
-//                        for(XmlProperty prop: chan.getProperties())
-//                        {
-//                            if(prop.getName().equals(propertyId))
-//                                p = prop;
-//                        }
-//                        chan.setProperties(Arrays.asList(p));
-//                    }
-//                    property.setChannels(chans);
-//                }
-//                return Optional.of(property);
-//            }
-//        } catch (IOException e) {
-//            log.log(Level.SEVERE, "Failed to find property: " + propertyId, e);
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-//                    "Failed to find property: " + propertyId, null);
-//        }
-        return Optional.empty();
+    public Optional<XmlProperty> findById(String propertyName, boolean withChannels) {
+        GetResponse<XmlProperty> response;
+        try {
+            response = client.get(g -> g.index(ES_PROPERTY_INDEX).id(propertyName), XmlProperty.class);
+
+            if (response.found()) {
+                XmlProperty property = response.source();
+                log.info("property name " + property.getName());
+                // TODO if (withChannels)
+                return Optional.of(property);
+            } else {
+                log.info("property not found");
+                return Optional.empty();
+            }
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find property " + propertyName, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find property: " + propertyName, null);
+        }
     }
 
     @Override
     public boolean existsById(String id) {
-
-//        RestHighLevelClient client = esService.getSearchClient();
-//        GetRequest getRequest = new GetRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, id);
-//        getRequest.fetchSourceContext(new FetchSourceContext(false));
-//        getRequest.storedFields("_none_");
-//        try {
-//            return client.exists(getRequest, RequestOptions.DEFAULT);
-//        } catch (IOException e) {
-//            log.log(Level.SEVERE, "Failed to check if property exists by id: " + id, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to check if property exists by id: " + id, null); 
-//        }
-        return false;
+        try {
+            ExistsRequest.Builder builder = new ExistsRequest.Builder();
+            builder.index(ES_PROPERTY_INDEX).id(id);
+            return client.exists(builder.build()).value();
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to check if property " + id + " exists", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to check if property exists by id: " + id, null);
+        }
     }
 
     /**
@@ -350,6 +335,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      */
     @Override
     public void deleteById(String propertyName) {
+
 //        RestHighLevelClient client = esService.getNewClient();
 //        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
 //        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);

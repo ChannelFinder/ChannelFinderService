@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import co.elastic.clients.elasticsearch._types.*;
 import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -21,10 +22,6 @@ import org.springframework.web.server.ResponseStatusException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch._types.FieldSort;
-import co.elastic.clients.elasticsearch._types.Refresh;
-import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetRequest;
@@ -68,11 +65,14 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> S index(S tag) {
         try {
-            IndexRequest request = IndexRequest.of(i -> i.index(ES_TAG_INDEX).id(tag.getName()).document(tag));
+            IndexRequest request = IndexRequest.of(i -> i.index(ES_TAG_INDEX).id(tag.getName()).document(tag).refresh(Refresh.True));
 
             IndexResponse response = client.index(request);
             /// verify the creation of the tag
-
+            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+                log.config("Created tag " + tag);
+                return tag;
+            }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to index tag " + tag.toLog(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index tag: " + tag, null);
@@ -89,6 +89,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> Iterable<S> indexAll(Iterable<S> tags) {
+        
 //        RestHighLevelClient client = esService.getNewClient();
 //        try {
 //            BulkRequest bulkRequest = new BulkRequest();
@@ -132,19 +133,22 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     public <S extends XmlTag> S save(String tagName, S tag) {
         // Cleanup old tag instance if present
         boolean existingTag = existsById(tagName);
-        if(existingTag) {
+        if (existingTag) {
             deleteById(tagName);
         }
 
         try {
-            IndexResponse response = client.index(i -> i.index(ES_TAG_INDEX).id(tagName).document(tag).refresh(Refresh.True));
-            //return response.result().;
+            IndexResponse response = client
+                    .index(i -> i.index(ES_TAG_INDEX).id(tagName).document(tag).refresh(Refresh.True));
+            // return response.result().;
+            // TODO return the result of the query
+            return tag;
         } catch (ElasticsearchException | IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to update/save tag:" + tag.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update/save tag: " + tag,
+                    null);
         }
 
-        
 //        RestHighLevelClient client = esService.getNewClient();
 //        try {
 //            UpdateRequest updateRequest;
@@ -170,7 +174,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 //            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update/save tag: " + tag,
 //                    null);
 //        }
-        return null;
     }
 
     @Override
@@ -254,6 +257,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             if (response.found()) {
                 XmlTag tag = response.source();
                 log.info("Tag name " + tag.getName());
+                // TODO if (withChannels)
                 return Optional.of(tag);
             } else {
                 log.info("Tag not found");
@@ -263,33 +267,12 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             log.log(Level.SEVERE, "Failed to find tag " + tagId, e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find tag: " + tagId, null);
         }
-
-//        RestHighLevelClient client = esService.getSearchClient();
-//        GetRequest getRequest = new GetRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagId);
-//        try {
-//            GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
-//            if (response.isExists()) {
-//                XmlTag tag = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlTag.class);
-//                if (withChannels) {
-//                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
-//                    params.add("~tag", tagId);
-//                    List<XmlChannel> chans = channelRepository.search(params);
-//                    chans.forEach(chan -> chan.setTags(new ArrayList<XmlTag>()));
-//                    chans.forEach(chan -> chan.setProperties(new ArrayList<XmlProperty>()));
-//                    tag.setChannels(chans);
-//                }
-//                return Optional.of(tag);
-//            }
-//        } catch (IOException e) {
-//            log.log(Level.SEVERE, "Failed to find tag " + tagId, e);
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find tag: " + tagId, null);
-//        }
     }
 
     @Override
     public boolean existsById(String id) {
         try {
-            co.elastic.clients.elasticsearch.core.ExistsRequest.Builder builder = new ExistsRequest.Builder();
+            ExistsRequest.Builder builder = new ExistsRequest.Builder();
             builder.index(ES_TAG_INDEX).id(id);
             return client.exists(builder.build()).value();
         } catch (ElasticsearchException | IOException e) {
@@ -307,8 +290,10 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Override
     public Iterable<XmlTag> findAll() {
         try {
-            SearchRequest.Builder searchBuilder = new Builder().query(new MatchAllQuery.Builder().build()._toQuery())
-                    .size(10000).sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+            SearchRequest.Builder searchBuilder = new Builder()
+                    .query(new MatchAllQuery.Builder().build()._toQuery())
+                    .size(10000)
+                    .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<XmlTag> response = client.search(searchBuilder.build(), XmlTag.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
