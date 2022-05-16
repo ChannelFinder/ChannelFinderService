@@ -1,20 +1,31 @@
 package org.phoebus.channelfinder;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
+import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.MultiValueMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 @Configuration
@@ -44,22 +55,23 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlChannel> S index(XmlChannel channel) {
-//        try {
-//            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-//                    .id(channel.getName())
-//                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-//            indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
-//            /// verify the creation of the channel
-//            Result result = indexResponse.getResult();
-//            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-//                return (S) findById(channel.getName()).get();
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to index channel: " + channel.toLog(), e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to index channel: " + channel, null);
-//        }
+        try {
+            IndexRequest request = IndexRequest.of(i -> i.index(ES_CHANNEL_INDEX)
+                    .id(channel.getName())
+                    .document(channel)
+                    .refresh(Refresh.True));
+
+            // TODO validation
+            IndexResponse response = client.index(request);
+            // verify the creation of the tag
+            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+                log.config("Created channel " + channel);
+                return (S) channel;
+            }
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channel: " + channel, null);
+        }
         return null;
     }
 
@@ -252,65 +264,69 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     /**
      * find channel using the given channel id
      * 
-     * @param channelId - id of channel to be found
+     * @param channelName - name of channel to be found
      * @return the found channel
      */
     @Override
-    public Optional<XmlChannel> findById(String channelId) {
-//        RestHighLevelClient client = esService.getSearchClient();
-//        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelId);
-//        try {
-//            GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
-//            if (response.isExists()) {
-//                XmlChannel channel = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlChannel.class);
-//                return Optional.of(channel);
-//            }
-//        } catch (IOException e) {
-//            log.log(Level.SEVERE, "Failed to find channel: " + channelId, e);
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-//                    "Failed to find channel: " + channelId, null);
-//        }
-        return Optional.empty();
+    public Optional<XmlChannel> findById(String channelName) {
+        GetResponse<XmlChannel> response;
+        try {
+            response = client.get(g -> g.index(ES_CHANNEL_INDEX).id(channelName), XmlChannel.class);
+
+            if (response.found()) {
+                XmlChannel channel = response.source();
+                log.info("Channel name " + channel.getName());
+                return Optional.of(channel);
+            } else {
+                log.info("Channel not found");
+                return Optional.empty();
+            }
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find Channel " + channelName, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find Channel: " + channelName, null);
+        }
     }
 
-    public boolean existsByIds(List<String> ids) {
-//        RestHighLevelClient client = esService.getSearchClient();
-//        MultiGetRequest request = new MultiGetRequest();
-//        for (String id : ids) {
-//            Item getRequest = new MultiGetRequest.Item(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
-//            getRequest.fetchSourceContext(new FetchSourceContext(false));
-//            getRequest.storedFields("_none_");
-//            request.add(getRequest);
-//        }
-//        try {
-//            long start = System.currentTimeMillis();
-//            MultiGetResponse response = client.mget(request, RequestOptions.DEFAULT);
-//            for (MultiGetItemResponse multiGetItemResponse : response) {
-//                if (!multiGetItemResponse.getResponse().isExists())
-//                    return false;
-//            }
-//            channelManagerAudit.info(
-//                    "Completed existance check for " + ids.size() + " in: " + (System.currentTimeMillis() - start));
-//            return true;
-//        } catch (IOException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        }
-        return false;
+    /**
+     * Find all channels with given ids
+     * @param channelIds - list of channel ids to verify exists
+     * @return true if all the channel id's exist
+     */
+    public boolean existsByIds(List<String> channelIds) {
+        try {
+            List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
+
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
+                    .index(ES_CHANNEL_INDEX)
+                    .query(IdsQuery.of(q -> q.values(ids))._toQuery())
+                    .size(10000)
+                    .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
+            return response.hits()
+                    .hits().stream().map(h -> h.source().getName()).collect(Collectors.toList())
+                    .containsAll(channelIds);
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find all channels", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all channels", null);
+        }
     }
 
+    /**
+     * Check is channel with name 'channelName' exists
+     * @param channelName
+     * @return true if channel exists
+     */
     @Override
-    public boolean existsById(String id) {
-//        RestHighLevelClient client = esService.getSearchClient();
-//        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
-//        getRequest.fetchSourceContext(new FetchSourceContext(false));
-//        getRequest.storedFields("_none_");
-//        try {
-//            return client.exists(getRequest, RequestOptions.DEFAULT);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        return false;
+    public boolean existsById(String channelName) {
+        try {
+            ExistsRequest.Builder builder = new ExistsRequest.Builder();
+            builder.index(ES_CHANNEL_INDEX).id(channelName);
+            return client.exists(builder.build()).value();
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to check if channel " + channelName + " exists", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to check if channel exists by channelName: " + channelName, null);
+        }
     }
 
     /**
@@ -356,27 +372,20 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      */
     @Override
     public Iterable<XmlChannel> findAllById(Iterable<String> channelIds) {
-        return null;
-//        MultiGetRequest request = new MultiGetRequest();
-//
-//        for (String channelId : channelIds) {
-//            request.add(new MultiGetRequest.Item(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelId));
-//        }
-//        try {
-//            List<XmlChannel> foundChannels = new ArrayList<XmlChannel>();
-//            MultiGetResponse response = esService.getSearchClient().mget(request, RequestOptions.DEFAULT);
-//            for (MultiGetItemResponse multiGetItemResponse : response) {
-//                if (!multiGetItemResponse.isFailed()) {
-//                    foundChannels.add(objectMapper.readValue(
-//                            multiGetItemResponse.getResponse().getSourceAsBytesRef().streamInput(), XmlChannel.class));
-//                } 
-//            }
-//            return foundChannels;
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to find all channels: " + channelIds, e);
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-//                    "Failed to find all channels: " + channelIds, null);
-//        }
+        try {
+            List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
+
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
+                    .index(ES_CHANNEL_INDEX)
+                    .query(IdsQuery.of(q -> q.values(ids))._toQuery())
+                    .size(10000)
+                    .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
+            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find all channels", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all channels", null);
+        }
     }
 
     @Override
