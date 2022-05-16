@@ -119,13 +119,14 @@ public class TagRepositoryIT {
         
         Optional<XmlTag> notFoundTag = tagRepository.findById(testTag.getName());
         // verify the tag was not found as expected
-        assertNotEquals("Found the tag",testTag,notFoundTag);
+        assertTrue("Found the test tag which has not yet been created", notFoundTag.isEmpty());
         
         XmlTag createdTag = tagRepository.index(testTag);
         Optional<XmlTag> foundTag = tagRepository.findById(createdTag.getName());
         // verify the tag was found as expected
-        assertEquals("Failed to find the tag",createdTag,foundTag.get());
-        
+        assertEquals("Failed to create/find the test tag", createdTag, foundTag.get());
+
+        // Create a channel with the test tag and find a tag with its associated channels
         XmlChannel channel = new XmlChannel("testChannel","testOwner",null,Arrays.asList(createdTag));
         XmlChannel createdChannel = channelRepository.index(channel);
         
