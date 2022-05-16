@@ -4,14 +4,12 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch._types.Refresh;
-import co.elastic.clients.elasticsearch._types.Result;
-import co.elastic.clients.elasticsearch.core.ExistsRequest;
-import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.elasticsearch.core.IndexRequest;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
+import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import org.phoebus.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -262,33 +260,18 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      */
     @Override
     public Iterable<XmlProperty> findAll() {
-//        RestHighLevelClient client = esService.getSearchClient();
-//
-//        SearchRequest searchRequest = new SearchRequest();
-//        searchRequest.indices(ES_PROPERTY_INDEX);
-//        searchRequest.types(ES_PROPERTY_TYPE);
-//
-//        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-//        // TODO use of scroll will be necessary
-//        searchSourceBuilder.size(10000);
-//        searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
-//        searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
-//
-//        try {
-//            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-//            if (searchResponse.status().equals(RestStatus.OK)) {
-//                List<XmlProperty> result = new ArrayList<XmlProperty>();
-//                for (SearchHit hit : searchResponse.getHits()) {
-//                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), XmlProperty.class));
-//                }
-//                return result;
-//            }
-//        } catch (IOException e) {
-//            log.log(Level.SEVERE, "Failed to find all properties", e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to find all properties", null);
-//        }
-        return null;
+        try {
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
+                    .index(ES_PROPERTY_INDEX)
+                    .query(new MatchAllQuery.Builder().build()._toQuery())
+                    .size(10000)
+                    .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+            SearchResponse<XmlProperty> response = client.search(searchBuilder.build(), XmlProperty.class);
+            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find all tags", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all tags", null);
+        }
     }
 
     /**
