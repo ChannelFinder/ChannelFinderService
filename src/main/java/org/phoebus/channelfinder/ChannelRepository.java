@@ -330,32 +330,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      */
     @Override
     public Iterable<XmlChannel> findAll() {
-//        RestHighLevelClient client = esService.getSearchClient();
-//
-//        SearchRequest searchRequest = new SearchRequest();
-//        searchRequest.indices(ES_CHANNEL_INDEX);
-//        searchRequest.types(ES_CHANNEL_TYPE);
-//
-//        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-//        // TODO use of scroll will be necessary
-//        searchSourceBuilder.size(10000);
-//        searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
-//
-//        try {
-//            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-//            if (searchResponse.status().equals(RestStatus.OK)) {
-//                List<XmlChannel> result = new ArrayList<XmlChannel>();
-//                for (SearchHit hit : searchResponse.getHits()) {
-//                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), XmlChannel.class));
-//                }
-//                return result;
-//            }
-//        } catch (IOException e) {
-//            log.log(Level.SEVERE, "Failed to find all channels", e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to find all channels", null);
-//        }
-        return null;
+        throw new UnsupportedOperationException("Find All is not supported. It could return hundreds of thousands" +
+                "of channels.");
     }
 
     /**
