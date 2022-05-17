@@ -87,19 +87,38 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void saveXmlChannel() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel updateTestChannel = new XmlChannel("testChannel","updateTestOwner",testProperties,testTags);
-        XmlChannel updateTestChannel1 = new XmlChannel("updateTestChannel1","updateTestOwner1",testProperties,testTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner");
+        XmlChannel updateTestChannel =
+                new XmlChannel("testChannel","updateTestOwner", testProperties.subList(0,1), testTags.subList(0,1));
+        XmlChannel updateTestChannel1 =
+                new XmlChannel("testChannel","updateTestOwner", testProperties.subList(1,2), testTags.subList(1,2));
+        XmlChannel updateTestChannel2 =
+                new XmlChannel("updateTestChannel1","updateTestOwner1",testUpdatedProperties, testUpdatedTags);
         XmlChannel createdChannel = channelRepository.index(testChannel);
-        cleanupTestChannels = Arrays.asList(testChannel,updateTestChannel,updateTestChannel1);
+        cleanupTestChannels = Arrays.asList(testChannel, updateTestChannel, updateTestChannel1, updateTestChannel2);
 
+        // Update Channel with new owner a new property and a new tag
         XmlChannel updatedTestChannel = channelRepository.save(updateTestChannel);
         // verify that the channel was updated as expected
-        assertEquals("Failed to update the channel with the same name",updateTestChannel,updatedTestChannel);
+        assertEquals("Failed to update the channel with the same name", updateTestChannel, updatedTestChannel);
 
-        XmlChannel updatedTestChannel1 = channelRepository.save("testChannel",updateTestChannel1);
+        // Update Channel with a second property and tag
+        XmlChannel updatedTestChannel1 = channelRepository.save(updateTestChannel1);
+        // verify that the channel was updated with the new tags and properties while preserving the old ones
+        XmlChannel expectedChannel = new XmlChannel("testChannel","updateTestOwner");
+        expectedChannel.addProperties(testProperties);
+        expectedChannel.addTags(testTags);
+        assertEquals("Failed to update the channel with the same name", updateTestChannel, updatedTestChannel);
+
+
+        // Update Channel with more updated properties and updated tags and rename the channel
+        XmlChannel updatedTestChannel2 = channelRepository.save("testChannel",updateTestChannel2);
         // verify that the channel was updated as expected
-        assertEquals("Failed to update the channel with a different name",updateTestChannel1,updatedTestChannel1);
+
+        expectedChannel = new XmlChannel("testChannel","updateTestOwner1");
+        expectedChannel.addProperties(testUpdatedProperties);
+        expectedChannel.addTags(testUpdatedTags);
+        assertEquals("Failed to update the channel with a different name", expectedChannel, updatedTestChannel2);
     }
 
 
@@ -396,8 +415,8 @@ public class ChannelRepositoryIT {
             new XmlProperty("testProperty1","testOwner1","value"));
 
     private final List<XmlProperty> testUpdatedProperties = Arrays.asList(
-            new XmlProperty("updateTestProperty","updateTestOwner","value"),
-            new XmlProperty("updateTestProperty1","updateTestOwner1","value"));
+            new XmlProperty("testProperty","updateTestOwner","updatedValue"),
+            new XmlProperty("testProperty1","updateTestOwner1","updatedValue"));
 
     private List<XmlChannel> cleanupTestChannels = Collections.emptyList();
 

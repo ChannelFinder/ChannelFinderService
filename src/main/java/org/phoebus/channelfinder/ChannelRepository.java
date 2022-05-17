@@ -127,71 +127,33 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @SuppressWarnings("unchecked")
     public XmlChannel save(String channelName, XmlChannel channel) {
         try {
-            // TODO validation
+            Optional<XmlChannel> existingChannel = findById(channelName);
+            XmlChannel newChannel;
+            if(existingChannel.isPresent()) {
+                // merge with existing channel
+                newChannel = existingChannel.get();
+                newChannel.setOwner(channel.getOwner());
+                newChannel.addProperties(channel.getProperties());
+                newChannel.addTags(channel.getTags());
+            } else {
+                newChannel = channel;
+            }
+
             UpdateResponse<XmlChannel> response = client.update(u -> u.index(ES_CHANNEL_INDEX)
                             .id(channelName)
-                            .doc(channel)
+                            .doc(newChannel)
                             .refresh(Refresh.True),
                     XmlChannel.class);
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created channel " + channel);
-                return channel;
+                return findById(channelName).get();
             }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channel: " + channel, null);
         }
         return null;
-//        RestHighLevelClient client = esService.getNewClient();
-//
-//        try {
-//            UpdateRequest updateRequest;
-//            Optional<XmlChannel> existingChannel = findById(channelName);
-//            boolean present = existingChannel.isPresent();
-//            if(present) {
-//                List<String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
-//                // Add the old tags on the channel update request to ensure that old tags are preserved
-//                for (XmlTag oldTag : existingChannel.get().getTags()) {
-//                    if (!tagNames.contains(oldTag.getName()))
-//                        channel.addTag(oldTag);
-//                }
-//
-//                // Add the old properties on the channel update request to ensure that old properties are preserved
-//                List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
-//                for(XmlProperty oldProp: existingChannel.get().getProperties()) {
-//                    if(!propNames.contains(oldProp.getName())) {
-//                        channel.addProperty(oldProp);
-//                    }
-//                }
-//
-//                // If there are properties with null or empty values, they are to be removed from the channel
-//                List<XmlProperty> properties = channel.getProperties();
-//                properties.removeIf(prop -> prop.getValue() == null);
-//                properties.removeIf(prop -> prop.getValue().isEmpty());
-//                channel.setProperties(properties);
-//
-//                // In case of a rename, the old channel should be removed
-//                deleteById(channelName);
-//            } 
-//            updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-//            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-//                    .id(channel.getName())
-//                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-//            updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
-//            updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
-//            // verify the creation of the channel
-//            Result result = updateResponse.getResult();
-//            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-//                // client.get(, options)
-//                return (S) findById(channel.getName()).get();
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to update/save channel: " + channel.toLog(), e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to update/save channel: " + channel, null);
-//        }
     }
 
     /**
