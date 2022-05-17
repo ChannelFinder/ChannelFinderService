@@ -138,11 +138,9 @@ public class ChannelRepositoryIT {
 
         Iterable<XmlChannel> updatedTestChannels = channelRepository.saveAll(updateTestChannels);
         // verify the channels were updated as expected
-        List<XmlProperty> expectedProperties = new ArrayList<>();
-        Stream.of(testProperties, testUpdatedProperties).forEach(expectedProperties::addAll);
         List<XmlChannel> expectedChannels = Arrays.asList(
-                new XmlChannel("testChannel","updateTestOwner", expectedProperties, testUpdatedTags),
-                new XmlChannel("testChannel1","updateTestOwner1", expectedProperties, testUpdatedTags)
+                new XmlChannel("testChannel","updateTestOwner", testUpdatedProperties, testUpdatedTags),
+                new XmlChannel("testChannel1","updateTestOwner1", testUpdatedProperties, testUpdatedTags)
         );
         assertEquals("Failed to update the channels: ",expectedChannels, updatedTestChannels);
     }
