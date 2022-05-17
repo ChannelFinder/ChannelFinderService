@@ -2,10 +2,12 @@ package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import co.elastic.clients.elasticsearch._types.*;
@@ -13,6 +15,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.elasticsearch.core.bulk.UpdateOperation;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -35,9 +38,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
-    @Value("${elasticsearch.channel.type:cf_channel}")
-    private String ES_CHANNEL_TYPE;
-    
+
     @Value("${elasticsearch.query.size:10000}")
     private int defaultMaxSize;
 
@@ -49,25 +50,22 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * create a new channel using the given XmlChannel
-     * 
-     * @param <S> extends XmlChannel
+     *
      * @param channel - channel to be created
      * @return the created channel
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> S index(XmlChannel channel) {
+    public XmlChannel index(XmlChannel channel) {
         try {
             IndexRequest request = IndexRequest.of(i -> i.index(ES_CHANNEL_INDEX)
                     .id(channel.getName())
                     .document(channel)
                     .refresh(Refresh.True));
-
-            // TODO validation
             IndexResponse response = client.index(request);
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created channel " + channel);
-                return (S) channel;
+                return channel;
             }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
@@ -78,13 +76,12 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * create new channels using the given XmlChannels
-     * 
-     * @param <S> extends XmlChannel
+     *
      * @param channels - channels to be created
      * @return the created channels
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> Iterable<S> indexAll(Iterable<XmlChannel> channels) {
+    public List<XmlChannel> indexAll(List<XmlChannel> channels) {
         BulkRequest.Builder br = new BulkRequest.Builder();
 
         for (XmlChannel channel : channels) {
@@ -94,7 +91,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                             .id(channel.getName())
                             .document(channel)
                     )
-            );
+            ).refresh(Refresh.True);
         }
 
         BulkResponse result = null;
@@ -110,7 +107,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 }
                 // TODO cleanup? or throw exception?
             } else {
-                return (Iterable<S>) channels;
+                return channels;
             }
         } catch (IOException e) {
             log.log(Level.SEVERE, "Failed to index channels " + channels, e);
@@ -122,14 +119,30 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * update/save channel using the given XmlChannel
-     * 
-     * @param <S> extends XmlChannel
+     *
      * @param channelName - name of channel to be saved
      * @param channel - channel to be saved
      * @return the updated/saved channel
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> S save(String channelName, S channel) {
+    public XmlChannel save(String channelName, XmlChannel channel) {
+        try {
+            // TODO validation
+            UpdateResponse<XmlChannel> response = client.update(u -> u.index(ES_CHANNEL_INDEX)
+                            .id(channelName)
+                            .doc(channel)
+                            .refresh(Refresh.True),
+                    XmlChannel.class);
+            // verify the creation of the tag
+            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+                log.config("Created channel " + channel);
+                return channel;
+            }
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channel: " + channel, null);
+        }
+        return null;
 //        RestHighLevelClient client = esService.getNewClient();
 //
 //        try {
@@ -179,15 +192,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 //            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 //                    "Failed to update/save channel: " + channel, null);
 //        }
-        return null;
     }
 
     /**
-     * 
-     * @param <S> extends XmlChannel
+     *
      */
     @Override
-    public <S extends XmlChannel> S save(S channel) {
+    public XmlChannel save(XmlChannel channel) {
         return save(channel.getName(),channel);
     }
 
@@ -201,67 +212,47 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> channels) {
+        // Create a list of all channel names
+        List<String> ids = StreamSupport.stream(channels.spliterator(), false).map(XmlChannel::getName).collect(Collectors.toList());
+
+        try {
+            Map<String, XmlChannel> existingChannels = findAllById(ids).stream().collect(Collectors.toMap(XmlChannel::getName, c -> c));
+
+            BulkRequest.Builder br = new BulkRequest.Builder();
+
+            for (XmlChannel channel : channels) {
+                if (existingChannels.containsKey(channel.getName())) {
+                    // merge with existing channel
+                    XmlChannel updatedChannel = existingChannels.get(channel.getName());
+                    updatedChannel.setOwner(channel.getOwner());
+                    updatedChannel.addProperties(channel.getProperties());
+                    updatedChannel.addTags(channel.getTags());
+                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX).id(updatedChannel.getName()).document(updatedChannel)));
+                } else {
+                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX).id(channel.getName()).document(channel)));
+                }
+
+            }
+            BulkResponse result = null;
+            result = client.bulk(br.refresh(Refresh.True).build());
+            // Log errors, if any
+            if (result.errors()) {
+                log.severe("Bulk had errors");
+                for (BulkResponseItem item : result.items()) {
+                    if (item.error() != null) {
+                        log.severe(item.error().reason());
+                    }
+                }
+                // TODO cleanup? or throw exception?
+            } else {
+                return (Iterable<S>) findAllById(ids);
+            }
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Failed to index channels " + channels, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channels: " + channels, null);
+
+        }
         return null;
-//        RestHighLevelClient client = esService.getNewClient();
-//
-//        BulkRequest bulkRequest = new BulkRequest();
-//        try {
-//            for (XmlChannel channel : channels) {
-//                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-//
-//                Optional<XmlChannel> existingChannel = findById(channel.getName());
-//                if (existingChannel.isPresent()) {
-//                    List<String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
-//                    // Add the old tags on the channel update request to ensure that old tags are preserved
-//                    for (XmlTag oldTag : existingChannel.get().getTags()) {
-//                        if (!tagNames.contains(oldTag.getName()))
-//                            channel.addTag(oldTag);
-//                    }
-//
-//                    // Add the old properties on the channel update request to ensure that old properties are preserved
-//                    List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
-//                    for(XmlProperty oldProp: existingChannel.get().getProperties()) {
-//                        if(!propNames.contains(oldProp.getName())) {
-//                            channel.addProperty(oldProp);
-//                        }
-//                    }
-//
-//                    // If there are properties with null or empty values, they are to be removed from the channel
-//                    List<XmlProperty> properties = channel.getProperties();
-//                    properties.removeIf(prop -> prop.getValue() == null);
-//                    properties.removeIf(prop -> prop.getValue().isEmpty());
-//                    channel.setProperties(properties);
-//
-//                    updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-//                } else {
-//                    IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-//                            .id(channel.getName())
-//                            .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-//                    updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
-//                }
-//                bulkRequest.add(updateRequest);
-//            }
-//
-//            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-//            if (bulkResponse.hasFailures()) {
-//                // Failed to create/update all the channels
-//                throw new Exception();
-//            } else {
-//                List<String> createdChannelIds = new ArrayList<String>();
-//                for (BulkItemResponse bulkItemResponse : bulkResponse) {
-//                    Result result = bulkItemResponse.getResponse().getResult();
-//                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-//                        createdChannelIds.add(bulkItemResponse.getId());
-//                    }
-//                }
-//                return (Iterable<S>) findAllById(createdChannelIds);
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to update/save channels: " + channels, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to update/save channels: " + channels, null);
-//        }
     }
 
     /**
@@ -374,7 +365,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the found channels
      */
     @Override
-    public Iterable<XmlChannel> findAllById(Iterable<String> channelIds) {
+    public List<XmlChannel> findAllById(Iterable<String> channelIds) {
         try {
             List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
 
@@ -399,27 +390,23 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * delete the given channel by channel name
-     * 
+     *
      * @param channelName - channel to be deleted
      */
     @Override
     public void deleteById(String channelName) {
-//        RestHighLevelClient client = esService.getNewClient();
-//
-//        DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName);
-//        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//
-//        try {
-//            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-//            Result result = response.getResult();
-//            if (!result.equals(Result.DELETED)) {
-//                throw new Exception();
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to delete channel: " + channelName, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to delete channel: " + channelName, null);
-//        }
+        try {
+            DeleteResponse response = client
+                    .delete(i -> i.index(ES_CHANNEL_INDEX).id(channelName).refresh(Refresh.True));
+            // verify the deletion of the channel
+            if (response.result().equals(Result.Deleted)) {
+                log.config("Deletes channel " + channelName);
+            }
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to delete channel: " + channelName, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to delete channel: " + channelName, null);
+        }
     }
 
     /**

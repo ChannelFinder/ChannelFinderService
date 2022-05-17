@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 
+import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -187,7 +188,7 @@ public class ChannelManager {
             });
 
             // create new channels
-            return channelRepository.indexAll(channels);
+            return channelRepository.indexAll(Lists.newArrayList(channels));
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channels, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

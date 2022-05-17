@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.After;
 import org.junit.Before;
@@ -107,10 +108,10 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void saveXmlChannels() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
-        XmlChannel updateTestChannel = new XmlChannel("testChannel","updateTestOwner",testProperties,testTags);
-        XmlChannel updateTestChannel1 = new XmlChannel("testChannel1","updateTestOwner1",testProperties,testTags);
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner", testProperties, testTags);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1", "testOwner1", testProperties, testTags);
+        XmlChannel updateTestChannel = new XmlChannel("testChannel", "updateTestOwner", testUpdatedProperties, testUpdatedTags);
+        XmlChannel updateTestChannel1 = new XmlChannel("testChannel1", "updateTestOwner1", testUpdatedProperties, testUpdatedTags);
         List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
         List<XmlChannel> updateTestChannels = Arrays.asList(updateTestChannel,updateTestChannel1);
         Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
@@ -118,7 +119,13 @@ public class ChannelRepositoryIT {
 
         Iterable<XmlChannel> updatedTestChannels = channelRepository.saveAll(updateTestChannels);
         // verify the channels were updated as expected
-        assertTrue("Failed to update the channels", Iterables.elementsEqual(updateTestChannels, updatedTestChannels));
+        List<XmlProperty> expectedProperties = new ArrayList<>();
+        Stream.of(testProperties, testUpdatedProperties).forEach(expectedProperties::addAll);
+        List<XmlChannel> expectedChannels = Arrays.asList(
+                new XmlChannel("testChannel","updateTestOwner", expectedProperties, testUpdatedTags),
+                new XmlChannel("testChannel1","updateTestOwner1", expectedProperties, testUpdatedTags)
+        );
+        assertEquals("Failed to update the channels: ",expectedChannels, updatedTestChannels);
     }
 
     /**
@@ -378,14 +385,18 @@ public class ChannelRepositoryIT {
 
     private final List<XmlTag> testTags = Arrays.asList(
             new XmlTag("testTag","testOwner"),
+            new XmlTag("testTag1","testOwner1"));
+
+    private final List<XmlTag> testUpdatedTags = Arrays.asList(
             new XmlTag("testTag","updateTestOwner"),
-            new XmlTag("testTag1","testOwner1"),
             new XmlTag("testTag1","updateTestOwner1"));
     
     private final List<XmlProperty> testProperties = Arrays.asList(
             new XmlProperty("testProperty","testOwner","value"),
+            new XmlProperty("testProperty1","testOwner1","value"));
+
+    private final List<XmlProperty> testUpdatedProperties = Arrays.asList(
             new XmlProperty("updateTestProperty","updateTestOwner","value"),
-            new XmlProperty("testProperty1","testOwner1","value"),    
             new XmlProperty("updateTestProperty1","updateTestOwner1","value"));
 
     private List<XmlChannel> cleanupTestChannels = Collections.emptyList();
@@ -406,7 +417,21 @@ public class ChannelRepositoryIT {
                 System.out.println("Failed to clean up tag: " + tag.getName());
             }
         });
+        testUpdatedTags.forEach(tag -> {
+            try {
+                tagRepository.deleteById(tag.getName());
+            } catch (Exception e) {
+                System.out.println("Failed to clean up tag: " + tag.getName());
+            }
+        });
         testProperties.forEach(property -> {
+            try {
+                propertyRepository.deleteById(property.getName());
+            } catch (Exception e) {
+                System.out.println("Failed to clean up property: " + property.getName());
+            }
+        });
+        testUpdatedProperties.forEach(property -> {
             try {
                 propertyRepository.deleteById(property.getName());
             } catch (Exception e) {

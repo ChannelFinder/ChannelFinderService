@@ -327,6 +327,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             DeleteResponse response = client
                     .delete(i -> i.index(ES_TAG_INDEX).id(tagName).refresh(Refresh.True));
             // TODO delete the tag from channels
+
             // verify the deletion of the tag
             if (response.result().equals(Result.Deleted)) {
                 log.config("Deletes tag " + tagName);
