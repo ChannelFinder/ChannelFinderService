@@ -67,7 +67,7 @@ public class TagRepositoryIT {
 
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         // verify the tags were created as expected
-        assertTrue("Failed to create the list of tags", Iterables.elementsEqual(testTags, createdTags));
+        assertEquals("Failed to create the list of tags", testTags, createdTags);
     }
 
     /**
@@ -106,7 +106,7 @@ public class TagRepositoryIT {
         Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
         Iterable<XmlTag> updatedTestTags = tagRepository.saveAll(updateTestTags);
         // verify the tags were updated as expected
-        assertTrue("Failed to update the tags", Iterables.elementsEqual(updateTestTags, updatedTestTags));
+        assertEquals("Failed to update the tags", updateTestTags, updatedTestTags);
     }
 
     /**
@@ -133,7 +133,7 @@ public class TagRepositoryIT {
         foundTag = tagRepository.findById(createdTag.getName(),true);
         createdTag.setChannels(Arrays.asList(new XmlChannel(channel.getName(),channel.getOwner())));
         // verify the tag was found as expected
-        assertEquals("Failed to find the tag",createdTag,foundTag.get());
+        assertEquals("Failed to find the tag", createdTag, foundTag.get());
 
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());
@@ -168,7 +168,7 @@ public class TagRepositoryIT {
             Set<XmlTag> createdTags = Sets.newHashSet(tagRepository.indexAll(testTags));
             Set<XmlTag> listedTags = Sets.newHashSet(tagRepository.findAll());
             // verify the tag was created as expected
-            assertEquals("Failed to list all created tags", createdTags, listedTags);
+            assertEquals("Failed to list all created tags", listedTags, createdTags);
         } catch (Exception e) {
             e.printStackTrace();
         } 
@@ -220,15 +220,15 @@ public class TagRepositoryIT {
         tagRepository.deleteById(createdTag.getName());
         // verify the tag was deleted as expected
         assertNotEquals("Failed to delete tag",testTag,tagRepository.findById(testTag.getName()));
-        
-        XmlChannel foundChannel = channelRepository.findById("testChannel").get();
+
         // verify the tag was deleted from channels as expected
+        XmlChannel foundChannel = channelRepository.findById("testChannel").get();
         assertTrue("Failed to remove tag from channel",foundChannel.getTags().isEmpty());
-        
+
+        // verify the tag was deleted from all channels as expected
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag","testChannel");
         List<XmlChannel> chans = channelRepository.search(params);
-        // verify the tag was deleted from channels as expected
         assertTrue("Failed to remove tag from channel",chans.isEmpty());
         
         // channel clean up

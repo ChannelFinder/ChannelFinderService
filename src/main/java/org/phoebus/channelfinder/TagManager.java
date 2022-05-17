@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -196,7 +197,7 @@ public class TagManager {
             }
 
             // create new tags
-            Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
+            Iterable<XmlTag> createdTags = tagRepository.indexAll(Lists.newArrayList(tags));
 
             // update the listed channels in the tags' payloads with new tags
             Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();

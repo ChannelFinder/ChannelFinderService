@@ -84,16 +84,14 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
     /**
      * create new tags using the given XmlTags
-     * 
-     * @param <S>  extends XmlTag
+     *
      * @param tags - tags to be created
      * @return the created tags
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlTag> Iterable<S> indexAll(Iterable<S> tags) {
+    public List<XmlTag> indexAll(List<XmlTag> tags) {
 
         BulkRequest.Builder br = new BulkRequest.Builder();
-
         for (XmlTag tag : tags) {
             br.operations(op -> op
                     .index(idx -> idx
@@ -101,7 +99,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                             .id(tag.getName())
                             .document(tag)
                     )
-            );
+            ).refresh(Refresh.True);
         }
 
         BulkResponse result = null;
@@ -117,7 +115,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 }
                 // TODO cleanup? or throw exception?
             } else {
-                return tags;
+                return findAllById(tags.stream().map(XmlTag::getName).collect(Collectors.toList()));
             }
         } catch (IOException e) {
             log.log(Level.SEVERE, "Failed to index tags " + tags, e);
@@ -137,12 +135,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> S save(String tagName, S tag) {
-        // Cleanup old tag instance if present
-        boolean existingTag = existsById(tagName);
-        if (existingTag) {
-            deleteById(tagName);
-        }
-
         try {
             IndexResponse response = client
                     .index(i -> i.index(ES_TAG_INDEX).id(tagName).document(tag).refresh(Refresh.True));
@@ -174,43 +166,41 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlTag> Iterable<S> saveAll(Iterable<S> tags) {
-//        RestHighLevelClient client = esService.getNewClient();
-//        BulkRequest bulkRequest = new BulkRequest();
-//        try {
-//            for (XmlTag tag : tags) {
-//                UpdateRequest updateRequest = new UpdateRequest(ES_TAG_INDEX, ES_TAG_TYPE, tag.getName());
-//
-//                Optional<XmlTag> existingTag = findById(tag.getName());
-//                if (existingTag.isPresent()) {
-//                    updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
-//                } else {
-//                    IndexRequest indexRequest = new IndexRequest(ES_TAG_INDEX, ES_TAG_TYPE).id(tag.getName())
-//                            .source(objectMapper.writeValueAsBytes(tag), XContentType.JSON);
-//                    updateRequest.doc(objectMapper.writeValueAsBytes(tag), XContentType.JSON).upsert(indexRequest);
-//                }
-//                bulkRequest.add(updateRequest);
-//            }
-//
-//            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-//            if (bulkResponse.hasFailures()) {
-//                // Failed to create/update all the tags
-//                throw new Exception();
-//            } else {
-//                List<String> createdTagIds = new ArrayList<String>();
-//                for (BulkItemResponse bulkItemResponse : bulkResponse) {
-//                    Result result = bulkItemResponse.getResponse().getResult();
-//                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-//                        createdTagIds.add(bulkItemResponse.getId());
-//                    }
-//                }
-//                return (Iterable<S>) findAllById(createdTagIds);
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to update/save tags" + tags, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update/save tags: " + tags,
-//                    null);
-//        }
+
+        BulkRequest.Builder br = new BulkRequest.Builder();
+        for (XmlTag tag : tags) {
+            br.operations(op -> op
+                    .index(idx -> idx
+                            .index(ES_TAG_INDEX)
+                            .id(tag.getName())
+                            .document(tag)
+                    )
+            ).refresh(Refresh.True);
+        }
+
+        BulkResponse result = null;
+        try {
+            result = client.bulk(br.build());
+            // Log errors, if any
+            if (result.errors()) {
+                log.severe("Bulk had errors");
+                for (BulkResponseItem item : result.items()) {
+                    if (item.error() != null) {
+                        log.severe(item.error().reason());
+                    }
+                }
+                // TODO cleanup? or throw exception?
+            } else {
+                return (Iterable<S>) findAllById(
+                        StreamSupport.stream(tags.spliterator(), false)
+                                .map(XmlTag::getName)
+                                .collect(Collectors.toList()));
+            }
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Failed to index tags " + tags, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index tags: " + tags, null);
+
+        }
         return null;
     }
 
@@ -293,7 +283,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @return the found tags
      */
     @Override
-    public Iterable<XmlTag> findAllById(Iterable<String> tagIds) {
+    public List<XmlTag> findAllById(Iterable<String> tagIds) {
         try {
             List<String> ids = StreamSupport.stream(tagIds.spliterator(), false).collect(Collectors.toList());
 
