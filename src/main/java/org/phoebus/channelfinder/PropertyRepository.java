@@ -1,14 +1,18 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
 import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import org.phoebus.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,41 +49,72 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     /**
      * create a new property using the given XmlProperty
-     * 
-     * @param <S> extends XmlProperty
+     *
      * @param property - property to be created
      * @return the created property
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlProperty> S index(XmlProperty property) {
-//        try {
-//            IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
-//                    .id(property.getName())
-//                    .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-//            indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
-//            /// verify the creation of the property
-//            Result result = indexResponse.getResult();
-//            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-//                return (S) findById(property.getName()).get();
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to index property: " + property.toLog(), e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to index property: " + property, null);
-//        }
+    public XmlProperty index(XmlProperty property) {
+        try {
+            IndexRequest request = IndexRequest.of(i -> i.index(ES_PROPERTY_INDEX)
+                    .id(property.getName())
+                    .document(property)
+                    .refresh(Refresh.True));
+
+            IndexResponse response = client.index(request);
+            // verify the creation of the tag
+            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+                log.config("Created property " + property);
+                return property;
+            }
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to index property: " + property.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to index property: " + property, null);
+        }
         return null;
     }
 
     /**
      * create new properties using the given XmlProperties
-     * 
-     * @param <S> extends XmlProperty
+     *
      * @param properties - properties to be created
      * @return the created properties
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlProperty> Iterable<S> indexAll(Iterable<XmlProperty> properties) {
+    public List<XmlProperty> indexAll(List<XmlProperty> properties) {
+        BulkRequest.Builder br = new BulkRequest.Builder();
+        for (XmlProperty property : properties) {
+            br.operations(op -> op
+                    .index(idx -> idx
+                            .index(ES_PROPERTY_INDEX)
+                            .id(property.getName())
+                            .document(property)
+                    )
+            ).refresh(Refresh.True);
+        }
+
+        BulkResponse result = null;
+        try {
+            result = client.bulk(br.build());
+            // Log errors, if any
+            if (result.errors()) {
+                log.severe("Bulk had errors");
+                for (BulkResponseItem item : result.items()) {
+                    if (item.error() != null) {
+                        log.severe(item.error().reason());
+                    }
+                }
+                // TODO cleanup? or throw exception?
+            } else {
+                return findAllById(properties.stream().map(XmlProperty::getName).collect(Collectors.toList()));
+            }
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Failed to index properties " + properties, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index properties: " + properties, null);
+
+        }
+        return null;
 //        try {
 //            BulkRequest bulkRequest = new BulkRequest();
 //            for (XmlProperty property : properties) {
@@ -109,7 +144,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 //            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
 //                    "Failed to index properties: " + properties, null);      
 //        }
-        return null;
     }
 
     /**
@@ -161,6 +195,34 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlProperty> Iterable<S> saveAll(Iterable<S> properties) {
+        List<String> ids = StreamSupport.stream(properties.spliterator(), false)
+                .map(XmlProperty::getName).collect(Collectors.toList());
+
+        BulkRequest.Builder br = new BulkRequest.Builder();
+
+        for (XmlProperty property: properties) {
+            br.operations(op -> op.index(i -> i.index(ES_PROPERTY_INDEX).id(property.getName()).document(property)));
+        }
+
+        BulkResponse result = null;
+        try {
+            result = client.bulk(br.refresh(Refresh.True).build());
+            // Log errors, if any
+            if (result.errors()) {
+                log.severe("Bulk had errors");
+                for (BulkResponseItem item : result.items()) {
+                    if (item.error() != null) {
+                        log.severe(item.error().reason());
+                    }
+                }
+                // TODO cleanup? or throw exception?
+            } else {
+                return (Iterable<S>) findAllById(ids);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 //        RestHighLevelClient client = esService.getNewClient();
 //        BulkRequest bulkRequest = new BulkRequest();
 //        try {
@@ -281,28 +343,21 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @return the found properties
      */
     @Override
-    public Iterable<XmlProperty> findAllById(Iterable<String> propertyIds) {
-//        MultiGetRequest request = new MultiGetRequest();
-//
-//        for (String propertyId : propertyIds) {
-//            request.add(new MultiGetRequest.Item(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyId));
-//        }
-//        try {
-//            List<XmlProperty> foundProperties = new ArrayList<XmlProperty>();
-//            MultiGetResponse response = esService.getSearchClient().mget(request, RequestOptions.DEFAULT);
-//            for (MultiGetItemResponse multiGetItemResponse : response) {
-//                if (!multiGetItemResponse.isFailed()) {
-//                    foundProperties.add(objectMapper.readValue(
-//                            multiGetItemResponse.getResponse().getSourceAsBytesRef().streamInput(), XmlProperty.class));
-//                } 
-//            }
-//            return foundProperties;
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to find all properties: " + propertyIds, e);
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-//                    "Failed to find all properties: " + propertyIds, null);
+    public List<XmlProperty> findAllById(Iterable<String> propertyIds) {
+        try {
+            List<String> ids = StreamSupport.stream(propertyIds.spliterator(), false).collect(Collectors.toList());
 
-        return null;
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
+                    .index(ES_PROPERTY_INDEX)
+                    .query(IdsQuery.of(q -> q.values(ids))._toQuery())
+                    .size(10000)
+                    .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+            SearchResponse<XmlProperty> response = client.search(searchBuilder.build(), XmlProperty.class);
+            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find all properties", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all properties", null);
+        }
     }
 
     @Override
@@ -318,7 +373,20 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      */
     @Override
     public void deleteById(String propertyName) {
+        try {
+            DeleteResponse response = client
+                    .delete(i -> i.index(ES_PROPERTY_INDEX).id(propertyName).refresh(Refresh.True));
+            // TODO delete the property from channels
 
+            // verify the deletion of the property
+            if (response.result().equals(Result.Deleted)) {
+                log.config("Deletes property " + propertyName);
+            }
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to delete property: " + propertyName, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to delete property: " + propertyName, null);
+        }
 //        RestHighLevelClient client = esService.getNewClient();
 //        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
 //        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);

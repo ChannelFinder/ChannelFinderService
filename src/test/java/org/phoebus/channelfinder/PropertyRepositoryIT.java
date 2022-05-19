@@ -1,9 +1,5 @@
 package org.phoebus.channelfinder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +25,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyRepository.class)
@@ -120,7 +119,8 @@ public class PropertyRepositoryIT {
         
         Optional<XmlProperty> notFoundProperty = propertyRepository.findById(testProperty.getName());
         // verify the property was not found as expected
-        assertNotEquals("Found the property",testProperty,notFoundProperty);
+        assertTrue("Found the property " + testProperty.getName() + " which should not exist.",
+                notFoundProperty.isEmpty());
 
         XmlProperty createdProperty = propertyRepository.index(testProperty);
 
@@ -146,15 +146,17 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void testPropertyExists() {
+
+        // check that non existing property returns false
+        assertFalse("Failed to check the non existing property :" + "no-property", propertyRepository.existsById("no-property"));
+
         XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        Optional<XmlProperty> notFoundProperty = propertyRepository.findById(testProperty.getName());
+        assertFalse("Test property " + testProperty.getName() + " already exists", propertyRepository.existsById(testProperty.getName()));
         XmlProperty createdProperty = propertyRepository.index(testProperty);
-        cleanupTestProperties = Arrays.asList(testProperty);
+        cleanupTestProperties = Arrays.asList(createdProperty);
 
         // verify the property exists as expected
         assertTrue("Failed to check the existance of " + testProperty.getName(), propertyRepository.existsById(testProperty.getName()));
-        // verify the property does not exist as expected
-        assertTrue("Failed to check the existance of 'non-existant-property'", !propertyRepository.existsById("non-existant-property"));
     }
 
     /**

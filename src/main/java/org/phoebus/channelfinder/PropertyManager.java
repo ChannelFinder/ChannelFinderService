@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -201,7 +202,7 @@ public class PropertyManager {
             }
 
             // create new properties
-            Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(properties);
+            propertyRepository.indexAll(Lists.newArrayList(properties));
 
             // update the listed channels in the properties' payloads with the new
             // properties
