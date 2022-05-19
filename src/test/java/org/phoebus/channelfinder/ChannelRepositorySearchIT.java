@@ -56,7 +56,9 @@ public class ChannelRepositorySearchIT {
     final List<Integer> val_bucket = Arrays.asList(1, 2, 5, 10, 20, 50, 100, 200, 500);
 
     /**
-     * Test searching for channels based on name
+     * Test searching for channel
+     * Note: the search tests are merged into a single test as an optimization. The population of the data cannot
+     * be performed in the @beforeClass since the springboot beans are not initialized hence the need to use @Before
      * @throws InterruptedException 
      */
     @Test

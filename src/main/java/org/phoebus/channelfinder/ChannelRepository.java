@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -11,12 +12,12 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import co.elastic.clients.elasticsearch._types.*;
-import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.bulk.UpdateOperation;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.ScoreMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -379,10 +380,81 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return matching channels
      */
     public List<XmlChannel> search(MultiValueMap<String, String> searchParameters) {
-        return null;
-//        StringBuffer performance = new StringBuffer();
-//        long start = System.currentTimeMillis();
-//        long totalStart = System.currentTimeMillis();
+        StringBuffer performance = new StringBuffer();
+        long start = System.currentTimeMillis();
+        long totalStart = System.currentTimeMillis();
+
+        BoolQuery.Builder boolQuery = new BoolQuery.Builder();
+        Integer size = defaultMaxSize;
+        Integer from = 0;
+
+        for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
+            String key = parameter.getKey().trim();
+            boolean isNot = key.endsWith("!");
+                if (isNot) {
+                    key = key.substring(0, key.length() - 1);
+                }
+            switch (key) {
+                case "~name":
+                    for (String value : parameter.getValue()) {
+                        DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
+                        for (String pattern : value.split("[\\|,;]")) {
+                            nameQuery.queries(WildcardQuery.of(w -> w.field("name").value(pattern.trim()))._toQuery());
+                        }
+                        boolQuery.must(nameQuery.build()._toQuery());
+                    }
+                    break;
+                case "~tag":
+                    for (String value : parameter.getValue()) {
+                        DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
+                        for (String pattern : value.split("[\\|,;]")) {
+                            tagQuery.queries(WildcardQuery.of(w -> w.field("tags.name").value(pattern.trim()))._toQuery());
+                        }
+                        if (isNot) {
+                            boolQuery.mustNot(NestedQuery.of(n -> n.path("tags").query(tagQuery.build()._toQuery())).query());
+                        } else {
+                            boolQuery.must(NestedQuery.of(n -> n.path("tags").query(tagQuery.build()._toQuery())).query());
+                        }
+                    }
+                    break;
+                case "~size":
+                    Optional<String> maxSize = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
+                    if (maxSize.isPresent()) {
+                        size = Integer.valueOf(maxSize.get());
+                    }
+                    break;
+                case "~from":
+                    Optional<String> maxFrom = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
+                    if (maxFrom.isPresent()) {
+                        from = Integer.valueOf(maxFrom.get());
+                    }
+                    break;
+
+                default:
+                    DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
+                    for (String value : parameter.getValue()) {
+                        for (String pattern : value.split("[\\|,;]")) {
+                            String finalKey = key;
+                            BoolQuery bq;
+                            if (isNot) {
+                                bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
+                                                   .mustNot(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                            } else {
+                                bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
+                                                   .must(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                            }
+                            propertyQuery.queries(bq._toQuery());
+
+                        }
+                    }
+                    boolQuery.must(propertyQuery.build()._toQuery());
+                    break;
+            }
+        }
+        performance.append("|prepare: " + (System.currentTimeMillis() - start));
+        start = System.currentTimeMillis();
+
+
 //
 //        RestHighLevelClient client = esService.getSearchClient();
 //        start = System.currentTimeMillis();
@@ -468,35 +540,27 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 //            searchRequest.types(ES_CHANNEL_TYPE);
 //            searchRequest.source(searchSourceBuilder);
 //
-//            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-//            performance.append(
-//                    "|query:(" + searchResponse.getHits().getTotalHits() + ")" + (System.currentTimeMillis() - start));
-//            start = System.currentTimeMillis();
-//            final ObjectMapper mapper = new ObjectMapper();
-//            mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
-//            mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
-//            start = System.currentTimeMillis();
-//            List<XmlChannel> result = new ArrayList<XmlChannel>();
-//            searchResponse.getHits().forEach(hit -> {
-//                try {
-//                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
-//                } catch (IOException e) {
-//                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
-//                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                            "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
-//                }
-//            });
-//
-//            performance.append("|parse:" + (System.currentTimeMillis() - start));
-//            //            log.info(user + "|" + uriInfo.getPath() + "|GET|OK" + performance.toString() + "|total:"
-//            //                    + (System.currentTimeMillis() - totalStart) + "|" + r.getStatus() + "|returns "
-//            //                    + qbResult.getHits().getTotalHits() + " channels");
-//            return result;
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
-//        }
+
+        try {
+            Integer finalSize = size;
+            Integer finalFrom = from;
+            SearchResponse<XmlChannel> response = client.search(s -> s
+                            .index(ES_CHANNEL_INDEX)
+                            .query(boolQuery.build()._toQuery())
+                            .from(finalFrom)
+                            .size(finalSize)
+                            .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name"))))),
+                    XmlChannel.class
+            );
+
+            List<Hit<XmlChannel>> hits = response.hits().hits();
+            return hits.stream().map(Hit::source).collect(Collectors.toList());
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+        }
+
     }
 
     @Override
