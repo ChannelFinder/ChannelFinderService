@@ -382,7 +382,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     public List<XmlChannel> search(MultiValueMap<String, String> searchParameters) {
         StringBuffer performance = new StringBuffer();
         long start = System.currentTimeMillis();
-        long totalStart = System.currentTimeMillis();
 
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
         Integer size = defaultMaxSize;
@@ -408,13 +407,16 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     for (String value : parameter.getValue()) {
                         DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
                         for (String pattern : value.split("[\\|,;]")) {
-                            tagQuery.queries(WildcardQuery.of(w -> w.field("tags.name").value(pattern.trim()))._toQuery());
+                            tagQuery.queries(
+                                    NestedQuery.of(n -> n.path("tags").query(
+                                            WildcardQuery.of(w -> w.field("tags.name").value(pattern.trim()))._toQuery()))._toQuery());
                         }
                         if (isNot) {
-                            boolQuery.mustNot(NestedQuery.of(n -> n.path("tags").query(tagQuery.build()._toQuery())).query());
+                            boolQuery.mustNot(tagQuery.build()._toQuery());
                         } else {
-                            boolQuery.must(NestedQuery.of(n -> n.path("tags").query(tagQuery.build()._toQuery())).query());
+                            boolQuery.must(tagQuery.build()._toQuery());
                         }
+
                     }
                     break;
                 case "~size":
@@ -438,13 +440,14 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                             BoolQuery bq;
                             if (isNot) {
                                 bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
-                                                   .mustNot(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                                        .mustNot(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
                             } else {
                                 bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
-                                                   .must(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                                        .must(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
                             }
-                            propertyQuery.queries(bq._toQuery());
-
+                            propertyQuery.queries(
+                                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
+                            );
                         }
                     }
                     boolQuery.must(propertyQuery.build()._toQuery());
@@ -453,93 +456,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         }
         performance.append("|prepare: " + (System.currentTimeMillis() - start));
         start = System.currentTimeMillis();
-
-
-//
-//        RestHighLevelClient client = esService.getSearchClient();
-//        start = System.currentTimeMillis();
-//        Integer size = defaultMaxSize;
-//
-//        try {
-//            BoolQueryBuilder qb = boolQuery();
-//            int from = 0;
-//            for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
-//                String key = parameter.getKey().trim();
-//
-//                boolean isNot = key.endsWith("!");
-//                if (isNot) {
-//                    key = key.substring(0, key.length() - 1);
-//                }
-//
-//                switch (key) {
-//                case "~name":
-//                    for (String value : parameter.getValue()) {
-//                        DisMaxQueryBuilder nameQuery = disMaxQuery();
-//                        for (String pattern : value.split("[\\|,;]")) {
-//                            nameQuery.add(wildcardQuery("name", pattern.trim()));
-//                        }
-//                        qb.must(nameQuery);
-//                    }
-//                    break;
-//                case "~tag":
-//                    for (String value : parameter.getValue()) {
-//                        DisMaxQueryBuilder tagQuery = disMaxQuery();
-//                        for (String pattern : value.split("[\\|,;]")) {
-//                            tagQuery.add(wildcardQuery("tags.name", pattern.trim()));
-//                        }
-//
-//                        if (isNot) {
-//                            qb.mustNot(nestedQuery("tags", tagQuery, ScoreMode.None));
-//                        } else {
-//                            qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
-//                        }
-//                    }
-//                    break;
-//                case "~size":
-//                    Optional<String> maxSize = parameter.getValue().stream().max((o1, o2) -> {
-//                        return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
-//                    });
-//                    if (maxSize.isPresent()) {
-//                        size = Integer.valueOf(maxSize.get());
-//                    }
-//                    break;
-//                case "~from":
-//                    Optional<String> maxFrom = parameter.getValue().stream().max((o1, o2) -> {
-//                        return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
-//                    });
-//                    if (maxFrom.isPresent()) {
-//                        from = Integer.valueOf(maxFrom.get());
-//                    }
-//                    break;
-//                default:
-//                    DisMaxQueryBuilder propertyQuery = disMaxQuery();
-//                    for (String value : parameter.getValue()) {
-//                        for (String pattern : value.split("[\\|,;]")) {
-//                            propertyQuery
-//                            .add(nestedQuery("properties",
-//                                    isNot ? boolQuery().must(matchQuery("properties.name", key)).mustNot(wildcardQuery("properties.value", pattern.trim()))
-//                                            : boolQuery().must(matchQuery("properties.name", key)).must(wildcardQuery("properties.value", pattern.trim())),
-//                                    ScoreMode.None));
-//                        }
-//                    }
-//                    qb.must(propertyQuery);
-//                    break;
-//                }
-//            }            
-//            
-//            performance.append("|prepare: " + (System.currentTimeMillis() - start));
-//            start = System.currentTimeMillis();
-//            SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
-//            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-//            searchSourceBuilder.size(size);
-//            if (from >= 0) {
-//                searchSourceBuilder.from(from);
-//            }
-//            searchSourceBuilder.query(qb);
-//            searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
-//            searchRequest.types(ES_CHANNEL_TYPE);
-//            searchRequest.source(searchSourceBuilder);
-//
 
         try {
             Integer finalSize = size;
