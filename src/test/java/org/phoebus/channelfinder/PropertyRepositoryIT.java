@@ -135,7 +135,9 @@ public class PropertyRepositoryIT {
         foundProperty = propertyRepository.findById(createdProperty.getName(),true);
         createdProperty.setChannels(Arrays.asList(channel));
         // verify the property was found as expected
-        assertEquals("Failed to find the property",createdProperty,foundProperty.get());
+        XmlProperty expectedProperty = new XmlProperty(createdProperty.getName(), createdProperty.getOwner());
+        expectedProperty.setChannels(Arrays.asList(createdChannel));
+        assertEquals("Failed to find the property", expectedProperty, foundProperty.get());
 
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());
@@ -236,7 +238,7 @@ public class PropertyRepositoryIT {
         params.add("testProperty","*");
         List<XmlChannel> chans = channelRepository.search(params);
         // verify the property was deleted from channels as expected
-        assertTrue("Failed to remove property from channel",chans.isEmpty());
+        assertTrue("Failed to remove property from channel", chans.isEmpty());
 
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());

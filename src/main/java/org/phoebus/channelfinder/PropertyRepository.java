@@ -26,6 +26,8 @@ import org.springframework.stereotype.Repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 @Repository
@@ -35,8 +37,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     @Value("${elasticsearch.property.index:cf_properties}")
     private String ES_PROPERTY_INDEX;
-    @Value("${elasticsearch.property.type:cf_property}")
-    private String ES_PROPERTY_TYPE;
+    @Value("${elasticsearch.channel.index:channelfinder}")
+    private String ES_CHANNEL_INDEX;
 
     @Autowired
     @Qualifier("indexClient")
@@ -148,10 +150,10 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     /**
      * update/save property using the given XmlProperty
-     * 
-     * @param <S> extends XmlProperty
+     *
+     * @param <S>          extends XmlProperty
      * @param propertyName - name of property to be created
-     * @param property - property to be created
+     * @param property     - property to be created
      * @return the updated/saved property
      */
     @SuppressWarnings("unchecked")
@@ -159,9 +161,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
         try {
             IndexRequest request = IndexRequest.of(i -> i.index(ES_PROPERTY_INDEX)
-                                                         .id(propertyName)
-                                                         .document(property)
-                                                         .refresh(Refresh.True));
+                    .id(propertyName)
+                    .document(property)
+                    .refresh(Refresh.True));
 
             IndexResponse response = client.index(request);
             /// verify the creation of the property
@@ -177,18 +179,17 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     }
 
     /**
-     * 
      * @param <S> extends XmlProperty
      */
     @Override
     public <S extends XmlProperty> S save(S property) {
-        return save(property.getName(),property);
+        return save(property.getName(), property);
     }
 
     /**
      * update/save properties using the given XmlProperties
-     * 
-     * @param <S> extends XmlProperty
+     *
+     * @param <S>        extends XmlProperty
      * @param properties - properties to be created
      * @return the updated/saved properties
      */
@@ -200,7 +201,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
         BulkRequest.Builder br = new BulkRequest.Builder();
 
-        for (XmlProperty property: properties) {
+        for (XmlProperty property : properties) {
             br.operations(op -> op.index(i -> i.index(ES_PROPERTY_INDEX).id(property.getName()).document(property)));
         }
 
@@ -266,7 +267,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     /**
      * find property using the given property id
-     * 
+     *
      * @param propertyId - id of property to be found
      * @return the found property
      */
@@ -277,7 +278,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     /**
      * find property using the given property id
-     * 
+     *
      * @param propertyName - id of property to be found
      * @param withChannels - whether channels should be included
      * @return the found property
@@ -290,7 +291,11 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             if (response.found()) {
                 XmlProperty property = response.source();
                 log.info("property name " + property.getName());
-                // TODO if (withChannels)
+                if(withChannels) {
+                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+                    params.add(property.getName(), "*");
+                    property.setChannels(channelRepository.search(params));
+                }
                 return Optional.of(property);
             } else {
                 log.info("property not found");
@@ -316,8 +321,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     }
 
     /**
-     * find all properties 
-     * 
+     * find all properties
+     *
      * @return the found properties
      */
     @Override
@@ -338,7 +343,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     /**
      * find properties using the given property ids
-     * 
+     *
      * @param propertyIds - ids of properties to be found
      * @return the found properties
      */
@@ -368,7 +373,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     /**
      * delete the given property by property name
-     * 
+     *
      * @param propertyName - name of property to be deleted
      */
     @Override
@@ -376,44 +381,56 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         try {
             DeleteResponse response = client
                     .delete(i -> i.index(ES_PROPERTY_INDEX).id(propertyName).refresh(Refresh.True));
-            // TODO delete the property from channels
+            BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            params.add(propertyName, "*");
+            List<XmlChannel> channels = channelRepository.search(params);
+            while (channels.size() > 0) {
+                for (XmlChannel channel : channels) {
+                    channel.removeProperty(
+                            channel.getProperties().stream().filter(prop -> propertyName.equalsIgnoreCase(prop.getName())).findAny().get());
+                    br.operations(op -> op.update(
+                            u -> u.index(ES_CHANNEL_INDEX)
+                                    .id(channel.getName())
+                                    .action(a -> a.doc(channel))));
+                }
+                try {
+                    BulkResponse result = client.bulk(br.build());
+                    // Log errors, if any
+                    if (result.errors()) {
+                        log.severe("Bulk had errors");
+                        for (BulkResponseItem item : result.items()) {
+                            if (item.error() != null) {
+                                log.severe(item.error().reason());
+                            }
+                        }
+                    } else {
+                    }
+                } catch (IOException e) {
+                    log.log(Level.SEVERE, "Failed to delete property " + propertyName, e);
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete property: " + propertyName, null);
+
+                }
+                params.set("~search_after", channels.get(channels.size() - 1).getName());
+                channels = channelRepository.search(params);
+            }
 
             // verify the deletion of the property
             if (response.result().equals(Result.Deleted)) {
                 log.config("Deletes property " + propertyName);
             }
+
         } catch (ElasticsearchException | IOException e) {
             log.log(Level.SEVERE, "Failed to delete property: " + propertyName, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to delete property: " + propertyName, null);
         }
-//        RestHighLevelClient client = esService.getNewClient();
-//        DeleteRequest request = new DeleteRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, propertyName);
-//        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//
-//        try {
-//            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-//            Result result = response.getResult();
-//            if (!result.equals(Result.DELETED)) 
-//                throw new Exception();
-//            // delete property from channels
-//            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
-//            params.add(propertyName,"*");
-//            List<XmlChannel> chans = channelRepository.search(params);
-//            if(!chans.isEmpty()) {
-//                chans.forEach(chan -> chan.removeProperty(new XmlProperty(propertyName, "")));
-//                channelRepository.indexAll(chans);
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to delete property: " + propertyName, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to delete property: " + propertyName, null);
-//        }
-    }
+
+}
 
     /**
      * delete the given property
-     * 
+     *
      * @param property - property to be deleted
      */
     @Override
@@ -434,7 +451,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {
         // TODO Auto-generated method stub
-        
+
     }
 
 }

@@ -233,7 +233,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             if (response.found()) {
                 XmlTag tag = response.source();
                 log.info("Tag name " + tag.getName());
-                // TODO if (withChannels)
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
                     params.add("~tag", tag.getName());
@@ -328,7 +327,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             if (response.result().equals(Result.Deleted)) {
                 log.config("Deletes tag " + tagName);
             }
-            BulkRequest.Builder br = new BulkRequest.Builder();
+            BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
             params.add("~tag", tagName);
             List<XmlChannel> channels = channelRepository.search(params);
