@@ -133,7 +133,10 @@ public class TagRepositoryIT {
         foundTag = tagRepository.findById(createdTag.getName(),true);
         createdTag.setChannels(Arrays.asList(new XmlChannel(channel.getName(),channel.getOwner())));
         // verify the tag was found as expected
-        assertEquals("Failed to find the tag", createdTag, foundTag.get());
+
+        XmlTag expectedTag = new XmlTag(createdTag.getName(), createdTag.getOwner());
+        expectedTag.setChannels(Arrays.asList(createdChannel));
+        assertEquals("Failed to find the tag", expectedTag, foundTag.get());
 
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());

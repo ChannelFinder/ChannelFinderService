@@ -15,6 +15,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.json.JsonData;
 import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,6 +24,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,8 +45,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
     @Value("${elasticsearch.tag.index:cf_tags}")
     private String ES_TAG_INDEX;
-    @Value("${elasticsearch.tag.type:cf_tag}")
-    private String ES_TAG_TYPE;
+    @Value("${elasticsearch.channel.index:channelfinder}")
+    private String ES_CHANNEL_INDEX;
 
     @Autowired
     @Qualifier("indexClient")
@@ -231,6 +234,11 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 XmlTag tag = response.source();
                 log.info("Tag name " + tag.getName());
                 // TODO if (withChannels)
+                if(withChannels) {
+                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+                    params.add("~tag", tag.getName());
+                    tag.setChannels(channelRepository.search(params));
+                }
                 return Optional.of(tag);
             } else {
                 log.info("Tag not found");
@@ -316,42 +324,58 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
         try {
             DeleteResponse response = client
                     .delete(i -> i.index(ES_TAG_INDEX).id(tagName).refresh(Refresh.True));
-            // TODO delete the tag from channels
-
             // verify the deletion of the tag
             if (response.result().equals(Result.Deleted)) {
                 log.config("Deletes tag " + tagName);
             }
+            BulkRequest.Builder br = new BulkRequest.Builder();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            params.add("~tag", tagName);
+            List<XmlChannel> channels = channelRepository.search(params);
+            while (channels.size() > 0) {
+
+                for (XmlChannel channel : channels) {
+//                    br.operations(op -> op.update(
+//                            u -> u.index(ES_CHANNEL_INDEX)
+//                                    .id(channel.getName())
+//                                    .action(a -> a.script(
+//                                                    Script.of(script -> script.inline(
+//                                                            InlineScript.of(
+//                                                                    i -> i.source("ctx._source.tags.removeIf(list_item -> list_item.name == params.remove_tag);")
+//                                                                          .params("remove_tag", JsonData.of(tagName)))))))));
+                    // Or
+                    channel.removeTag(channel.getTags().stream().filter(tag -> tagName.equalsIgnoreCase(tag.getName())).findAny().get());
+                    br.operations(op -> op.update(
+                            u -> u.index(ES_CHANNEL_INDEX)
+                                    .id(channel.getName())
+                                    .action(a -> a.doc(channel))));
+                }
+                try {
+                    BulkResponse result = client.bulk(br.build());
+                    // Log errors, if any
+                    if (result.errors()) {
+                        log.severe("Bulk had errors");
+                        for (BulkResponseItem item : result.items()) {
+                            if (item.error() != null) {
+                                log.severe(item.error().reason());
+                            }
+                        }
+                    } else {
+                    }
+                } catch (IOException e) {
+                    log.log(Level.SEVERE, "Failed to delete tag " + tagName, e);
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete tag: " + tagName, null);
+
+                }
+                params.set("~search_after", channels.get(channels.size() - 1).getName());
+                channels = channelRepository.search(params);
+            }
+            
         } catch (ElasticsearchException | IOException e) {
             log.log(Level.SEVERE, "Failed to delete tag:" + tagName, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete tag: " + tagName,
                     null);
         }
-
-//        RestHighLevelClient client = esService.getNewClient();
-//        DeleteRequest request = new DeleteRequest(ES_TAG_INDEX, ES_TAG_TYPE, tagName);
-//        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//
-//        try {
-//            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-//            Result result = response.getResult();
-//            if (!result.equals(Result.DELETED)) {
-//                throw new Exception();
-//            }
-//            // delete tag from channels
-//            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
-//            params.add("~tag", tagName);
-//            List<XmlChannel> chans = channelRepository.search(params);
-//            if (!chans.isEmpty()) {
-//                chans.forEach(chan -> chan.removeTag(new XmlTag(tagName, "")));
-//                channelRepository.indexAll(chans);
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to delete tag: " + tagName, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete tag: " + tagName,
-//                    null);
-//        }
-
     }
 
     /**
