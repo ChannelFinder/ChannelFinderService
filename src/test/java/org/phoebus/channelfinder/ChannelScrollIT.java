@@ -1,28 +1,21 @@
 package org.phoebus.channelfinder;
 
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.phoebus.channelfinder.ChannelRepository;
-import org.phoebus.channelfinder.ChannelScroll;
-import org.phoebus.channelfinder.ElasticConfig;
-import org.phoebus.channelfinder.PropertyRepository;
-import org.phoebus.channelfinder.TagRepository;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlScroll;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelScroll.class)
@@ -48,6 +41,7 @@ public class ChannelScrollIT {
 
     @Before
     public void setup() throws InterruptedException {
+        populateService.cleanupDB();
         populateService.createDB(1);
         Thread.sleep(10000);
     }
@@ -75,7 +69,7 @@ public class ChannelScrollIT {
         XmlScroll scrollResult = channelScroll.search(null,searchParameters);
         List<XmlChannel> result = scrollResult.getChannels();
         while(scrollResult.getChannels().size()==100) {
-            scrollResult = channelScroll.search(scrollResult.getId(), null);
+            scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
         assertTrue(result.size() == 1 && result.get(0).getName().equals(channelNames.get(0)));
@@ -86,7 +80,7 @@ public class ChannelScrollIT {
         scrollResult = channelScroll.search(null,searchParameters);
         result = scrollResult.getChannels();
         while(scrollResult.getChannels().size()==100) {
-            scrollResult = channelScroll.search(scrollResult.getId(), null);
+            scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
         assertTrue("Expected 2 but got " + result.size(), result.size() == 2);
@@ -96,7 +90,7 @@ public class ChannelScrollIT {
         scrollResult = channelScroll.search(null,searchParameters);
         result = scrollResult.getChannels();
         while(scrollResult.getChannels().size()==100) {
-            scrollResult = channelScroll.search(scrollResult.getId(), null);
+            scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }       
         assertTrue("Expected 4 but got " + result.size(), result.size() == 4);
@@ -107,7 +101,7 @@ public class ChannelScrollIT {
         scrollResult = channelScroll.search(null,searchParameters);
         result = scrollResult.getChannels();
         while(scrollResult.getChannels().size()==100) {
-            scrollResult = channelScroll.search(scrollResult.getId(), null);
+            scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
         assertTrue("Expected 1000 but got " + result.size(), result.size() == 1000);
@@ -118,7 +112,7 @@ public class ChannelScrollIT {
         scrollResult = channelScroll.search(null,searchParameters);
         result = scrollResult.getChannels();
         while(scrollResult.getChannels().size()==100) {
-            scrollResult = channelScroll.search(scrollResult.getId(), null);
+            scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
         assertTrue("Expected 1500 but got " + result.size(), result.size() == 1500);
@@ -128,7 +122,7 @@ public class ChannelScrollIT {
         scrollResult = channelScroll.search(null,searchParameters);
         result = scrollResult.getChannels();
         while(scrollResult.getChannels().size()==100) {
-            scrollResult = channelScroll.search(scrollResult.getId(), null);
+            scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
         assertTrue("Expected 1500 but got " + result.size(), result.size() == 1500);
@@ -145,7 +139,7 @@ public class ChannelScrollIT {
             scrollResult = channelScroll.search(null,searchParameters);
             result = scrollResult.getChannels();
             while(scrollResult.getChannels().size()==100) {
-                scrollResult = channelScroll.search(scrollResult.getId(), null);
+                scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
                 result.addAll(scrollResult.getChannels());
             }
             assertTrue("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), result.size() == val_bucket.get(index));
@@ -163,7 +157,7 @@ public class ChannelScrollIT {
             scrollResult = channelScroll.search(null,searchParameters);
             result = scrollResult.getChannels();
             while(scrollResult.getChannels().size()==100) {
-                scrollResult = channelScroll.search(scrollResult.getId(), null);
+                scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
                 result.addAll(scrollResult.getChannels());
             }
             assertTrue("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), result.size() == val_bucket.get(index));

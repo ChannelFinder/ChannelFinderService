@@ -40,7 +40,7 @@ public class ChannelScrollSearchIT {
 
     @Before
     public void setup() throws InterruptedException {
-        populateService.createDB(1000);
+        populateService.createDB(1);
         Thread.sleep(10000);
     }
 
@@ -61,6 +61,7 @@ public class ChannelScrollSearchIT {
 
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("~name", "*");
+        searchParameters.add("~size", "100");
 
         long start = System.currentTimeMillis();
         XmlScroll scrollResult = channelScroll.query(searchParameters);
@@ -75,8 +76,9 @@ public class ChannelScrollSearchIT {
         start = System.currentTimeMillis();
 
         while (scrollResult.getChannels().size() == 100) {
-            scrollResult = channelScroll.query(scrollResult.getId());
-            logger.fine("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+            logger.info("Retireval id: " + scrollResult.getId());
+            scrollResult = channelScroll.query(scrollResult.getId(), searchParameters);
+            logger.info("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                     + " in : " + (System.currentTimeMillis() - start) + "ms");
             avg100 = (avg100 + (System.currentTimeMillis() - start)) / 2;
             totalResult += scrollResult.getChannels().size();
@@ -93,15 +95,16 @@ public class ChannelScrollSearchIT {
         totalResult = 0;
         Double avg1000 = 0.0;
 
-        logger.fine("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+        logger.info("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                 + " in : " + (System.currentTimeMillis() - start) + "ms");
         avg1000 = (avg1000 + (System.currentTimeMillis() - start)) / 2;
         totalResult += scrollResult.getChannels().size();
         start = System.currentTimeMillis();
 
         while (scrollResult.getChannels().size() == 1000) {
-            scrollResult = channelScroll.query(scrollResult.getId());
-            logger.fine("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+            logger.info("Retireval id: " + scrollResult.getId());
+            scrollResult = channelScroll.query(scrollResult.getId(), searchParameters);
+            logger.info("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                     + " in : " + (System.currentTimeMillis() - start) + "ms");
             avg1000 = (avg1000 + (System.currentTimeMillis() - start)) / 2;
             totalResult += scrollResult.getChannels().size();
@@ -126,7 +129,7 @@ public class ChannelScrollSearchIT {
         start = System.currentTimeMillis();
 
         while (scrollResult.getChannels().size() == 10000) {
-            scrollResult = channelScroll.query(scrollResult.getId());
+            scrollResult = channelScroll.query(scrollResult.getId(), searchParameters);
             logger.fine("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                     + " in : " + (System.currentTimeMillis() - start) + "ms");
             avg10000 = (avg10000 + (System.currentTimeMillis() - start)) / 2;
