@@ -66,7 +66,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created channel " + channel);
-                return channel;
+                return findById(channel.getName()).get();
             }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
@@ -386,6 +386,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
         Integer size = defaultMaxSize;
         Integer from = 0;
+        Optional<String> searchAfter = Optional.empty();
 
         for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
             String key = parameter.getKey().trim();
@@ -431,7 +432,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         from = Integer.valueOf(maxFrom.get());
                     }
                     break;
-
+                case "~search_after":
+                    searchAfter = parameter.getValue().stream().findFirst();
+                    break;
                 default:
                     DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
                     for (String value : parameter.getValue()) {
@@ -460,13 +463,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         try {
             Integer finalSize = size;
             Integer finalFrom = from;
-            SearchResponse<XmlChannel> response = client.search(s -> s
-                            .index(ES_CHANNEL_INDEX)
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
+            searchBuilder.index(ES_CHANNEL_INDEX)
                             .query(boolQuery.build()._toQuery())
                             .from(finalFrom)
                             .size(finalSize)
-                            .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name"))))),
-                    XmlChannel.class
+                            .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
+            if(searchAfter.isPresent()) {
+                searchBuilder.searchAfter(searchAfter.get());
+            }
+            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(),
+                                                                XmlChannel.class
             );
 
             List<Hit<XmlChannel>> hits = response.hits().hits();
