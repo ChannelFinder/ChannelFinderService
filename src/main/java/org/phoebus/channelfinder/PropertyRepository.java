@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder;
 
-import java.io.IOException;
+import java.io.*;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -14,6 +15,14 @@ import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.JsonpMapper;
+import co.elastic.clients.json.JsonpSerializer;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import jakarta.json.Json;
+import jakarta.json.stream.JsonParser;
+import jakarta.json.stream.JsonParserFactory;
 import org.phoebus.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -57,24 +66,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      */
     @SuppressWarnings("unchecked")
     public XmlProperty index(XmlProperty property) {
-        try {
-            IndexRequest request = IndexRequest.of(i -> i.index(ES_PROPERTY_INDEX)
-                    .id(property.getName())
-                    .document(property)
-                    .refresh(Refresh.True));
-
-            IndexResponse response = client.index(request);
-            // verify the creation of the tag
-            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config("Created property " + property);
-                return property;
-            }
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index property: " + property.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index property: " + property, null);
-        }
-        return null;
+        return save(property.getName(), property);
     }
 
     /**
@@ -88,17 +80,17 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (XmlProperty property : properties) {
             br.operations(op -> op
-                    .index(idx -> idx
-                            .index(ES_PROPERTY_INDEX)
-                            .id(property.getName())
-                            .document(property)
+                    .index(idx -> {
+                                return idx
+                                        .index(ES_PROPERTY_INDEX)
+                                        .id(property.getName())
+                                        .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)));
+                            }
                     )
-            ).refresh(Refresh.True);
+            );
         }
-
-        BulkResponse result = null;
         try {
-            result = client.bulk(br.build());
+            BulkResponse result  = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
                 log.severe("Bulk had errors");
@@ -107,7 +99,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         log.severe(item.error().reason());
                     }
                 }
-                // TODO cleanup? or throw exception?
             } else {
                 return findAllById(properties.stream().map(XmlProperty::getName).collect(Collectors.toList()));
             }
@@ -117,35 +108,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
         }
         return null;
-//        try {
-//            BulkRequest bulkRequest = new BulkRequest();
-//            for (XmlProperty property : properties) {
-//                IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
-//                        .id(property.getName())
-//                        .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-//                bulkRequest.add(indexRequest);
-//            }
-//
-//            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-//            /// verify the creation of the properties
-//            if (bulkResponse.hasFailures()) {
-//                // Failed to create all the properties
-//            } else {
-//                List<String> createdPropertyIds = new ArrayList<String>();
-//                for (BulkItemResponse bulkItemResponse : bulkResponse) {
-//                    Result result = bulkItemResponse.getResponse().getResult();
-//                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-//                        createdPropertyIds.add(bulkItemResponse.getId());
-//                    }
-//                }
-//                return (Iterable<S>) findAllById(createdPropertyIds);
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to index properties: " + properties, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to index properties: " + properties, null);      
-//        }
     }
 
     /**
@@ -158,22 +120,22 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlProperty> S save(String propertyName, S property) {
-
         try {
             IndexRequest request = IndexRequest.of(i -> i.index(ES_PROPERTY_INDEX)
                     .id(propertyName)
-                    .document(property)
+                    .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))
                     .refresh(Refresh.True));
 
             IndexResponse response = client.index(request);
-            /// verify the creation of the property
+            // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created property " + property);
-                return property;
+                return (S) findById(propertyName).get();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index property " + property.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index property: " + property, null);
+            log.log(Level.SEVERE, "Failed to index property: " + property.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to index property: " + property, null);
         }
         return null;
     }
@@ -202,12 +164,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         BulkRequest.Builder br = new BulkRequest.Builder();
 
         for (XmlProperty property : properties) {
-            br.operations(op -> op.index(i -> i.index(ES_PROPERTY_INDEX).id(property.getName()).document(property)));
+            br.operations(op -> op.index(i -> i.index(ES_PROPERTY_INDEX)
+                    .id(property.getName())
+                    .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))));
         }
 
-        BulkResponse result = null;
         try {
-            result = client.bulk(br.refresh(Refresh.True).build());
+            BulkResponse result = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
                 log.severe("Bulk had errors");
@@ -221,47 +184,10 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 return (Iterable<S>) findAllById(ids);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to update/save properties: " + properties, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to update/save properties: " + properties, null);
         }
-
-//        RestHighLevelClient client = esService.getNewClient();
-//        BulkRequest bulkRequest = new BulkRequest();
-//        try {
-//            for (XmlProperty property : properties) {
-//                UpdateRequest updateRequest = new UpdateRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE, property.getName());
-//
-//                Optional<XmlProperty> existingProperty = findById(property.getName());
-//                if (existingProperty.isPresent()) {
-//                    updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-//                } else {
-//                    IndexRequest indexRequest = new IndexRequest(ES_PROPERTY_INDEX, ES_PROPERTY_TYPE)
-//                            .id(property.getName())
-//                            .source(objectMapper.writeValueAsBytes(property), XContentType.JSON);
-//                    updateRequest.doc(objectMapper.writeValueAsBytes(property), XContentType.JSON).upsert(indexRequest);
-//                }
-//                bulkRequest.add(updateRequest);
-//            }
-//
-//            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-//            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-//            if (bulkResponse.hasFailures()) {
-//                // Failed to create/update all the properties
-//                throw new Exception();
-//            } else {
-//                List<String> createdPropertyIds = new ArrayList<String>();
-//                for (BulkItemResponse bulkItemResponse : bulkResponse) {
-//                    Result result = bulkItemResponse.getResponse().getResult();
-//                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-//                        createdPropertyIds.add(bulkItemResponse.getId());
-//                    }
-//                }
-//                return (Iterable<S>) findAllById(createdPropertyIds);
-//            }
-//        } catch (Exception e) {
-//            log.log(Level.SEVERE, "Failed to update/save properties: " + properties, e);
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-//                    "Failed to update/save properties: " + properties, null);
-//        }
         return null;
     }
 

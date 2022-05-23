@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +17,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import jakarta.json.Json;
 import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -66,23 +69,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> S index(S tag) {
-        try {
-            IndexRequest request = IndexRequest.of(i -> i.index(ES_TAG_INDEX)
-                    .id(tag.getName())
-                    .document(tag)
-                    .refresh(Refresh.True));
 
-            IndexResponse response = client.index(request);
-            // verify the creation of the tag
-            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config("Created tag " + tag);
-                return tag;
-            }
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index tag " + tag.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index tag: " + tag, null);
-        }
-        return null;
+        return save(tag.getName(), tag);
     }
 
     /**
@@ -100,14 +88,10 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     .index(idx -> idx
                             .index(ES_TAG_INDEX)
                             .id(tag.getName())
-                            .document(tag)
-                    )
-            ).refresh(Refresh.True);
+                            .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))));
         }
-
-        BulkResponse result = null;
         try {
-            result = client.bulk(br.build());
+            BulkResponse result  = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
                 log.severe("Bulk had errors");
@@ -138,9 +122,12 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> S save(String tagName, S tag) {
-        try {
+        try{
             IndexResponse response = client
-                    .index(i -> i.index(ES_TAG_INDEX).id(tagName).document(tag).refresh(Refresh.True));
+                    .index(i -> i.index(ES_TAG_INDEX)
+                            .id(tagName)
+                            .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))
+                            .refresh(Refresh.True));
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created tag " + tag);
@@ -176,7 +163,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     .index(idx -> idx
                             .index(ES_TAG_INDEX)
                             .id(tag.getName())
-                            .document(tag)
+                            .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))
                     )
             ).refresh(Refresh.True);
         }
@@ -293,7 +280,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     public List<XmlTag> findAllById(Iterable<String> tagIds) {
         try {
             List<String> ids = StreamSupport.stream(tagIds.spliterator(), false).collect(Collectors.toList());
-
             SearchRequest.Builder searchBuilder = new Builder()
                     .index(ES_TAG_INDEX)
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())

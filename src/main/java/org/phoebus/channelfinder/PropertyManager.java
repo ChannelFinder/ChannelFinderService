@@ -75,24 +75,18 @@ public class PropertyManager {
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         propertyManagerAudit.info("getting property: " + propertyName);
 
+        Optional<XmlProperty> foundProperty;
         if(withChannels) {
-            Optional<XmlProperty> foundProperty = propertyRepository.findById(propertyName,true);
-            if (foundProperty.isPresent()) {
-                return foundProperty.get();
-            } else {
-                log.log(Level.SEVERE, "The property with the name " + propertyName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The property with the name " + propertyName + " does not exist");
-            }
+            foundProperty = propertyRepository.findById(propertyName, true);
         } else {
-            Optional<XmlProperty> foundProperty = propertyRepository.findById(propertyName);
-            if (foundProperty.isPresent()) {
-                return foundProperty.get();
-            } else {
-                log.log(Level.SEVERE, "The property with the name " + propertyName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The property with the name " + propertyName + " does not exist");
-            }
+            foundProperty = propertyRepository.findById(propertyName);
+        }
+        if (foundProperty.isPresent()) {
+            return foundProperty.get();
+        } else {
+            log.log(Level.SEVERE, "The property with the name " + propertyName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The property with the name " + propertyName + " does not exist");
         }
     }
 
