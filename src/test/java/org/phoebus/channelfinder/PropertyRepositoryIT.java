@@ -95,12 +95,12 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void saveXmlProperties() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        XmlProperty updateTestProperty = new XmlProperty("testProperty","updateTestOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
-        XmlProperty updateTestProperty1 = new XmlProperty("testProperty1","updateTestOwner1");
-        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);        
-        List<XmlProperty> updateTestProperties = Arrays.asList(updateTestProperty, updateTestProperty1);        
+        XmlProperty testProperty = new XmlProperty("testProperty", "testOwner");
+        XmlProperty updateTestProperty = new XmlProperty("testProperty", "updateTestOwner");
+        XmlProperty testProperty1 = new XmlProperty("testProperty1", "testOwner1");
+        XmlProperty updateTestProperty1 = new XmlProperty("testProperty1", "updateTestOwner1");
+        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
+        List<XmlProperty> updateTestProperties = Arrays.asList(updateTestProperty, updateTestProperty1);
         cleanupTestProperties = updateTestProperties;
 
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);

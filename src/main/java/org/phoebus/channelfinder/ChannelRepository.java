@@ -145,7 +145,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                             .doc(newChannel)
                             .refresh(Refresh.True),
                     XmlChannel.class);
-            // verify the creation of the tag
+            // verify the creation of the channel
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created channel " + channel);
                 return findById(channelName).get();
