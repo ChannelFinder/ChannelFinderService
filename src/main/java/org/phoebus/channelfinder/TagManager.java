@@ -311,7 +311,7 @@ public class TagManager {
                 channels = existingTag.get().getChannels();
                 newTag = existingTag.get();
                 newTag.setOwner(tag.getOwner());
-                // Is an existing channel being renamed
+                // Is an existing tag being renamed
                 if (!tag.getName().equalsIgnoreCase(existingTag.get().getName())) {
                     // Since this is a rename operation we will need to remove the old channel.
                     tagRepository.deleteById(existingTag.get().getName());
