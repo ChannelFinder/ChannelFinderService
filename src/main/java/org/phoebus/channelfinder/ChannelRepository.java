@@ -18,6 +18,8 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.bulk.UpdateOperation;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.core.search.ScoreMode;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,7 +49,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @Qualifier("indexClient")
     ElasticsearchClient client;
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = new ObjectMapper()
+            .addMixIn(XmlTag.class, XmlTag.OnlyXmlTag.class)
+            .addMixIn(XmlProperty.class, XmlProperty.OnlyXmlProperty.class);
 
     /**
      * create a new channel using the given XmlChannel
@@ -60,7 +64,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         try {
             IndexRequest request = IndexRequest.of(i -> i.index(ES_CHANNEL_INDEX)
                     .id(channel.getName())
-                    .document(channel)
+                    .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
                     .refresh(Refresh.True));
             IndexResponse response = client.index(request);
             // verify the creation of the tag
@@ -90,7 +94,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .index(idx -> idx
                             .index(ES_CHANNEL_INDEX)
                             .id(channel.getName())
-                            .document(channel)
+                            .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
                     )
             ).refresh(Refresh.True);
         }
@@ -130,25 +134,32 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         try {
             Optional<XmlChannel> existingChannel = findById(channelName);
             XmlChannel newChannel;
+            IndexResponse response;
             if(existingChannel.isPresent()) {
                 // merge with existing channel
                 newChannel = existingChannel.get();
                 newChannel.setOwner(channel.getOwner());
                 newChannel.addProperties(channel.getProperties());
                 newChannel.addTags(channel.getTags());
+                // Is an existing channel being renamed
+                if (!channel.getName().equalsIgnoreCase(existingChannel.get().getName())) {
+                    // Since this is a rename operation we will need to remove the old channel.
+                    client.delete(d -> d.index(ES_CHANNEL_INDEX).id(existingChannel.get().getName()).refresh(Refresh.True));
+                    newChannel.setName(channel.getName());
+                }
+
             } else {
                 newChannel = channel;
             }
 
-            UpdateResponse<XmlChannel> response = client.update(u -> u.index(ES_CHANNEL_INDEX)
-                            .id(channelName)
-                            .doc(newChannel)
-                            .refresh(Refresh.True),
-                    XmlChannel.class);
+            response = client.index(i -> i.index(ES_CHANNEL_INDEX)
+                    .id(newChannel.getName())
+                    .document(JsonData.of(newChannel, new JacksonJsonpMapper(objectMapper)))
+                    .refresh(Refresh.True));
             // verify the creation of the channel
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created channel " + channel);
-                return findById(channelName).get();
+                return findById(newChannel.getName()).get();
             }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
@@ -190,9 +201,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     updatedChannel.setOwner(channel.getOwner());
                     updatedChannel.addProperties(channel.getProperties());
                     updatedChannel.addTags(channel.getTags());
-                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX).id(updatedChannel.getName()).document(updatedChannel)));
+                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX)
+                            .id(updatedChannel.getName())
+                            .document(JsonData.of(updatedChannel, new JacksonJsonpMapper(objectMapper)))));
                 } else {
-                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX).id(channel.getName()).document(channel)));
+                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX)
+                            .id(channel.getName())
+                            .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))));
                 }
 
             }

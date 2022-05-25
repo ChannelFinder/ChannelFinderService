@@ -269,8 +269,8 @@ public class ChannelManagerIT {
         XmlChannel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
         XmlChannel createdChannelWithItems = channelManager.create(testChannel2.getName(), testChannel2);
         // update the testChannels
-        createdChannel = channelManager.update(testChannel0.getName(), testChannel1);
-        createdChannelWithItems = channelManager.update(testChannel2.getName(), testChannel3);
+        XmlChannel renamedChannel = channelManager.update(testChannel0.getName(), testChannel1);
+        XmlChannel renamedChannelWithItems = channelManager.update(testChannel2.getName(), testChannel3);
         
         // verify that the old channels were replaced by the new ones
         try {
