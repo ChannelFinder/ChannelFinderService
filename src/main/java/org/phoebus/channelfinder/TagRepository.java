@@ -69,7 +69,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      */
     @SuppressWarnings("unchecked")
     public <S extends XmlTag> S index(S tag) {
-
         return save(tag.getName(), tag);
     }
 
@@ -131,7 +130,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created tag " + tag);
-                return tag;
+                return (S) findById(tagName).get();
             }
         } catch (ElasticsearchException | IOException e) {
             log.log(Level.SEVERE, "Failed to update/save tag:" + tag.toLog(), e);
@@ -165,12 +164,12 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                             .id(tag.getName())
                             .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))
                     )
-            ).refresh(Refresh.True);
+            );
         }
 
         BulkResponse result = null;
         try {
-            result = client.bulk(br.build());
+            result = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
                 log.severe("Bulk had errors");
