@@ -132,34 +132,14 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @SuppressWarnings("unchecked")
     public XmlChannel save(String channelName, XmlChannel channel) {
         try {
-            Optional<XmlChannel> existingChannel = findById(channelName);
-            XmlChannel newChannel;
-            IndexResponse response;
-            if(existingChannel.isPresent()) {
-                // merge with existing channel
-                newChannel = existingChannel.get();
-                newChannel.setOwner(channel.getOwner());
-                newChannel.addProperties(channel.getProperties());
-                newChannel.addTags(channel.getTags());
-                // Is an existing channel being renamed
-                if (!channel.getName().equalsIgnoreCase(existingChannel.get().getName())) {
-                    // Since this is a rename operation we will need to remove the old channel.
-                    client.delete(d -> d.index(ES_CHANNEL_INDEX).id(existingChannel.get().getName()).refresh(Refresh.True));
-                    newChannel.setName(channel.getName());
-                }
-
-            } else {
-                newChannel = channel;
-            }
-
-            response = client.index(i -> i.index(ES_CHANNEL_INDEX)
-                    .id(newChannel.getName())
-                    .document(JsonData.of(newChannel, new JacksonJsonpMapper(objectMapper)))
+            IndexResponse response = client.index(i -> i.index(ES_CHANNEL_INDEX)
+                    .id(channel.getName())
+                    .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
                     .refresh(Refresh.True));
             // verify the creation of the channel
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
                 log.config("Created channel " + channel);
-                return findById(newChannel.getName()).get();
+                return findById(channel.getName()).get();
             }
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);

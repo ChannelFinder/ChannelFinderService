@@ -109,16 +109,6 @@ public class ChannelRepositoryIT {
         expectedChannel.addProperties(testProperties);
         expectedChannel.addTags(testTags);
         assertEquals("Failed to update the channel with the same name", updateTestChannel, updatedTestChannel);
-
-
-        // Update Channel with more updated properties and updated tags and rename the channel
-        XmlChannel updatedTestChannel2 = channelRepository.save("testChannel",updateTestChannel2);
-        // verify that the channel was updated as expected
-
-        expectedChannel = new XmlChannel("testChannel","updateTestOwner1");
-        expectedChannel.addProperties(testUpdatedProperties);
-        expectedChannel.addTags(testUpdatedTags);
-        assertEquals("Failed to update the channel with a different name", expectedChannel, updatedTestChannel2);
     }
 
 
