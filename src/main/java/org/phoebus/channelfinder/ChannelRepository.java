@@ -178,7 +178,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 if (existingChannels.containsKey(channel.getName())) {
                     // merge with existing channel
                     XmlChannel updatedChannel = existingChannels.get(channel.getName());
-                    updatedChannel.setOwner(channel.getOwner());
+                    if (channel.getOwner() != null && !channel.getOwner().isEmpty())
+                        updatedChannel.setOwner(channel.getOwner());
                     updatedChannel.addProperties(channel.getProperties());
                     updatedChannel.addTags(channel.getTags());
                     br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX)
