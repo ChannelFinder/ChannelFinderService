@@ -21,7 +21,7 @@ services:
         java -jar ChannelFinder-4.0.0.jar
       "
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.0.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
     hostname: elasticsearch-cf
     networks:
       - channelfinder-net
