@@ -235,7 +235,7 @@ public class PropertyManager {
      * @param property - property payload with value
      * @return added property
      */
-    @PutMapping("/{propertyName}/{chName}")
+    @PutMapping("/{propertyName}/{channelName}")
     public XmlProperty addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName, @RequestBody XmlProperty property) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {

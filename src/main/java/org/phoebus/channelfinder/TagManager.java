@@ -234,7 +234,7 @@ public class TagManager {
      * @param channelName - channel to update <code>tag</code> to
      * @return added tag
      */
-    @PutMapping("/{tagName}/{chName}")
+    @PutMapping("/{tagName}/{channelName}")
     public XmlTag addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -496,10 +496,13 @@ public class TagManager {
 
     /**
      * Checks if all the tags included satisfy the following conditions
-     * 1. the tag names are not null
-     * 2. the tag owners are not null or empty
-     * 3. all the channels exist
-     * 
+     *
+     * <ol>
+     * <li> the tag names are not null or empty and matches the names in the bodies
+     * <li> the tag owners are not null or empty
+     * <li> all the channels exist
+     * </ol>
+     *
      * @param tags the list of tags to be validated
      */
     public void validateTagRequest(Iterable<XmlTag> tags) {
@@ -510,10 +513,13 @@ public class TagManager {
 
     /**
      * Checks if tag satisfies the following conditions
-     * 1. the tag name is not null and matches the name in the body
-     * 2. the tag owner is not null or empty
-     * 3. all the listed channels exist
-     * 
+     *
+     * <ol>
+     * <li> the tag name is not null or empty and matches the name in the body
+     * <li> the tag owner is not null or empty
+     * <li> all the listed channels exist
+     * </ol>
+     *
      * @param tag the tag to be validates
      */
     public void validateTagRequest(XmlTag tag) {
