@@ -68,6 +68,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
      */
     @Value("${demo_auth.enabled:false}")
     boolean demo_auth_enabled;
+    @Value("${demo_auth.delimiter.roles::}")
+    String demo_auth_delimiter_roles;
+    @Value("${demo_auth.users}")
+    String[] demo_auth_users;
+    @Value("${demo_auth.pwds}")
+    String[] demo_auth_pwds;
+    @Value("${demo_auth.roles}")
+    String[] demo_auth_roles;
 
     /**
      * File based authentication
@@ -112,9 +120,27 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         }
 
         if (demo_auth_enabled) {
-            auth.inMemoryAuthentication()
-                    .withUser("admin").password(encoder().encode("adminPass")).roles("ADMIN").and()
-                    .withUser("user").password(encoder().encode("userPass")).roles("USER");
+            // read from configuration, no default content
+            //     interpret users, pwds, roles
+            //     user may have multiple roles
+
+            if (demo_auth_users != null
+                    && demo_auth_pwds != null
+                    && demo_auth_roles != null
+                    && demo_auth_users.length > 0
+                    && demo_auth_users.length == demo_auth_pwds.length
+                    && demo_auth_pwds.length == demo_auth_roles.length) {
+
+                for (int i=0; i<demo_auth_users.length; i++) {
+                    String[] userroles = demo_auth_roles[i].split(demo_auth_delimiter_roles);
+                    if (userroles != null && userroles.length > 0) {
+                        auth.inMemoryAuthentication()
+                                .withUser(demo_auth_users[i])
+                                .password(encoder().encode(demo_auth_pwds[i]))
+                                .roles(userroles);
+                    }
+                }
+            }
         }
     }
 
