@@ -231,14 +231,14 @@ public class PropertyManager {
      * wildcards thus removing the need to explicitly define the entire property
      * 
      * @param propertyName - name of tag to be created
-     * @param channelName - channel to update <code>tag</code> to
+     * @param channelName - channel to update <code>property</code> to
      * @param property - property payload with value
      * @return added property
      */
     @PutMapping("/{propertyName}/{channelName}")
     public XmlProperty addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName, @RequestBody XmlProperty property) {
         // check if authorized role
-        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
             propertyManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
             // Validate request parameters
