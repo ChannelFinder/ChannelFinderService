@@ -37,7 +37,7 @@
 	</developers>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring.boot-version>2.6.7</spring.boot-version>
+		<spring.boot-version>2.7.2</spring.boot-version>
 		<elasticsearch.version>8.2.0</elasticsearch.version>
 	</properties>
 	<dependencyManagement>
