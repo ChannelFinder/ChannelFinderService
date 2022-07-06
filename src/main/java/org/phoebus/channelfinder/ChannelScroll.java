@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,7 +37,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping(SCROLL_RESOURCE_URI)
 @EnableAutoConfiguration
 public class ChannelScroll {
-    static Logger log = Logger.getLogger(ChannelRepository.class.getName());
+    static Logger log = Logger.getLogger(ChannelScroll.class.getName());
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;

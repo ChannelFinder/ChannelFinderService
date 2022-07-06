@@ -35,7 +35,7 @@ public class InfoManager {
     @Autowired
     private ElasticConfig esService;
 
-    private final static ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+    private static final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
     /**
      * 
@@ -44,11 +44,11 @@ public class InfoManager {
     @GetMapping
     public String info() {
 
-        Map<String, Object> cfServiceInfo = new LinkedHashMap<String, Object>();
+        Map<String, Object> cfServiceInfo = new LinkedHashMap<>();
         cfServiceInfo.put("name", "ChannelFinder Service");
         cfServiceInfo.put("version", version);
 
-        Map<String, String> elasticInfo = new LinkedHashMap<String, String>();
+        Map<String, String> elasticInfo = new LinkedHashMap<>();
         try {
 
             ElasticsearchClient client = esService.getSearchClient();

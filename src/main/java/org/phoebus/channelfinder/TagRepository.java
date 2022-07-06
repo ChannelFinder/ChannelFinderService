@@ -1,24 +1,19 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import co.elastic.clients.elasticsearch._types.*;
-import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import jakarta.json.Json;
 import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,9 +32,6 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
 import co.elastic.clients.elasticsearch.core.SearchRequest.Builder;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch.core.search.TotalHits;
-import co.elastic.clients.elasticsearch.core.search.TotalHitsRelation;
-import co.elastic.clients.util.ObjectBuilder;
 
 @Repository
 @Configuration
@@ -67,7 +59,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @param tag - tag to be created
      * @return the created tag
      */
-    @SuppressWarnings("unchecked")
     public <S extends XmlTag> S index(S tag) {
         return save(tag.getName(), tag);
     }
@@ -78,7 +69,6 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @param tags - tags to be created
      * @return the created tags
      */
-    @SuppressWarnings("unchecked")
     public List<XmlTag> indexAll(List<XmlTag> tags) {
 
         BulkRequest.Builder br = new BulkRequest.Builder();
@@ -220,7 +210,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 XmlTag tag = response.source();
                 log.info("Tag name " + tag.getName());
                 if(withChannels) {
-                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+                    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add("~tag", tag.getName());
                     tag.setChannels(channelRepository.search(params));
                 }
@@ -313,7 +303,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 log.config("Deletes tag " + tagName);
             }
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("~tag", tagName);
             List<XmlChannel> channels = channelRepository.search(params);
             while (channels.size() > 0) {

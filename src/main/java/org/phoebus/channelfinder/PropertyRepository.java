@@ -1,7 +1,6 @@
 package org.phoebus.channelfinder;
 
 import java.io.*;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -16,13 +15,7 @@ import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
-import co.elastic.clients.json.JsonpMapper;
-import co.elastic.clients.json.JsonpSerializer;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import jakarta.json.Json;
-import jakarta.json.stream.JsonParser;
-import jakarta.json.stream.JsonParserFactory;
 import org.phoebus.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -64,7 +57,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @param property - property to be created
      * @return the created property
      */
-    @SuppressWarnings("unchecked")
     public XmlProperty index(XmlProperty property) {
         return save(property.getName(), property);
     }
@@ -75,17 +67,14 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @param properties - properties to be created
      * @return the created properties
      */
-    @SuppressWarnings("unchecked")
     public List<XmlProperty> indexAll(List<XmlProperty> properties) {
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (XmlProperty property : properties) {
             br.operations(op -> op
-                    .index(idx -> {
-                                return idx
-                                        .index(ES_PROPERTY_INDEX)
-                                        .id(property.getName())
-                                        .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)));
-                            }
+                    .index(idx -> idx
+                                    .index(ES_PROPERTY_INDEX)
+                                    .id(property.getName())
+                                    .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))
                     )
             );
         }
@@ -218,7 +207,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 XmlProperty property = response.source();
                 log.info("property name " + property.getName());
                 if(withChannels) {
-                    MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+                    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add(property.getName(), "*");
                     property.setChannels(channelRepository.search(params));
                 }
@@ -308,7 +297,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             DeleteResponse response = client
                     .delete(i -> i.index(ES_PROPERTY_INDEX).id(propertyName).refresh(Refresh.True));
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
+            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add(propertyName, "*");
             List<XmlChannel> channels = channelRepository.search(params);
             while (channels.size() > 0) {

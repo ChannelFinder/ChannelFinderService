@@ -22,7 +22,6 @@ import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.bulk.IndexOperation;
-import co.elastic.clients.elasticsearch.core.bulk.UpdateOperation;
 import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlProperty;
@@ -136,7 +135,6 @@ public class PopulateService {
     }
 
     public synchronized void cleanupDB() {
-
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (String channelName : channel_list) {
             br.operations(op -> op
@@ -187,8 +185,6 @@ public class PopulateService {
     }
 
     public synchronized void createDB() {
-
-
         long start = System.currentTimeMillis();
         Collection<Boolean> finalResult = new ArrayList<>();
         start = System.currentTimeMillis();
@@ -209,13 +205,12 @@ public class PopulateService {
             }
         }
         log.info(finalResult.size() + " channels created sequentially in time: " + (System.currentTimeMillis() - start));
-        prop_list.forEach((p) -> {
-            log.info(p.toLog());
-        });
-        tag_list.forEach((t) -> {
-            log.info(t.toLog());
-        });
-
+        prop_list.forEach(p ->
+            log.info(p.toLog())
+        );
+        tag_list.forEach(t ->
+            log.info(t.toLog())
+        );
 
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (XmlProperty property : prop_list) {
@@ -655,9 +650,9 @@ public class PopulateService {
             }
 
             channel_list.add(channel.getName());
-            prop_list.addAll(channel.getProperties().stream().map((p) -> {
-                return new XmlProperty(p.getName(), p.getOwner());
-            }).collect(Collectors.toSet()));
+            prop_list.addAll(channel.getProperties().stream().map(p ->
+                new XmlProperty(p.getName(), p.getOwner())
+            ).collect(Collectors.toSet()));
             tag_list.addAll(channel.getTags());
             result.add(channel);
         }

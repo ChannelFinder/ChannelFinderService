@@ -138,7 +138,7 @@ public class TagManager {
                 tag.getChannels().forEach(chan -> chan.addTag(createdTag));
                 // update the listed channels in the tag's payloads with the new tag
                 Iterable<XmlChannel> chans = channelRepository.saveAll(tag.getChannels());
-                List<XmlChannel> chanList = new ArrayList<XmlChannel>();
+                List<XmlChannel> chanList = new ArrayList<>();
                 for (XmlChannel chan : chans) {
                     chanList.add(chan);
                 }
@@ -199,7 +199,7 @@ public class TagManager {
             Iterable<XmlTag> createdTags = tagRepository.indexAll(Lists.newArrayList(tags));
 
             // update the listed channels in the tags' payloads with new tags
-            Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
+            Map<String, XmlChannel> channels = new HashMap<>();
             for (XmlTag tag : tags) {
                 for (XmlChannel channel : tag.getChannels()) {
                     if (channels.get(channel.getName()) != null) {
@@ -298,7 +298,7 @@ public class TagManager {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
-            List<XmlChannel> channels = new ArrayList<XmlChannel>();
+            List<XmlChannel> channels = new ArrayList<>();
             Optional<XmlTag> existingTag = tagRepository.findById(tagName,true);
 
             XmlTag newTag;
@@ -390,7 +390,7 @@ public class TagManager {
             validateTagRequest(tags);
 
             // update the listed channels in the tags' payloads with new tags
-            Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
+            Map<String, XmlChannel> channels = new HashMap<>();
             for (XmlTag tag : tags) {
                 for (XmlChannel channel : tag.getChannels()) {
                     if (channels.get(channel.getName()) != null) {

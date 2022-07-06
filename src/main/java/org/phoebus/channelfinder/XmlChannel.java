@@ -28,8 +28,8 @@ import javax.xml.bind.annotation.XmlType;
 public class XmlChannel {
     private String name;
     private String owner;
-    private List<XmlProperty> properties = new ArrayList<XmlProperty>();
-    private List<XmlTag> tags = new ArrayList<XmlTag>();
+    private List<XmlProperty> properties = new ArrayList<>();
+    private List<XmlTag> tags = new ArrayList<>();
 
     /** Creates a new instance of XmlChannel */
     public XmlChannel() {
@@ -128,9 +128,9 @@ public class XmlChannel {
      */
     public void addTag(XmlTag tag) {
         // If the tag already exists, then filter it out
-        this.tags = this.tags.stream().filter(t -> {
-            return !t.getName().equals(tag.getName());
-        }).collect(Collectors.toList());
+        this.tags = this.tags.stream().filter(t ->
+            !t.getName().equals(tag.getName())
+        ).collect(Collectors.toList());
         // add the updated version of the tag
         this.tags.add(tag);
     }
@@ -140,9 +140,9 @@ public class XmlChannel {
      * @param tag the tag to be removed from channel
      */
     public void removeTag(XmlTag tag) {
-        this.tags = this.tags.stream().filter(t -> {
-            return !t.getName().equals(tag.getName());
-        }).collect(Collectors.toList());
+        this.tags = this.tags.stream().filter(t ->
+            !t.getName().equals(tag.getName())
+        ).collect(Collectors.toList());
     }
 
     /**
@@ -160,9 +160,9 @@ public class XmlChannel {
      */
     public void addProperty(XmlProperty property) {
         // If the property already exists, then filter it out
-        this.properties = this.properties.stream().filter(p -> {
-            return !p.getName().equals(property.getName());
-        }).collect(Collectors.toList());
+        this.properties = this.properties.stream().filter(p ->
+            !p.getName().equals(property.getName())
+        ).collect(Collectors.toList());
         // add the updated version of the property
         this.properties.add(property);
     }
@@ -172,9 +172,9 @@ public class XmlChannel {
      * @param property the property to be removed from the channel
      */
     public void removeProperty(XmlProperty property) {
-        this.properties = this.properties.stream().filter(p -> {
-            return !p.getName().equals(property.getName());
-        }).collect(Collectors.toList());
+        this.properties = this.properties.stream().filter(p ->
+            !p.getName().equals(property.getName())
+        ).collect(Collectors.toList());
     }
 
     /**
