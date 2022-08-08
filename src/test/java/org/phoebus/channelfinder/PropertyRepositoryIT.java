@@ -1,9 +1,5 @@
 package org.phoebus.channelfinder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,7 +11,7 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.phoebus.channelfinder.ChannelRepository;
-import org.phoebus.channelfinder.ElasticSearchClient;
+import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.PropertyRepository;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlProperty;
@@ -30,12 +26,15 @@ import org.springframework.web.server.ResponseStatusException;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyRepository.class)
 public class PropertyRepositoryIT {
 
     @Autowired
-    ElasticSearchClient esService;
+    ElasticConfig esService;
 
     @Autowired
     PropertyRepository propertyRepository;
@@ -96,12 +95,12 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void saveXmlProperties() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        XmlProperty updateTestProperty = new XmlProperty("testProperty","updateTestOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
-        XmlProperty updateTestProperty1 = new XmlProperty("testProperty1","updateTestOwner1");
-        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);        
-        List<XmlProperty> updateTestProperties = Arrays.asList(updateTestProperty, updateTestProperty1);        
+        XmlProperty testProperty = new XmlProperty("testProperty", "testOwner");
+        XmlProperty updateTestProperty = new XmlProperty("testProperty", "updateTestOwner");
+        XmlProperty testProperty1 = new XmlProperty("testProperty1", "testOwner1");
+        XmlProperty updateTestProperty1 = new XmlProperty("testProperty1", "updateTestOwner1");
+        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
+        List<XmlProperty> updateTestProperties = Arrays.asList(updateTestProperty, updateTestProperty1);
         cleanupTestProperties = updateTestProperties;
 
         Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
@@ -120,7 +119,8 @@ public class PropertyRepositoryIT {
         
         Optional<XmlProperty> notFoundProperty = propertyRepository.findById(testProperty.getName());
         // verify the property was not found as expected
-        assertNotEquals("Found the property",testProperty,notFoundProperty);
+        assertTrue("Found the property " + testProperty.getName() + " which should not exist.",
+                notFoundProperty.isEmpty());
 
         XmlProperty createdProperty = propertyRepository.index(testProperty);
 
@@ -135,7 +135,9 @@ public class PropertyRepositoryIT {
         foundProperty = propertyRepository.findById(createdProperty.getName(),true);
         createdProperty.setChannels(Arrays.asList(channel));
         // verify the property was found as expected
-        assertEquals("Failed to find the property",createdProperty,foundProperty.get());
+        XmlProperty expectedProperty = new XmlProperty(createdProperty.getName(), createdProperty.getOwner());
+        expectedProperty.setChannels(Arrays.asList(createdChannel));
+        assertEquals("Failed to find the property", expectedProperty, foundProperty.get());
 
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());
@@ -146,15 +148,17 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void testPropertyExists() {
+
+        // check that non existing property returns false
+        assertFalse("Failed to check the non existing property :" + "no-property", propertyRepository.existsById("no-property"));
+
         XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        Optional<XmlProperty> notFoundProperty = propertyRepository.findById(testProperty.getName());
+        assertFalse("Test property " + testProperty.getName() + " already exists", propertyRepository.existsById(testProperty.getName()));
         XmlProperty createdProperty = propertyRepository.index(testProperty);
-        cleanupTestProperties = Arrays.asList(testProperty);
+        cleanupTestProperties = Arrays.asList(createdProperty);
 
         // verify the property exists as expected
         assertTrue("Failed to check the existance of " + testProperty.getName(), propertyRepository.existsById(testProperty.getName()));
-        // verify the property does not exist as expected
-        assertTrue("Failed to check the existance of 'non-existant-property'", !propertyRepository.existsById("non-existant-property"));
     }
 
     /**
@@ -234,7 +238,7 @@ public class PropertyRepositoryIT {
         params.add("testProperty","*");
         List<XmlChannel> chans = channelRepository.search(params);
         // verify the property was deleted from channels as expected
-        assertTrue("Failed to remove property from channel",chans.isEmpty());
+        assertTrue("Failed to remove property from channel", chans.isEmpty());
 
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());

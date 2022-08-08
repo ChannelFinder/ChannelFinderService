@@ -1,65 +1,38 @@
 package org.phoebus.channelfinder;
 
-import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
-import static org.elasticsearch.index.query.QueryBuilders.disMaxQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
-import static org.elasticsearch.index.query.QueryBuilders.nestedQuery;
-import static org.elasticsearch.index.query.QueryBuilders.wildcardQuery;
-import static org.phoebus.channelfinder.ChannelManager.channelManagerAudit;
-
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.bulk.BulkItemResponse;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.get.MultiGetItemResponse;
-import org.elasticsearch.action.get.MultiGetRequest;
-import org.elasticsearch.action.get.MultiGetRequest.Item;
-import org.elasticsearch.action.get.MultiGetResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest;
-import org.elasticsearch.action.update.UpdateRequest;
-import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.DisMaxQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
-import org.phoebus.channelfinder.XmlProperty.OnlyXmlProperty;
-import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
+import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.query_dsl.*;
+import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.elasticsearch.core.bulk.UpdateOperation;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.ScoreMode;
+import co.elastic.clients.json.JsonData;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 @Configuration
@@ -68,157 +41,118 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
-    @Value("${elasticsearch.channel.type:cf_channel}")
-    private String ES_CHANNEL_TYPE;
-    
+
     @Value("${elasticsearch.query.size:10000}")
     private int defaultMaxSize;
 
-
     @Autowired
-    ElasticSearchClient esService;
+    @Qualifier("indexClient")
+    ElasticsearchClient client;
 
-    ObjectMapper objectMapper = new ObjectMapper();
+    ObjectMapper objectMapper = new ObjectMapper()
+            .addMixIn(XmlTag.class, XmlTag.OnlyXmlTag.class)
+            .addMixIn(XmlProperty.class, XmlProperty.OnlyXmlProperty.class);
 
     /**
      * create a new channel using the given XmlChannel
-     * 
-     * @param <S> extends XmlChannel
+     *
      * @param channel - channel to be created
      * @return the created channel
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> S index(XmlChannel channel) {
-        RestHighLevelClient client = esService.getIndexClient();
+    public XmlChannel index(XmlChannel channel) {
         try {
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+            IndexRequest request = IndexRequest.of(i -> i.index(ES_CHANNEL_INDEX)
                     .id(channel.getName())
-                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-            indexRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-            IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
-            /// verify the creation of the channel
-            Result result = indexResponse.getResult();
-            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                return (S) findById(channel.getName()).get();
+                    .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
+                    .refresh(Refresh.True));
+            IndexResponse response = client.index(request);
+            // verify the creation of the tag
+            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+                log.config("Created channel " + channel);
+                return findById(channel.getName()).get();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index channel: " + channel.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index channel: " + channel, null);
+            log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channel: " + channel, null);
         }
         return null;
     }
 
     /**
      * create new channels using the given XmlChannels
-     * 
-     * @param <S> extends XmlChannel
+     *
      * @param channels - channels to be created
      * @return the created channels
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> Iterable<S> indexAll(Iterable<XmlChannel> channels) {
-        RestHighLevelClient client = esService.getIndexClient();
-        try {
-            BulkRequest bulkRequest = new BulkRequest();
-            for (XmlChannel channel : channels) {
-                IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
-                        .id(channel.getName())
-                        .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-                bulkRequest.add(indexRequest);
-            }
+    public List<XmlChannel> indexAll(List<XmlChannel> channels) {
+        BulkRequest.Builder br = new BulkRequest.Builder();
 
-            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            // verify the creation of the channels
-            if (bulkResponse.hasFailures()) {
-                // Failed to create all the channels
-            } else {
-                List<String> createdChannelIds = new ArrayList<String>();
-                for (BulkItemResponse bulkItemResponse : bulkResponse) {
-                    Result result = bulkItemResponse.getResponse().getResult();
-                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED)) {
-                        createdChannelIds.add(bulkItemResponse.getId());
+        for (XmlChannel channel : channels) {
+            br.operations(op -> op
+                    .index(idx -> idx
+                            .index(ES_CHANNEL_INDEX)
+                            .id(channel.getName())
+                            .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
+                    )
+            ).refresh(Refresh.True);
+        }
+
+        BulkResponse result = null;
+        try {
+            result = client.bulk(br.build());
+            // Log errors, if any
+            if (result.errors()) {
+                log.severe("Bulk had errors");
+                for (BulkResponseItem item : result.items()) {
+                    if (item.error() != null) {
+                        log.severe(item.error().reason());
                     }
                 }
-                return (Iterable<S>) findAllById(createdChannelIds);
+                // TODO cleanup? or throw exception?
+            } else {
+                return channels;
             }
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index channels: " + channels, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index channels: " + channels, null);
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Failed to index channels " + channels, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channels: " + channels, null);
+
         }
         return null;
     }
 
     /**
      * update/save channel using the given XmlChannel
-     * 
-     * @param <S> extends XmlChannel
+     *
      * @param channelName - name of channel to be saved
      * @param channel - channel to be saved
      * @return the updated/saved channel
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlChannel> S save(String channelName, S channel) {
-        RestHighLevelClient client = esService.getIndexClient();
-
+    public XmlChannel save(String channelName, XmlChannel channel) {
         try {
-            UpdateRequest updateRequest;
-            Optional<XmlChannel> existingChannel = findById(channelName);
-            boolean present = existingChannel.isPresent();
-            if(present) {
-                List<String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
-                // Add the old tags on the channel update request to ensure that old tags are preserved
-                for (XmlTag oldTag : existingChannel.get().getTags()) {
-                    if (!tagNames.contains(oldTag.getName()))
-                        channel.addTag(oldTag);
-                }
-
-                // Add the old properties on the channel update request to ensure that old properties are preserved
-                List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
-                for(XmlProperty oldProp: existingChannel.get().getProperties()) {
-                    if(!propNames.contains(oldProp.getName())) {
-                        channel.addProperty(oldProp);
-                    }
-                }
-
-                // If there are properties with null or empty values, they are to be removed from the channel
-                List<XmlProperty> properties = channel.getProperties();
-                properties.removeIf(prop -> prop.getValue() == null);
-                properties.removeIf(prop -> prop.getValue().isEmpty());
-                channel.setProperties(properties);
-
-                // In case of a rename, the old channel should be removed
-                deleteById(channelName);
-            } 
-            updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-            IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+            IndexResponse response = client.index(i -> i.index(ES_CHANNEL_INDEX)
                     .id(channel.getName())
-                    .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-            updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
-            updateRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-            UpdateResponse updateResponse = client.update(updateRequest, RequestOptions.DEFAULT);
+                    .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
+                    .refresh(Refresh.True));
             // verify the creation of the channel
-            Result result = updateResponse.getResult();
-            if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-                // client.get(, options)
-                return (S) findById(channel.getName()).get();
+            if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+                log.config("Created channel " + channel);
+                return findById(channel.getName()).get();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to update/save channel: " + channel.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save channel: " + channel, null);
+            log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channel: " + channel, null);
         }
         return null;
     }
 
     /**
-     * 
-     * @param <S> extends XmlChannel
+     *
      */
     @Override
-    public <S extends XmlChannel> S save(S channel) {
+    public XmlChannel save(XmlChannel channel) {
         return save(channel.getName(),channel);
     }
 
@@ -232,130 +166,120 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @SuppressWarnings("unchecked")
     @Override
     public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> channels) {
-        RestHighLevelClient client = esService.getIndexClient();
+        // Create a list of all channel names
+        List<String> ids = StreamSupport.stream(channels.spliterator(), false).map(XmlChannel::getName).collect(Collectors.toList());
 
-        BulkRequest bulkRequest = new BulkRequest();
         try {
+            Map<String, XmlChannel> existingChannels = findAllById(ids).stream().collect(Collectors.toMap(XmlChannel::getName, c -> c));
+
+            BulkRequest.Builder br = new BulkRequest.Builder();
+
             for (XmlChannel channel : channels) {
-                UpdateRequest updateRequest = new UpdateRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channel.getName());
-
-                Optional<XmlChannel> existingChannel = findById(channel.getName());
-                if (existingChannel.isPresent()) {
-                    List<String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
-                    // Add the old tags on the channel update request to ensure that old tags are preserved
-                    for (XmlTag oldTag : existingChannel.get().getTags()) {
-                        if (!tagNames.contains(oldTag.getName()))
-                            channel.addTag(oldTag);
-                    }
-
-                    // Add the old properties on the channel update request to ensure that old properties are preserved
-                    List<String> propNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
-                    for(XmlProperty oldProp: existingChannel.get().getProperties()) {
-                        if(!propNames.contains(oldProp.getName())) {
-                            channel.addProperty(oldProp);
-                        }
-                    }
-
-                    // If there are properties with null or empty values, they are to be removed from the channel
-                    List<XmlProperty> properties = channel.getProperties();
-                    properties.removeIf(prop -> prop.getValue() == null);
-                    properties.removeIf(prop -> prop.getValue().isEmpty());
-                    channel.setProperties(properties);
-
-                    updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
+                if (existingChannels.containsKey(channel.getName())) {
+                    // merge with existing channel
+                    XmlChannel updatedChannel = existingChannels.get(channel.getName());
+                    if (channel.getOwner() != null && !channel.getOwner().isEmpty())
+                        updatedChannel.setOwner(channel.getOwner());
+                    updatedChannel.addProperties(channel.getProperties());
+                    updatedChannel.addTags(channel.getTags());
+                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX)
+                            .id(updatedChannel.getName())
+                            .document(JsonData.of(updatedChannel, new JacksonJsonpMapper(objectMapper)))));
                 } else {
-                    IndexRequest indexRequest = new IndexRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE)
+                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX)
                             .id(channel.getName())
-                            .source(objectMapper.writeValueAsBytes(channel), XContentType.JSON);
-                    updateRequest.doc(objectMapper.writeValueAsBytes(channel), XContentType.JSON).upsert(indexRequest);
+                            .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))));
                 }
-                bulkRequest.add(updateRequest);
-            }
 
-            bulkRequest.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
-            if (bulkResponse.hasFailures()) {
-                // Failed to create/update all the channels
-                throw new Exception();
-            } else {
-                List<String> createdChannelIds = new ArrayList<String>();
-                for (BulkItemResponse bulkItemResponse : bulkResponse) {
-                    Result result = bulkItemResponse.getResponse().getResult();
-                    if (result.equals(Result.CREATED) || result.equals(Result.UPDATED) || result.equals(Result.NOOP)) {
-                        createdChannelIds.add(bulkItemResponse.getId());
+            }
+            BulkResponse result = null;
+            result = client.bulk(br.refresh(Refresh.True).build());
+            // Log errors, if any
+            if (result.errors()) {
+                log.severe("Bulk had errors");
+                for (BulkResponseItem item : result.items()) {
+                    if (item.error() != null) {
+                        log.severe(item.error().reason());
                     }
                 }
-                return (Iterable<S>) findAllById(createdChannelIds);
+                // TODO cleanup? or throw exception?
+            } else {
+                return (Iterable<S>) findAllById(ids);
             }
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to update/save channels: " + channels, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save channels: " + channels, null);
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Failed to index channels " + channels, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channels: " + channels, null);
+
         }
+        return null;
     }
 
     /**
      * find channel using the given channel id
      * 
-     * @param channelId - id of channel to be found
+     * @param channelName - name of channel to be found
      * @return the found channel
      */
     @Override
-    public Optional<XmlChannel> findById(String channelId) {
-        RestHighLevelClient client = esService.getSearchClient();
-        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelId);
+    public Optional<XmlChannel> findById(String channelName) {
+        GetResponse<XmlChannel> response;
         try {
-            GetResponse response = client.get(getRequest, RequestOptions.DEFAULT);
-            if (response.isExists()) {
-                XmlChannel channel = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), XmlChannel.class);
+            response = client.get(g -> g.index(ES_CHANNEL_INDEX).id(channelName), XmlChannel.class);
+
+            if (response.found()) {
+                XmlChannel channel = response.source();
+                log.info("Channel name " + channel.getName());
                 return Optional.of(channel);
+            } else {
+                log.info("Channel not found");
+                return Optional.empty();
             }
-        } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to find channel: " + channelId, e);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find channel: " + channelId, null);
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find Channel " + channelName, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find Channel: " + channelName, null);
         }
-        return Optional.empty();
     }
 
-    public boolean existsByIds(List<String> ids) {
-        RestHighLevelClient client = esService.getSearchClient();
-        MultiGetRequest request = new MultiGetRequest();
-        for (String id : ids) {
-            Item getRequest = new MultiGetRequest.Item(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
-            getRequest.fetchSourceContext(new FetchSourceContext(false));
-            getRequest.storedFields("_none_");
-            request.add(getRequest);
-        }
+    /**
+     * Find all channels with given ids
+     * @param channelIds - list of channel ids to verify exists
+     * @return true if all the channel id's exist
+     */
+    public boolean existsByIds(List<String> channelIds) {
         try {
-            long start = System.currentTimeMillis();
-            MultiGetResponse response = client.mget(request, RequestOptions.DEFAULT);
-            for (MultiGetItemResponse multiGetItemResponse : response) {
-                if (!multiGetItemResponse.getResponse().isExists())
-                    return false;
-            }
-            channelManagerAudit.info(
-                    "Completed existance check for " + ids.size() + " in: " + (System.currentTimeMillis() - start));
-            return true;
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
+
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
+                    .index(ES_CHANNEL_INDEX)
+                    .query(IdsQuery.of(q -> q.values(ids))._toQuery())
+                    .size(10000)
+                    .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
+            return response.hits()
+                    .hits().stream().map(h -> h.source().getName()).collect(Collectors.toList())
+                    .containsAll(channelIds);
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find all channels", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all channels", null);
         }
-        return false;
     }
 
+    /**
+     * Check is channel with name 'channelName' exists
+     * @param channelName
+     * @return true if channel exists
+     */
     @Override
-    public boolean existsById(String id) {
-        RestHighLevelClient client = esService.getSearchClient();
-        GetRequest getRequest = new GetRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, id);
-        getRequest.fetchSourceContext(new FetchSourceContext(false));
-        getRequest.storedFields("_none_");
+    public boolean existsById(String channelName) {
         try {
-            return client.exists(getRequest, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            e.printStackTrace();
+            ExistsRequest.Builder builder = new ExistsRequest.Builder();
+            builder.index(ES_CHANNEL_INDEX).id(channelName);
+            return client.exists(builder.build()).value();
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to check if channel " + channelName + " exists", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to check if channel exists by channelName: " + channelName, null);
         }
-        return false;
     }
 
     /**
@@ -365,32 +289,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      */
     @Override
     public Iterable<XmlChannel> findAll() {
-        RestHighLevelClient client = esService.getSearchClient();
-
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.indices(ES_CHANNEL_INDEX);
-        searchRequest.types(ES_CHANNEL_TYPE);
-
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        // TODO use of scroll will be necessary
-        searchSourceBuilder.size(10000);
-        searchRequest.source(searchSourceBuilder.query(QueryBuilders.matchAllQuery()));
-
-        try {
-            SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            if (searchResponse.status().equals(RestStatus.OK)) {
-                List<XmlChannel> result = new ArrayList<XmlChannel>();
-                for (SearchHit hit : searchResponse.getHits()) {
-                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), XmlChannel.class));
-                }
-                return result;
-            }
-        } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to find all channels", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to find all channels", null);
-        }
-        return null;
+        throw new UnsupportedOperationException("Find All is not supported. It could return hundreds of thousands" +
+                "of channels.");
     }
 
     /**
@@ -400,26 +300,20 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the found channels
      */
     @Override
-    public Iterable<XmlChannel> findAllById(Iterable<String> channelIds) {
-        MultiGetRequest request = new MultiGetRequest();
-
-        for (String channelId : channelIds) {
-            request.add(new MultiGetRequest.Item(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelId));
-        }
+    public List<XmlChannel> findAllById(Iterable<String> channelIds) {
         try {
-            List<XmlChannel> foundChannels = new ArrayList<XmlChannel>();
-            MultiGetResponse response = esService.getSearchClient().mget(request, RequestOptions.DEFAULT);
-            for (MultiGetItemResponse multiGetItemResponse : response) {
-                if (!multiGetItemResponse.isFailed()) {
-                    foundChannels.add(objectMapper.readValue(
-                            multiGetItemResponse.getResponse().getSourceAsBytesRef().streamInput(), XmlChannel.class));
-                } 
-            }
-            return foundChannels;
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to find all channels: " + channelIds, e);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Failed to find all channels: " + channelIds, null);
+            List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
+
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
+                    .index(ES_CHANNEL_INDEX)
+                    .query(IdsQuery.of(q -> q.values(ids))._toQuery())
+                    .size(10000)
+                    .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
+            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+        } catch (ElasticsearchException | IOException e) {
+            log.log(Level.SEVERE, "Failed to find all channels", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all channels", null);
         }
     }
 
@@ -431,23 +325,19 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * delete the given channel by channel name
-     * 
+     *
      * @param channelName - channel to be deleted
      */
     @Override
     public void deleteById(String channelName) {
-        RestHighLevelClient client = esService.getIndexClient();
-
-        DeleteRequest request = new DeleteRequest(ES_CHANNEL_INDEX, ES_CHANNEL_TYPE, channelName);
-        request.setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
-
         try {
-            DeleteResponse response = client.delete(request, RequestOptions.DEFAULT);
-            Result result = response.getResult();
-            if (!result.equals(Result.DELETED)) {
-                throw new Exception();
+            DeleteResponse response = client
+                    .delete(i -> i.index(ES_CHANNEL_INDEX).id(channelName).refresh(Refresh.True));
+            // verify the deletion of the channel
+            if (response.result().equals(Result.Deleted)) {
+                log.config("Deletes channel " + channelName);
             }
-        } catch (Exception e) {
+        } catch (ElasticsearchException | IOException e) {
             log.log(Level.SEVERE, "Failed to delete channel: " + channelName, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to delete channel: " + channelName, null);
@@ -486,123 +376,115 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return matching channels
      */
     public List<XmlChannel> search(MultiValueMap<String, String> searchParameters) {
-
         StringBuffer performance = new StringBuffer();
         long start = System.currentTimeMillis();
-        long totalStart = System.currentTimeMillis();
 
-        RestHighLevelClient client = esService.getSearchClient();
-        start = System.currentTimeMillis();
+        BoolQuery.Builder boolQuery = new BoolQuery.Builder();
         Integer size = defaultMaxSize;
+        Integer from = 0;
+        Optional<String> searchAfter = Optional.empty();
 
-        try {
-            BoolQueryBuilder qb = boolQuery();
-            int from = 0;
-            for (Entry<String, List<String>> parameter : searchParameters.entrySet()) {
-                String key = parameter.getKey().trim();
-
-                boolean isNot = key.endsWith("!");
+        for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
+            String key = parameter.getKey().trim();
+            boolean isNot = key.endsWith("!");
                 if (isNot) {
                     key = key.substring(0, key.length() - 1);
                 }
-
-                switch (key) {
+            switch (key) {
                 case "~name":
                     for (String value : parameter.getValue()) {
-                        DisMaxQueryBuilder nameQuery = disMaxQuery();
+                        DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
                         for (String pattern : value.split("[\\|,;]")) {
-                            nameQuery.add(wildcardQuery("name", pattern.trim()));
+                            nameQuery.queries(WildcardQuery.of(w -> w.field("name").value(pattern.trim()))._toQuery());
                         }
-                        qb.must(nameQuery);
+                        boolQuery.must(nameQuery.build()._toQuery());
                     }
                     break;
                 case "~tag":
                     for (String value : parameter.getValue()) {
-                        DisMaxQueryBuilder tagQuery = disMaxQuery();
+                        DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
                         for (String pattern : value.split("[\\|,;]")) {
-                            tagQuery.add(wildcardQuery("tags.name", pattern.trim()));
+                            tagQuery.queries(
+                                    NestedQuery.of(n -> n.path("tags").query(
+                                            WildcardQuery.of(w -> w.field("tags.name").value(pattern.trim()))._toQuery()))._toQuery());
+                        }
+                        if (isNot) {
+                            boolQuery.mustNot(tagQuery.build()._toQuery());
+                        } else {
+                            boolQuery.must(tagQuery.build()._toQuery());
                         }
 
-                        if (isNot) {
-                            qb.mustNot(nestedQuery("tags", tagQuery, ScoreMode.None));
-                        } else {
-                            qb.must(nestedQuery("tags", tagQuery, ScoreMode.None));
-                        }
                     }
                     break;
                 case "~size":
-                    Optional<String> maxSize = parameter.getValue().stream().max((o1, o2) -> {
-                        return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
-                    });
+                    Optional<String> maxSize = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
                     if (maxSize.isPresent()) {
                         size = Integer.valueOf(maxSize.get());
                     }
                     break;
                 case "~from":
-                    Optional<String> maxFrom = parameter.getValue().stream().max((o1, o2) -> {
-                        return Integer.valueOf(o1).compareTo(Integer.valueOf(o2));
-                    });
+                    Optional<String> maxFrom = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
                     if (maxFrom.isPresent()) {
                         from = Integer.valueOf(maxFrom.get());
                     }
                     break;
+                case "~search_after":
+                    searchAfter = parameter.getValue().stream().findFirst();
+                    break;
                 default:
-                    DisMaxQueryBuilder propertyQuery = disMaxQuery();
+                    DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
                     for (String value : parameter.getValue()) {
                         for (String pattern : value.split("[\\|,;]")) {
-                            propertyQuery
-                            .add(nestedQuery("properties",
-                                    isNot ? boolQuery().must(matchQuery("properties.name", key)).mustNot(wildcardQuery("properties.value", pattern.trim()))
-                                            : boolQuery().must(matchQuery("properties.name", key)).must(wildcardQuery("properties.value", pattern.trim())),
-                                    ScoreMode.None));
+                            String finalKey = key;
+                            BoolQuery bq;
+                            if (isNot) {
+                                bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
+                                        .mustNot(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                            } else {
+                                bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
+                                        .must(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                            }
+                            propertyQuery.queries(
+                                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
+                            );
                         }
                     }
-                    qb.must(propertyQuery);
+                    boolQuery.must(propertyQuery.build()._toQuery());
                     break;
-                }
-            }            
-            
-            performance.append("|prepare: " + (System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
-            SearchRequest searchRequest = new SearchRequest(ES_CHANNEL_INDEX);
-            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-            searchSourceBuilder.size(size);
-            if (from >= 0) {
-                searchSourceBuilder.from(from);
             }
-            searchSourceBuilder.query(qb);
-            searchSourceBuilder.sort(SortBuilders.fieldSort("name").order(SortOrder.ASC));
-            searchRequest.types(ES_CHANNEL_TYPE);
-            searchRequest.source(searchSourceBuilder);
+        }
+        performance.append("|prepare: " + (System.currentTimeMillis() - start));
+        start = System.currentTimeMillis();
 
-            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-            performance.append(
-                    "|query:(" + searchResponse.getHits().getTotalHits() + ")" + (System.currentTimeMillis() - start));
-            start = System.currentTimeMillis();
-            final ObjectMapper mapper = new ObjectMapper();
-            mapper.addMixIn(XmlProperty.class, OnlyXmlProperty.class);
-            mapper.addMixIn(XmlTag.class, OnlyXmlTag.class);
-            start = System.currentTimeMillis();
-            List<XmlChannel> result = new ArrayList<XmlChannel>();
-            searchResponse.getHits().forEach(hit -> {
-                try {
-                    result.add(mapper.readValue(hit.getSourceAsString(), XmlChannel.class));
-                } catch (IOException e) {
-                    log.log(Level.SEVERE, "Failed to parse result for search : " + searchParameters, e);
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                            "Failed to parse result for search : " + searchParameters + ", CAUSE: " + e.getMessage(), e);
-                }
-            });
+        try {
+            Integer finalSize = size;
+            Integer finalFrom = from;
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
+            searchBuilder.index(ES_CHANNEL_INDEX)
+                            .query(boolQuery.build()._toQuery())
+                            .from(finalFrom)
+                            .size(finalSize)
+                            .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
+            if(searchAfter.isPresent()) {
+                searchBuilder.searchAfter(searchAfter.get());
+            }
+            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(),
+                                                                XmlChannel.class
+            );
 
-            performance.append("|parse:" + (System.currentTimeMillis() - start));
-            //            log.info(user + "|" + uriInfo.getPath() + "|GET|OK" + performance.toString() + "|total:"
-            //                    + (System.currentTimeMillis() - totalStart) + "|" + r.getStatus() + "|returns "
-            //                    + qbResult.getHits().getTotalHits() + " channels");
-            return result;
+            List<Hit<XmlChannel>> hits = response.hits().hits();
+            return hits.stream().map(Hit::source).collect(Collectors.toList());
         } catch (Exception e) {
             log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
         }
+
+    }
+
+    @Override
+    public void deleteAllById(Iterable<? extends String> ids) {
+        // TODO Auto-generated method stub
+        
     }
 }

@@ -30,7 +30,7 @@ public class XmlChannel {
     private String owner;
     private List<XmlProperty> properties = new ArrayList<XmlProperty>();
     private List<XmlTag> tags = new ArrayList<XmlTag>();
-  
+
     /** Creates a new instance of XmlChannel */
     public XmlChannel() {
     }

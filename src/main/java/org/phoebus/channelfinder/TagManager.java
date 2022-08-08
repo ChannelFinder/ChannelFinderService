@@ -11,7 +11,9 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
+import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -137,9 +139,7 @@ public class TagManager {
                 // update the listed channels in the tag's payloads with the new tag
                 Iterable<XmlChannel> chans = channelRepository.saveAll(tag.getChannels());
                 List<XmlChannel> chanList = new ArrayList<XmlChannel>();
-                for(XmlChannel chan: chans) {
-                    chan.setTags(new ArrayList<XmlTag>());
-                    chan.setProperties(new ArrayList<XmlProperty>());
+                for (XmlChannel chan : chans) {
                     chanList.add(chan);
                 }
                 createdTag.setChannels(chanList);
@@ -196,7 +196,7 @@ public class TagManager {
             }
 
             // create new tags
-            Iterable<XmlTag> createdTags = tagRepository.indexAll(tags);
+            Iterable<XmlTag> createdTags = tagRepository.indexAll(Lists.newArrayList(tags));
 
             // update the listed channels in the tags' payloads with new tags
             Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
@@ -257,8 +257,6 @@ public class TagManager {
                 channel.addTag(existingTag.get());
                 XmlChannel taggedChannel = channelRepository.save(channel);
                 XmlTag addedTag = existingTag.get();
-                taggedChannel.setTags(new ArrayList<XmlTag>());
-                taggedChannel.setProperties(new ArrayList<XmlProperty>());
                 addedTag.setChannels(Arrays.asList(taggedChannel));
                 return addedTag;
             } else {
@@ -300,43 +298,51 @@ public class TagManager {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
-            List<XmlChannel> chans = new ArrayList<XmlChannel>();
+            List<XmlChannel> channels = new ArrayList<XmlChannel>();
             Optional<XmlTag> existingTag = tagRepository.findById(tagName,true);
-            boolean present = existingTag.isPresent();
-            if(present) {
+
+            XmlTag newTag;
+            if(existingTag.isPresent()) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
                 } 
-                chans = existingTag.get().getChannels();
-            } 
+                channels = existingTag.get().getChannels();
+                newTag = existingTag.get();
+                newTag.setOwner(tag.getOwner());
+                // Is an existing tag being renamed
+                if (!tag.getName().equalsIgnoreCase(existingTag.get().getName())) {
+                    // Since this is a rename operation we will need to remove the old channel.
+                    tagRepository.deleteById(existingTag.get().getName());
+                    newTag.setName(tag.getName());
+                }
+            } else {
+                newTag = tag;
+            }
 
             // update tag
-            XmlTag updatedTag = tagRepository.save(tagName,tag);
+            XmlTag updatedTag = tagRepository.save(newTag);
 
             // update channels of existing tag
-            if(!chans.isEmpty()) {
-                chans.forEach(chan -> chan.addTag(updatedTag));
-                channelRepository.saveAll(chans);
+            if(!channels.isEmpty()) {
+                channels.forEach(chan -> chan.addTag(updatedTag));
             }
 
             // update the listed channels in the tag's payload with the updated tag
             if(!tag.getChannels().isEmpty()) {
-                tag.getChannels().forEach(chan -> chan.addTag(updatedTag));
+                tag.getChannels().forEach(c -> c.addTag(updatedTag));
                 // update the listed channels in the tag's payloads with the new tag
-                Iterable<XmlChannel> channels = channelRepository.saveAll(tag.getChannels());
-                List<XmlChannel> chanList = new ArrayList<XmlChannel>();
-                for(XmlChannel chan: channels) {
-                    chan.setTags(new ArrayList<XmlTag>());
-                    chan.setProperties(new ArrayList<XmlProperty>());
-                    chanList.add(chan);
-                }
-                if(!chanList.isEmpty())
-                    updatedTag.setChannels(chanList);
+                channels.addAll(tag.getChannels());
             }
 
-            return updatedTag;        
+            if(!channels.isEmpty()) {
+                Iterable<XmlChannel> updatedChannels = channelRepository.saveAll(channels);
+                updatedTag.setChannels(StreamSupport.stream(updatedChannels.spliterator(), false)
+                        .collect(Collectors.toList()));
+            }
+
+            return updatedTag;
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -361,7 +367,7 @@ public class TagManager {
             tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
 
             // check if authorized owner
-            for(XmlTag tag:tags) {                
+            for(XmlTag tag:tags) {
                 Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(present) {
@@ -369,7 +375,7 @@ public class TagManager {
                         log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                                 "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
-                    }     
+                    }
                     tag.setOwner(existingTag.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {

@@ -29,8 +29,8 @@ public class EpicsRPCRequest {
         uri.getQuery().getStringField("_name").put("*");
         try {
             PVStructure result = client.request(uri.getPVStructure(), 3.0);
-            List<XmlChannel> channels = NTXmlUtil.parse(result);
-            channels.forEach(c -> System.out.println(c.toLog()));
+//            List<XmlChannel> channels = NTXmlUtil.parse(result);
+//            channels.forEach(c -> System.out.println(c.toLog()));
         } catch (Exception e) {
             e.printStackTrace();
         }

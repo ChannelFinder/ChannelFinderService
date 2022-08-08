@@ -3,16 +3,10 @@ package org.phoebus.channelfinder;
 import static org.phoebus.channelfinder.CFResourceDescriptors.CF_SERVICE_INFO;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.logging.Level;
 
-import org.elasticsearch.Version;
-import org.elasticsearch.action.main.MainResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -25,6 +19,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchVersionInfo;
+import co.elastic.clients.elasticsearch.core.InfoResponse;
+
 @CrossOrigin
 @RestController
 @RequestMapping(CF_SERVICE_INFO)
@@ -33,9 +31,9 @@ public class InfoManager {
 
     @Value("${channelfinder.version:4.0.0}")
     private String version;
-
+    
     @Autowired
-    ElasticSearchClient esService;
+    private ElasticConfig esService;
 
     private final static ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -50,15 +48,16 @@ public class InfoManager {
         cfServiceInfo.put("name", "ChannelFinder Service");
         cfServiceInfo.put("version", version);
 
-        RestHighLevelClient client = esService.getSearchClient();
         Map<String, String> elasticInfo = new LinkedHashMap<String, String>();
         try {
-            MainResponse response = client.info(RequestOptions.DEFAULT);
+
+            ElasticsearchClient client = esService.getSearchClient();
+            InfoResponse response = client.info();
             
             elasticInfo.put("status", "Connected");
-            elasticInfo.put("clusterName", response.getClusterName().value());
-            elasticInfo.put("clusterUuid", response.getClusterUuid());
-            Version version = response.getVersion();
+            elasticInfo.put("clusterName", response.clusterName());
+            elasticInfo.put("clusterUuid", response.clusterUuid());
+            ElasticsearchVersionInfo version = response.version();
             elasticInfo.put("version", version.toString());
         } catch (IOException e) {
             Application.logger.log(Level.WARNING, "Failed to create ChannelFinder service info resource.", e);

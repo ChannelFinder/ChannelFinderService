@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 
+import co.elastic.clients.elasticsearch._types.Refresh;
+import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -187,7 +189,7 @@ public class ChannelManager {
             });
 
             // create new channels
-            return channelRepository.indexAll(channels);
+            return channelRepository.indexAll(Lists.newArrayList(channels));
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channels, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -220,20 +222,34 @@ public class ChannelManager {
             }
             Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
             boolean present = existingChannel.isPresent();
+
+            XmlChannel newChannel;
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                     log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                             "User does not have the proper authorization to perform an operation on this channel: " + existingChannel.get(), null);
                 }
-            } 
+                newChannel = existingChannel.get();
+                newChannel.setOwner(channel.getOwner());
+                newChannel.addProperties(channel.getProperties());
+                newChannel.addTags(channel.getTags());
+                // Is an existing channel being renamed
+                if (!channel.getName().equalsIgnoreCase(existingChannel.get().getName())) {
+                    // Since this is a rename operation we will need to remove the old channel.
+                    channelRepository.deleteById(existingChannel.get().getName());
+                    newChannel.setName(channel.getName());
+                }
+            } else {
+                newChannel = channel;
+            }
 
             // reset owners of attached tags/props back to existing owners
             channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
             channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
 
             // update channel
-            return channelRepository.save(channelName,channel);
+            return channelRepository.save(newChannel);
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channelName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
