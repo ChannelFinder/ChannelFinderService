@@ -234,7 +234,7 @@ public class TagManager {
      * @param channelName - channel to update <code>tag</code> to
      * @return added tag
      */
-    @PutMapping("/{tagName}/{chName}")
+    @PutMapping("/{tagName}/{channelName}")
     public XmlTag addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
