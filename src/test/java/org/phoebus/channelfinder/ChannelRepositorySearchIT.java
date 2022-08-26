@@ -1,5 +1,6 @@
 package org.phoebus.channelfinder;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -83,18 +84,18 @@ public class ChannelRepositorySearchIT {
         searchParameters.clear();
         searchParameters.add("~name", "SR*");
         result = channelRepository.search(searchParameters);
-        assertSame("Expected 1000 but got " + result.size(), 1000, result.size());
+        assertEquals("Expected 1000 but got " + result.size(), 1000, result.size());
 
         // Search for all 1000 SR channels and all 500 booster channels
         searchParameters.clear();
         searchParameters.add("~name", "SR*|BR*");
         result = channelRepository.search(searchParameters);
-        assertSame("Expected 1500 but got " + result.size(), 1500, result.size());
+        assertEquals("Expected 1500 but got " + result.size(), 1500, result.size());
 
         searchParameters.clear();
         searchParameters.add("~name", "SR*,BR*");
         result = channelRepository.search(searchParameters);
-        assertSame("Expected 1500 but got " + result.size(), 1500, result.size());
+        assertEquals("Expected 1500 but got " + result.size(), 1500, result.size());
         
         // search for channels based on a tag
         for (int i = 0; i < 5; i++) {
@@ -106,7 +107,7 @@ public class ChannelRepositorySearchIT {
             searchParameters.add("~tag", "group"+id+"_"+val_bucket.get(index));
 
             result = channelRepository.search(searchParameters);
-            assertSame("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), result.size());
+            assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), Integer.valueOf(result.size()));
         }
         
         // search for channels based on a tag
@@ -119,7 +120,7 @@ public class ChannelRepositorySearchIT {
             searchParameters.add("group"+id, String.valueOf(val_bucket.get(index)));
 
             result = channelRepository.search(searchParameters);
-            assertSame("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), result.size());
+            assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), Integer.valueOf(result.size()));
         }
     }
 

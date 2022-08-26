@@ -169,7 +169,7 @@ public class PropertyRepositoryIT {
             Set<XmlProperty> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
             Set<XmlProperty> listedProperties = Sets.newHashSet(propertyRepository.findAll());
             // verify the properties were listed as expected
-            assertEquals("Failed to list all created tags", createdProperties, listedProperties);
+            assertEquals("Failed to list all created properties", createdProperties, listedProperties);
         } catch (Exception e) {
             e.printStackTrace();
         } 

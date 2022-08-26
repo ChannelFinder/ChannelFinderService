@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -105,7 +106,7 @@ public class ChannelScrollIT {
             scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
-        assertSame("Expected 1000 but got " + result.size(), 1000, result.size());
+        assertEquals("Expected 1000 but got " + result.size(), 1000, result.size());
 
         // Search for all 1000 SR channels and all 500 booster channels
         searchParameters.clear();
@@ -116,7 +117,7 @@ public class ChannelScrollIT {
             scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
-        assertSame("Expected 1500 but got " + result.size(), 1500, result.size());
+        assertEquals("Expected 1500 but got " + result.size(), 1500, result.size());
 
         searchParameters.clear();
         searchParameters.add("~name", "SR*,BR*");
@@ -126,7 +127,7 @@ public class ChannelScrollIT {
             scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());
         }
-        assertSame("Expected 1500 but got " + result.size(), 1500, result.size());
+        assertEquals("Expected 1500 but got " + result.size(), 1500, result.size());
         
         // search for channels based on a tag
         for (int i = 0; i < 5; i++) {
@@ -143,7 +144,7 @@ public class ChannelScrollIT {
                 scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
                 result.addAll(scrollResult.getChannels());
             }
-            assertSame("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), result.size());
+            assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), Integer.valueOf(result.size()));
         }
         
         // search for channels based on a tag
@@ -161,7 +162,7 @@ public class ChannelScrollIT {
                 scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
                 result.addAll(scrollResult.getChannels());
             }
-            assertSame("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), result.size());
+            assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), Integer.valueOf(result.size()));
         }
     }
 
