@@ -8,16 +8,13 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import co.elastic.clients.elasticsearch._types.*;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
-import co.elastic.clients.elasticsearch.core.bulk.UpdateOperation;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch.core.search.ScoreMode;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +82,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @param channels - channels to be created
      * @return the created channels
      */
-    @SuppressWarnings("unchecked")
     public List<XmlChannel> indexAll(List<XmlChannel> channels) {
         BulkRequest.Builder br = new BulkRequest.Builder();
 
@@ -129,7 +125,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @param channel - channel to be saved
      * @return the updated/saved channel
      */
-    @SuppressWarnings("unchecked")
     public XmlChannel save(String channelName, XmlChannel channel) {
         try {
             IndexResponse response = client.index(i -> i.index(ES_CHANNEL_INDEX)

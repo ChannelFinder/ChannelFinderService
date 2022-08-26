@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 
-import co.elastic.clients.elasticsearch._types.Refresh;
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -184,9 +183,9 @@ public class ChannelManager {
                 channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
             }
 
-            channels.forEach(log -> {
-                channelManagerAudit.info("PUT" + log.toLog());
-            });
+            channels.forEach(log ->
+                channelManagerAudit.info("PUT" + log.toLog())
+            );
 
             // create new channels
             return channelRepository.indexAll(Lists.newArrayList(channels));

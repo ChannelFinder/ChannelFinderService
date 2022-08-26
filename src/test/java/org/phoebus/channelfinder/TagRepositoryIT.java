@@ -11,14 +11,8 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.phoebus.channelfinder.ChannelRepository;
-import org.phoebus.channelfinder.ElasticConfig;
-import org.phoebus.channelfinder.TagRepository;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -26,7 +20,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 @RunWith(SpringRunner.class)

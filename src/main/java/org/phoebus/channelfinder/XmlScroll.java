@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType (propOrder={"id","channels"})
 public class XmlScroll {
     private String id;
-    private List<XmlChannel> channels = new ArrayList<XmlChannel>();
+    private List<XmlChannel> channels = new ArrayList<>();
     
     /**
      * Creates a new instance of XmlScroll.

@@ -138,7 +138,7 @@ public class TagManager {
                 tag.getChannels().forEach(chan -> chan.addTag(createdTag));
                 // update the listed channels in the tag's payloads with the new tag
                 Iterable<XmlChannel> chans = channelRepository.saveAll(tag.getChannels());
-                List<XmlChannel> chanList = new ArrayList<XmlChannel>();
+                List<XmlChannel> chanList = new ArrayList<>();
                 for (XmlChannel chan : chans) {
                     chanList.add(chan);
                 }
@@ -199,7 +199,7 @@ public class TagManager {
             Iterable<XmlTag> createdTags = tagRepository.indexAll(Lists.newArrayList(tags));
 
             // update the listed channels in the tags' payloads with new tags
-            Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
+            Map<String, XmlChannel> channels = new HashMap<>();
             for (XmlTag tag : tags) {
                 for (XmlChannel channel : tag.getChannels()) {
                     if (channels.get(channel.getName()) != null) {
@@ -234,7 +234,7 @@ public class TagManager {
      * @param channelName - channel to update <code>tag</code> to
      * @return added tag
      */
-    @PutMapping("/{tagName}/{chName}")
+    @PutMapping("/{tagName}/{channelName}")
     public XmlTag addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -298,7 +298,7 @@ public class TagManager {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
                         "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
             }
-            List<XmlChannel> channels = new ArrayList<XmlChannel>();
+            List<XmlChannel> channels = new ArrayList<>();
             Optional<XmlTag> existingTag = tagRepository.findById(tagName,true);
 
             XmlTag newTag;
@@ -390,7 +390,7 @@ public class TagManager {
             validateTagRequest(tags);
 
             // update the listed channels in the tags' payloads with new tags
-            Map<String, XmlChannel> channels = new HashMap<String, XmlChannel>();
+            Map<String, XmlChannel> channels = new HashMap<>();
             for (XmlTag tag : tags) {
                 for (XmlChannel channel : tag.getChannels()) {
                     if (channels.get(channel.getName()) != null) {
@@ -496,10 +496,13 @@ public class TagManager {
 
     /**
      * Checks if all the tags included satisfy the following conditions
-     * 1. the tag names are not null
-     * 2. the tag owners are not null or empty
-     * 3. all the channels exist
-     * 
+     *
+     * <ol>
+     * <li> the tag names are not null or empty and matches the names in the bodies
+     * <li> the tag owners are not null or empty
+     * <li> all the channels exist
+     * </ol>
+     *
      * @param tags the list of tags to be validated
      */
     public void validateTagRequest(Iterable<XmlTag> tags) {
@@ -510,10 +513,13 @@ public class TagManager {
 
     /**
      * Checks if tag satisfies the following conditions
-     * 1. the tag name is not null and matches the name in the body
-     * 2. the tag owner is not null or empty
-     * 3. all the listed channels exist
-     * 
+     *
+     * <ol>
+     * <li> the tag name is not null or empty and matches the name in the body
+     * <li> the tag owner is not null or empty
+     * <li> all the listed channels exist
+     * </ol>
+     *
      * @param tag the tag to be validates
      */
     public void validateTagRequest(XmlTag tag) {

@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -23,27 +22,27 @@ public class AuthorizationService {
 
     @Value("${admin-groups:cf-admins}")
     void initializeAdminRoles(String groups) {
-        this.admin_groups = Arrays.asList(groups.split(",")).stream().map(g -> {
-            return "ROLE_" + g.trim().toUpperCase();
-        }).collect(Collectors.toList());
+        AuthorizationService.admin_groups = Arrays.asList(groups.split(",")).stream().map(g ->
+            "ROLE_" + g.trim().toUpperCase()
+        ).collect(Collectors.toList());
     }
     @Value("${channel-groups:cf-channels}")
     void initializeChannelModRoles(String groups) {
-        this.channel_groups = Arrays.asList(groups.split(",")).stream().map(g -> {
-            return "ROLE_" + g.trim().toUpperCase();
-        }).collect(Collectors.toList());
+        AuthorizationService.channel_groups = Arrays.asList(groups.split(",")).stream().map(g ->
+            "ROLE_" + g.trim().toUpperCase()
+        ).collect(Collectors.toList());
     }
     @Value("${property-groups:cf-properties}")
     void initializePropertyRoles(String groups) {
-        this.property_groups = Arrays.asList(groups.split(",")).stream().map(g -> {
-            return "ROLE_" + g.trim().toUpperCase();
-        }).collect(Collectors.toList());
+        AuthorizationService.property_groups = Arrays.asList(groups.split(",")).stream().map(g ->
+            "ROLE_" + g.trim().toUpperCase()
+        ).collect(Collectors.toList());
     }
     @Value("${tag-groups:cf-tags}")
     void initializeTagRoles(String groups) {
-        this.tag_groups = Arrays.asList(groups.split(",")).stream().map(g -> {
-            return "ROLE_" + g.trim().toUpperCase();
-        }).collect(Collectors.toList());
+        AuthorizationService.tag_groups = Arrays.asList(groups.split(",")).stream().map(g ->
+            "ROLE_" + g.trim().toUpperCase()
+        ).collect(Collectors.toList());
     }
 
     public enum ROLES {
@@ -57,11 +56,10 @@ public class AuthorizationService {
         private ROLES(List<String> groups) {
             this.groups = groups;
         }
-
-    };
+    }
 
     public boolean isAuthorizedOwner(Authentication authentication, XmlTag data) {
-        ArrayList<String> auth = new ArrayList<String>();
+        ArrayList<String> auth = new ArrayList<>();
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         for(GrantedAuthority a: auths)
             auth.add(a.getAuthority());
@@ -74,7 +72,7 @@ public class AuthorizationService {
     }
 
     public boolean isAuthorizedOwner(Authentication authentication, XmlProperty data) {
-        ArrayList<String> auth = new ArrayList<String>();
+        ArrayList<String> auth = new ArrayList<>();
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         for(GrantedAuthority a: auths)
             auth.add(a.getAuthority());
@@ -87,7 +85,7 @@ public class AuthorizationService {
     }
 
     public boolean isAuthorizedOwner(Authentication authentication, XmlChannel data) {
-        ArrayList<String> auth = new ArrayList<String>();
+        ArrayList<String> auth = new ArrayList<>();
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         for(GrantedAuthority a: auths)
             auth.add(a.getAuthority());
@@ -100,7 +98,7 @@ public class AuthorizationService {
     }
 
     public boolean isAuthorizedRole(Authentication authentication, ROLES expectedRole) {
-        ArrayList<String> auth = new ArrayList<String>();
+        ArrayList<String> auth = new ArrayList<>();
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         for(GrantedAuthority a: auths)
             auth.add(a.getAuthority());

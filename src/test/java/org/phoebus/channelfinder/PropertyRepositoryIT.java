@@ -10,12 +10,6 @@ import java.util.Set;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.phoebus.channelfinder.ChannelRepository;
-import org.phoebus.channelfinder.ElasticConfig;
-import org.phoebus.channelfinder.PropertyRepository;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlProperty;
-import org.phoebus.channelfinder.XmlTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -175,7 +169,7 @@ public class PropertyRepositoryIT {
             Set<XmlProperty> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
             Set<XmlProperty> listedProperties = Sets.newHashSet(propertyRepository.findAll());
             // verify the properties were listed as expected
-            assertEquals("Failed to list all created tags", createdProperties, listedProperties);
+            assertEquals("Failed to list all created properties", createdProperties, listedProperties);
         } catch (Exception e) {
             e.printStackTrace();
         } 

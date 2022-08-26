@@ -1,14 +1,9 @@
 package org.phoebus.channelfinder.epics;
 
-import java.util.List;
-
 import org.epics.nt.NTURI;
 import org.epics.nt.NTURIBuilder;
 import org.epics.pvaccess.client.rpc.RPCClientImpl;
 import org.epics.pvdata.pv.PVStructure;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.epics.ChannelFinderEpicsService;
-import org.phoebus.channelfinder.epics.NTXmlUtil;
 
 /**
  * A simple example client to the channelfinder epics rpc service

@@ -6,3 +6,9 @@
 .pydevproject
 *.iml
 **/site/sphinx/build/*
+
+### Eclipse ###
+.settings/org.eclipse.jdt.core.prefs
+
+### Docker ###
+docker-compose-local*

@@ -33,7 +33,6 @@ import org.phoebus.channelfinder.ChannelRepository;
 import org.phoebus.channelfinder.XmlChannel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -60,7 +59,7 @@ public class ChannelFinderEpicsService {
 
     private final ExecutorService pool = Executors.newScheduledThreadPool(1);
     
-    public final static String SERVICE_DESC = "cfService:query";
+    public static final String SERVICE_DESC = "cfService:query";
 
     @Autowired
     ChannelRepository repository;
@@ -139,7 +138,7 @@ public class ChannelFinderEpicsService {
 
                 final Set<String> filteredColumns = Collections.emptySet();
 
-                MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+                MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
                 NTURI uri = NTURI.wrap(args);
                 String[] query = uri.getQueryNames();
                 for (String parameter : query) {
@@ -167,9 +166,9 @@ public class ChannelFinderEpicsService {
 
                 List<XmlChannel> result = channelRepository.search(searchParameters);
 
-                final Map<String, List<String>> channelTable = new HashMap<String, List<String>>();
-                final Map<String, List<String>> channelPropertyTable = new HashMap<String, List<String>>();
-                final Map<String, boolean[]> channelTagTable = new HashMap<String, boolean[]>();
+                final Map<String, List<String>> channelTable = new HashMap<>();
+                final Map<String, List<String>> channelPropertyTable = new HashMap<>();
+                final Map<String, boolean[]> channelTagTable = new HashMap<>();
                 channelTable.put("channelName", Arrays.asList(new String[result.size()]));
                 channelTable.put("owner", Arrays.asList(new String[result.size()]));
 
@@ -183,18 +182,18 @@ public class ChannelFinderEpicsService {
                     channelTable.get("owner").set(index, ch.getOwner());
 
                     if (!filteredColumns.contains("ALL")) {
-                        ch.getTags().stream().filter((tag) -> {
-                            return filteredColumns.isEmpty() || filteredColumns.contains(tag.getName());
-                        }).forEach(t -> {
+                        ch.getTags().stream().filter(tag ->
+                            filteredColumns.isEmpty() || filteredColumns.contains(tag.getName())
+                        ).forEach(t -> {
                             if (!channelTagTable.containsKey(t.getName())) {
                                 channelTagTable.put(t.getName(), new boolean[result.size()]);
                             }
                             channelTagTable.get(t.getName())[index] = true;
                         });
 
-                        ch.getProperties().stream().filter((prop) -> {
-                            return filteredColumns.isEmpty() || filteredColumns.contains(prop.getName());
-                        }).forEach(prop -> {
+                        ch.getProperties().stream().filter(prop ->
+                            filteredColumns.isEmpty() || filteredColumns.contains(prop.getName())
+                        ).forEach(prop -> {
                             if (!channelPropertyTable.containsKey(prop.getName())) {
                                 channelPropertyTable.put(prop.getName(), Arrays.asList(new String[result.size()]));
                             }
@@ -203,31 +202,31 @@ public class ChannelFinderEpicsService {
                     }
                 });
                 NTTableBuilder ntTableBuilder = NTTable.createBuilder();
-                channelTable.keySet().forEach(name -> {
-                    ntTableBuilder.addColumn(name, ScalarType.pvString);
-                });
-                channelPropertyTable.keySet().forEach(name -> {
-                    ntTableBuilder.addColumn(name, ScalarType.pvString);
-                });
-                channelTagTable.keySet().forEach(name -> {
-                    ntTableBuilder.addColumn(name, ScalarType.pvBoolean);
-                });
+                channelTable.keySet().forEach(name ->
+                    ntTableBuilder.addColumn(name, ScalarType.pvString)
+                );
+                channelPropertyTable.keySet().forEach(name ->
+                    ntTableBuilder.addColumn(name, ScalarType.pvString)
+                );
+                channelTagTable.keySet().forEach(name ->
+                    ntTableBuilder.addColumn(name, ScalarType.pvBoolean)
+                );
                 NTTable ntTable = ntTableBuilder.create();
 
-                channelTable.entrySet().stream().forEach(col -> {
+                channelTable.entrySet().stream().forEach(col ->
                     ntTable.getColumn(PVStringArray.class, col.getKey()).put(0, col.getValue().size(),
-                            col.getValue().stream().toArray(String[]::new), 0);
-                });
+                            col.getValue().stream().toArray(String[]::new), 0)
+                );
 
-                channelPropertyTable.entrySet().stream().forEach(col -> {
+                channelPropertyTable.entrySet().stream().forEach(col ->
                     ntTable.getColumn(PVStringArray.class, col.getKey()).put(0, col.getValue().size(),
-                            col.getValue().stream().toArray(String[]::new), 0);
-                });
+                            col.getValue().stream().toArray(String[]::new), 0)
+                );
 
-                channelTagTable.entrySet().stream().forEach(col -> {
+                channelTagTable.entrySet().stream().forEach(col ->
                     ntTable.getColumn(PVBooleanArray.class, col.getKey()).put(0, col.getValue().length,
-                            col.getValue(), 0);
-                });
+                            col.getValue(), 0)
+                );
 
                 log.fine(ntTable.toString());
                 this.callback.requestDone(StatusFactory.getStatusCreate().getStatusOK(), ntTable.getPVStructure());
