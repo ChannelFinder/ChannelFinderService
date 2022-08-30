@@ -33,13 +33,12 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
 * Prerequisites
 
   * JDK 11
-  * Elastic version 6.3
+  * Elastic version 8.2.x
   * <For authN/authZ using LDAP:> LDAP server, e.g. OpenLDAP
 
 * setup elastic search  
   **Install**  
-  Download and install elasticsearch (verision 6.3) from [elastic.com](https://www.elastic.co/downloads/past-releases/elasticsearch-6-3-1)
-  ( [other releases](https://www.elastic.co/downloads/past-releases#elasticsearch) )
+  Download and install elasticsearch (verision 8.2.0) from [elastic.com](https://www.elastic.co/downloads/past-releases/elasticsearch-8-2-0)
   following the instructions for your platform.\
   <Alternatively:> Install the elastic server from your distribution using a package manager.  
   
@@ -47,8 +46,8 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
 ```
 # Debian 10
 sudo apt-get install openjdk-11-jdk maven git curl wget
-wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.3.2.deb
-sudo dpkg -i elasticsearch-6.3.2.deb
+wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.2.0-amd64.deb
+sudo dpkg -i elasticsearch-8.2.0-amd64.deb
 sudo systemctl start elasticsearch
 
 # checkout and build channelfinder service source
@@ -69,7 +68,7 @@ mvn spring-boot:run
 * or using the jar
 
 ```
-java -jar target/ChannelFinder-4.0.0.jar
+java -jar target/ChannelFinder-4.7.0.jar
 ```
 
 The above command will start the channelfinder service on port 8080 with the default settings,
@@ -84,12 +83,12 @@ To check that the server is running correctly.
 $ curl http://localhost:8080/ChannelFinder
 {
   "name" : "ChannelFinder Service",
-  "version" : "4.0.0",
+  "version" : "4.7.0",
   "elastic" : {
     "status" : "Connected",
     "clusterName" : "elasticsearch",
     "clusterUuid" : "sA2L_cpoRD-H46c_Mya3mA",
-    "version" : "6.3.2"
+    "version" : "8.2.0"
   }
 }
 $ curl http://localhost:8080/ChannelFinder/resources/tags
@@ -113,14 +112,14 @@ mvn spring-boot:run -Dspring.config.location=file:./application.properties
 ```
 or  
 ```
-java -jar ChannelFinder-4.0.0.jar -Dspring.config.location=file:./application.properties
+java -jar ChannelFinder-4.7.0.jar -Dspring.config.location=file:./application.properties
 ```
 
 You can also start up channelfinder with demo data using the command line argument `demo-data` followed by an integer number `n`. For example, `--demo-data=n`. With this argument, `n*1500` channels will be created to simulate some of the most common types of devices found in accelerators like magnets, power supplies, etc...  
 
 ```
-java -jar target/ChannelFinder-4.0.0.jar --demo-data=1
-java -jar target/ChannelFinder-4.0.0.jar --cleanup=1
+java -jar target/ChannelFinder-4.7.0.jar --demo-data=1
+java -jar target/ChannelFinder-4.7.0.jar --cleanup=1
 ```
   
 ```
