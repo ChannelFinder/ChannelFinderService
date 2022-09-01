@@ -29,7 +29,7 @@ import co.elastic.clients.elasticsearch.core.InfoResponse;
 @EnableAutoConfiguration
 public class InfoManager {
 
-    @Value("${channelfinder.version:4.0.0}")
+    @Value("${channelfinder.version:4.7.0}")
     private String version;
     
     @Autowired
