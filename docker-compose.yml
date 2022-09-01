@@ -18,8 +18,8 @@ services:
           echo 'Waiting for Elasticsearch'
           sleep 1
         done
-        java -jar ChannelFinder-4.0.0.jar
-      "
+        java -jar /channelfinder/ChannelFinder-4.7.0.jar"
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
     hostname: elasticsearch-cf
@@ -30,11 +30,15 @@ services:
     environment:
       cluster.name: channelfinder
       discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      xpack.security.enabled: "false"
     volumes:
       - channelfinder-es-data:/usr/share/elasticsearch/data
+
 volumes:
   channelfinder-es-data:
     driver: local
+
 networks:
   channelfinder-net:
     driver: bridge
