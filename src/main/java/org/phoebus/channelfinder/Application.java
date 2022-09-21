@@ -77,7 +77,9 @@ public class Application  implements ApplicationRunner {
         if(args.containsOption("cleanup")) {
             int numberOfCells = args.getOptionValues("cleanup").stream().mapToInt(Integer::valueOf).max().orElse(1);
             // This is kind of a hack, the create Db is being called to reset the channels and then deleting them
+            logger.log(Level.INFO, "Populating the channelfinder service with demo data first, then deleting them");
             service.createDB(numberOfCells);
+            logger.log(Level.INFO, "Cleaning up the populated demo data");
             service.cleanupDB();
         }
     }
