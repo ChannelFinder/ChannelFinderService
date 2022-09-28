@@ -1,6 +1,6 @@
 package org.phoebus.channelfinder;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -8,10 +8,22 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import co.elastic.clients.elasticsearch._types.*;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldSort;
+import co.elastic.clients.elasticsearch._types.Refresh;
+import co.elastic.clients.elasticsearch._types.Result;
+import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
-import co.elastic.clients.elasticsearch.core.*;
+import co.elastic.clients.elasticsearch.core.BulkRequest;
+import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.DeleteResponse;
+import co.elastic.clients.elasticsearch.core.ExistsRequest;
+import co.elastic.clients.elasticsearch.core.GetResponse;
+import co.elastic.clients.elasticsearch.core.IndexRequest;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
@@ -296,6 +308,12 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
         try {
             DeleteResponse response = client
                     .delete(i -> i.index(ES_PROPERTY_INDEX).id(propertyName).refresh(Refresh.True));
+            // verify the deletion of the property
+            if (response.result().equals(Result.Deleted)) {
+                log.config("Deletes property " + propertyName);
+            }
+
+            // Remove the Property from Channels
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add(propertyName, "*");
@@ -310,6 +328,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                                     .action(a -> a.doc(channel))));
                 }
                 try {
+                    br.refresh(Refresh.True);
                     BulkResponse result = client.bulk(br.build());
                     // Log errors, if any
                     if (result.errors()) {
@@ -329,12 +348,6 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 params.set("~search_after", channels.get(channels.size() - 1).getName());
                 channels = channelRepository.search(params);
             }
-
-            // verify the deletion of the property
-            if (response.result().equals(Result.Deleted)) {
-                log.config("Deletes property " + propertyName);
-            }
-
         } catch (ElasticsearchException | IOException e) {
             log.log(Level.SEVERE, "Failed to delete property: " + propertyName, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,

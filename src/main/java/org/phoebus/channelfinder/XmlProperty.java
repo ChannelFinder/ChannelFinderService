@@ -10,13 +10,12 @@ package org.phoebus.channelfinder;
  * #L%
  */
 
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Property object that can be represented as JSON in payload data.
@@ -26,9 +25,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @XmlRootElement(name="property")
 @XmlType (propOrder={"name","owner","value","channels"})
 public class XmlProperty {
-    private String name = null;
-    private String owner = null;
-    private String value = null;
+    private String name;
+    private String owner;
+    private String value;
     private List<XmlChannel> channels = new ArrayList<>();
 
     /**
