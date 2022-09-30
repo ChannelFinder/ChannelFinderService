@@ -418,7 +418,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                         for (String pattern : value.split("[\\|,;]")) {
                             tagQuery.queries(
                                     NestedQuery.of(n -> n.path("tags").query(
-                                            WildcardQuery.of(w -> w.field("tags.name").value(pattern.trim()))._toQuery()))._toQuery());
+                                            WildcardQuery.of(w -> w.field("tags.name").caseInsensitive(true).value(pattern.trim()))._toQuery()))._toQuery());
                         }
                         if (isNot) {
                             boolQuery.mustNot(tagQuery.build()._toQuery());
@@ -450,10 +450,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                             String finalKey = key;
                             BoolQuery bq;
                             if (isNot) {
-                                bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
+                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
                                         .mustNot(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
                             } else {
-                                bq = BoolQuery.of(p -> p.must(MatchQuery.of(name -> name.field("properties.name").query(finalKey))._toQuery())
+                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
                                         .must(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
                             }
                             propertyQuery.queries(

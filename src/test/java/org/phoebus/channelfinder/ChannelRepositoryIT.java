@@ -18,6 +18,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.google.common.collect.Iterables;
@@ -221,6 +223,7 @@ public class ChannelRepositoryIT {
         }
 
         Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         try {
             foundChannels = channelRepository.findAllById(channelNames);
@@ -230,7 +233,44 @@ public class ChannelRepositoryIT {
             assertEquals("Failed to find the tags",createdChannels,foundChannels);           
         }
     }
-    
+
+    /**
+     * find channels using case insensitive tag and property names searches
+     */
+    @Test
+    public void findChannels() {
+        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
+        List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
+        List<String> channelNames = Arrays.asList(testChannel.getName(),testChannel1.getName());
+        Iterable<XmlChannel> foundChannels = null;
+
+        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
+
+        try {
+            MultiValueMap searchParameters = new LinkedMultiValueMap();
+            searchParameters.set(testProperties.get(0).getName().toLowerCase(), "*");
+            foundChannels = channelRepository.search(searchParameters);
+            assertEquals("Failed to find the based on property name search (all lower case)", createdChannels, foundChannels);
+
+            searchParameters.set(testProperties.get(0).getName().toUpperCase(), "*");
+            foundChannels = channelRepository.search(searchParameters);
+            assertEquals("Failed to find the based on property name search (all upper case)", createdChannels, foundChannels);
+
+            searchParameters.clear();
+            searchParameters.set("~tag", testTags.get(0).getName().toLowerCase());
+            foundChannels = channelRepository.search(searchParameters);
+            assertEquals("Failed to find the based on tags name search (all lower case)", createdChannels, foundChannels);
+
+            searchParameters.set("~tag", testTags.get(0).getName().toUpperCase());
+            foundChannels = channelRepository.search(searchParameters);
+            assertEquals("Failed to find the based on tags name search (all upper case)", createdChannels, foundChannels);
+
+        } catch (ResponseStatusException e) {
+        }
+    }
+
     /**
      * delete a single tag
      */
