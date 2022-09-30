@@ -407,7 +407,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     for (String value : parameter.getValue()) {
                         DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
                         for (String pattern : value.split("[\\|,;]")) {
-                            nameQuery.queries(WildcardQuery.of(w -> w.field("name").value(pattern.trim()))._toQuery());
+                            nameQuery.queries(WildcardQuery.of(w -> w.field("name").caseInsensitive(true).value(pattern.trim()))._toQuery());
                         }
                         boolQuery.must(nameQuery.build()._toQuery());
                     }
@@ -451,10 +451,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                             BoolQuery bq;
                             if (isNot) {
                                 bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
-                                        .mustNot(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                                        .mustNot(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
                             } else {
                                 bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
-                                        .must(WildcardQuery.of(val -> val.field("properties.value").value(pattern.trim()))._toQuery()));
+                                        .must(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
                             }
                             propertyQuery.queries(
                                     NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
