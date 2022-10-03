@@ -10,14 +10,13 @@ package org.phoebus.channelfinder;
  * #L%
  */
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Tag object that can be represented as XML/JSON in payload data.
@@ -27,8 +26,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @XmlRootElement(name="tag")
 @XmlType (propOrder={"name","owner","channels"})
 public class XmlTag {
-    private String name = null;
-    private String owner = null;
+    private String name;
+    private String owner;
     private List<XmlChannel> channels = new ArrayList<>();
 
     /**

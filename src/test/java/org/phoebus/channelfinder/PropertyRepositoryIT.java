@@ -125,6 +125,7 @@ public class PropertyRepositoryIT {
         testProperty.setValue("test");
         XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(testProperty),new ArrayList<XmlTag>());
         XmlChannel createdChannel = channelRepository.index(channel);
+        cleanupTestChannels = Arrays.asList(createdChannel);
 
         foundProperty = propertyRepository.findById(createdProperty.getName(),true);
         createdProperty.setChannels(Arrays.asList(channel));
@@ -133,8 +134,6 @@ public class PropertyRepositoryIT {
         expectedProperty.setChannels(Arrays.asList(createdChannel));
         assertEquals("Failed to find the property", expectedProperty, foundProperty.get());
 
-        // channel clean up
-        channelRepository.deleteById(createdChannel.getName());
     }
 
     /**
@@ -220,6 +219,7 @@ public class PropertyRepositoryIT {
         cleanupTestProperties = Arrays.asList(testProperty);
 
         XmlChannel createdChannel = channelRepository.index(channel);
+        cleanupTestChannels = Arrays.asList(createdChannel);
         propertyRepository.deleteById(createdProperty.getName());
         // verify the property was deleted as expected
         assertNotEquals("Failed to delete property",testProperty,propertyRepository.findById(testProperty.getName()));
@@ -233,14 +233,12 @@ public class PropertyRepositoryIT {
         List<XmlChannel> chans = channelRepository.search(params);
         // verify the property was deleted from channels as expected
         assertTrue("Failed to remove property from channel", chans.isEmpty());
-
-        // channel clean up
-        channelRepository.deleteById(createdChannel.getName());
     }
 
     // helper operations to clean up proprepoIT
-
     private List<XmlProperty> cleanupTestProperties = Collections.emptyList();
+
+    private List<XmlChannel> cleanupTestChannels = Collections.emptyList();
 
     @After
     public void cleanup() {
@@ -249,6 +247,12 @@ public class PropertyRepositoryIT {
             if (propertyRepository.existsById(property.getName())) {
                 propertyRepository.deleteById(property.getName());
             }            
+        });
+
+        cleanupTestChannels.forEach(channel -> {
+            if (channelRepository.existsById(channel.getName())) {
+                channelRepository.deleteById(channel.getName());
+            }
         });
     }
 }

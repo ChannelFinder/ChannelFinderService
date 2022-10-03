@@ -27,6 +27,8 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,6 +76,11 @@ public class ElasticConfig implements ServletContextListener {
     @Value("${elasticsearch.query.size}")
     private String ES_QUERY_SIZE;
 
+    ObjectMapper objectMapper = new ObjectMapper()
+            .addMixIn(XmlTag.class, XmlTag.OnlyXmlTag.class)
+            .addMixIn(XmlProperty.class, XmlProperty.OnlyXmlProperty.class);
+
+
     @Bean({ "searchClient" })
     public ElasticsearchClient getSearchClient() {
         if (searchClient == null) {
@@ -81,7 +88,7 @@ public class ElasticConfig implements ServletContextListener {
             RestClient httpClient = RestClient.builder(new HttpHost(host, port)).build();
 
             // Create the Java API Client with the same low level client
-            ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper());
+            ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper(objectMapper));
 
             searchClient = new ElasticsearchClient(transport);
         }
@@ -99,7 +106,7 @@ public class ElasticConfig implements ServletContextListener {
             RestClient httpClient = RestClient.builder(new HttpHost(host, port)).build();
 
             // Create the Java API Client with the same low level client
-            ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper());
+            ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper(objectMapper));
             indexClient = new ElasticsearchClient(transport);
         }
         esInitialized.set(!Boolean.parseBoolean(createIndices));
