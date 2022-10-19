@@ -6,6 +6,7 @@
 .pydevproject
 *.iml
 **/site/sphinx/build/*
+.idea
 
 ### Eclipse ###
 .settings/org.eclipse.jdt.core.prefs
