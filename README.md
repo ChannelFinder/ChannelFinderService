@@ -50,7 +50,7 @@ wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.2.0-am
 sudo dpkg -i elasticsearch-8.2.0-amd64.deb
 sudo systemctl start elasticsearch
 
-# checkout and build channelfinder service source
+#### Checkout and build ChannelFinder service source
 git clone https://github.com/ChannelFinder/ChannelFinderService.git
 cd ChannelFinderService
 mvn clean install
@@ -126,6 +126,38 @@ java -jar target/ChannelFinder-4.7.0.jar --cleanup=1
 mvn spring-boot:run -Dspring-boot.run.arguments="--demo-data=1"
 mvn spring-boot:run -Dspring-boot.run.arguments="--cleanup=1"
 ```
+
+#### Integration tests with Docker containers
+
+Purpose is to have integration tests for ChannelFinder API.
+
+See `src/test/java` and package
+* `org.phoebus.channelfinder.docker`
+
+Integration tests are implemented in test class annotated with `@Testcontainers`. Test class starts a docker container for the application (ChannelFinder service) and another docker container for elastic (Elasticsearch) through `docker-compose-integrationtest.yml` after which JUnit tests are run.
+
+```
+    @Container
+    public static final DockerComposeContainer<?> ENVIRONMENT =
+        new DockerComposeContainer<>(new File("docker-compose-integrationtest.yml"))
+            .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
+
+    @Test
+    void channelfinderUp() {
+        try {
+            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER;
+            int responseCode = ITUtil.doGet(address);
+
+            assertEquals(HttpURLConnection.HTTP_OK, responseCode);
+        } catch (IOException e) {
+            fail();
+        }
+    }
+```
+
+In this way, http requests (GET) and curl commands (POST, PUT, DELETE) are run towards the application to test behavior (read, list, query, create, update, remove) and replies are received and checked if content is as expected.
+
+There are tests for properties, tags and channels separately and in combination.
 
 #### ChannelFinder data managment
 

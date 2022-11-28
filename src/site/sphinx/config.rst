@@ -6,7 +6,7 @@ Default configuration is `built in <https://github.com/ChannelFinder/ChannelFind
 which may be suitable for initial testing and evaluation.
 This may be overridden when starting the service.  eg. ::
 
-    java -jar ChannelFinder-4.0.0.jar -Dspring.config.location=file:./application.properties
+    java -jar ChannelFinder-4.7.0.jar -Dspring.config.location=file:./application.properties
 
 application.properties
 ----------------------
