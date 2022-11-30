@@ -59,7 +59,7 @@ public class ChannelRepositorySearchIT {
      * @throws InterruptedException 
      */
     @Test
-    public void searchNameTest() throws InterruptedException {
+    public void searchTest() throws InterruptedException {
         List<String> channelNames = Arrays
                 .asList(populateService.getChannelList().toArray(new String[populateService.getChannelList().size()]));
 
@@ -121,6 +121,72 @@ public class ChannelRepositorySearchIT {
 
             result = channelRepository.search(searchParameters);
             assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), Integer.valueOf(result.size()));
+        }
+    }
+
+    @Test
+    public void countTest() throws InterruptedException {
+        List<String> channelNames = Arrays
+                .asList(populateService.getChannelList().toArray(new String[populateService.getChannelList().size()]));
+
+        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+        // Search for a single unique channel
+        searchParameters.add("~name", channelNames.get(0));
+        long result = channelRepository.count(searchParameters);
+        assertTrue(result == 1);
+
+        // Search for all channels via wildcards
+        searchParameters.clear();
+        searchParameters.add("~name", "BR:C001-BI:2{BLA}Pos:?-RB");
+        result = channelRepository.count(searchParameters);
+        assertEquals("Expected 2 but got " + result, 2, result);
+
+        searchParameters.clear();
+        searchParameters.add("~name", "BR:C001-BI:?{BLA}Pos:*");
+        result = channelRepository.count(searchParameters);
+        assertEquals("Expected 4 but got " + result, 4, result);
+
+        // Search for all 1000 channels
+        searchParameters.clear();
+        searchParameters.add("~name", "SR*");
+        result = channelRepository.count(searchParameters);
+        assertEquals("Expected 1000 but got " + result, 1000, result);
+
+        // Search for all 1000 SR channels and all 500 booster channels
+        searchParameters.clear();
+        searchParameters.add("~name", "SR*|BR*");
+        result = channelRepository.count(searchParameters);
+        assertEquals("Expected 1500 but got " + result, 1500, result);
+
+        searchParameters.clear();
+        searchParameters.add("~name", "SR*,BR*");
+        result = channelRepository.count(searchParameters);
+        assertEquals("Expected 1500 but got " + result, 1500, result);
+
+        // search for channels based on a tag
+        for (int i = 0; i < 5; i++) {
+
+            long id = new Random().nextInt(10);
+            int index = new Random().nextInt(9);
+            searchParameters.clear();
+            searchParameters.add("~name", "SR*");
+            searchParameters.add("~tag", "group"+id+"_"+val_bucket.get(index));
+
+            result = channelRepository.count(searchParameters);
+            assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result, val_bucket.get(index), Integer.valueOf((int) result));
+        }
+
+        // search for channels based on a tag
+        for (int i = 0; i < 5; i++) {
+
+            long id = new Random().nextInt(10);
+            int index = new Random().nextInt(9);
+            searchParameters.clear();
+            searchParameters.add("~name", "SR*");
+            searchParameters.add("group"+id, String.valueOf(val_bucket.get(index)));
+
+            result = channelRepository.count(searchParameters);
+            assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result, val_bucket.get(index), Integer.valueOf((int) result));
         }
     }
 

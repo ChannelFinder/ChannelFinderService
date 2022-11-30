@@ -23,6 +23,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.CountRequest;
+import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -468,9 +470,11 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         performance.append("|prepare: " + (System.currentTimeMillis() - start));
         start = System.currentTimeMillis();
 
+        
         try {
             Integer finalSize = size;
             Integer finalFrom = from;
+
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
             searchBuilder.index(ES_CHANNEL_INDEX)
                             .query(boolQuery.build()._toQuery())
@@ -494,6 +498,92 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         }
 
     }
+
+    /**
+     * Match count
+     * @param searchParameters channel search parameters
+     * @return count of the number of matches to the provided query
+     */
+    public long count(MultiValueMap<String, String> searchParameters) {
+
+        BoolQuery.Builder boolQuery = new BoolQuery.Builder();
+
+        for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
+            String key = parameter.getKey().trim();
+            boolean isNot = key.endsWith("!");
+            if (isNot) {
+                key = key.substring(0, key.length() - 1);
+            }
+            switch (key) {
+                case "~name":
+                    for (String value : parameter.getValue()) {
+                        DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
+                        for (String pattern : value.split("[\\|,;]")) {
+                            nameQuery.queries(WildcardQuery.of(w -> w.field("name").caseInsensitive(true).value(pattern.trim()))._toQuery());
+                        }
+                        boolQuery.must(nameQuery.build()._toQuery());
+                    }
+                    break;
+                case "~tag":
+                    for (String value : parameter.getValue()) {
+                        DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
+                        for (String pattern : value.split("[\\|,;]")) {
+                            tagQuery.queries(
+                                    NestedQuery.of(n -> n.path("tags").query(
+                                            WildcardQuery.of(w -> w.field("tags.name").caseInsensitive(true).value(pattern.trim()))._toQuery()))._toQuery());
+                        }
+                        if (isNot) {
+                            boolQuery.mustNot(tagQuery.build()._toQuery());
+                        } else {
+                            boolQuery.must(tagQuery.build()._toQuery());
+                        }
+
+                    }
+                    break;
+                // Ignore the arguments associated with pagination
+                case "~size":
+                case "~from":
+                case "~search_after":
+                    break;
+                default:
+                    DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
+                    for (String value : parameter.getValue()) {
+                        for (String pattern : value.split("[\\|,;]")) {
+                            String finalKey = key;
+                            BoolQuery bq;
+                            if (isNot) {
+                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
+                                        .mustNot(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
+                            } else {
+                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
+                                        .must(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
+                            }
+                            propertyQuery.queries(
+                                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
+                            );
+                        }
+                    }
+                    boolQuery.must(propertyQuery.build()._toQuery());
+                    break;
+            }
+        }
+
+
+        try {
+
+            CountRequest.Builder countBuilder = new CountRequest.Builder();
+            countBuilder.index(ES_CHANNEL_INDEX).query(boolQuery.build()._toQuery());
+            CountResponse response = client.count(countBuilder.build());
+
+            return response.count();
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Count failed for: " + searchParameters, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+        }
+
+    }
+
 
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {

@@ -66,6 +66,11 @@ public class ChannelManager {
         return channelRepository.search(allRequestParams);
     }
 
+    @GetMapping("/count")
+    public long queryCount(@RequestParam MultiValueMap<String, String> allRequestParams) {
+        return channelRepository.count(allRequestParams);
+    }
+
     /**
      * GET method for retrieving an instance of Channel identified by
      * <code>channelName</code>.

@@ -320,6 +320,15 @@ Returns a list of all channels whose names start with “SR:C01-MG:G02A<QDP:H2>F
 
 Note that a number of special characters need to be escaped in URL expressions – in most cases the browser or API library will do the escaping.
 
+Query Count
+"""""""""""
+
+**.../channels/count?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...**
+
+Method: GET    Returns: long    Required Role: None
+
+Returns a count of the number of channels which match a given query.
+
 Create/Replace Channel
 """"""""""""""""""""""
 
