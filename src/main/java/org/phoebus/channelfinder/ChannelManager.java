@@ -141,7 +141,7 @@ public class ChannelManager {
 
             XmlChannel createdChannel = channelRepository.index(channel);
             // process the results
-            sendToNotifiers(List.of(createdChannel));
+            sendToProcessors(List.of(createdChannel));
             // create new channel
             return createdChannel;
         } else {
@@ -205,7 +205,7 @@ public class ChannelManager {
 
             List<XmlChannel> createdChannels = channelRepository.indexAll(Lists.newArrayList(channels));
             // process the results
-            sendToNotifiers(createdChannels);
+            sendToProcessors(createdChannels);
             // created new channel
             return createdChannels;
         } else {
@@ -268,7 +268,7 @@ public class ChannelManager {
 
             XmlChannel updatedChannels = channelRepository.save(newChannel);
             // process the results
-            sendToNotifiers(List.of(updatedChannels));
+            sendToProcessors(List.of(updatedChannels));
             // created new channel
             return updatedChannels;
         } else {
@@ -326,7 +326,7 @@ public class ChannelManager {
             // update channels
             List<XmlChannel> updatedChannels =  FluentIterable.from(channelRepository.saveAll(channels)).toList();
             // process the results
-            sendToNotifiers(updatedChannels);
+            sendToProcessors(updatedChannels);
             // created new channel
             return updatedChannels;
         } else {
@@ -453,7 +453,7 @@ public class ChannelManager {
      *
      * @param channels list of channels to be processed
      */
-    private void sendToNotifiers(List<XmlChannel> channels) {
+    private void sendToProcessors(List<XmlChannel> channels) {
         if (channelProcessors.isEmpty()) {
             return;
         }
