@@ -1,3 +1,3 @@
 FROM openjdk:11-jre
 WORKDIR /channelfinder
-ADD https://github.com/ChannelFinder/ChannelFinderService/releases/download/service-cf-4.0.0/ChannelFinder-4.0.0.jar .
+ADD https://repo1.maven.org/maven2/org/phoebus/app-channel-channelfinder/4.7.0/app-channel-channelfinder-4.7.0.jar .
