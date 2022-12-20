@@ -37,7 +37,7 @@ import org.springframework.util.FileCopyUtils;
 @EnableAutoConfiguration
 @ComponentScan(basePackages="org.phoebus.channelfinder")
 @SpringBootApplication
-public class Application  implements ApplicationRunner {
+public class Application implements ApplicationRunner {
 
     static Logger logger = Logger.getLogger(Application.class.getName());
 

@@ -6,11 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlProperty;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -40,11 +38,10 @@ public class AAChannelProcessor implements ChannelProcessor{
     private String aaURL;
 
     private static final String mgmtResource = "/mgmt/bpl/archivePV";
-    private static final ObjectMapper objectMappper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
     private WebClient client = WebClient.create();
 
     private static final String archivePropertyName = "archive";
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public boolean enabled() {
@@ -74,7 +71,7 @@ public class AAChannelProcessor implements ChannelProcessor{
         String response = client.post()
                 .uri(URI.create(aaURL + mgmtResource))
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(objectMappper.writeValueAsString(archivePVS))
+                .bodyValue(objectMapper.writeValueAsString(archivePVS))
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
