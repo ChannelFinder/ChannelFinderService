@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class ChannelProcessorService {
@@ -19,6 +20,13 @@ public class ChannelProcessorService {
     @Autowired
     private TaskExecutor taskExecutor;
 
+    long getProcessorCount() {
+        return channelProcessors.stream().count();
+    }
+
+    List<String> getProcessorsNames() {
+        return channelProcessors.stream().map(ChannelProcessor::processorName).collect(Collectors.toList());
+    }
     /**
      * {@link ChannelProcessor} providers are called for the specified list of channels. Since a provider
      * implementation may need some time to do it's job, calling them is done asynchronously. Any
