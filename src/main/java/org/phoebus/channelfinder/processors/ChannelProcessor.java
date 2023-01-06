@@ -9,5 +9,8 @@ public interface ChannelProcessor {
 
     boolean enabled();
 
+    String processorName();
+
     void process(List<XmlChannel> channels) throws JsonProcessingException;
+
 }

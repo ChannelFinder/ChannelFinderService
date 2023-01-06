@@ -14,6 +14,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
+import org.phoebus.channelfinder.processors.ChannelProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.core.task.TaskExecutor;
@@ -57,10 +58,8 @@ public class ChannelManager {
     AuthorizationService authorizationService;
 
     @Autowired
-    private List<ChannelProcessor> channelProcessors;
+    ChannelProcessorService channelProcessorService;
 
-    @Autowired
-    private TaskExecutor taskExecutor;
     /**
      * GET method for retrieving a collection of Channel instances, based on a
      * multi-parameter query specifying patterns for tags, property values, and
@@ -141,7 +140,7 @@ public class ChannelManager {
 
             XmlChannel createdChannel = channelRepository.index(channel);
             // process the results
-            sendToProcessors(List.of(createdChannel));
+            channelProcessorService.sendToProcessors(List.of(createdChannel));
             // create new channel
             return createdChannel;
         } else {
@@ -205,7 +204,7 @@ public class ChannelManager {
 
             List<XmlChannel> createdChannels = channelRepository.indexAll(Lists.newArrayList(channels));
             // process the results
-            sendToProcessors(createdChannels);
+            channelProcessorService.sendToProcessors(createdChannels);
             // created new channel
             return createdChannels;
         } else {
@@ -268,7 +267,7 @@ public class ChannelManager {
 
             XmlChannel updatedChannels = channelRepository.save(newChannel);
             // process the results
-            sendToProcessors(List.of(updatedChannels));
+            channelProcessorService.sendToProcessors(List.of(updatedChannels));
             // created new channel
             return updatedChannels;
         } else {
@@ -326,7 +325,7 @@ public class ChannelManager {
             // update channels
             List<XmlChannel> updatedChannels =  FluentIterable.from(channelRepository.saveAll(channels)).toList();
             // process the results
-            sendToProcessors(updatedChannels);
+            channelProcessorService.sendToProcessors(updatedChannels);
             // created new channel
             return updatedChannels;
         } else {
@@ -445,26 +444,4 @@ public class ChannelManager {
         }
     }
 
-    /**
-     * {@link ChannelProcessor} providers are called for the specified list of channels. Since a provider
-     * implementation may need some time to do it's job, calling them is done asynchronously. Any
-     * error handling or logging has to be done in the {@link ChannelProcessor}, but exceptions are
-     * handled here in order to not abort if any of the providers fails.
-     *
-     * @param channels list of channels to be processed
-     */
-    private void sendToProcessors(List<XmlChannel> channels) {
-        if (channelProcessors.isEmpty()) {
-            return;
-        }
-        taskExecutor.execute(() -> channelProcessors.stream()
-                .filter(ChannelProcessor::enabled)
-                .forEach(channelProcessor -> {
-                    try {
-                        channelProcessor.process(channels);
-                    } catch (Exception e) {
-                        log.log(Level.WARNING, "ChannelProcessor " + channelProcessor.getClass().getName() + " throws exception", e);
-                    }
-                }));
-    }
 }

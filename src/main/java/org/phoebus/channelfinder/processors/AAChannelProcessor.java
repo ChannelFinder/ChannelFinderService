@@ -49,6 +49,11 @@ public class AAChannelProcessor implements ChannelProcessor{
     }
 
     @Override
+    public String processorName() {
+        return "Process " + archivePropertyName + " properties on channels";
+    }
+
+    @Override
     public void process(List<XmlChannel> channels) throws JsonProcessingException {
         List<ArchivePV> archivePVS = new ArrayList<>();
         channels.stream()
