@@ -36,6 +36,7 @@ public class ChannelProcessorService {
      * @param channels list of channels to be processed
      */
     public void sendToProcessors(List<XmlChannel> channels) {
+        log.info(channels.stream().map(XmlChannel::toLog).collect(Collectors.joining()));
         if (channelProcessors.isEmpty()) {
             return;
         }

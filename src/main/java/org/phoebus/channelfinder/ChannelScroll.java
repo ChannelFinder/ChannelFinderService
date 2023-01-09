@@ -45,7 +45,6 @@ public class ChannelScroll {
     @Value("${elasticsearch.query.size:10000}")
     private int defaultMaxSize;
 
-
     @Autowired
     @Qualifier("indexClient")
     ElasticsearchClient client;
