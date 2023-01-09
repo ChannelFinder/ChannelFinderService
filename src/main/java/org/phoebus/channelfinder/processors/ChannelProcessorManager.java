@@ -1,18 +1,27 @@
 package org.phoebus.channelfinder.processors;
 
+import org.phoebus.channelfinder.AuthorizationService;
 import org.phoebus.channelfinder.ChannelScroll;
 import org.phoebus.channelfinder.XmlChannel;
 import org.phoebus.channelfinder.XmlScroll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_RESOURCE_URI;
 
@@ -20,11 +29,18 @@ import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_
  * A rest end point for retrieving information about the various channel processors included
  * in this installation of ChannelFinder and end points for manually triggering their processing.
  */
+
 @RestController
 @RequestMapping(CHANNEL_PROCESSOR_RESOURCE_URI)
+@EnableAutoConfiguration
 public class ChannelProcessorManager {
+
+    private static final Logger log = Logger.getLogger(ChannelProcessorManager.class.getName());
+
     @Autowired
     ChannelProcessorService channelProcessorService;
+    @Autowired
+    AuthorizationService authorizationService;
 
     // TODO replace with PIT and search_after
     @Autowired
@@ -43,16 +59,26 @@ public class ChannelProcessorManager {
         return channelProcessorService.getProcessorsNames();
     }
 
-    @GetMapping("/process/all")
+    @PutMapping("/process/all")
     public long processAllChannels() {
+        log.info("Calling processor on ALL channels in ChannelFinder");
         // Only allow authorized users to trigger this operation
-
-        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
-        searchParameters.add("~name", "*");
-        return processChannels(searchParameters);
+        if(authorizationService
+                .isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(),
+                                  AuthorizationService.ROLES.CF_ADMIN)) {
+            MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
+            searchParameters.add("~name", "*");
+            return processChannels(searchParameters);
+        } else {
+            log.log(Level.SEVERE,
+                    "User does not have the proper authorization to perform this operation: /process/all",
+                    new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "User does not have the proper authorization to perform this operation: /process/all");
+        }
     }
 
-    @GetMapping("/process/query")
+    @PutMapping("/process/query")
     public long processChannels(@RequestParam MultiValueMap<String, String> allRequestParams) {
         long channelCount = 0;
         XmlScroll scrollResult = channelScroll.query(allRequestParams);
@@ -66,7 +92,7 @@ public class ChannelProcessorManager {
         return channelCount;
     }
 
-    @GetMapping("/process/channels")
+    @PutMapping("/process/channels")
     public void processChannels(List<XmlChannel> channels) {
         channelProcessorService.sendToProcessors(channels);
     }
