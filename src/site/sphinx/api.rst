@@ -639,3 +639,46 @@ Continue Channels Query
 Method: GET    Returns: Scroll    Required Role: None
 
 Return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
+
+Processor Resources
+^^^^^^^^^^^^^^^^^^^
+
+Starting with Version 4.7.2 ChannelFinder services allows the registration of Channel Processors to allow execution of
+some site specific actions when channels are created or updated.
+
+**.../processors/info**
+
+Method: GET    Returns: List<String>    Required Role: None
+
+Return a list of all the registered processors
+
+**.../processors/count**
+
+Method: GET    Returns: long    Required Role: None
+
+Return a count of how many processors are registered
+
+**.../processors/all**
+
+Method: PUT    Returns: long    Required Role: Admin
+
+Manually trigger the processing of all channels using all the registered processors
+
+Return a count of how many channels are successfully processed
+
+**.../processors/query?~name=name_pattern&~tag=tag_pattern&prop1=value_pattern**
+
+Method: PUT    Returns: long    Required Role: Admin
+
+Manually trigger the processing of all channels which match the provided query
+
+Return a count of how many channels are successfully processed
+
+**.../processors/channels**
+
+Method: PUT     Payload: :ref:`pay-list-of-channels`	 Returns: long    Required Role: Admin
+
+Manually trigger the processing of all channels included in the body
+
+Return a count of how many channels are successfully processed
+
