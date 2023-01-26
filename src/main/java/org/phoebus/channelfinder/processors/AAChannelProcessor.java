@@ -37,6 +37,9 @@ public class AAChannelProcessor implements ChannelProcessor{
     @Value("${aa.url:http://localhost:10065}")
     private String aaURL;
 
+    @Value("${aa.pva:false}")
+    private boolean aaPVA;
+
     private static final String mgmtResource = "/mgmt/bpl/archivePV";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private WebClient client = WebClient.create();
@@ -63,7 +66,12 @@ public class AAChannelProcessor implements ChannelProcessor{
                             .findFirst();
                     if(archiveProperty.isPresent()) {
                         ArchivePV newArchiverPV = new ArchivePV();
-                        newArchiverPV.setPv(channel.getName());
+                        if(aaPVA && !channel.getName().contains("://")) {
+                            newArchiverPV.setPv("pva://" + channel.getName());
+                        }
+                        else {
+                            newArchiverPV.setPv(channel.getName());
+                        }
                         newArchiverPV.setSamplingParameters(archiveProperty.get().getValue());
                         archivePVS.add(newArchiverPV);
                     }
