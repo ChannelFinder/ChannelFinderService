@@ -72,7 +72,7 @@ public class TagManager {
     @GetMapping("/{tagName}")
     public XmlTag read(@PathVariable("tagName") String tagName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
-        tagManagerAudit.info(MessageFormat.format(TextUtil.FIND_TAG, tagName));
+        tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_TAG, tagName));
 
         if(withChannels) {
             Optional<XmlTag> foundTag = tagRepository.findById(tagName,true);
@@ -110,7 +110,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validateTagRequest(tag);
 
@@ -164,7 +164,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
             for(XmlTag tag: tags) {       
@@ -241,7 +241,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validateTagWithChannelRequest(channelName);
 
@@ -290,7 +290,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validateTagRequest(tag);
 
@@ -366,7 +366,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
             for(XmlTag tag:tags) {

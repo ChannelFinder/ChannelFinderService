@@ -145,7 +145,7 @@ public class ElasticConfig implements ServletContextListener {
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
                                 c -> c.index(ES_CHANNEL_INDEX).withJson(is)));
-                log.info("Created index: " + ES_CHANNEL_INDEX + " : acknowledged " + result.acknowledged());
+                log.info(() -> "Created index: " + ES_CHANNEL_INDEX + " : acknowledged " + result.acknowledged());
             }
         } catch (IOException e) {
             log.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_CHANNEL_INDEX), e);
@@ -159,7 +159,7 @@ public class ElasticConfig implements ServletContextListener {
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
                                 c -> c.index(ES_TAG_INDEX).withJson(is)));
-                log.info("Created index: " + ES_TAG_INDEX + " : acknowledged " + result.acknowledged());
+                log.info(() -> "Created index: " + ES_TAG_INDEX + " : acknowledged " + result.acknowledged());
             }
         } catch (IOException e) {
             log.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_TAG_INDEX), e);
@@ -173,7 +173,7 @@ public class ElasticConfig implements ServletContextListener {
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
                                 c -> c.index(ES_PROPERTY_INDEX).withJson(is)));
-                log.info("Created index: " + ES_PROPERTY_INDEX + " : acknowledged " + result.acknowledged());
+                log.info(() -> "Created index: " + ES_PROPERTY_INDEX + " : acknowledged " + result.acknowledged());
             }
         } catch (IOException e) {
             log.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_PROPERTY_INDEX), e);

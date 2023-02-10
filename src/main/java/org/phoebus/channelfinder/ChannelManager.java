@@ -81,7 +81,7 @@ public class ChannelManager {
      */
     @GetMapping("/{channelName}")
     public XmlChannel read(@PathVariable("channelName") String channelName) {
-        channelManagerAudit.info(MessageFormat.format(TextUtil.FIND_CHANNEL, channelName));
+        channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_CHANNEL, channelName));
 
         Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
         if (foundChannel.isPresent())
@@ -106,7 +106,7 @@ public class ChannelManager {
     public XmlChannel create(@PathVariable("channelName") String channelName, @RequestBody XmlChannel channel) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
-            channelManagerAudit.info(MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
+            channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
             // Validate request parameters
             validateChannelRequest(channel);
 
@@ -214,9 +214,6 @@ public class ChannelManager {
     public XmlChannel update(@PathVariable("channelName") String channelName, @RequestBody XmlChannel channel) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
-            channelManagerAudit.info(MessageFormat.format(TextUtil.PATH_POST_VALIDATION_TIME, servletContext.getContextPath(), (System.currentTimeMillis() - start)));
-            // Validate request parameters
-            validateChannelRequest(channel);
 
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
@@ -247,6 +244,12 @@ public class ChannelManager {
             } else {
                 newChannel = channel;
             }
+
+            // Validate request parameters
+            validateChannelRequest(channel);
+
+            final long time = System.currentTimeMillis() - start;
+            channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_VALIDATION_TIME, servletContext.getContextPath(), time));
 
             // reset owners of attached tags/props back to existing owners
             channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
@@ -296,8 +299,8 @@ public class ChannelManager {
             // Validate request parameters
             validateChannelRequest(channels);   
 
-            start = System.currentTimeMillis();
-            channelManagerAudit.info(MessageFormat.format(TextUtil.PATH_POST_VALIDATION_TIME, servletContext.getContextPath(), (System.currentTimeMillis() - start)));
+            final long time = System.currentTimeMillis() - start;
+            channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_VALIDATION_TIME, servletContext.getContextPath(), time));
 
             // reset owners of attached tags/props back to existing owners
             for(XmlChannel channel: channels) {
@@ -324,7 +327,7 @@ public class ChannelManager {
     public void remove(@PathVariable("channelName") String channelName) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
-            channelManagerAudit.info(MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
+            channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
 
             Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
             if(existingChannel.isPresent()) {

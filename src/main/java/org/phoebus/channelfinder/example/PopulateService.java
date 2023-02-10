@@ -166,7 +166,7 @@ public class PopulateService {
                 log.severe("Bulk had errors");
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.severe(() -> item.error().reason());
                     }
                 }
             }
@@ -204,7 +204,8 @@ public class PopulateService {
                 e.printStackTrace();
             }
         }
-        log.info(finalResult.size() + " channels created sequentially in time: " + (System.currentTimeMillis() - start));
+        final long time = System.currentTimeMillis() - start;
+        log.info(() -> finalResult.size() + " channels created sequentially in time: " + time);
         prop_list.forEach(p ->
             log.info(p.toLog())
         );
@@ -227,7 +228,7 @@ public class PopulateService {
                 log.severe("Bulk had errors");
                 for (BulkResponseItem item : results.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.severe(() -> item.error().reason());
                     }
                 }
             }
@@ -290,7 +291,7 @@ public class PopulateService {
             log.severe("Bulk had errors");
             for (BulkResponseItem item : srResult.items()) {
                 if (item.error() != null) {
-                    log.severe(item.error().reason());
+                    log.severe(() -> item.error().reason());
                 }
             }
         } else {
@@ -348,7 +349,7 @@ public class PopulateService {
             log.severe("Bulk had errors");
             for (BulkResponseItem item : boosterResult.items()) {
                 if (item.error() != null) {
-                    log.severe(item.error().reason());
+                    log.severe(() -> item.error().reason());
                 }
             }
         } else {

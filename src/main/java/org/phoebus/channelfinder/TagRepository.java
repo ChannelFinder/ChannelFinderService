@@ -98,7 +98,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
                 // TODO cleanup? or throw exception?
@@ -132,7 +132,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                             .refresh(Refresh.True));
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config(MessageFormat.format(TextUtil.CREATE_TAG, tag.toLog()));
+                log.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_TAG, tag.toLog()));
                 return (S) findById(tagName).get();
             }
         } catch (ElasticsearchException | IOException e) {
@@ -178,7 +178,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
                 // TODO cleanup? or throw exception?
@@ -222,7 +222,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
             if (response.found()) {
                 XmlTag tag = response.source();
-                log.info(MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
+                log.log(Level.INFO, () -> MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add("~tag", tag.getName());
@@ -230,7 +230,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 }
                 return Optional.of(tag);
             } else {
-                log.info(MessageFormat.format(TextUtil.TAG_NOT_FOUND, tagId));
+                log.log(Level.INFO, () -> MessageFormat.format(TextUtil.TAG_NOT_FOUND, tagId));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
@@ -315,7 +315,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     .delete(i -> i.index(ES_TAG_INDEX).id(tagName).refresh(Refresh.True));
             // verify the deletion of the tag
             if (response.result().equals(Result.Deleted)) {
-                log.config(MessageFormat.format(TextUtil.DELETE_TAG, tagName));
+                log.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_TAG, tagName));
             }
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -346,7 +346,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                         log.severe(TextUtil.BULK_HAD_ERRORS);
                         for (BulkResponseItem item : result.items()) {
                             if (item.error() != null) {
-                                log.severe(item.error().reason());
+                                log.log(Level.SEVERE, () -> item.error().reason());
                             }
                         }
                     } else {
