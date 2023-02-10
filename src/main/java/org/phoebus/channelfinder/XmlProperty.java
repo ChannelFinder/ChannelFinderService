@@ -16,6 +16,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Property object that can be represented as JSON in payload data.
@@ -135,15 +136,32 @@ public class XmlProperty {
     /**
      * Creates a compact string representation for the log.
      *
-     * @return string representation for log
+     * @return string representation
      */
     public String toLog() {
-         if (this.channels == null) {
-            return this.getName() + "(" + this.getOwner() + ")";
-        } else {
-            return this.getName() + "(" + this.getOwner() + ")"
-                    + (this.channels);
+        return toLog(false);
+    }
+    /**
+     * Creates a compact string representation for the log.
+     *
+     * @param additional if additional information is to be included
+     * @return string representation
+     */
+    public String toLog(boolean additional) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"name\": "                    + getName());
+        sb.append(", \"owner\": "                 + getOwner());
+        sb.append(", \"value\": "                 + getValue());
+        sb.append(", \"channels\": [");
+        String info = channels != null ? String.valueOf(channels.size()) : "";
+        if (additional && channels != null) {
+            info = this.channels.stream().map(XmlChannel::toLog).collect(Collectors.joining(","));
         }
+        sb.append(info);
+        sb.append("]");
+        sb.append("}");
+        return sb.toString();
     }
 
     @Override

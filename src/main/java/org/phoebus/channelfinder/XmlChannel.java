@@ -183,16 +183,42 @@ public class XmlChannel {
     public void addProperties(List<XmlProperty> properties) {
         properties.forEach(this::addProperty);
     }
+
     /**
      * Creates a compact string representation for the log.
      *
      * @return string representation
      */
     public String toLog() {
-        return this.getName() + "(" + this.getOwner() + "):["
-                + (this.properties)
-                + (this.tags)
-                + "]";
+        return toLog(false);
+    }
+    /**
+     * Creates a compact string representation for the log.
+     *
+     * @param additional if additional information is to be included
+     * @return string representation
+     */
+    public String toLog(boolean additional) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        sb.append("\"name\": "                    + getName());
+        sb.append(", \"owner\": "                 + getOwner());
+        sb.append(", \"properties\": [");
+        String info = properties != null ? String.valueOf(properties.size()) : "";
+        if (additional && properties != null) {
+            info = this.properties.stream().map(XmlProperty::toLog).collect(Collectors.joining(","));
+        }
+        sb.append(info);
+        sb.append("]");
+        sb.append(", \"tags\": [");
+        info = tags != null ? String.valueOf(tags.size()) : "";
+        if (additional && tags != null) {
+            info = this.tags.stream().map(XmlTag::toLog).collect(Collectors.joining(","));
+        }
+        sb.append(info);
+        sb.append("]");
+        sb.append("}");
+        return sb.toString();
     }
 
     @Override
