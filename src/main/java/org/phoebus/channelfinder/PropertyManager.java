@@ -74,7 +74,7 @@ public class PropertyManager {
     @GetMapping("/{propertyName}")
     public XmlProperty read(@PathVariable("propertyName") String propertyName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
-        propertyManagerAudit.info(MessageFormat.format(TextUtil.FIND_PROPERTY, propertyName));
+        propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_PROPERTY, propertyName));
 
         Optional<XmlProperty> foundProperty;
         if(withChannels) {
@@ -108,7 +108,7 @@ public class PropertyManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
-            propertyManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validatePropertyRequest(property);
 
@@ -162,7 +162,7 @@ public class PropertyManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
-            propertyManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
             for(XmlProperty property: properties) {
@@ -241,7 +241,7 @@ public class PropertyManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
-            propertyManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validatePropertyRequest(channelName);
             if(!propertyName.equals(property.getName()) || property.getValue().isEmpty() || property.getValue() == null) {
@@ -296,7 +296,7 @@ public class PropertyManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
-            propertyManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validatePropertyRequest(property);
 
@@ -395,7 +395,7 @@ public class PropertyManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             long start = System.currentTimeMillis();
-            propertyManagerAudit.info(MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+            propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
             for(XmlProperty property: properties) {

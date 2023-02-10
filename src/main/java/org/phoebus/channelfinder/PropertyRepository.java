@@ -98,7 +98,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
             } else {
@@ -132,7 +132,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             IndexResponse response = client.index(request);
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config(MessageFormat.format(TextUtil.CREATE_PROPERTY, property.toLog()));
+                log.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_PROPERTY, property.toLog()));
                 return (S) findById(propertyName).get();
             }
         } catch (Exception e) {
@@ -179,7 +179,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
                 // TODO cleanup? or throw exception?
@@ -219,7 +219,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
             if (response.found()) {
                 XmlProperty property = response.source();
-                log.info(MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
+                log.log(Level.INFO, () -> MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add(property.getName(), "*");
@@ -227,7 +227,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 }
                 return Optional.of(property);
             } else {
-                log.info(MessageFormat.format(TextUtil.PROPERTY_NOT_FOUND, propertyName));
+                log.log(Level.INFO, () -> MessageFormat.format(TextUtil.PROPERTY_NOT_FOUND, propertyName));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
@@ -313,7 +313,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     .delete(i -> i.index(ES_PROPERTY_INDEX).id(propertyName).refresh(Refresh.True));
             // verify the deletion of the property
             if (response.result().equals(Result.Deleted)) {
-                log.config(MessageFormat.format(TextUtil.DELETE_PROPERTY, propertyName));
+                log.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_PROPERTY, propertyName));
             }
 
             // Remove the Property from Channels
@@ -338,7 +338,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                         log.severe(TextUtil.BULK_HAD_ERRORS);
                         for (BulkResponseItem item : result.items()) {
                             if (item.error() != null) {
-                                log.severe(item.error().reason());
+                                log.log(Level.SEVERE, () -> item.error().reason());
                             }
                         }
                     } else {

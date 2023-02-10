@@ -86,7 +86,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             IndexResponse response = client.index(request);
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config(MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
+                log.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
                 return findById(channel.getName()).get();
             }
         } catch (Exception e) {
@@ -124,7 +124,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
                 // TODO cleanup? or throw exception?
@@ -155,7 +155,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .refresh(Refresh.True));
             // verify the creation of the channel
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config(MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
+                log.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
                 return findById(channel.getName()).get();
             }
         } catch (Exception e) {
@@ -217,7 +217,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(item.error().reason());
+                        log.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
                 // TODO cleanup? or throw exception?
@@ -247,10 +247,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
             if (response.found()) {
                 XmlChannel channel = response.source();
-                log.info(MessageFormat.format(TextUtil.CHANNEL_FOUND, channel.getName()));
+                log.log(Level.INFO, () -> MessageFormat.format(TextUtil.CHANNEL_FOUND, channel.getName()));
                 return Optional.of(channel);
             } else {
-                log.info(MessageFormat.format(TextUtil.CHANNEL_NOT_FOUND, channelName));
+                log.log(Level.INFO, () -> MessageFormat.format(TextUtil.CHANNEL_NOT_FOUND, channelName));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
@@ -354,7 +354,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .delete(i -> i.index(ES_CHANNEL_INDEX).id(channelName).refresh(Refresh.True));
             // verify the deletion of the channel
             if (response.result().equals(Result.Deleted)) {
-                log.config(MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
+                log.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
             }
         } catch (ElasticsearchException | IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_CHANNEL, channelName);

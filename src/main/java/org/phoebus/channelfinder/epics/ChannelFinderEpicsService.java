@@ -116,7 +116,7 @@ public class ChannelFinderEpicsService {
 
         @Override
         public void request(PVStructure args, RPCResponseCallback call) {
-            log.fine(args.toString());
+            log.fine(() -> args.toString());
             HandlerQuery query = new HandlerQuery(args, call, repository);
             query.run();
         }
@@ -228,7 +228,7 @@ public class ChannelFinderEpicsService {
                             col.getValue(), 0)
                 );
 
-                log.fine(ntTable.toString());
+                log.fine(() -> ntTable.toString());
                 this.callback.requestDone(StatusFactory.getStatusCreate().getStatusOK(), ntTable.getPVStructure());
             }
         }
