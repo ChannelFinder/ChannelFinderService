@@ -2,6 +2,7 @@ package org.phoebus.channelfinder;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.SCROLL_RESOURCE_URI;
 
+import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -179,9 +180,9 @@ public class ChannelScroll {
             List<Hit<XmlChannel>> hits = response.hits().hits();
             return new XmlScroll(hits.size() > 0 ? hits.get(hits.size()-1).id() : null, hits.stream().map(Hit::source).collect(Collectors.toList()));
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+            String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
         }
     }
 }

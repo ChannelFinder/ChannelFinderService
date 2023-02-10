@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -85,12 +86,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             IndexResponse response = client.index(request);
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config("Created channel " + channel);
+                log.config(MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
                 return findById(channel.getName()).get();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channel: " + channel, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNEL, channel.toLog());
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
         return null;
     }
@@ -119,7 +121,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             result = client.bulk(br.build());
             // Log errors, if any
             if (result.errors()) {
-                log.severe("Bulk had errors");
+                log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
                         log.severe(item.error().reason());
@@ -130,8 +132,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return channels;
             }
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to index channels " + channels, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channels: " + channels, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
         }
         return null;
@@ -152,12 +155,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .refresh(Refresh.True));
             // verify the creation of the channel
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config("Created channel " + channel);
+                log.config(MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
                 return findById(channel.getName()).get();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index channel " + channel.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channel: " + channel, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNEL, channel.toLog());
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
         return null;
     }
@@ -210,7 +214,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             result = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
-                log.severe("Bulk had errors");
+                log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
                         log.severe(item.error().reason());
@@ -221,8 +225,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 return (Iterable<S>) findAllById(ids);
             }
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to index channels " + channels, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index channels: " + channels, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
         }
         return null;
@@ -242,15 +247,16 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
             if (response.found()) {
                 XmlChannel channel = response.source();
-                log.info("Channel name " + channel.getName());
+                log.info(MessageFormat.format(TextUtil.CHANNEL_FOUND, channel.getName()));
                 return Optional.of(channel);
             } else {
-                log.info("Channel not found");
+                log.info(MessageFormat.format(TextUtil.CHANNEL_NOT_FOUND, channelName));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find Channel " + channelName, e);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find Channel: " + channelName, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_FIND_CHANNEL, channelName);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message, null);
         }
     }
 
@@ -273,8 +279,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .hits().stream().map(h -> h.source().getName()).collect(Collectors.toList())
                     .containsAll(channelIds);
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find all channels", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all channels", null);
+            log.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, null);
         }
     }
 
@@ -290,9 +296,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             builder.index(ES_CHANNEL_INDEX).id(channelName);
             return client.exists(builder.build()).value();
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to check if channel " + channelName + " exists", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to check if channel exists by channelName: " + channelName, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_CHANNEL_EXISTS, channelName);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
     }
 
@@ -303,8 +309,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      */
     @Override
     public Iterable<XmlChannel> findAll() {
-        throw new UnsupportedOperationException("Find All is not supported. It could return hundreds of thousands" +
-                "of channels.");
+        throw new UnsupportedOperationException(TextUtil.FIND_ALL_CHANNELS_NOT_SUPPORTED);
     }
 
     /**
@@ -326,8 +331,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find all channels", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all channels", null);
+            log.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, null);
         }
     }
 
@@ -349,12 +354,12 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .delete(i -> i.index(ES_CHANNEL_INDEX).id(channelName).refresh(Refresh.True));
             // verify the deletion of the channel
             if (response.result().equals(Result.Deleted)) {
-                log.config("Deletes channel " + channelName);
+                log.config(MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
             }
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to delete channel: " + channelName, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to delete channel: " + channelName, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_CHANNEL, channelName);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
     }
 
@@ -370,12 +375,12 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     @Override
     public void deleteAll(Iterable<? extends XmlChannel> entities) {
-        throw new UnsupportedOperationException("Delete All is not supported.");
+        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
     @Override
     public void deleteAll() {
-        throw new UnsupportedOperationException("Delete All is not supported.");
+        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
     /**
@@ -469,7 +474,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         }
         performance.append("|prepare: " + (System.currentTimeMillis() - start));
         start = System.currentTimeMillis();
-
         
         try {
             Integer finalSize = size;
@@ -492,9 +496,9 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             List<Hit<XmlChannel>> hits = response.hits().hits();
             return hits.stream().map(Hit::source).collect(Collectors.toList());
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Search failed for: " + searchParameters, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+            String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
         }
 
     }
@@ -568,7 +572,6 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             }
         }
 
-
         try {
 
             CountRequest.Builder countBuilder = new CountRequest.Builder();
@@ -577,17 +580,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
             return response.count();
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Count failed for: " + searchParameters, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Search failed for: " + searchParameters + ", CAUSE: " + e.getMessage(), e);
+            String message = MessageFormat.format(TextUtil.COUNT_FAILED_CAUSE, searchParameters, e.getMessage());
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
         }
 
     }
-
 
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {
         // TODO Auto-generated method stub
         
     }
+
 }

@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -94,7 +95,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             BulkResponse result  = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
-                log.severe("Bulk had errors");
+                log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
                         log.severe(item.error().reason());
@@ -105,8 +106,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 return findAllById(tags.stream().map(XmlTag::getName).collect(Collectors.toList()));
             }
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to index tags " + tags, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index tags: " + tags, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
         }
         return null;
@@ -130,13 +132,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                             .refresh(Refresh.True));
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config("Created tag " + tag);
+                log.config(MessageFormat.format(TextUtil.CREATE_TAG, tag.toLog()));
                 return (S) findById(tagName).get();
             }
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to update/save tag:" + tag.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update/save tag: " + tag,
-                    null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_UPDATE_SAVE_TAG, tag.toLog());
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
         return null;
     }
@@ -173,7 +175,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             result = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
-                log.severe("Bulk had errors");
+                log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
                         log.severe(item.error().reason());
@@ -187,8 +189,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                                 .collect(Collectors.toList()));
             }
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to index tags " + tags, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index tags: " + tags, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
         }
         return null;
@@ -219,7 +222,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
             if (response.found()) {
                 XmlTag tag = response.source();
-                log.info("Tag name " + tag.getName());
+                log.info(MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add("~tag", tag.getName());
@@ -227,12 +230,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 }
                 return Optional.of(tag);
             } else {
-                log.info("Tag not found");
+                log.info(MessageFormat.format(TextUtil.TAG_NOT_FOUND, tagId));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find tag " + tagId, e);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find tag: " + tagId, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_FIND_TAG, tagId);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message, null);
         }
     }
 
@@ -243,9 +247,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             builder.index(ES_TAG_INDEX).id(id);
             return client.exists(builder.build()).value();
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to check if tag " + id + " exists", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to check if tag exists by id: " + id, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_TAG_EXISTS, id);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
     }
 
@@ -265,8 +269,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             SearchResponse<XmlTag> response = client.search(searchBuilder.build(), XmlTag.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find all tags", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all tags", null);
+            log.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
         }
     }
 
@@ -288,8 +292,8 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             SearchResponse<XmlTag> response = client.search(searchBuilder.build(), XmlTag.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find all tags", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all tags", null);
+            log.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
         }
     }
 
@@ -311,7 +315,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     .delete(i -> i.index(ES_TAG_INDEX).id(tagName).refresh(Refresh.True));
             // verify the deletion of the tag
             if (response.result().equals(Result.Deleted)) {
-                log.config("Deletes tag " + tagName);
+                log.config(MessageFormat.format(TextUtil.DELETE_TAG, tagName));
             }
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -339,7 +343,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     BulkResponse result = client.bulk(br.build());
                     // Log errors, if any
                     if (result.errors()) {
-                        log.severe("Bulk had errors");
+                        log.severe(TextUtil.BULK_HAD_ERRORS);
                         for (BulkResponseItem item : result.items()) {
                             if (item.error() != null) {
                                 log.severe(item.error().reason());
@@ -348,8 +352,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     } else {
                     }
                 } catch (IOException e) {
-                    log.log(Level.SEVERE, "Failed to delete tag " + tagName, e);
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete tag: " + tagName, null);
+                    String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_TAG, tagName);
+                    log.log(Level.SEVERE, message, e);
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
                 }
                 params.set("~search_after", channels.get(channels.size() - 1).getName());
@@ -357,9 +362,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             }
             
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to delete tag:" + tagName, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete tag: " + tagName,
-                    null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_TAG, tagName);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
     }
 
@@ -375,16 +380,17 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
     @Override
     public void deleteAll(Iterable<? extends XmlTag> entities) {
-        throw new UnsupportedOperationException("Delete All is not supported.");
+        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
     @Override
     public void deleteAll() {
-        throw new UnsupportedOperationException("Delete All is not supported.");
+        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {
-        throw new UnsupportedOperationException("Delete All is not supported.");
+        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
+
 }

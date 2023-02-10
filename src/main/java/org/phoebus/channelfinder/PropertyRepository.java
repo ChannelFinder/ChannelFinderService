@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -94,7 +95,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             BulkResponse result  = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
-                log.severe("Bulk had errors");
+                log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
                         log.severe(item.error().reason());
@@ -104,8 +105,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 return findAllById(properties.stream().map(XmlProperty::getName).collect(Collectors.toList()));
             }
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to index properties " + properties, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to index properties: " + properties, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_PROPERTIES, properties);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
         }
         return null;
@@ -130,13 +132,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             IndexResponse response = client.index(request);
             // verify the creation of the tag
             if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-                log.config("Created property " + property);
+                log.config(MessageFormat.format(TextUtil.CREATE_PROPERTY, property.toLog()));
                 return (S) findById(propertyName).get();
             }
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to index property: " + property.toLog(), e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to index property: " + property, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_PROPERTY, property.toLog());
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
         return null;
     }
@@ -174,7 +176,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             BulkResponse result = client.bulk(br.refresh(Refresh.True).build());
             // Log errors, if any
             if (result.errors()) {
-                log.severe("Bulk had errors");
+                log.severe(TextUtil.BULK_HAD_ERRORS);
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
                         log.severe(item.error().reason());
@@ -185,9 +187,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 return (Iterable<S>) findAllById(ids);
             }
         } catch (IOException e) {
-            log.log(Level.SEVERE, "Failed to update/save properties: " + properties, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to update/save properties: " + properties, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_UPDATE_SAVE_PROPERTIES, properties);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
         return null;
     }
@@ -217,7 +219,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
             if (response.found()) {
                 XmlProperty property = response.source();
-                log.info("property name " + property.getName());
+                log.info(MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add(property.getName(), "*");
@@ -225,12 +227,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                 }
                 return Optional.of(property);
             } else {
-                log.info("property not found");
+                log.info(MessageFormat.format(TextUtil.PROPERTY_NOT_FOUND, propertyName));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find property " + propertyName, e);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Failed to find property: " + propertyName, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_FIND_PROPERTY, propertyName);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message, null);
         }
     }
 
@@ -241,9 +244,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             builder.index(ES_PROPERTY_INDEX).id(id);
             return client.exists(builder.build()).value();
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to check if property " + id + " exists", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to check if property exists by id: " + id, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_PROPERTY_EXISTS, id);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
     }
 
@@ -263,8 +266,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             SearchResponse<XmlProperty> response = client.search(searchBuilder.build(), XmlProperty.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find all tags", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all tags", null);
+            log.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, null);
         }
     }
 
@@ -287,8 +290,8 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             SearchResponse<XmlProperty> response = client.search(searchBuilder.build(), XmlProperty.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to find all properties", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to find all properties", null);
+            log.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, null);
         }
     }
 
@@ -310,7 +313,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     .delete(i -> i.index(ES_PROPERTY_INDEX).id(propertyName).refresh(Refresh.True));
             // verify the deletion of the property
             if (response.result().equals(Result.Deleted)) {
-                log.config("Deletes property " + propertyName);
+                log.config(MessageFormat.format(TextUtil.DELETE_PROPERTY, propertyName));
             }
 
             // Remove the Property from Channels
@@ -332,7 +335,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     BulkResponse result = client.bulk(br.build());
                     // Log errors, if any
                     if (result.errors()) {
-                        log.severe("Bulk had errors");
+                        log.severe(TextUtil.BULK_HAD_ERRORS);
                         for (BulkResponseItem item : result.items()) {
                             if (item.error() != null) {
                                 log.severe(item.error().reason());
@@ -341,20 +344,20 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     } else {
                     }
                 } catch (IOException e) {
-                    log.log(Level.SEVERE, "Failed to delete property " + propertyName, e);
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete property: " + propertyName, null);
+                    String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_PROPERTY, propertyName);
+                    log.log(Level.SEVERE, message, e);
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
                 }
                 params.set("~search_after", channels.get(channels.size() - 1).getName());
                 channels = channelRepository.search(params);
             }
         } catch (ElasticsearchException | IOException e) {
-            log.log(Level.SEVERE, "Failed to delete property: " + propertyName, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to delete property: " + propertyName, null);
+            String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_PROPERTY, propertyName);
+            log.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
-
-}
+    }
 
     /**
      * delete the given property
@@ -368,12 +371,12 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
 
     @Override
     public void deleteAll(Iterable<? extends XmlProperty> entities) {
-        throw new UnsupportedOperationException("Delete All is not supported.");
+        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
     @Override
     public void deleteAll() {
-        throw new UnsupportedOperationException("Delete All is not supported.");
+        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
     @Override

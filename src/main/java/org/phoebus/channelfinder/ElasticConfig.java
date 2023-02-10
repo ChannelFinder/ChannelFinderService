@@ -16,6 +16,7 @@ package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -147,7 +148,7 @@ public class ElasticConfig implements ServletContextListener {
                 log.info("Created index: " + ES_CHANNEL_INDEX + " : acknowledged " + result.acknowledged());
             }
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to create index " + ES_CHANNEL_INDEX, e);
+            log.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_CHANNEL_INDEX), e);
         }
 
         // ChannelFinder tag Index
@@ -161,7 +162,7 @@ public class ElasticConfig implements ServletContextListener {
                 log.info("Created index: " + ES_TAG_INDEX + " : acknowledged " + result.acknowledged());
             }
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to create index " + ES_TAG_INDEX, e);
+            log.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_TAG_INDEX), e);
         }
 
         // ChannelFinder property Index
@@ -175,7 +176,7 @@ public class ElasticConfig implements ServletContextListener {
                 log.info("Created index: " + ES_PROPERTY_INDEX + " : acknowledged " + result.acknowledged());
             }
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to create index " + ES_PROPERTY_INDEX, e);
+            log.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_PROPERTY_INDEX), e);
         }
     }
 }
