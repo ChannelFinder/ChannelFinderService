@@ -38,7 +38,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping(SCROLL_RESOURCE_URI)
 @EnableAutoConfiguration
 public class ChannelScroll {
-    static Logger log = Logger.getLogger(ChannelScroll.class.getName());
+
+	private static Logger logger = Logger.getLogger(ChannelScroll.class.getName());
 
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
@@ -181,7 +182,7 @@ public class ChannelScroll {
             return new XmlScroll(hits.size() > 0 ? hits.get(hits.size()-1).id() : null, hits.stream().map(Hit::source).collect(Collectors.toList()));
         } catch (Exception e) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
-            log.log(Level.SEVERE, message, e);
+            logger.log(Level.SEVERE, message, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
         }
     }

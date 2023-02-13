@@ -55,7 +55,7 @@ import org.springframework.util.MultiValueMap;
 @ComponentScan(basePackages="org.phoebus.channelfinder")
 public class ChannelFinderEpicsService {
 
-    private static Logger log = Logger.getLogger(ChannelFinderEpicsService.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(ChannelFinderEpicsService.class.getCanonicalName());
 
     private final ExecutorService pool = Executors.newScheduledThreadPool(1);
     
@@ -71,20 +71,20 @@ public class ChannelFinderEpicsService {
     @PostConstruct
     public void init() {
 
-        log.info("Launching the epics rpc channelfinder service: " + SERVICE_DESC);
+        logger.log(Level.INFO, "Launching the epics rpc channelfinder service: " + SERVICE_DESC);
         server = new RPCServer();
 
-        log.info(SERVICE_DESC + " initializing...");
+        logger.log(Level.INFO, SERVICE_DESC + " initializing...");
         service = new ChannelFinderServiceImpl(repository);
         server.registerService(SERVICE_DESC, service);
         server.printInfo();
-        log.info(SERVICE_DESC + " is operational.");
+        logger.log(Level.INFO, SERVICE_DESC + " is operational.");
 
         pool.submit(() -> {
             try {
                 server.run(0);
             } catch (PVAException e) {
-                log.log(Level.SEVERE, "Failed to start the epics rpc channelfinder service", e);
+                logger.log(Level.SEVERE, "Failed to start the epics rpc channelfinder service", e);
             }
         });
         
@@ -92,13 +92,13 @@ public class ChannelFinderEpicsService {
 
     @PreDestroy
     public void onDestroy() throws Exception {
-        log.info("Shutting down service " + SERVICE_DESC);
+        logger.log(Level.INFO, "Shutting down service " + SERVICE_DESC);
         try {
             service.shutdown();
             server.destroy();
-            log.info(SERVICE_DESC + " Shutdown complete.");
+            logger.log(Level.INFO, SERVICE_DESC + " Shutdown complete.");
         } catch (PVAException e) {
-            log.log(Level.SEVERE, "Failed to close service : " + SERVICE_DESC, e);
+            logger.log(Level.SEVERE, "Failed to close service : " + SERVICE_DESC, e);
         }
     }
 
@@ -109,14 +109,14 @@ public class ChannelFinderEpicsService {
 
         public ChannelFinderServiceImpl(ChannelRepository repository) {
             this.repository = repository;
-            log.info("start");
+            logger.log(Level.INFO, "start");
         }
 
         private final ExecutorService pool = Executors.newScheduledThreadPool(50);
 
         @Override
         public void request(PVStructure args, RPCResponseCallback call) {
-            log.fine(() -> args.toString());
+            logger.log(Level.FINE, () -> args.toString());
             HandlerQuery query = new HandlerQuery(args, call, repository);
             query.run();
         }
@@ -228,13 +228,13 @@ public class ChannelFinderEpicsService {
                             col.getValue(), 0)
                 );
 
-                log.fine(() -> ntTable.toString());
+                logger.log(Level.FINE, () -> ntTable.toString());
                 this.callback.requestDone(StatusFactory.getStatusCreate().getStatusOK(), ntTable.getPVStructure());
             }
         }
     
         public void shutdown() {
-            log.info("shutting down service.");
+            logger.log(Level.INFO, "shutting down service.");
             pool.shutdown();
             // Disable new tasks from being submitted
             try {
@@ -251,7 +251,7 @@ public class ChannelFinderEpicsService {
                 // Preserve interrupt status
                 Thread.currentThread().interrupt();
             }
-            log.info("completed shut down.");
+            logger.log(Level.INFO, "completed shut down.");
         }
     }
 }
