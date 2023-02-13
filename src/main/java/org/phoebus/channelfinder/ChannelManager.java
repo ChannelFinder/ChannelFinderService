@@ -36,8 +36,8 @@ import org.springframework.web.server.ResponseStatusException;
 @EnableAutoConfiguration
 public class ChannelManager {
 
-    static Logger channelManagerAudit = Logger.getLogger(ChannelManager.class.getName() + ".audit");
-    static Logger log = Logger.getLogger(ChannelManager.class.getName());
+    private static Logger channelManagerAudit = Logger.getLogger(ChannelManager.class.getName() + ".audit");
+    private static Logger logger = Logger.getLogger(ChannelManager.class.getName());
 
     @Autowired
     private ServletContext servletContext;
@@ -88,7 +88,7 @@ public class ChannelManager {
             return foundChannel.get();
         else {
             String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
         }
     }
@@ -113,7 +113,7 @@ public class ChannelManager {
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                 String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channel.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
@@ -121,7 +121,7 @@ public class ChannelManager {
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, existingChannel.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // delete existing channel
@@ -136,7 +136,7 @@ public class ChannelManager {
             return channelRepository.index(channel);
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channelName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -159,14 +159,14 @@ public class ChannelManager {
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, existingChannel.get().toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     } 
                     channel.setOwner(existingChannel.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channel.toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
@@ -190,14 +190,14 @@ public class ChannelManager {
             }
 
             channels.forEach(log ->
-                channelManagerAudit.info(MessageFormat.format(TextUtil.CREATE_CHANNEL, log.toLog()))
+                channelManagerAudit.log(Level.INFO, MessageFormat.format(TextUtil.CREATE_CHANNEL, log.toLog()))
             );
 
             // create new channels
             return channelRepository.indexAll(Lists.newArrayList(channels));
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNELS, channels);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -218,7 +218,7 @@ public class ChannelManager {
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                 String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channel.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
@@ -228,7 +228,7 @@ public class ChannelManager {
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, existingChannel.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
                 newChannel = existingChannel.get();
@@ -259,7 +259,7 @@ public class ChannelManager {
             return channelRepository.save(newChannel);
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channelName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -283,14 +283,14 @@ public class ChannelManager {
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, existingChannel.get().toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                     channel.setOwner(existingChannel.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channel.toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
@@ -312,7 +312,7 @@ public class ChannelManager {
             return channelRepository.saveAll(channels);
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNELS, channels);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -337,17 +337,17 @@ public class ChannelManager {
                     channelRepository.deleteById(channelName);
                 } else {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channelName);
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
             } else {
                 String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channelName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -375,13 +375,13 @@ public class ChannelManager {
         // 1 
         if (channel.getName() == null || channel.getName().isEmpty()) {
             String message = MessageFormat.format(TextUtil.CHANNEL_NAME_CANNOT_BE_NULL_OR_EMPTY, channel.toLog());
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 2
         if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
             String message = MessageFormat.format(TextUtil.CHANNEL_OWNER_CANNOT_BE_NULL_OR_EMPTY, channel.toLog());
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 3 
@@ -389,7 +389,7 @@ public class ChannelManager {
         for(String tagName:tagNames) {
             if(!tagRepository.existsById(tagName)) {
                 String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         }
@@ -399,14 +399,14 @@ public class ChannelManager {
         for(String propertyName:propertyNames) {
             if(!propertyRepository.existsById(propertyName)) {
                 String message = MessageFormat.format(TextUtil.PROPERTY_NAME_DOES_NOT_EXIST, propertyName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             } 
         }
         for(String propertyValue:propertyValues) {
             if(propertyValue == null || propertyValue.isEmpty()) {
                 String message = MessageFormat.format(TextUtil.PROPERTY_VALUE_NULL_OR_EMPTY, propertyNames.get(propertyValues.indexOf(propertyValue)), propertyValue);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
             }
         }

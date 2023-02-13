@@ -37,8 +37,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class PropertyManager {
 
     // private SecurityContext securityContext;
-    static Logger propertyManagerAudit = Logger.getLogger(PropertyManager.class.getName() + ".audit");
-    static Logger log = Logger.getLogger(PropertyManager.class.getName());
+    private static Logger propertyManagerAudit = Logger.getLogger(PropertyManager.class.getName() + ".audit");
+    private static Logger logger = Logger.getLogger(PropertyManager.class.getName());
 
     @Autowired
     TagRepository tagRepository;
@@ -86,7 +86,7 @@ public class PropertyManager {
             return foundProperty.get();
         } else {
             String message = MessageFormat.format(TextUtil.PROPERTY_NAME_DOES_NOT_EXIST, propertyName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
         }
     }
@@ -115,7 +115,7 @@ public class PropertyManager {
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                 String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             Optional<XmlProperty> existingProperty = propertyRepository.findById(propertyName);
@@ -123,7 +123,7 @@ public class PropertyManager {
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // delete existing property
@@ -146,7 +146,7 @@ public class PropertyManager {
             return createdProperty;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -171,7 +171,7 @@ public class PropertyManager {
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     } 
                     property.setOwner(existingProperty.get().getOwner());
@@ -179,7 +179,7 @@ public class PropertyManager {
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
@@ -219,7 +219,7 @@ public class PropertyManager {
             return properties;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTIES, properties);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -246,7 +246,7 @@ public class PropertyManager {
             validatePropertyRequest(channelName);
             if(!propertyName.equals(property.getName()) || property.getValue().isEmpty() || property.getValue() == null) {
                 String message = MessageFormat.format(TextUtil.PAYLOAD_PROPERTY_DOES_NOT_MATCH_URI_OR_HAS_BAD_VALUE, property.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
             }
 
@@ -256,7 +256,7 @@ public class PropertyManager {
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // add property to channel
@@ -271,12 +271,12 @@ public class PropertyManager {
                 return addedProperty;
             } else {
                 String message = MessageFormat.format(TextUtil.PROPERTY_NAME_DOES_NOT_EXIST, propertyName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -303,7 +303,7 @@ public class PropertyManager {
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                 String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             List<XmlChannel> chans = new ArrayList<>();
@@ -312,7 +312,7 @@ public class PropertyManager {
             if(existingProperty.isPresent()) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 chans = existingProperty.get().getChannels();
@@ -376,7 +376,7 @@ public class PropertyManager {
             return updatedProperty;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -404,7 +404,7 @@ public class PropertyManager {
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                     property.setOwner(existingProperty.get().getOwner());
@@ -412,7 +412,7 @@ public class PropertyManager {
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
@@ -458,7 +458,7 @@ public class PropertyManager {
             return properties;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTIES, properties);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -481,17 +481,17 @@ public class PropertyManager {
                     propertyRepository.deleteById(propertyName);
                 } else {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
             } else {
                 String message = MessageFormat.format(TextUtil.PROPERTY_NAME_DOES_NOT_EXIST, propertyName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -519,22 +519,22 @@ public class PropertyManager {
                         channelRepository.index(channel);
                     } else {
                         String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
                     }
                 } else {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
             } else {
                 String message = MessageFormat.format(TextUtil.PROPERTY_NAME_DOES_NOT_EXIST, propertyName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -562,13 +562,13 @@ public class PropertyManager {
         // 1 
         if (property.getName() == null || property.getName().isEmpty()) {
             String message = MessageFormat.format(TextUtil.PROPERTY_NAME_CANNOT_BE_NULL_OR_EMPTY, property.toLog());
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 2
         if (property.getOwner() == null || property.getOwner().isEmpty()) {
             String message = MessageFormat.format(TextUtil.PROPERTY_OWNER_CANNOT_BE_NULL_OR_EMPTY, property.toLog());
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 3
@@ -576,7 +576,7 @@ public class PropertyManager {
             // Check if all the channels exists 
             if(!channelRepository.existsById(channel.getName())) {
                 String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channel.getName());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
             }
             // Check if the channel data has the requested property attached with a non null - non empty value
@@ -584,7 +584,7 @@ public class PropertyManager {
                 p.getName().equals(property.getName()) && p.getValue() != null && !p.getValue().isEmpty()
             )) {
                 String message = MessageFormat.format(TextUtil.CHANNEL_NAME_NO_VALID_INSTANCE_PROPERTY, channel.getName(), property.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
             }
         });
@@ -613,7 +613,7 @@ public class PropertyManager {
     public void validatePropertyRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {
             String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
         }
     }

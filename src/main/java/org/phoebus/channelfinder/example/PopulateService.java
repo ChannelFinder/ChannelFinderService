@@ -62,7 +62,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 public class PopulateService {
 
-    private static Logger log = Logger.getLogger(PopulateService.class.getCanonicalName());
+    private static Logger logger = Logger.getLogger(PopulateService.class.getCanonicalName());
 
     static int max_prop = 40; // must be >=20
     static int max_tag = 60; // must be >=11
@@ -163,15 +163,15 @@ public class PopulateService {
         try {
             BulkResponse result = client.bulk(br.refresh(Refresh.True).build());
             if (result.errors()) {
-                log.severe("Bulk had errors");
+                logger.log(Level.SEVERE, "Bulk had errors");
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
-                        log.severe(() -> item.error().reason());
+                        logger.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
             }
         } catch (IOException e) {
-            log.log(Level.WARNING, e.getMessage(), e);
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -205,12 +205,12 @@ public class PopulateService {
             }
         }
         final long time = System.currentTimeMillis() - start;
-        log.info(() -> finalResult.size() + " channels created sequentially in time: " + time);
+        logger.log(Level.INFO, () -> finalResult.size() + " channels created sequentially in time: " + time);
         prop_list.forEach(p ->
-            log.info(p.toLog())
+            logger.log(Level.INFO, p.toLog())
         );
         tag_list.forEach(t ->
-            log.info(t.toLog())
+            logger.log(Level.INFO, t.toLog())
         );
 
         BulkRequest.Builder br = new BulkRequest.Builder();
@@ -225,17 +225,17 @@ public class PopulateService {
         try {
             BulkResponse results = client.bulk(br.build());
             if (results.errors()) {
-                log.severe("Bulk had errors");
+                logger.log(Level.SEVERE, "Bulk had errors");
                 for (BulkResponseItem item : results.items()) {
                     if (item.error() != null) {
-                        log.severe(() -> item.error().reason());
+                        logger.log(Level.SEVERE, () -> item.error().reason());
                     }
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-       log.info("completed populating");
+       logger.log(Level.INFO, "completed populating");
     }
 
 
@@ -286,12 +286,12 @@ public class PopulateService {
 
         BulkResponse srResult = client.bulk(br.build());
         String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
-        log.info("Insterted BO cell " + cell + " " + prepare + " " + execute);
+        logger.log(Level.INFO, "Insterted BO cell " + cell + " " + prepare + " " + execute);
         if (srResult.errors()) {
-            log.severe("Bulk had errors");
+            logger.log(Level.SEVERE, "Bulk had errors");
             for (BulkResponseItem item : srResult.items()) {
                 if (item.error() != null) {
-                    log.severe(() -> item.error().reason());
+                    logger.log(Level.SEVERE, () -> item.error().reason());
                 }
             }
         } else {
@@ -344,12 +344,12 @@ public class PopulateService {
 
         BulkResponse boosterResult = client.bulk(br.build());
         String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
-        log.info("Insterted BO cell " + cell + " " + prepare + " " + execute);
+        logger.log(Level.INFO, "Insterted BO cell " + cell + " " + prepare + " " + execute);
         if (boosterResult.errors()) {
-            log.severe("Bulk had errors");
+            logger.log(Level.SEVERE, "Bulk had errors");
             for (BulkResponseItem item : boosterResult.items()) {
                 if (item.error() != null) {
-                    log.severe(() -> item.error().reason());
+                    logger.log(Level.SEVERE, () -> item.error().reason());
                 }
             }
         } else {

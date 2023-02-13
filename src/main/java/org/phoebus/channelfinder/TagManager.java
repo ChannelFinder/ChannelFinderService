@@ -38,8 +38,8 @@ import org.springframework.web.server.ResponseStatusException;
 @EnableAutoConfiguration
 public class TagManager {
 
-    static Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
-    static Logger log = Logger.getLogger(TagManager.class.getName());
+    private static Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
+    private static Logger logger = Logger.getLogger(TagManager.class.getName());
 
     @Autowired
     TagRepository tagRepository;
@@ -80,7 +80,7 @@ public class TagManager {
                 return foundTag.get();
             } else {
                 String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
@@ -89,7 +89,7 @@ public class TagManager {
                 return foundTag.get();
             } else {
                 String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         }
@@ -117,7 +117,7 @@ public class TagManager {
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                 String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             Optional<XmlTag> existingTag = tagRepository.findById(tagName);
@@ -125,7 +125,7 @@ public class TagManager {
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // delete existing tag
@@ -148,7 +148,7 @@ public class TagManager {
             return createdTag;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -173,14 +173,14 @@ public class TagManager {
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                     tag.setOwner(existingTag.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
@@ -220,7 +220,7 @@ public class TagManager {
             return tags;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAGS, tags);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -251,7 +251,7 @@ public class TagManager {
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // add tag to channel
@@ -263,12 +263,12 @@ public class TagManager {
                 return addedTag;
             } else {
                 String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -297,7 +297,7 @@ public class TagManager {
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                 String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             List<XmlChannel> channels = new ArrayList<>();
@@ -307,7 +307,7 @@ public class TagManager {
             if(existingTag.isPresent()) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 channels = existingTag.get().getChannels();
@@ -347,7 +347,7 @@ public class TagManager {
             return updatedTag;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -375,14 +375,14 @@ public class TagManager {
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                     tag.setOwner(existingTag.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
@@ -415,7 +415,7 @@ public class TagManager {
             return tags;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAGS, tags);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -438,17 +438,17 @@ public class TagManager {
                     tagRepository.deleteById(tagName);
                 } else {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
             } else {
                 String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -476,22 +476,22 @@ public class TagManager {
                         channelRepository.index(channel);
                     } else {
                         String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
-                        log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                         throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
                     }
                 } else {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
-                    log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
             } else {
                 String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
@@ -528,13 +528,13 @@ public class TagManager {
         // 1 
         if (tag.getName() == null || tag.getName().isEmpty()) {
             String message = MessageFormat.format(TextUtil.TAG_NAME_CANNOT_BE_NULL_OR_EMPTY, tag.toLog());
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 2
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
             String message = MessageFormat.format(TextUtil.TAG_OWNER_CANNOT_BE_NULL_OR_EMPTY, tag.toLog());
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 3
@@ -542,7 +542,7 @@ public class TagManager {
         for(String channelName:channelNames) {
             if(!channelRepository.existsById(channelName)) {
                 String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
-                log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         }
@@ -556,7 +556,7 @@ public class TagManager {
     public void validateTagWithChannelRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {
             String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
-            log.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
         }
     }
