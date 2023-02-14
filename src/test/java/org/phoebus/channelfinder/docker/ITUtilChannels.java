@@ -224,6 +224,61 @@ public class ITUtilChannels {
     // ----------------------------------------------------------------------------------------------------
 
     /**
+     * @see ITUtilChannels#assertCountChannels(String, int, int, int)
+     */
+    public static Integer assertCountChannels(int expectedEqual) {
+        return assertCountChannels("", HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual);
+    }
+    /**
+     * @see ITUtilChannels#assertCountChannels(String, int, int, int)
+     */
+    public static Integer assertCountChannels(String queryString, int expectedEqual) {
+        return assertCountChannels(queryString, HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual);
+    }
+    /**
+     * Utility method to return the count of channels which match all given expressions, i.e. the expressions are combined in a logical AND.
+     *
+     * @param queryString query string
+     * @param responseCode response code
+     * @param expectedGreaterThanOrEqual (if non-negative number) greater than or equal to this number of items
+     * @param expectedLessThanOrEqual (if non-negative number) less than or equal to this number of items
+     * @param expected expected response channels
+     * @return number of channels
+     */
+    public static Integer assertCountChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual) {
+        try {
+            String[] response = null;
+            Integer actual = -1;
+
+            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + "/count" + queryString);
+            ITUtil.assertResponseLength2Code(response, responseCode);
+            if (HttpURLConnection.HTTP_OK == responseCode) {
+                actual = Integer.parseInt(response[1]);
+            }
+
+            // expected number of items in list
+            //     (if non-negative number)
+            //     expectedGreaterThanOrEqual <= nbr of items <= expectedLessThanOrEqual
+            if (expectedGreaterThanOrEqual >= 0) {
+                assertTrue(actual >= expectedGreaterThanOrEqual);
+            }
+            if (expectedLessThanOrEqual >= 0) {
+                assertTrue(actual <= expectedLessThanOrEqual);
+            }
+
+            // expected content
+            return actual;
+        } catch (IOException e) {
+            fail();
+        } catch (Exception e) {
+            fail();
+        }
+        return null;
+    }
+
+    // ----------------------------------------------------------------------------------------------------
+
+    /**
      * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, XmlChannel)
      */
     public static XmlChannel assertCreateReplaceChannel(String path, XmlChannel value) {
