@@ -51,22 +51,22 @@ public class ITUtilScroll {
      * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
      *
      * @param queryString query string
-     * @param responseCode expected response code
+     * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertQueryChannels(String queryString, int responseCode) {
-    	return assertQueryChannels(queryString, responseCode, null, -1);
+    public static XmlScroll assertQueryChannels(String queryString, int expectedLength) {
+        return assertQueryChannels(queryString, HttpURLConnection.HTTP_OK, null, expectedLength);
     }
     /**
      * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
      *
      * @param queryString query string
      * @param responseCode expected response code
-     * @param expectedLengthChannels (if non-negative number) expected length of channels
+     * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertQueryChannels(String queryString, int responseCode, int expectedLengthChannels) {
-    	return assertQueryChannels(queryString, responseCode, null, expectedLengthChannels);
+    public static XmlScroll assertQueryChannels(String queryString, int responseCode, int expectedLength) {
+        return assertQueryChannels(queryString, responseCode, null, expectedLength);
     }
     /**
      * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
@@ -74,10 +74,10 @@ public class ITUtilScroll {
      * @param queryString query string
      * @param responseCode expected response code
      * @param expectedId (if non-null) expected id
-     * @param expectedLengthChannels (if non-negative number) expected length of channels
+     * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertQueryChannels(String queryString, int responseCode, String expectedId, int expectedLengthChannels) {
+    public static XmlScroll assertQueryChannels(String queryString, int responseCode, String expectedId, int expectedLength) {
         try {
             String[] response = null;
             XmlScroll actual = null;
@@ -93,8 +93,8 @@ public class ITUtilScroll {
             	assertEquals(expectedId, actual.getId());
             }
             // (if non-negative number) expected length of channels
-            if (expectedLengthChannels >= 0) {
-                assertEquals(expectedLengthChannels, actual.getChannels().size());
+            if (expectedLength >= 0) {
+                assertEquals(expectedLength, actual.getChannels().size());
             }
 
             return actual;
@@ -112,11 +112,11 @@ public class ITUtilScroll {
      * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
      *
      * @param path path
-     * @param responseCode expected response code
+     * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode) {
-    	return assertContinueChannelsQuery(path, responseCode, null, -1);
+    public static XmlScroll assertContinueChannelsQuery(String path, int expectedLength) {
+        return assertContinueChannelsQuery(path, HttpURLConnection.HTTP_OK, null, expectedLength);
     }
     /**
      * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
@@ -124,11 +124,11 @@ public class ITUtilScroll {
      * @param path path
      * @param responseCode expected response code
      * @param expectedId (if non-null) expected id
-     * @param expectedLengthChannels (if non-negative number) expected length of channels
+     * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode, int expectedLengthChannels) {
-    	return assertContinueChannelsQuery(path, responseCode, null, expectedLengthChannels);
+    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode, int expectedLength) {
+        return assertContinueChannelsQuery(path, responseCode, null, expectedLength);
     }
     /**
      * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
@@ -136,10 +136,10 @@ public class ITUtilScroll {
      * @param path path
      * @param responseCode expected response code
      * @param expectedId (if non-null) expected id
-     * @param expectedLengthChannels (if non-negative number) expected length of channels
+     * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode, String expectedId, int expectedLengthChannels) {
+    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode, String expectedId, int expectedLength) {
         try {
             String[] response = null;
             XmlScroll actual = null;
@@ -155,8 +155,8 @@ public class ITUtilScroll {
             	assertEquals(expectedId, actual.getId());
             }
             // (if non-negative number) expected length of channels
-            if (expectedLengthChannels >= 0) {
-                assertEquals(expectedLengthChannels, actual.getChannels().size());
+            if (expectedLength >= 0) {
+                assertEquals(expectedLength, actual.getChannels().size());
             }
 
             return actual;
