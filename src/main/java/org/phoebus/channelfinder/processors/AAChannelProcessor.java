@@ -13,6 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -41,6 +42,7 @@ public class AAChannelProcessor implements ChannelProcessor{
     private boolean aaPVA;
 
     private static final String mgmtResource = "/mgmt/bpl/archivePV";
+    private static final String policyResource = "/mgmt/bpl/getPolicyList";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private WebClient client = WebClient.create();
 
@@ -59,6 +61,7 @@ public class AAChannelProcessor implements ChannelProcessor{
     @Override
     public void process(List<XmlChannel> channels) throws JsonProcessingException {
         List<ArchivePV> archivePVS = new ArrayList<>();
+        List<String> policyList = getAAPolicies();
         channels.stream()
                 .forEach(channel -> {
                     Optional<XmlProperty> archiveProperty = channel.getProperties().stream()
@@ -72,7 +75,7 @@ public class AAChannelProcessor implements ChannelProcessor{
                         else {
                             newArchiverPV.setPv(channel.getName());
                         }
-                        newArchiverPV.setSamplingParameters(archiveProperty.get().getValue());
+                        newArchiverPV.setSamplingParameters(archiveProperty.get().getValue(), policyList);
                         archivePVS.add(newArchiverPV);
                     }
                 });
@@ -91,11 +94,30 @@ public class AAChannelProcessor implements ChannelProcessor{
         log.info(response);
     }
 
+    private List<String> getAAPolicies() throws JsonProcessingException {
+        try {
+            String response = client.get()
+                    .uri(URI.create(aaURL + policyResource))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+            Map<String, String> policyMap = objectMapper.readValue(response, Map.class);
+            List<String> policies = new ArrayList<>(policyMap.keySet());
+            return policies;
+        }
+        catch (Exception e) {
+            // problem collecting policies from AA, so warn and return empty list
+            log.warning("Could not get AA policies list: " + e.getMessage());
+            return List.of();
+        }
+    }
+
     @JsonInclude(Include.NON_NULL)
     public static class ArchivePV {
         private String pv;
         private String samplingmethod;
         private String samplingperiod;
+        private String policy;
 
         public String getPv() {
             return pv;
@@ -109,8 +131,12 @@ public class AAChannelProcessor implements ChannelProcessor{
          * process the archive property value string to configure the sampling method and rate
          * @param parameters string expected in the form monitor@1.0
          */
-        public void setSamplingParameters(String parameters) {
+        public void setSamplingParameters(String parameters, List<String> policyList) {
             if(parameters.equalsIgnoreCase("default")){
+                return;
+            }
+            if(policyList.contains(parameters)) {
+                setPolicy(parameters);
                 return;
             }
             String[] p = parameters.split("@");
@@ -124,11 +150,22 @@ public class AAChannelProcessor implements ChannelProcessor{
                         break;
                     default:
                         // invalid sampling method
+                        log.warning("Invalid sampling method " + p[0]);
+                        return;
                 }
+                // ignore anything after first space
+                String sp = p[1].split("\\s")[0];
                 // catch number format errors
-                setSamplingperiod(p[1]);
+                try {
+                    Float.parseFloat(sp);
+                }
+                catch(NumberFormatException e) {
+                    log.warning("Invalid sampling period" + sp);
+                    setSamplingmethod(null);
+                    return;
+                }
+                setSamplingperiod(sp);
             }
-
         }
 
         public String getSamplingmethod() {
@@ -145,6 +182,14 @@ public class AAChannelProcessor implements ChannelProcessor{
 
         public void setSamplingperiod(String samplingperiod) {
             this.samplingperiod = samplingperiod;
+        }
+
+        public String getPolicy() {
+            return policy;
+        }
+
+        public void setPolicy(String policy) {
+            this.policy = policy;
         }
     }
 }
