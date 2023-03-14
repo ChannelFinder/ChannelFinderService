@@ -14,31 +14,36 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.phoebus.channelfinder.example.PopulateService;
+import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.FileCopyUtils;
 
 @EnableAutoConfiguration
 @ComponentScan(basePackages="org.phoebus.channelfinder")
 @SpringBootApplication
-public class Application  implements ApplicationRunner {
+public class Application implements ApplicationRunner {
 
     static Logger logger = Logger.getLogger(Application.class.getName());
 
     public static void main(String[] args){
         // Set the java truststore used by channelfinder
         configureTruststore();
-//        args = new String[1];
-//        args[0] = "--demo-data=20";
         SpringApplication.run(Application.class, args);
     }
 
@@ -82,6 +87,37 @@ public class Application  implements ApplicationRunner {
             logger.log(Level.INFO, "Cleaning up the populated demo data");
             service.cleanupDB();
         }
+    }
+
+    /**
+     * List of {@link ChannelProcessor} implementations called when new channels are created or existing channels are updated
+     *
+     * @return A list of {@link ChannelProcessor}s, if any have been registered over SPI.
+     */
+    @Bean
+    public List<ChannelProcessor> channelProcessors() {
+        List<ChannelProcessor> processors = new ArrayList<>();
+        ServiceLoader<ChannelProcessor> loader = ServiceLoader.load(ChannelProcessor.class);
+        loader.stream().forEach(p -> {
+            ChannelProcessor notifier = p.get();
+            processors.add(notifier);
+        });
+        return processors;
+    }
+
+    /**
+     * {@link TaskExecutor} used when calling {@link ChannelProcessor}s.
+     *
+     * @return A {@link TaskExecutor}
+     */
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(3);
+        taskExecutor.setMaxPoolSize(10);
+        taskExecutor.setQueueCapacity(25);
+
+        return taskExecutor;
     }
 
 }

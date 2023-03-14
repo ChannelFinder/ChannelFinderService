@@ -10,10 +10,14 @@ import java.util.stream.Collectors;
 
 import javax.servlet.ServletContext;
 
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
+import org.phoebus.channelfinder.processors.ChannelProcessor;
+import org.phoebus.channelfinder.processors.ChannelProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
@@ -52,6 +56,9 @@ public class ChannelManager {
 
     @Autowired
     AuthorizationService authorizationService;
+
+    @Autowired
+    ChannelProcessorService channelProcessorService;
 
     /**
      * GET method for retrieving a collection of Channel instances, based on a
@@ -131,8 +138,11 @@ public class ChannelManager {
             channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
             channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
 
+            XmlChannel createdChannel = channelRepository.index(channel);
+            // process the results
+            channelProcessorService.sendToProcessors(List.of(createdChannel));
             // create new channel
-            return channelRepository.index(channel);
+            return createdChannel;
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channelName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -192,8 +202,11 @@ public class ChannelManager {
                 channelManagerAudit.info("PUT" + log.toLog())
             );
 
-            // create new channels
-            return channelRepository.indexAll(Lists.newArrayList(channels));
+            List<XmlChannel> createdChannels = channelRepository.indexAll(Lists.newArrayList(channels));
+            // process the results
+            channelProcessorService.sendToProcessors(createdChannels);
+            // created new channel
+            return createdChannels;
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channels, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -252,8 +265,11 @@ public class ChannelManager {
             channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
             channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
 
-            // update channel
-            return channelRepository.save(newChannel);
+            XmlChannel updatedChannels = channelRepository.save(newChannel);
+            // process the results
+            channelProcessorService.sendToProcessors(List.of(updatedChannels));
+            // created new channel
+            return updatedChannels;
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channelName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -307,7 +323,11 @@ public class ChannelManager {
             }
 
             // update channels
-            return channelRepository.saveAll(channels);
+            List<XmlChannel> updatedChannels =  FluentIterable.from(channelRepository.saveAll(channels)).toList();
+            // process the results
+            channelProcessorService.sendToProcessors(updatedChannels);
+            // created new channel
+            return updatedChannels;
         } else {
             log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this channel: " + channels, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
@@ -423,4 +443,5 @@ public class ChannelManager {
             validateChannelRequest(channel);
         }
     }
+
 }

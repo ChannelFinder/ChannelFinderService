@@ -145,16 +145,22 @@ Example of recsync properties:
 
 RecSync Benefits:
 Running together, ChannelFinder, recceiver, and a collection of reccaster-enabled IOCs provide various benefits, such as:
- 1. The directory service provides an easily searchable list of all the PV’s on the controls infrastructure.
+
+1. The directory service provides an easily searchable list of all the PV's on the controls infrastructure.
  One such use case of this directory is to create reports on the PV naming standards compliance.
 
- 2. ChannelFinder service populated with actual data provides advanced diagnostics and debugging capabilities.
- When you cannot connect to a PV you can now look up the last time the PV was active,
- the host and the IOC that was last serving this PV from ChannelFinder.
- If defined by the IOC, the information also includes the name and email of the IOC engineer to facilitate contacting them.
+2. ChannelFinder service populated with actual data provides advanced diagnostics and debugging capabilities.
+ When you cannot connect to a PV you can now look up the last time the PV was active, the host and the IOC that was last serving this PV from ChannelFinder. If defined by the IOC, the information also includes the name and email of the IOC engineer to facilitate contacting them.
 
- 3. Properly populated ChannelFinder data is useful for creating device, geographical, and other groups of channels.
- E.g. for accelerator applications, the Accelerator Physics High Level Applications module (APHLA) used ChannelFinder 
- to create abstract physics representations out of machine PVs (e.g. a collection of magnet setpoints).
+3. Properly populated ChannelFinder data is useful for creating device, geographical, and other groups of channels.
+ E.g. for accelerator applications, the Accelerator Physics High Level Applications module (APHLA) used ChannelFinder to create abstract physics representations out of machine PVs (e.g. a collection of magnet setpoints).
 
- 4. Phoebus can use ChannelFinder data to auto complete PV names so there is no need to memorize an exact PV name.
+4. Phoebus can use ChannelFinder data to auto complete PV names so there is no need to memorize an exact PV name.
+
+
+Data Processor
+--------------
+
+ChannelFinder service allows the registration of Processors using the java SPI framework. Site specific installations of ChannelFinder can include multiple actions/processes which are performed everytime a channel is created or updated.
+
+e.g. The AA processor, checks if the newly created channel includes a property called *archive*, if present it uses the value of this property and adds this channel to the archiver appliance to begin archiving.
