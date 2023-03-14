@@ -11,10 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -24,7 +21,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
  * The archive parameters are specified in the property value, they consist of 2 parts
  * the sampling method which can be scan or monitor
  * the sampling rate defined in seconds
- *
+ * <p>
  * e.g. archive=monitor@1.0
  */
 @Configuration
@@ -35,18 +32,25 @@ public class AAChannelProcessor implements ChannelProcessor{
     @Value("${aa.enabled:true}")
     private boolean aaEnabled;
 
-    @Value("${aa.url:http://localhost:10065}")
-    private String aaURL;
+    @Value("#{${aa.urls:{'default': 'http://localhost:17665'}}}")
+    private Map<String, String> aaURLs;
+
+    @Value("${aa.default_alias:default")
+    private String defaultArchiver;
 
     @Value("${aa.pva:false}")
     private boolean aaPVA;
 
+    @Value("${aa.archive_property_name:archive}")
+    private String archivePropertyName;
+    @Value("${aa.archiver_property_name:archiver}")
+    private String archiverPropertyName;
+
     private static final String mgmtResource = "/mgmt/bpl/archivePV";
     private static final String policyResource = "/mgmt/bpl/getPolicyList";
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private WebClient client = WebClient.create();
+    private final WebClient client = WebClient.create();
 
-    private static final String archivePropertyName = "archive";
 
     @Override
     public boolean enabled() {
@@ -60,30 +64,44 @@ public class AAChannelProcessor implements ChannelProcessor{
 
     @Override
     public void process(List<XmlChannel> channels) throws JsonProcessingException {
-        List<ArchivePV> archivePVS = new ArrayList<>();
-        List<String> policyList = getAAPolicies();
-        channels.stream()
-                .forEach(channel -> {
-                    Optional<XmlProperty> archiveProperty = channel.getProperties().stream()
-                            .filter(xmlProperty -> archivePropertyName.equalsIgnoreCase(xmlProperty.getName()))
-                            .findFirst();
-                    if(archiveProperty.isPresent()) {
-                        ArchivePV newArchiverPV = new ArchivePV();
-                        if(aaPVA && !channel.getName().contains("://")) {
-                            newArchiverPV.setPv("pva://" + channel.getName());
-                        }
-                        else {
-                            newArchiverPV.setPv(channel.getName());
-                        }
-                        newArchiverPV.setSamplingParameters(archiveProperty.get().getValue(), policyList);
-                        archivePVS.add(newArchiverPV);
-                    }
-                });
-        configureAA(archivePVS);
+        Map<String, List<ArchivePV>> aaArchivePVS = new HashMap<>();
+        for (String alias: aaURLs.keySet()) {
+            aaArchivePVS.put(alias, new ArrayList<>());
+        }
+        Map<String, List<String>> policyLists = getAAsPolicies(aaURLs);
+        channels.forEach(channel -> {
+            Optional<XmlProperty> archiverProperty = channel.getProperties().stream()
+                    .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
+                    .findFirst();
+            Optional<XmlProperty> archiveProperty = channel.getProperties().stream()
+                    .filter(xmlProperty -> archivePropertyName.equalsIgnoreCase(xmlProperty.getName()))
+                    .findFirst();
+            if(archiveProperty.isPresent()) {
+                String archiverAlias = archiverProperty.isPresent() ? aaURLs.get(archiverProperty.get().getValue()): defaultArchiver;
+                ArchivePV newArchiverPV = getArchivePV(policyLists.get(archiverAlias), channel, archiveProperty.get().getValue());
+                aaArchivePVS.get(archiverAlias).add(newArchiverPV);
+            }
+        });
+
+        for (Map.Entry<String, List<ArchivePV>> e : aaArchivePVS.entrySet()) {
+            configureAA(e.getValue(), aaURLs.get(e.getKey()));
+        }
+    }
+
+    private ArchivePV getArchivePV(List<String> policyList, XmlChannel channel, String archiveProperty) {
+        ArchivePV newArchiverPV = new ArchivePV();
+        if(aaPVA && !channel.getName().contains("://")) {
+            newArchiverPV.setPv("pva://" + channel.getName());
+        }
+        else {
+            newArchiverPV.setPv(channel.getName());
+        }
+        newArchiverPV.setSamplingParameters(archiveProperty, policyList);
+        return newArchiverPV;
     }
 
 
-    private void configureAA(List<ArchivePV> archivePVS) throws JsonProcessingException {
+    private void configureAA(List<ArchivePV> archivePVS, String aaURL) throws JsonProcessingException {
         String response = client.post()
                 .uri(URI.create(aaURL + mgmtResource))
                 .contentType(MediaType.APPLICATION_JSON)
@@ -94,7 +112,15 @@ public class AAChannelProcessor implements ChannelProcessor{
         log.info(response);
     }
 
-    private List<String> getAAPolicies() throws JsonProcessingException {
+    private Map<String, List<String>> getAAsPolicies(Map<String, String> aaURLs) {
+        Map<String, List<String>> result = new HashMap<>();
+        for (String aaAlias: aaURLs.keySet()) {
+            result.put(aaAlias, getAAPolicies(aaURLs.get(aaAlias)));
+        }
+        return result;
+    }
+
+    private List<String> getAAPolicies(String aaURL) {
         try {
             String response = client.get()
                     .uri(URI.create(aaURL + policyResource))
@@ -115,8 +141,8 @@ public class AAChannelProcessor implements ChannelProcessor{
     @JsonInclude(Include.NON_NULL)
     public static class ArchivePV {
         private String pv;
-        private String samplingmethod;
-        private String samplingperiod;
+        private String samplingMethod;
+        private String samplingPeriod;
         private String policy;
 
         public String getPv() {
@@ -143,10 +169,10 @@ public class AAChannelProcessor implements ChannelProcessor{
             if(p.length == 2) {
                 switch (p[0].toUpperCase()) {
                     case "MONITOR":
-                        setSamplingmethod("MONITOR");
+                        setSamplingMethod("MONITOR");
                         break;
                     case "SCAN":
-                        setSamplingmethod("SCAN");
+                        setSamplingMethod("SCAN");
                         break;
                     default:
                         // invalid sampling method
@@ -161,27 +187,28 @@ public class AAChannelProcessor implements ChannelProcessor{
                 }
                 catch(NumberFormatException e) {
                     log.warning("Invalid sampling period" + sp);
-                    setSamplingmethod(null);
+                    setSamplingMethod(null);
                     return;
                 }
-                setSamplingperiod(sp);
+                setSamplingPeriod(sp);
+
             }
         }
 
-        public String getSamplingmethod() {
-            return samplingmethod;
+        public String getSamplingMethod() {
+            return samplingMethod;
         }
 
-        public void setSamplingmethod(String samplingmethod) {
-            this.samplingmethod = samplingmethod;
+        public void setSamplingMethod(String samplingMethod) {
+            this.samplingMethod = samplingMethod;
         }
 
-        public String getSamplingperiod() {
-            return samplingperiod;
+        public String getSamplingPeriod() {
+            return samplingPeriod;
         }
 
-        public void setSamplingperiod(String samplingperiod) {
-            this.samplingperiod = samplingperiod;
+        public void setSamplingPeriod(String samplingPeriod) {
+            this.samplingPeriod = samplingPeriod;
         }
 
         public String getPolicy() {
