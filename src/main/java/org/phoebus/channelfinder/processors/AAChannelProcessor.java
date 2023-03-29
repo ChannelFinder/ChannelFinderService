@@ -35,7 +35,7 @@ public class AAChannelProcessor implements ChannelProcessor{
     @Value("#{${aa.urls:{'default': 'http://localhost:17665'}}}")
     private Map<String, String> aaURLs;
 
-    @Value("${aa.default_alias:default")
+    @Value("${aa.default_alias:default}")
     private String defaultArchiver;
 
     @Value("${aa.pva:false}")
@@ -102,6 +102,10 @@ public class AAChannelProcessor implements ChannelProcessor{
 
 
     private void configureAA(List<ArchivePV> archivePVS, String aaURL) throws JsonProcessingException {
+        // Don't request to archive an empty list.
+        if (archivePVS.isEmpty()) {
+            return;
+        }
         String response = client.post()
                 .uri(URI.create(aaURL + mgmtResource))
                 .contentType(MediaType.APPLICATION_JSON)
