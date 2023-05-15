@@ -1,7 +1,11 @@
 package org.phoebus.channelfinder;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.json.UTF8JsonGenerator;
+import com.fasterxml.jackson.core.util.JsonGeneratorDelegate;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.json.stream.JsonGeneratorFactory;
 import org.junit.Test;
 
 import java.util.List;
@@ -19,11 +23,11 @@ public class AAChannelProcessorTest {
 
         assertEquals(ar.getPv(), "sim://testing");
         assertEquals(ar.getSamplingmethod(), "MONITOR");
-        assertEquals(ar.getSamplingperiod(), Float.valueOf("1.0"));
+        assertEquals(ar.getSamplingperiod(), "1.0");
 
         ar.setSamplingParameters("scan@.01");
         assertEquals(ar.getSamplingmethod(), "SCAN");
-        assertEquals(ar.getSamplingperiod(), Float.valueOf(".01"));
+        assertEquals(ar.getSamplingperiod(), ".01");
     }
 
     @Test
@@ -39,7 +43,7 @@ public class AAChannelProcessorTest {
         ObjectMapper objectMapper = new ObjectMapper();
         String str = objectMapper.writeValueAsString(List.of(ar1, ar2));
 
-        String expectedString = "[{\"samplingmethod\":\"MONITOR\",\"samplingperiod\":1.0,\"pvname\":\"sim://testing1\"},{\"samplingmethod\":\"SCAN\",\"samplingperiod\":0.2,\"pvname\":\"sim://testing2\"}]";
+        String expectedString = "[{\"pv\":\"sim://testing1\",\"samplingmethod\":\"MONITOR\",\"samplingperiod\":\"1.0\"},{\"pv\":\"sim://testing2\",\"samplingmethod\":\"SCAN\",\"samplingperiod\":\"0.2\"}]";
         assertEquals(str, expectedString);
 
         // Only a pv name
@@ -47,7 +51,7 @@ public class AAChannelProcessorTest {
         ar3.setPv("sim://testing3");
         str = objectMapper.writeValueAsString(List.of(ar3));
 
-        expectedString = "[{\"pvname\":\"sim://testing3\"}]";
+        expectedString = "[{\"pv\":\"sim://testing3\"}]";
         assertEquals(str, expectedString);
 
     }

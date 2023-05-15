@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder.processors;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.phoebus.channelfinder.XmlChannel;
@@ -84,6 +85,7 @@ public class AAChannelProcessor implements ChannelProcessor{
     }
 
     @JsonInclude(Include.NON_NULL)
+    @JsonPropertyOrder({"pv", "samplingmethod","samplingperiod"})
     public static class ArchivePV {
         private String pv;
         private String samplingmethod;
