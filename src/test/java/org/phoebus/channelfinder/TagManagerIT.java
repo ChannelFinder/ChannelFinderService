@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +41,7 @@ public class TagManagerIT {
     @Autowired
     ChannelRepository channelRepository;
 
-    private static final Logger log = Logger.getLogger(TagManagerIT.class.getName());
+    private static final Logger logger = Logger.getLogger(TagManagerIT.class.getName());
 
     /**
      * list all tags
@@ -718,7 +719,7 @@ public class TagManagerIT {
                 if(channelRepository.existsById(channel.getName()))
                     channelRepository.deleteById(channel.getName());
             } catch (Exception e) {
-                log.warning("Failed to clean up channel: " + channel.getName());
+                logger.log(Level.WARNING, "Failed to clean up channel: " + channel.getName());
             }
         });
         // additional cleanup for "testChannelX"

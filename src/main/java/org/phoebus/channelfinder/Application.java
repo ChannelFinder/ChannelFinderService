@@ -39,7 +39,7 @@ import org.springframework.util.FileCopyUtils;
 @SpringBootApplication
 public class Application implements ApplicationRunner {
 
-    static Logger logger = Logger.getLogger(Application.class.getName());
+    static final Logger logger = Logger.getLogger(Application.class.getName());
 
     public static void main(String[] args){
         // Set the java truststore used by channelfinder

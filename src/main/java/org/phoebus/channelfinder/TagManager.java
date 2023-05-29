@@ -2,6 +2,7 @@ package org.phoebus.channelfinder;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -37,8 +38,8 @@ import org.springframework.web.server.ResponseStatusException;
 @EnableAutoConfiguration
 public class TagManager {
 
-    static Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
-    static Logger log = Logger.getLogger(TagManager.class.getName());
+    private static final Logger tagManagerAudit = Logger.getLogger(TagManager.class.getName() + ".audit");
+    private static final Logger logger = Logger.getLogger(TagManager.class.getName());
 
     @Autowired
     TagRepository tagRepository;
@@ -71,25 +72,25 @@ public class TagManager {
     @GetMapping("/{tagName}")
     public XmlTag read(@PathVariable("tagName") String tagName,
             @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
-        tagManagerAudit.info("getting tag: " + tagName);
+        tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_TAG, tagName));
 
         if(withChannels) {
             Optional<XmlTag> foundTag = tagRepository.findById(tagName,true);
             if(foundTag.isPresent()) {
                 return foundTag.get();
             } else {
-                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The tag with the name " + tagName + " does not exist");
+                String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
             Optional<XmlTag> foundTag = tagRepository.findById(tagName);
             if(foundTag.isPresent()) {
                 return foundTag.get();
             } else {
-                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The tag with the name " + tagName + " does not exist");
+                String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         }
     }
@@ -109,23 +110,23 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validateTagRequest(tag);
 
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             Optional<XmlTag> existingTag = tagRepository.findById(tagName);
             boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
+                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // delete existing tag
                 tagRepository.deleteById(tagName);
@@ -145,10 +146,11 @@ public class TagManager {
                 createdTag.setChannels(chanList);
             }
             return createdTag;
-        } else
-            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+        } else {
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
     }
 
     /**
@@ -162,7 +164,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));            
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
             for(XmlTag tag: tags) {       
@@ -170,16 +172,16 @@ public class TagManager {
                 boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                                "User does not have the proper authorization to perform an operation on this tag: " + existingTag, null);
+                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                     tag.setOwner(existingTag.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                                "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
             }
@@ -217,9 +219,9 @@ public class TagManager {
             // TODO should return created tags with properly organized saved channels, but it would be very complicated...
             return tags;
         } else {
-            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on these tags: " + tags, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on these tags: " + tags, null);
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAGS, tags);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
 
@@ -239,7 +241,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validateTagWithChannelRequest(channelName);
 
@@ -248,9 +250,9 @@ public class TagManager {
             boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
+                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // add tag to channel
                 XmlChannel channel = channelRepository.findById(channelName).get();
@@ -260,14 +262,14 @@ public class TagManager {
                 addedTag.setChannels(Arrays.asList(taggedChannel));
                 return addedTag;
             } else {
-                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The tag with the name " + tagName + " does not exist");
+                String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
-            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
 
@@ -288,15 +290,15 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
             // Validate request parameters
             validateTagRequest(tag);
 
             // check if authorized owner
             if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                        "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
             List<XmlChannel> channels = new ArrayList<>();
             Optional<XmlTag> existingTag = tagRepository.findById(tagName,true);
@@ -304,9 +306,9 @@ public class TagManager {
             XmlTag newTag;
             if(existingTag.isPresent()) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
+                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 channels = existingTag.get().getChannels();
                 newTag = existingTag.get();
@@ -344,9 +346,9 @@ public class TagManager {
 
             return updatedTag;
         } else {
-            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
 
@@ -364,7 +366,7 @@ public class TagManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
-            tagManagerAudit.info("client initialization: " + (System.currentTimeMillis() - start));
+            tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
             for(XmlTag tag:tags) {
@@ -372,16 +374,16 @@ public class TagManager {
                 boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get().toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                                "User does not have the proper authorization to perform an operation on this tag: " + existingTag.get(), null);
+                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                     tag.setOwner(existingTag.get().getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), tag)) {
-                        log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tag.toLog(), new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                                "User does not have the proper authorization to perform an operation on this tag: " + tag, null);
+                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     }
                 }
             }
@@ -412,9 +414,9 @@ public class TagManager {
             // TODO should return updated tags with properly organized saved channels, but it would be very complicated...
             return tags;
         } else {
-            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on these tags: " + tags, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on these tag: " + tags, null);
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAGS, tags);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
 
@@ -435,19 +437,19 @@ public class TagManager {
                     // delete tag
                     tagRepository.deleteById(tagName);
                 } else {
-                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
+                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
             } else {
-                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The tag with the name " + tagName + " does not exist");
+                String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
-            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
 
@@ -473,24 +475,24 @@ public class TagManager {
                         channel.removeTag(new XmlTag(tagName, ""));
                         channelRepository.index(channel);
                     } else {
-                        log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                        throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                "The channel with the name " + channelName + " does not exist");
+                        String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
+                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
                     }
                 } else {
-                    log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                            "User does not have the proper authorization to perform an operation on this tag: " + tagName, null); 
+                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 }
             } else {
-                log.log(Level.SEVERE, "The tag with the name " + tagName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The tag with the name " + tagName + " does not exist");
+                String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
-            log.log(Level.SEVERE, "User does not have the proper authorization to perform an operation on this tag: " + tagName, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
-                    "User does not have the proper authorization to perform an operation on this tag: " + tagName, null);       
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
     }
 
@@ -525,26 +527,25 @@ public class TagManager {
     public void validateTagRequest(XmlTag tag) {
         // 1 
         if (tag.getName() == null || tag.getName().isEmpty()) {
-            log.log(Level.SEVERE, "The tag name cannot be null or empty " + tag.toLog(), new ResponseStatusException(HttpStatus.BAD_REQUEST));
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag name cannot be null or empty " + tag.toString(), null);
+            String message = MessageFormat.format(TextUtil.TAG_NAME_CANNOT_BE_NULL_OR_EMPTY, tag.toLog());
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 2
         if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
-            log.log(Level.SEVERE, "The tag owner cannot be null or empty " + tag.toLog(), new ResponseStatusException(HttpStatus.BAD_REQUEST));
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "The tag owner cannot be null or empty " + tag.toString(), null);
+            String message = MessageFormat.format(TextUtil.TAG_OWNER_CANNOT_BE_NULL_OR_EMPTY, tag.toLog());
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 3
         List <String> channelNames = tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
         for(String channelName:channelNames) {
             if(!channelRepository.existsById(channelName)) {
-                log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "The channel with the name " + channelName + " does not exist");
+                String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         }
-
     }
 
     /**
@@ -553,9 +554,10 @@ public class TagManager {
      */
     public void validateTagWithChannelRequest(String channelName) {
         if(!channelRepository.existsById(channelName)) {
-            log.log(Level.SEVERE, "The channel with the name " + channelName + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "The channel with the name " + channelName + " does not exist");
+            String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
         }
     }
+
 }

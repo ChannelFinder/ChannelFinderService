@@ -2,6 +2,7 @@ package org.phoebus.channelfinder;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.junit.After;
@@ -20,6 +21,7 @@ import org.springframework.util.MultiValueMap;
 public class ChannelScrollSearchIT {
 
     private static final Logger logger = Logger.getLogger(ChannelScrollSearchIT.class.getName());
+    
     @Autowired
     ChannelScroll channelScroll;
 
@@ -60,64 +62,64 @@ public class ChannelScrollSearchIT {
 
         long start = System.currentTimeMillis();
         XmlScroll scrollResult = channelScroll.query(searchParameters);
-        logger.info("Completed the first scroll request in : " + (System.currentTimeMillis() - start) + "ms");
+        logger.log(Level.INFO, "Completed the first scroll request in : " + (System.currentTimeMillis() - start) + "ms");
         int totalResult = 0;
         Double avg100 = 0.0;
 
-        logger.info("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+        logger.log(Level.INFO, "Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                 + " in : " + (System.currentTimeMillis() - start) + "ms");
         avg100 = (avg100 + (System.currentTimeMillis() - start)) / 2;
         totalResult += scrollResult.getChannels().size();
         start = System.currentTimeMillis();
 
         while (scrollResult.getChannels().size() == 100) {
-            logger.info("Retireval id: " + scrollResult.getId());
+            logger.log(Level.INFO, "Retireval id: " + scrollResult.getId());
             scrollResult = channelScroll.query(scrollResult.getId(), searchParameters);
-            logger.info("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+            logger.log(Level.INFO, "Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                     + " in : " + (System.currentTimeMillis() - start) + "ms");
             avg100 = (avg100 + (System.currentTimeMillis() - start)) / 2;
             totalResult += scrollResult.getChannels().size();
             start = System.currentTimeMillis();
         }
-        logger.info("total result = " + totalResult);
+        logger.log(Level.INFO, "total result = " + totalResult);
 
         // Size = 1000
-        logger.info("Rerun test with scroll size  = 1000");
+        logger.log(Level.INFO, "Rerun test with scroll size  = 1000");
         searchParameters.add("~size", "1000");
         start = System.currentTimeMillis();
         scrollResult = channelScroll.query(searchParameters);
-        logger.info("Completed the first scroll request in : " + (System.currentTimeMillis() - start) + "ms");
+        logger.log(Level.INFO, "Completed the first scroll request in : " + (System.currentTimeMillis() - start) + "ms");
         totalResult = 0;
         Double avg1000 = 0.0;
 
-        logger.info("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+        logger.log(Level.INFO, "Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                 + " in : " + (System.currentTimeMillis() - start) + "ms");
         avg1000 = (avg1000 + (System.currentTimeMillis() - start)) / 2;
         totalResult += scrollResult.getChannels().size();
         start = System.currentTimeMillis();
 
         while (scrollResult.getChannels().size() == 1000) {
-            logger.info("Retireval id: " + scrollResult.getId());
+            logger.log(Level.INFO, "Retireval id: " + scrollResult.getId());
             scrollResult = channelScroll.query(scrollResult.getId(), searchParameters);
-            logger.info("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+            logger.log(Level.INFO, "Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                     + " in : " + (System.currentTimeMillis() - start) + "ms");
             avg1000 = (avg1000 + (System.currentTimeMillis() - start)) / 2;
             totalResult += scrollResult.getChannels().size();
             start = System.currentTimeMillis();
         }
-        logger.info("total result = " + totalResult);
+        logger.log(Level.INFO, "total result = " + totalResult);
 
         // Size = 10000
-        logger.info("Rerun test with scroll size  = 10000");
+        logger.log(Level.INFO, "Rerun test with scroll size  = 10000");
         searchParameters.remove("~size");
         searchParameters.add("~size", "10000");
         start = System.currentTimeMillis();
         scrollResult = channelScroll.query(searchParameters);
-        logger.info("Completed the first scroll request in : " + (System.currentTimeMillis() - start) + "ms");
+        logger.log(Level.INFO, "Completed the first scroll request in : " + (System.currentTimeMillis() - start) + "ms");
         totalResult = 0;
         Double avg10000 = 0.0;
 
-        logger.fine("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+        logger.log(Level.FINE, "Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                 + " in : " + (System.currentTimeMillis() - start) + "ms");
         avg10000 = (avg10000 + (System.currentTimeMillis() - start)) / 2;
         totalResult += scrollResult.getChannels().size();
@@ -125,15 +127,15 @@ public class ChannelScrollSearchIT {
 
         while (scrollResult.getChannels().size() == 10000) {
             scrollResult = channelScroll.query(scrollResult.getId(), searchParameters);
-            logger.fine("Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
+            logger.log(Level.FINE, "Retrieved channels " + totalResult + " to " + (totalResult + scrollResult.getChannels().size())
                     + " in : " + (System.currentTimeMillis() - start) + "ms");
             avg10000 = (avg10000 + (System.currentTimeMillis() - start)) / 2;
             totalResult += scrollResult.getChannels().size();
             start = System.currentTimeMillis();
         }
-        logger.info("total result = " + totalResult);
+        logger.log(Level.INFO, "total result = " + totalResult);
 
-        logger.info(" compeleted scrolling db with \n"
+        logger.log(Level.INFO, " compeleted scrolling db with \n"
                 + " size 100 in avg: " + avg100 + "\n"
                 + " size 1000 in avg: " + avg1000 + "\n"
                 + " size 10000 in avg: " + avg10000 + "\n");
