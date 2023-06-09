@@ -35,7 +35,7 @@ import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_
 @EnableAutoConfiguration
 public class ChannelProcessorManager {
 
-    private static final Logger log = Logger.getLogger(ChannelProcessorManager.class.getName());
+    private static final Logger logger = Logger.getLogger(ChannelProcessorManager.class.getName());
 
     @Autowired
     ChannelProcessorService channelProcessorService;
@@ -61,7 +61,7 @@ public class ChannelProcessorManager {
 
     @PutMapping("/process/all")
     public long processAllChannels() {
-        log.info("Calling processor on ALL channels in ChannelFinder");
+        logger.log(Level.INFO, "Calling processor on ALL channels in ChannelFinder");
         // Only allow authorized users to trigger this operation
         if(authorizationService
                 .isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(),
@@ -70,7 +70,7 @@ public class ChannelProcessorManager {
             searchParameters.add("~name", "*");
             return processChannels(searchParameters);
         } else {
-            log.log(Level.SEVERE,
+            logger.log(Level.SEVERE,
                     "User does not have the proper authorization to perform this operation: /process/all",
                     new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,

@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.net.URI;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -27,7 +28,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 @Configuration
 public class AAChannelProcessor implements ChannelProcessor{
 
-    private static final Logger log = Logger.getLogger(AAChannelProcessor.class.getName());
+    private static final Logger logger = Logger.getLogger(AAChannelProcessor.class.getName());
 
     @Value("${aa.enabled:true}")
     private boolean aaEnabled;
@@ -113,7 +114,7 @@ public class AAChannelProcessor implements ChannelProcessor{
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
-        log.info(response);
+        logger.log(Level.INFO, response);
     }
 
     private Map<String, List<String>> getAAsPolicies(Map<String, String> aaURLs) {
@@ -137,7 +138,7 @@ public class AAChannelProcessor implements ChannelProcessor{
         }
         catch (Exception e) {
             // problem collecting policies from AA, so warn and return empty list
-            log.warning("Could not get AA policies list: " + e.getMessage());
+            logger.log(Level.WARNING, "Could not get AA policies list: " + e.getMessage());
             return List.of();
         }
     }
@@ -180,7 +181,7 @@ public class AAChannelProcessor implements ChannelProcessor{
                         break;
                     default:
                         // invalid sampling method
-                        log.warning("Invalid sampling method " + p[0]);
+                        logger.log(Level.WARNING, "Invalid sampling method " + p[0]);
                         return;
                 }
                 // ignore anything after first space
@@ -190,7 +191,7 @@ public class AAChannelProcessor implements ChannelProcessor{
                     Float.parseFloat(sp);
                 }
                 catch(NumberFormatException e) {
-                    log.warning("Invalid sampling period" + sp);
+                    logger.log(Level.WARNING, "Invalid sampling period" + sp);
                     setSamplingMethod(null);
                     return;
                 }

@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class ChannelProcessorService {
-    private static final Logger log = Logger.getLogger(ChannelProcessorService.class.getName());
+	
+    private static final Logger logger = Logger.getLogger(ChannelProcessorService.class.getName());
 
     @Autowired
     private List<ChannelProcessor> channelProcessors;
@@ -36,7 +37,7 @@ public class ChannelProcessorService {
      * @param channels list of channels to be processed
      */
     public void sendToProcessors(List<XmlChannel> channels) {
-        log.info(channels.stream().map(XmlChannel::toLog).collect(Collectors.joining()));
+        logger.log(Level.INFO, channels.stream().map(XmlChannel::toLog).collect(Collectors.joining()));
         if (channelProcessors.isEmpty()) {
             return;
         }
@@ -46,7 +47,7 @@ public class ChannelProcessorService {
                     try {
                         channelProcessor.process(channels);
                     } catch (Exception e) {
-                        log.log(Level.WARNING, "ChannelProcessor " + channelProcessor.getClass().getName() + " throws exception", e);
+                        logger.log(Level.WARNING, "ChannelProcessor " + channelProcessor.getClass().getName() + " throws exception", e);
                     }
                 }));
     }

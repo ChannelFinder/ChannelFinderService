@@ -16,6 +16,7 @@ package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,7 +53,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 @PropertySource(value = "classpath:application.properties")
 public class ElasticConfig implements ServletContextListener {
 
-    private static Logger log = Logger.getLogger(ElasticConfig.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(ElasticConfig.class.getCanonicalName());
 
     private ElasticsearchClient searchClient;
     private ElasticsearchClient indexClient;
@@ -118,12 +119,12 @@ public class ElasticConfig implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        log.info("Initializing a new Transport clients.");
+        logger.log(Level.INFO, "Initializing a new Transport clients.");
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        log.info("Closing the default Transport clients.");
+        logger.log(Level.INFO, "Closing the default Transport clients.");
         if (searchClient != null)
             searchClient.shutdown();
         if (indexClient != null)
@@ -144,10 +145,10 @@ public class ElasticConfig implements ServletContextListener {
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
                                 c -> c.index(ES_CHANNEL_INDEX).withJson(is)));
-                log.info("Created index: " + ES_CHANNEL_INDEX + " : acknowledged " + result.acknowledged());
+                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_CHANNEL_INDEX, result.acknowledged()));
             }
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to create index " + ES_CHANNEL_INDEX, e);
+            logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_CHANNEL_INDEX), e);
         }
 
         // ChannelFinder tag Index
@@ -158,10 +159,10 @@ public class ElasticConfig implements ServletContextListener {
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
                                 c -> c.index(ES_TAG_INDEX).withJson(is)));
-                log.info("Created index: " + ES_TAG_INDEX + " : acknowledged " + result.acknowledged());
+                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_TAG_INDEX, result.acknowledged()));
             }
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to create index " + ES_TAG_INDEX, e);
+            logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_TAG_INDEX), e);
         }
 
         // ChannelFinder property Index
@@ -172,10 +173,10 @@ public class ElasticConfig implements ServletContextListener {
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
                                 c -> c.index(ES_PROPERTY_INDEX).withJson(is)));
-                log.info("Created index: " + ES_PROPERTY_INDEX + " : acknowledged " + result.acknowledged());
+                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_PROPERTY_INDEX, result.acknowledged()));
             }
         } catch (IOException e) {
-            log.log(Level.WARNING, "Failed to create index " + ES_PROPERTY_INDEX, e);
+            logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_PROPERTY_INDEX), e);
         }
     }
 }
