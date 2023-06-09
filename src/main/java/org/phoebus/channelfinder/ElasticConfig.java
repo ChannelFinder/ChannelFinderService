@@ -53,7 +53,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 @PropertySource(value = "classpath:application.properties")
 public class ElasticConfig implements ServletContextListener {
 
-    private static final Logger logger = Logger.getLogger(ElasticConfig.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(ElasticConfig.class.getName());
 
     private ElasticsearchClient searchClient;
     private ElasticsearchClient indexClient;

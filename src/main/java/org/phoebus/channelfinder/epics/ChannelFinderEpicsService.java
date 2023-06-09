@@ -55,7 +55,7 @@ import org.springframework.util.MultiValueMap;
 @ComponentScan(basePackages="org.phoebus.channelfinder")
 public class ChannelFinderEpicsService {
 
-    private static final Logger logger = Logger.getLogger(ChannelFinderEpicsService.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(ChannelFinderEpicsService.class.getName());
 
     private final ExecutorService pool = Executors.newScheduledThreadPool(1);
     

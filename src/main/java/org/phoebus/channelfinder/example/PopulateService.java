@@ -62,7 +62,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Configuration
 public class PopulateService {
 
-    private static final Logger logger = Logger.getLogger(PopulateService.class.getCanonicalName());
+    private static final Logger logger = Logger.getLogger(PopulateService.class.getName());
 
     static int max_prop = 40; // must be >=20
     static int max_tag = 60; // must be >=11
