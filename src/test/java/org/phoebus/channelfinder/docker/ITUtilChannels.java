@@ -104,14 +104,14 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertRetrieveChannel(String, int, XmlChannel)
      */
-    public static void assertRetrieveChannel(String path, int responseCode) {
-        assertRetrieveChannel(path, responseCode, CHANNEL_NULL);
+    public static XmlChannel assertRetrieveChannel(String path, int responseCode) {
+        return assertRetrieveChannel(path, responseCode, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertRetrieveChannel(String, int, XmlChannel)
      */
-    public static void assertRetrieveChannel(String path, XmlChannel expected) {
-        assertRetrieveChannel(path, HttpURLConnection.HTTP_OK, expected);
+    public static XmlChannel assertRetrieveChannel(String path, XmlChannel expected) {
+        return assertRetrieveChannel(path, HttpURLConnection.HTTP_OK, expected);
     }
     /**
      * Utility method to return the full listing of a single channel with the given name.
@@ -120,24 +120,28 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channel
      */
-    public static void assertRetrieveChannel(String path, int responseCode, XmlChannel expected) {
+    public static XmlChannel assertRetrieveChannel(String path, int responseCode, XmlChannel expected) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
             XmlChannel actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + path);
             ITUtil.assertResponseLength2Code(response, responseCode);
+            if (HttpURLConnection.HTTP_OK == responseCode) {
+                actual = mapper.readValue(response[1], XmlChannel.class);
+            }
 
             if (expected != null) {
-                actual = mapper.readValue(response[1], XmlChannel.class);
                 assertEquals(expected, actual);
             }
+
+            return actual;
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
             fail();
         }
+        return null;
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -145,31 +149,31 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
      */
-    public static Integer assertListChannels(int expectedEqual) {
+    public static XmlChannel[] assertListChannels(int expectedEqual) {
         return assertListChannels("", HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, CHANNELS_NULL);
     }
     /**
      * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
      */
-    public static Integer assertListChannels(int expectedEqual, XmlChannel... expected) {
+    public static XmlChannel[] assertListChannels(int expectedEqual, XmlChannel... expected) {
         return assertListChannels("", HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, expected);
     }
     /**
      * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
      */
-    public static Integer assertListChannels(String queryString, XmlChannel... expected) {
+    public static XmlChannel[] assertListChannels(String queryString, XmlChannel... expected) {
         return assertListChannels(queryString, HttpURLConnection.HTTP_OK, -1, -1, expected);
     }
     /**
      * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
      */
-    public static Integer assertListChannels(String queryString, int expectedEqual) {
+    public static XmlChannel[] assertListChannels(String queryString, int expectedEqual) {
         return assertListChannels(queryString, HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, CHANNELS_NULL);
     }
     /**
      * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
      */
-    public static Integer assertListChannels(String queryString, int responseCode, int expectedEqual) {
+    public static XmlChannel[] assertListChannels(String queryString, int responseCode, int expectedEqual) {
         return assertListChannels(queryString, responseCode, expectedEqual, expectedEqual, CHANNELS_NULL);
     }
     /**
@@ -182,16 +186,15 @@ public class ITUtilChannels {
      * @param expected expected response channels
      * @return number of channels
      */
-    public static Integer assertListChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, XmlChannel... expected) {
+    public static XmlChannel[] assertListChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, XmlChannel... expected) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
             XmlChannel[] actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + queryString);
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-            	actual = mapper.readValue(response[1], XmlChannel[].class);
+                actual = mapper.readValue(response[1], XmlChannel[].class);
             }
 
             // expected number of items in list
@@ -209,7 +212,62 @@ public class ITUtilChannels {
                 assertEqualsXmlChannels(actual, expected);
             }
 
-            return actual != null ? actual.length : -1;
+            return actual;
+        } catch (IOException e) {
+            fail();
+        } catch (Exception e) {
+            fail();
+        }
+        return null;
+    }
+
+    // ----------------------------------------------------------------------------------------------------
+
+    /**
+     * @see ITUtilChannels#assertCountChannels(String, int, int, int)
+     */
+    public static Integer assertCountChannels(int expectedEqual) {
+        return assertCountChannels("", HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual);
+    }
+    /**
+     * @see ITUtilChannels#assertCountChannels(String, int, int, int)
+     */
+    public static Integer assertCountChannels(String queryString, int expectedEqual) {
+        return assertCountChannels(queryString, HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual);
+    }
+    /**
+     * Utility method to return the count of channels which match all given expressions, i.e. the expressions are combined in a logical AND.
+     *
+     * @param queryString query string
+     * @param responseCode response code
+     * @param expectedGreaterThanOrEqual (if non-negative number) greater than or equal to this number of items
+     * @param expectedLessThanOrEqual (if non-negative number) less than or equal to this number of items
+     * @param expected expected response channels
+     * @return number of channels
+     */
+    public static Integer assertCountChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual) {
+        try {
+            String[] response = null;
+            Integer actual = -1;
+
+            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + "/count" + queryString);
+            ITUtil.assertResponseLength2Code(response, responseCode);
+            if (HttpURLConnection.HTTP_OK == responseCode) {
+                actual = Integer.parseInt(response[1]);
+            }
+
+            // expected number of items in list
+            //     (if non-negative number)
+            //     expectedGreaterThanOrEqual <= nbr of items <= expectedLessThanOrEqual
+            if (expectedGreaterThanOrEqual >= 0) {
+                assertTrue(actual >= expectedGreaterThanOrEqual);
+            }
+            if (expectedLessThanOrEqual >= 0) {
+                assertTrue(actual <= expectedLessThanOrEqual);
+            }
+
+            // expected content
+            return actual;
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
@@ -223,20 +281,20 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, XmlChannel)
      */
-    public static void assertCreateReplaceChannel(String path, XmlChannel value) {
-        assertCreateReplaceChannel(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNEL_NULL);
+    public static XmlChannel assertCreateReplaceChannel(String path, XmlChannel value) {
+        return assertCreateReplaceChannel(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, XmlChannel)
      */
-    public static void assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, XmlChannel value, int responseCode) {
-        assertCreateReplaceChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
+    public static XmlChannel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, XmlChannel value, int responseCode) {
+        return assertCreateReplaceChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, XmlChannel)
      */
-    public static void assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        assertCreateReplaceChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
+    public static XmlChannel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+        return assertCreateReplaceChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
     }
     /**
      * Utility method to create or completely replace the existing channel name with the payload data.
@@ -247,24 +305,28 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channel
      */
-    public static void assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel expected) {
+    public static XmlChannel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel expected) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
             XmlChannel actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
+            if (HttpURLConnection.HTTP_OK == responseCode) {
+                actual = mapper.readValue(response[1], XmlChannel.class);
+            }
 
             if (expected != null) {
-                actual = mapper.readValue(response[1], XmlChannel.class);
                 assertEquals(expected, actual);
             }
+
+            return actual;
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
             fail();
         }
+        return null;
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -272,14 +334,14 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertCreateReplaceMultipleChannels(AuthorizationChoice, String, String, int, XmlChannel[])
      */
-    public static void assertCreateReplaceMultipleChannels(String path, XmlChannel[] value) {
-        assertCreateReplaceMultipleChannels(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNELS_NULL);
+    public static XmlChannel[] assertCreateReplaceMultipleChannels(String path, XmlChannel[] value) {
+        return assertCreateReplaceMultipleChannels(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNELS_NULL);
     }
     /**
      * @see ITUtilChannels#assertCreateReplaceMultipleChannels(AuthorizationChoice, String, String, int, XmlChannel[])
      */
-    public static void assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        assertCreateReplaceMultipleChannels(authorizationChoice, path, json, responseCode, CHANNELS_NULL);
+    public static XmlChannel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+        return assertCreateReplaceMultipleChannels(authorizationChoice, path, json, responseCode, CHANNELS_NULL);
     }
     /**
      * Utility method to add the channels in the payload to the directory.
@@ -290,22 +352,28 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channels
      */
-    public static void assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel[] expected) {
+    public static XmlChannel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel[] expected) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
+            XmlChannel[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
+            if (HttpURLConnection.HTTP_OK == responseCode) {
+                actual = mapper.readValue(response[1], XmlChannel[].class);
+            }
 
             if (expected != null) {
-                assertEqualsXmlChannels(mapper.readValue(response[1], XmlChannel[].class), expected);
+                assertEqualsXmlChannels(expected, actual);
             }
+
+            return actual;
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
             fail();
         }
+        return null;
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -313,20 +381,20 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, XmlChannel)
      */
-    public static void assertUpdateChannel(String path, XmlChannel value) {
-        assertUpdateChannel(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNEL_NULL);
+    public static XmlChannel assertUpdateChannel(String path, XmlChannel value) {
+        return assertUpdateChannel(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, XmlChannel)
      */
-    public static void assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, XmlChannel value, int responseCode) {
-        assertUpdateChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
+    public static XmlChannel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, XmlChannel value, int responseCode) {
+        return assertUpdateChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, XmlChannel)
      */
-    public static void assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        assertUpdateChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
+    public static XmlChannel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+        return assertUpdateChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
     }
     /**
      * Utility method to merge properties and tags of the channel identified by the payload into an existing channel.
@@ -337,24 +405,28 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channel
      */
-    public static void assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel expected) {
+    public static XmlChannel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel expected) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
             XmlChannel actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, authorizationChoice, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
+            if (HttpURLConnection.HTTP_OK == responseCode) {
+                actual = mapper.readValue(response[1], XmlChannel.class);
+            }
 
             if (expected != null) {
-                actual = mapper.readValue(response[1], XmlChannel.class);
                 assertEquals(expected, actual);
             }
+
+            return actual;
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
             fail();
         }
+        return null;
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -362,14 +434,14 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertUpdateChannels(String, String, int, XmlChannel[])
      */
-    public static void assertUpdateChannels(String path, XmlChannel[] value) {
-        assertUpdateChannels(path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNELS_NULL);
+    public static XmlChannel[] assertUpdateChannels(String path, XmlChannel[] value) {
+        return assertUpdateChannels(path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNELS_NULL);
     }
     /**
      * @see ITUtilChannels#assertUpdateChannels(String, String, int, XmlChannel[])
      */
-    public static void assertUpdateChannels(String path, String json, int responseCode) {
-        assertUpdateChannels(path, json, responseCode, CHANNELS_NULL);
+    public static XmlChannel[] assertUpdateChannels(String path, String json, int responseCode) {
+        return assertUpdateChannels(path, json, responseCode, CHANNELS_NULL);
     }
     /**
      * Utility method to merge properties and tags of the channels identified by the payload into existing channels.
@@ -379,22 +451,28 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channels
      */
-    public static void assertUpdateChannels(String path, String json, int responseCode, XmlChannel[] expected) {
+    public static XmlChannel[] assertUpdateChannels(String path, String json, int responseCode, XmlChannel[] expected) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
+            XmlChannel[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, AuthorizationChoice.ADMIN, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
+            if (HttpURLConnection.HTTP_OK == responseCode) {
+                actual = mapper.readValue(response[1], XmlChannel[].class);
+            }
 
             if (expected != null) {
-                assertEqualsXmlChannels(mapper.readValue(response[1], XmlChannel[].class), expected);
+                assertEqualsXmlChannels(expected, actual);
             }
+
+            return actual;
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
             fail();
         }
+        return null;
     }
 
     // ----------------------------------------------------------------------------------------------------
