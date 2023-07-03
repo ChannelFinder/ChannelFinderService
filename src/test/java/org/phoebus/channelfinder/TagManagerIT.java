@@ -692,7 +692,7 @@ public class TagManagerIT {
         // Verify the tag is removed from the testChannel0
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("~tag", testTag1.getName());
-        assertFalse("Failed to delete the tag from channel", channelRepository.search(searchParameters).stream().anyMatch(ch -> {
+        assertFalse("Failed to delete the tag from channel", channelRepository.search(searchParameters).getChannels().stream().anyMatch(ch -> {
             return ch.getName().equals(testChannels.get(0).getName());
         }));
     }

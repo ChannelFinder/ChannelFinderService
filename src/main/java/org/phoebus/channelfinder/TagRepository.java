@@ -225,7 +225,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add("~tag", tag.getName());
-                    tag.setChannels(channelRepository.search(params));
+                    tag.setChannels(channelRepository.search(params).getChannels());
                 }
                 return Optional.of(tag);
             } else {
@@ -319,7 +319,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("~tag", tagName);
-            List<XmlChannel> channels = channelRepository.search(params);
+            List<XmlChannel> channels = channelRepository.search(params).getChannels();
             while (channels.size() > 0) {
 
                 for (XmlChannel channel : channels) {
@@ -357,7 +357,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
 
                 }
                 params.set("~search_after", channels.get(channels.size() - 1).getName());
-                channels = channelRepository.search(params);
+                channels = channelRepository.search(params).getChannels();
             }
             
         } catch (ElasticsearchException | IOException e) {

@@ -2,7 +2,9 @@ package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +21,6 @@ import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.DisMaxQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
@@ -37,6 +38,7 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import com.google.common.base.Objects;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,7 +56,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Repository
 @Configuration
 public class ChannelRepository implements CrudRepository<XmlChannel, String> {
-	
+
     private static final Logger logger = Logger.getLogger(ChannelRepository.class.getName());
 
     @Value("${elasticsearch.channel.index:channelfinder}")
@@ -67,7 +69,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     @Qualifier("indexClient")
     ElasticsearchClient client;
 
-    ObjectMapper objectMapper = new ObjectMapper()
+    final ObjectMapper objectMapper = new ObjectMapper()
             .addMixIn(XmlTag.class, XmlTag.OnlyXmlTag.class)
             .addMixIn(XmlProperty.class, XmlProperty.OnlyXmlProperty.class);
 
@@ -138,7 +140,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
         }
-        return null;
+        return Collections.emptyList();
     }
 
     /**
@@ -177,7 +179,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * update/save channels using the given XmlChannels
-     * 
+     *
      * @param <S> extends XmlChannel
      * @param channels - channels to be saved
      * @return the updated/saved channels
@@ -236,7 +238,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * find channel using the given channel id
-     * 
+     *
      * @param channelName - name of channel to be found
      * @return the found channel
      */
@@ -276,8 +278,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
-            return response.hits()
-                    .hits().stream().map(h -> h.source().getName()).collect(Collectors.toList())
+            return new HashSet<>(response.hits()
+                    .hits().stream().map(h -> h.source().getName()).collect(Collectors.toList()))
                     .containsAll(channelIds);
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
@@ -304,8 +306,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     }
 
     /**
-     * find all channels 
-     * 
+     * find all channels
+     *
      * @return the found channels
      */
     @Override
@@ -315,7 +317,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * find channels using the given channels ids
-     * 
+     *
      * @param channelIds - ids of channels to be found
      * @return the found channels
      */
@@ -366,7 +368,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     /**
      * delete the given channel
-     * 
+     *
      * @param channel - channel to be deleted
      */
     @Override
@@ -384,26 +386,82 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
         throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
+    public static class ResponseSearch {
+        private final long count;
+        private final List<XmlChannel> channels;
+        ResponseSearch(List<XmlChannel> channels, long count) {
+            this.channels = channels;
+            this.count = count;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ResponseSearch that = (ResponseSearch) o;
+            return count == that.count && Objects.equal(channels, that.channels);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(count, channels);
+        }
+
+        public long getCount() {
+            return count;
+        }
+
+        public List<XmlChannel> getChannels() {
+            return channels;
+        }
+
+
+    }
     /**
      * Search for a list of channels based on their name, tags, and/or properties.
      * Search parameters ~name - The name of the channel ~tags - A list of comma
      * separated values ${propertyName}:${propertyValue} -
-     * 
+     * <p>
      * The query result is sorted based on the channel name ~size - The number of
      * channels to be returned ~from - The starting index of the channel list
-     * 
+     *
      * @param searchParameters channel search parameters
      * @return matching channels
      */
-    public List<XmlChannel> search(MultiValueMap<String, String> searchParameters) {
-        StringBuffer performance = new StringBuffer();
-        long start = System.currentTimeMillis();
+    public ResponseSearch search(MultiValueMap<String, String> searchParameters) {
+        BuiltQuery builtQuery = getBuiltQuery(searchParameters);
 
+        try {
+            Integer finalSize = builtQuery.size;
+            Integer finalFrom = builtQuery.from;
+
+            SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
+            searchBuilder.index(ES_CHANNEL_INDEX)
+                            .query(builtQuery.boolQuery.build()._toQuery())
+                            .from(finalFrom)
+                            .size(finalSize)
+                            .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
+            builtQuery.searchAfter.ifPresent(searchBuilder::searchAfter);
+
+            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(),
+                                                                XmlChannel.class
+            );
+            long count = response.hits().total().value();
+            List<Hit<XmlChannel>> hits = response.hits().hits();
+            return new ResponseSearch(hits.stream().map(Hit::source).collect(Collectors.toList()), count);
+        } catch (Exception e) {
+            String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
+            logger.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+        }
+    }
+
+    private BuiltQuery getBuiltQuery(MultiValueMap<String, String> searchParameters) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-        Integer size = defaultMaxSize;
-        Integer from = 0;
+        int size = defaultMaxSize;
+        int from = 0;
         Optional<String> searchAfter = Optional.empty();
-
+        String valueSplitPattern = "[\\|,;]";
         for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
             String key = parameter.getKey().trim();
             boolean isNot = key.endsWith("!");
@@ -414,7 +472,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 case "~name":
                     for (String value : parameter.getValue()) {
                         DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
-                        for (String pattern : value.split("[\\|,;]")) {
+                        for (String pattern : value.split(valueSplitPattern)) {
                             nameQuery.queries(WildcardQuery.of(w -> w.field("name").caseInsensitive(true).value(pattern.trim()))._toQuery());
                         }
                         boolQuery.must(nameQuery.build()._toQuery());
@@ -423,7 +481,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 case "~tag":
                     for (String value : parameter.getValue()) {
                         DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
-                        for (String pattern : value.split("[\\|,;]")) {
+                        for (String pattern : value.split(valueSplitPattern)) {
                             tagQuery.queries(
                                     NestedQuery.of(n -> n.path("tags").query(
                                             WildcardQuery.of(w -> w.field("tags.name").caseInsensitive(true).value(pattern.trim()))._toQuery()))._toQuery());
@@ -439,13 +497,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 case "~size":
                     Optional<String> maxSize = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
                     if (maxSize.isPresent()) {
-                        size = Integer.valueOf(maxSize.get());
+                        size = Integer.parseInt(maxSize.get());
                     }
                     break;
                 case "~from":
                     Optional<String> maxFrom = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
                     if (maxFrom.isPresent()) {
-                        from = Integer.valueOf(maxFrom.get());
+                        from = Integer.parseInt(maxFrom.get());
                     }
                     break;
                 case "~search_after":
@@ -454,7 +512,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                 default:
                     DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
                     for (String value : parameter.getValue()) {
-                        for (String pattern : value.split("[\\|,;]")) {
+                        for (String pattern : value.split(valueSplitPattern)) {
                             String finalKey = key;
                             BoolQuery bq;
                             if (isNot) {
@@ -473,33 +531,20 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     break;
             }
         }
-        performance.append("|prepare: " + (System.currentTimeMillis() - start));
-        start = System.currentTimeMillis();
-        
-        try {
-            Integer finalSize = size;
-            Integer finalFrom = from;
+        return new BuiltQuery(boolQuery, size, from, searchAfter);
+    }
 
-            SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
-            searchBuilder.index(ES_CHANNEL_INDEX)
-                            .query(boolQuery.build()._toQuery())
-                            .from(finalFrom)
-                            .size(finalSize)
-                            .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
-            if(searchAfter.isPresent()) {
-                searchBuilder.searchAfter(searchAfter.get());
-            }
+    private static class BuiltQuery {
+        public final BoolQuery.Builder boolQuery;
+        public final Integer size;
+        public final Integer from;
+        public final Optional<String> searchAfter;
 
-            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(),
-                                                                XmlChannel.class
-            );
-
-            List<Hit<XmlChannel>> hits = response.hits().hits();
-            return hits.stream().map(Hit::source).collect(Collectors.toList());
-        } catch (Exception e) {
-            String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
-            logger.log(Level.SEVERE, message, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+        public BuiltQuery(BoolQuery.Builder boolQuery, Integer size, Integer from, Optional<String> searchAfter) {
+            this.boolQuery = boolQuery;
+            this.size = size;
+            this.from = from;
+            this.searchAfter = searchAfter;
         }
     }
 
@@ -509,73 +554,12 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return count of the number of matches to the provided query
      */
     public long count(MultiValueMap<String, String> searchParameters) {
-
-        BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-
-        for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
-            String key = parameter.getKey().trim();
-            boolean isNot = key.endsWith("!");
-            if (isNot) {
-                key = key.substring(0, key.length() - 1);
-            }
-            switch (key) {
-                case "~name":
-                    for (String value : parameter.getValue()) {
-                        DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
-                        for (String pattern : value.split("[\\|,;]")) {
-                            nameQuery.queries(WildcardQuery.of(w -> w.field("name").caseInsensitive(true).value(pattern.trim()))._toQuery());
-                        }
-                        boolQuery.must(nameQuery.build()._toQuery());
-                    }
-                    break;
-                case "~tag":
-                    for (String value : parameter.getValue()) {
-                        DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
-                        for (String pattern : value.split("[\\|,;]")) {
-                            tagQuery.queries(
-                                    NestedQuery.of(n -> n.path("tags").query(
-                                            WildcardQuery.of(w -> w.field("tags.name").caseInsensitive(true).value(pattern.trim()))._toQuery()))._toQuery());
-                        }
-                        if (isNot) {
-                            boolQuery.mustNot(tagQuery.build()._toQuery());
-                        } else {
-                            boolQuery.must(tagQuery.build()._toQuery());
-                        }
-
-                    }
-                    break;
-                // Ignore the arguments associated with pagination
-                case "~size":
-                case "~from":
-                case "~search_after":
-                    break;
-                default:
-                    DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
-                    for (String value : parameter.getValue()) {
-                        for (String pattern : value.split("[\\|,;]")) {
-                            String finalKey = key;
-                            BoolQuery bq;
-                            if (isNot) {
-                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
-                                        .mustNot(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
-                            } else {
-                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
-                                        .must(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
-                            }
-                            propertyQuery.queries(
-                                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
-                            );
-                        }
-                    }
-                    boolQuery.must(propertyQuery.build()._toQuery());
-                    break;
-            }
-        }
+        BuiltQuery builtQuery = getBuiltQuery(searchParameters);
 
         try {
 
             CountRequest.Builder countBuilder = new CountRequest.Builder();
-            countBuilder.index(ES_CHANNEL_INDEX).query(boolQuery.build()._toQuery());
+            countBuilder.index(ES_CHANNEL_INDEX).query(builtQuery.boolQuery.build()._toQuery());
             CountResponse response = client.count(countBuilder.build());
 
             return response.count();
@@ -585,6 +569,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
         }
     }
+
+
 
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {

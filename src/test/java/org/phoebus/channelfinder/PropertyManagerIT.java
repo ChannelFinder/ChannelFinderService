@@ -706,7 +706,7 @@ public class PropertyManagerIT {
         // Verify the property is removed from the testChannel0
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("testProperty0WithChannels", "*");
-        assertFalse("Failed to delete the property from channel", channelRepository.search(searchParameters).stream().anyMatch(ch -> {
+        assertFalse("Failed to delete the property from channel", channelRepository.search(searchParameters).getChannels().stream().anyMatch(ch -> {
             return ch.getName().equals(testChannel0.getName());
         }));
     }

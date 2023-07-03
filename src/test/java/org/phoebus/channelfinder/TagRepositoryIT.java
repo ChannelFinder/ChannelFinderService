@@ -224,7 +224,7 @@ public class TagRepositoryIT {
         // verify the tag was deleted from all channels as expected
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag","testChannel");
-        List<XmlChannel> chans = channelRepository.search(params);
+        List<XmlChannel> chans = channelRepository.search(params).getChannels();
         assertTrue("Failed to remove tag from channel",chans.isEmpty());
         
         // channel clean up

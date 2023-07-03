@@ -14,11 +14,9 @@ import javax.servlet.ServletContext;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
-import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.phoebus.channelfinder.processors.ChannelProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
@@ -31,6 +29,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -71,6 +70,12 @@ public class ChannelManager {
      */
     @GetMapping
     public List<XmlChannel> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
+        return channelRepository.search(allRequestParams).getChannels();
+    }
+
+    @GetMapping("/combined")
+    @ResponseBody
+    public ChannelRepository.ResponseSearch combinedQuery(@RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.search(allRequestParams);
     }
 

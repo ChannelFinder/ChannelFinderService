@@ -230,7 +230,7 @@ public class PropertyRepositoryIT {
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("testProperty","*");
-        List<XmlChannel> chans = channelRepository.search(params);
+        List<XmlChannel> chans = channelRepository.search(params).getChannels();
         // verify the property was deleted from channels as expected
         assertTrue("Failed to remove property from channel", chans.isEmpty());
     }
