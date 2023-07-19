@@ -293,7 +293,7 @@ public class PropertyManagerIT {
         params.add("testProperty0WithChannels", "*");
         // verify the property was removed from the old channels
         assertEquals("Failed to delete the property from channels",
-                Arrays.asList(testChannels.get(1)), channelRepository.search(params));
+                Arrays.asList(testChannels.get(1)), channelRepository.search(params).getChannels());
     }
 
     /**
@@ -689,7 +689,7 @@ public class PropertyManagerIT {
         // verify the property was deleted and removed from all associated channels
         assertTrue("Failed to delete the property", !propertyRepository.existsById(testProperty0WithChannels.getName()));
         assertEquals("Failed to delete the property from channels",
-                new ArrayList<Channel>(), channelRepository.search(params));
+                new ArrayList<Channel>(), channelRepository.search(params).getChannels());
     }
 
     /**
