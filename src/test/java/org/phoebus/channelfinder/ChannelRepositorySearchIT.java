@@ -66,35 +66,35 @@ public class ChannelRepositorySearchIT {
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         // Search for a single unique channel
         searchParameters.add("~name", channelNames.get(0));
-        List<XmlChannel> result = channelRepository.search(searchParameters);
+        List<XmlChannel> result = channelRepository.search(searchParameters).getChannels();
         assertTrue(result.size() == 1 && result.get(0).getName().equals(channelNames.get(0)));
 
         // Search for all channels via wildcards
         searchParameters.clear();
         searchParameters.add("~name", "BR:C001-BI:2{BLA}Pos:?-RB");
-        result = channelRepository.search(searchParameters);
+        result = channelRepository.search(searchParameters).getChannels();
         assertSame("Expected 2 but got " + result.size(), 2, result.size());
 
         searchParameters.clear();
         searchParameters.add("~name", "BR:C001-BI:?{BLA}Pos:*");
-        result = channelRepository.search(searchParameters);
+        result = channelRepository.search(searchParameters).getChannels();
         assertSame("Expected 4 but got " + result.size(), 4, result.size());
 
         // Search for all 1000 channels
         searchParameters.clear();
         searchParameters.add("~name", "SR*");
-        result = channelRepository.search(searchParameters);
+        result = channelRepository.search(searchParameters).getChannels();
         assertEquals("Expected 1000 but got " + result.size(), 1000, result.size());
 
         // Search for all 1000 SR channels and all 500 booster channels
         searchParameters.clear();
         searchParameters.add("~name", "SR*|BR*");
-        result = channelRepository.search(searchParameters);
+        result = channelRepository.search(searchParameters).getChannels();
         assertEquals("Expected 1500 but got " + result.size(), 1500, result.size());
 
         searchParameters.clear();
         searchParameters.add("~name", "SR*,BR*");
-        result = channelRepository.search(searchParameters);
+        result = channelRepository.search(searchParameters).getChannels();
         assertEquals("Expected 1500 but got " + result.size(), 1500, result.size());
         
         // search for channels based on a tag
@@ -106,7 +106,7 @@ public class ChannelRepositorySearchIT {
             searchParameters.add("~name", "SR*");
             searchParameters.add("~tag", "group"+id+"_"+val_bucket.get(index));
 
-            result = channelRepository.search(searchParameters);
+            result = channelRepository.search(searchParameters).getChannels();
             assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), Integer.valueOf(result.size()));
         }
         
@@ -119,7 +119,7 @@ public class ChannelRepositorySearchIT {
             searchParameters.add("~name", "SR*");
             searchParameters.add("group"+id, String.valueOf(val_bucket.get(index)));
 
-            result = channelRepository.search(searchParameters);
+            result = channelRepository.search(searchParameters).getChannels();
             assertEquals("Search: "+ maptoString(searchParameters) +" Failed Expected "+val_bucket.get(index)+" but got " + result.size(), val_bucket.get(index), Integer.valueOf(result.size()));
         }
     }
