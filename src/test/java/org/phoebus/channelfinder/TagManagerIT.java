@@ -312,7 +312,7 @@ public class TagManagerIT {
         params.add("~tag", testTag0WithChannels.getName());
         // verify the tag was removed from the old channels
         assertEquals("Failed to change the channels the tag is attached to correctly",
-                Arrays.asList(testChannels.get(1)), channelRepository.search(params));    
+                Arrays.asList(testChannels.get(1)), channelRepository.search(params).getChannels());
     }
     
     /**
@@ -678,7 +678,7 @@ public class TagManagerIT {
         // verify the tag was deleted and removed from all associated channels
         assertTrue("Failed to delete the tag", !tagRepository.existsById(testTag1.getName()));
         assertEquals("Failed to delete the tag from channels",
-                new ArrayList<Channel>(), channelRepository.search(params));
+                new ArrayList<Channel>(), channelRepository.search(params).getChannels());
     }
 
     /**
