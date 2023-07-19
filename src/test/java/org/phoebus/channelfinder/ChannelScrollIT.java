@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelScroll.class)
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelScrollIT {
     
     @Autowired

@@ -29,7 +29,7 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyRepository.class)
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class PropertyRepositoryIT {
 
     @Autowired

@@ -20,7 +20,7 @@ import org.springframework.util.MultiValueMap;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelScroll.class)
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelScrollSearchIT {
 
     private static final Logger logger = Logger.getLogger(ChannelScrollSearchIT.class.getName());

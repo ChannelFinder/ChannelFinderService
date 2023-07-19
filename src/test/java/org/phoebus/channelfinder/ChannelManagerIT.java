@@ -28,7 +28,7 @@ import com.google.common.collect.Iterables;
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelManagerIT {
 
     @Autowired

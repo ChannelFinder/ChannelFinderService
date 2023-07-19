@@ -23,7 +23,7 @@ import org.springframework.util.MultiValueMap;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelRepository.class)
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelRepositorySearchIT {
 
     @Autowired

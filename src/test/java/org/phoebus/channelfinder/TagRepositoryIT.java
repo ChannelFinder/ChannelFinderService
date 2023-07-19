@@ -27,7 +27,7 @@ import com.google.common.collect.Sets;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(TagRepository.class)
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class TagRepositoryIT {
 
     @Autowired

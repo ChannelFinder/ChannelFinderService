@@ -30,7 +30,7 @@ import static java.util.Collections.EMPTY_LIST;
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyManager.class)
 @WithMockUser(roles = "CF-ADMINS")
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class PropertyManagerIT {
 
     @Autowired

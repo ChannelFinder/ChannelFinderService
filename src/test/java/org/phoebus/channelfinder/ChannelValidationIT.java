@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
-@PropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelValidationIT {
 
     @Autowired
