@@ -3,8 +3,8 @@ package org.phoebus.channelfinder.processors;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlProperty;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -64,17 +64,17 @@ public class AAChannelProcessor implements ChannelProcessor{
     }
 
     @Override
-    public void process(List<XmlChannel> channels) throws JsonProcessingException {
+    public void process(List<Channel> channels) throws JsonProcessingException {
         Map<String, List<ArchivePV>> aaArchivePVS = new HashMap<>();
         for (String alias: aaURLs.keySet()) {
             aaArchivePVS.put(alias, new ArrayList<>());
         }
         Map<String, List<String>> policyLists = getAAsPolicies(aaURLs);
         channels.forEach(channel -> {
-            Optional<XmlProperty> archiverProperty = channel.getProperties().stream()
+            Optional<Property> archiverProperty = channel.getProperties().stream()
                     .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
                     .findFirst();
-            Optional<XmlProperty> archiveProperty = channel.getProperties().stream()
+            Optional<Property> archiveProperty = channel.getProperties().stream()
                     .filter(xmlProperty -> archivePropertyName.equalsIgnoreCase(xmlProperty.getName()))
                     .findFirst();
             if(archiveProperty.isPresent()) {
@@ -89,7 +89,7 @@ public class AAChannelProcessor implements ChannelProcessor{
         }
     }
 
-    private ArchivePV getArchivePV(List<String> policyList, XmlChannel channel, String archiveProperty) {
+    private ArchivePV getArchivePV(List<String> policyList, Channel channel, String archiveProperty) {
         ArchivePV newArchiverPV = new ArchivePV();
         if(aaPVA && !channel.getName().contains("://")) {
             newArchiverPV.setPv("pva://" + channel.getName());

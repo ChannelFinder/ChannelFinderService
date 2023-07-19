@@ -13,8 +13,11 @@ import java.util.Set;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -24,6 +27,7 @@ import com.google.common.collect.Sets;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(TagRepository.class)
+@PropertySource(value = "classpath:application_test.properties")
 public class TagRepositoryIT {
 
     @Autowired
@@ -40,10 +44,10 @@ public class TagRepositoryIT {
      */
     @Test
     public void indexXmlTag() {      
-        XmlTag testTag = new XmlTag("testTag","testOwner");
+        Tag testTag = new Tag("testTag","testOwner");
         cleanupTestTags = Arrays.asList(testTag);
         
-        XmlTag createdTag = tagRepository.index(testTag);
+        Tag createdTag = tagRepository.index(testTag);
         // verify the tag was created as expected
         assertEquals("Failed to create the tag", testTag, createdTag);
     }
@@ -53,12 +57,12 @@ public class TagRepositoryIT {
      */
     @Test
     public void indexXmlTags() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
-        XmlTag testTag1 = new XmlTag("testTag1","testOwner1");    
-        List<XmlTag> testTags = Arrays.asList(testTag, testTag1);
+        Tag testTag = new Tag("testTag","testOwner");
+        Tag testTag1 = new Tag("testTag1","testOwner1");
+        List<Tag> testTags = Arrays.asList(testTag, testTag1);
         cleanupTestTags = testTags;
 
-        Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
+        Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
         // verify the tags were created as expected
         assertEquals("Failed to create the list of tags", testTags, createdTags);
     }
@@ -68,17 +72,17 @@ public class TagRepositoryIT {
      */
     @Test
     public void saveXmlTag() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
-        XmlTag updateTestTag = new XmlTag("testTag","updateTestOwner");
-        XmlTag updateTestTag1 = new XmlTag("testTag1","updateTestOwner1");
+        Tag testTag = new Tag("testTag","testOwner");
+        Tag updateTestTag = new Tag("testTag","updateTestOwner");
+        Tag updateTestTag1 = new Tag("testTag1","updateTestOwner1");
         cleanupTestTags = Arrays.asList(testTag,updateTestTag,updateTestTag1);
         
-        XmlTag createdTag = tagRepository.index(testTag);
-        XmlTag updatedTestTag = tagRepository.save(updateTestTag);
+        Tag createdTag = tagRepository.index(testTag);
+        Tag updatedTestTag = tagRepository.save(updateTestTag);
         // verify the tag was updated as expected
         assertEquals("Failed to update the tag with the same name", updateTestTag, updatedTestTag);
 
-        XmlTag updatedTestTag1 = tagRepository.save("testTag",updateTestTag1);
+        Tag updatedTestTag1 = tagRepository.save("testTag",updateTestTag1);
         // verify the tag was updated as expected
         assertEquals("Failed to update the tag with a different name", updateTestTag1, updatedTestTag1);
     }
@@ -88,16 +92,16 @@ public class TagRepositoryIT {
      */
     @Test
     public void saveXmlTags() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
-        XmlTag testTag1 = new XmlTag("testTag1","testOwner1");
-        XmlTag updateTestTag = new XmlTag("testTag","updateTestOwner");
-        XmlTag updateTestTag1 = new XmlTag("testTag1","updateTestOwner1");    
-        List<XmlTag> testTags = Arrays.asList(testTag, testTag1);        
-        List<XmlTag> updateTestTags = Arrays.asList(updateTestTag, updateTestTag1);     
+        Tag testTag = new Tag("testTag","testOwner");
+        Tag testTag1 = new Tag("testTag1","testOwner1");
+        Tag updateTestTag = new Tag("testTag","updateTestOwner");
+        Tag updateTestTag1 = new Tag("testTag1","updateTestOwner1");
+        List<Tag> testTags = Arrays.asList(testTag, testTag1);
+        List<Tag> updateTestTags = Arrays.asList(updateTestTag, updateTestTag1);
         cleanupTestTags = updateTestTags;
         
-        Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
-        Iterable<XmlTag> updatedTestTags = tagRepository.saveAll(updateTestTags);
+        Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
+        Iterable<Tag> updatedTestTags = tagRepository.saveAll(updateTestTags);
         // verify the tags were updated as expected
         assertEquals("Failed to update the tags", updateTestTags, updatedTestTags);
     }
@@ -107,27 +111,27 @@ public class TagRepositoryIT {
      */
     @Test
     public void findXmlTag() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
+        Tag testTag = new Tag("testTag","testOwner");
         cleanupTestTags = Arrays.asList(testTag);
         
-        Optional<XmlTag> notFoundTag = tagRepository.findById(testTag.getName());
+        Optional<Tag> notFoundTag = tagRepository.findById(testTag.getName());
         // verify the tag was not found as expected
         assertTrue("Found the test tag which has not yet been created", notFoundTag.isEmpty());
         
-        XmlTag createdTag = tagRepository.index(testTag);
-        Optional<XmlTag> foundTag = tagRepository.findById(createdTag.getName());
+        Tag createdTag = tagRepository.index(testTag);
+        Optional<Tag> foundTag = tagRepository.findById(createdTag.getName());
         // verify the tag was found as expected
         assertEquals("Failed to create/find the test tag", createdTag, foundTag.get());
 
         // Create a channel with the test tag and find a tag with its associated channels
-        XmlChannel channel = new XmlChannel("testChannel","testOwner",null,Arrays.asList(createdTag));
-        XmlChannel createdChannel = channelRepository.index(channel);
+        Channel channel = new Channel("testChannel","testOwner",null,Arrays.asList(createdTag));
+        Channel createdChannel = channelRepository.index(channel);
         
         foundTag = tagRepository.findById(createdTag.getName(),true);
-        createdTag.setChannels(Arrays.asList(new XmlChannel(channel.getName(),channel.getOwner())));
+        createdTag.setChannels(Arrays.asList(new Channel(channel.getName(),channel.getOwner())));
         // verify the tag was found as expected
 
-        XmlTag expectedTag = new XmlTag(createdTag.getName(), createdTag.getOwner());
+        Tag expectedTag = new Tag(createdTag.getName(), createdTag.getOwner());
         expectedTag.setChannels(Arrays.asList(createdChannel));
         assertEquals("Failed to find the tag", expectedTag, foundTag.get());
 
@@ -140,10 +144,10 @@ public class TagRepositoryIT {
      */
     @Test
     public void testTagExists() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
+        Tag testTag = new Tag("testTag","testOwner");
         cleanupTestTags = Arrays.asList(testTag);
 
-        XmlTag createdTag = tagRepository.index(testTag);
+        Tag createdTag = tagRepository.index(testTag);
         // verify the tag exists as expected
         assertTrue("Failed to check the existance of " + testTag.getName(), tagRepository.existsById(testTag.getName()));
         // verify the tag does not exist, as expected
@@ -155,14 +159,14 @@ public class TagRepositoryIT {
      */
     @Test
     public void findAllXmlTags() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
-        XmlTag testTag1 = new XmlTag("testTag1","testOwner1");    
-        List<XmlTag> testTags = Arrays.asList(testTag, testTag1);
+        Tag testTag = new Tag("testTag","testOwner");
+        Tag testTag1 = new Tag("testTag1","testOwner1");
+        List<Tag> testTags = Arrays.asList(testTag, testTag1);
         cleanupTestTags = testTags;
         
         try {
-            Set<XmlTag> createdTags = Sets.newHashSet(tagRepository.indexAll(testTags));
-            Set<XmlTag> listedTags = Sets.newHashSet(tagRepository.findAll());
+            Set<Tag> createdTags = Sets.newHashSet(tagRepository.indexAll(testTags));
+            Set<Tag> listedTags = Sets.newHashSet(tagRepository.findAll());
             // verify the tag was created as expected
             assertEquals("Failed to list all created tags", listedTags, createdTags);
         } catch (Exception e) {
@@ -175,12 +179,12 @@ public class TagRepositoryIT {
      */
     @Test
     public void findXmlTags() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
-        XmlTag testTag1 = new XmlTag("testTag1","testOwner1");    
-        List<XmlTag> testTags = Arrays.asList(testTag,testTag1);
+        Tag testTag = new Tag("testTag","testOwner");
+        Tag testTag1 = new Tag("testTag1","testOwner1");
+        List<Tag> testTags = Arrays.asList(testTag,testTag1);
         List<String> tagNames = Arrays.asList(testTag.getName(),testTag1.getName());
-        Iterable<XmlTag> notFoundTags = null;
-        Iterable<XmlTag> foundTags = null;
+        Iterable<Tag> notFoundTags = null;
+        Iterable<Tag> foundTags = null;
         cleanupTestTags = testTags;
         
         try {
@@ -191,7 +195,7 @@ public class TagRepositoryIT {
             assertNotEquals("Found the tags",testTags,notFoundTags);
         }
 
-        Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
+        Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
 
         try {
             foundTags = tagRepository.findAllById(tagNames);
@@ -207,24 +211,24 @@ public class TagRepositoryIT {
      */
     @Test
     public void deleteXmlTag() {
-        XmlTag testTag = new XmlTag("testTag","testOwner");
-        XmlTag createdTag = tagRepository.index(testTag);
-        XmlChannel channel = new XmlChannel("testChannel","testOwner",null,Arrays.asList(createdTag));        
+        Tag testTag = new Tag("testTag","testOwner");
+        Tag createdTag = tagRepository.index(testTag);
+        Channel channel = new Channel("testChannel","testOwner",null,Arrays.asList(createdTag));
         cleanupTestTags = Arrays.asList(testTag);
         
-        XmlChannel createdChannel = channelRepository.index(channel);
+        Channel createdChannel = channelRepository.index(channel);
         tagRepository.deleteById(createdTag.getName());
         // verify the tag was deleted as expected
         assertNotEquals("Failed to delete tag",testTag,tagRepository.findById(testTag.getName()));
 
         // verify the tag was deleted from channels as expected
-        XmlChannel foundChannel = channelRepository.findById("testChannel").get();
+        Channel foundChannel = channelRepository.findById("testChannel").get();
         assertTrue("Failed to remove tag from channel",foundChannel.getTags().isEmpty());
 
         // verify the tag was deleted from all channels as expected
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag","testChannel");
-        List<XmlChannel> chans = channelRepository.search(params).getChannels();
+        List<Channel> chans = channelRepository.search(params).getChannels();
         assertTrue("Failed to remove tag from channel",chans.isEmpty());
         
         // channel clean up
@@ -233,7 +237,7 @@ public class TagRepositoryIT {
 
     // helper operations to clean up tagrepoIT
     
-    private List<XmlTag> cleanupTestTags = Collections.emptyList();
+    private List<Tag> cleanupTestTags = Collections.emptyList();
 
     @After
     public void cleanup() {

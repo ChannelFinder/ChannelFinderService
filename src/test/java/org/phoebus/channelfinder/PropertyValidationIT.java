@@ -7,8 +7,12 @@ import java.util.Arrays;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,6 +21,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyManager.class)
 @WithMockUser(roles = "CF-ADMINS")
+@PropertySource(value = "classpath:application_test.properties")
 public class PropertyValidationIT {
 
     @Autowired
@@ -26,130 +31,130 @@ public class PropertyValidationIT {
     ChannelRepository channelRepository;
 
     /**
-     * Attempt to XmlProperty request with null name
+     * Attempt to Property request with null name
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestNullName() {
-        XmlProperty testProperty1 = new XmlProperty(null, "testOwner");
+        Property testProperty1 = new Property(null, "testOwner");
         propertyManager.validatePropertyRequest(testProperty1);
     }
 
     /**
-     * Attempt to XmlProperty request with empty name
+     * Attempt to Property request with empty name
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestEmptyName() {
-        XmlProperty testProperty1 = new XmlProperty("", "testOwner");
+        Property testProperty1 = new Property("", "testOwner");
         propertyManager.validatePropertyRequest(testProperty1);
     }
 
     /**
-     * Attempt to XmlProperty request with null owner
+     * Attempt to Property request with null owner
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestNullOwner() {
-        XmlProperty testProperty1 = new XmlProperty("testProperty1", null);
+        Property testProperty1 = new Property("testProperty1", null);
         propertyManager.validatePropertyRequest(testProperty1);
     }
 
     /**
-     * Attempt to XmlProperty request with empty owner
+     * Attempt to Property request with empty owner
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestEmptyOwner() {
-        XmlProperty testProperty1 = new XmlProperty("testProperty1", "");
+        Property testProperty1 = new Property("testProperty1", "");
         propertyManager.validatePropertyRequest(testProperty1);
     }
 
     /**
-     * Attempt to XmlProperty request with a non existent channel
+     * Attempt to Property request with a non existent channel
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestFakeChannel() {
-        XmlProperty testProperty1 = new XmlProperty("testProperty1", "testOwner");
-        testProperty1.setChannels(Arrays.asList(new XmlChannel("Non-existent-channel")));
+        Property testProperty1 = new Property("testProperty1", "testOwner");
+        testProperty1.setChannels(Arrays.asList(new Channel("Non-existent-channel")));
         propertyManager.validatePropertyRequest(testProperty1);
     }
 
     /**
-     * Attempt to XmlProperty request with multiple non existent channels
+     * Attempt to Property request with multiple non existent channels
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestFakeChannels() {
-        XmlProperty testProperty1 = new XmlProperty("testProperty1", "testOwner");
+        Property testProperty1 = new Property("testProperty1", "testOwner");
         testProperty1.setChannels(
-                Arrays.asList(new XmlChannel("Non-existent-channel"),
-                        new XmlChannel("Non-existent-channel")));
+                Arrays.asList(new Channel("Non-existent-channel"),
+                        new Channel("Non-existent-channel")));
         propertyManager.validatePropertyRequest(testProperty1);
     }
 
     /**
-     * Attempt to XmlProperty request with some existent(and valid) and some non existent channels
+     * Attempt to Property request with some existent(and valid) and some non existent channels
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestSomeFakeChannels() {
-        XmlChannel chan = new XmlChannel("testChannel0", "testOwner");
+        Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
         testProperty1.setChannels(Arrays.asList(
-                new XmlChannel(chan.getName(),chan.getOwner(),Arrays.asList(new XmlProperty(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<XmlTag>()),
-                new XmlChannel("Non-existent-channel")));
+                new Channel(chan.getName(),chan.getOwner(),Arrays.asList(new Property(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<Tag>()),
+                new Channel("Non-existent-channel")));
         propertyManager.validatePropertyRequest(testProperty1);
         channelRepository.deleteById("testChannel0");
     }
 
     /**
-     * Attempt to XmlProperty request with a channel that has no prop
+     * Attempt to Property request with a channel that has no prop
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestNoProp() {
-        XmlChannel chan = new XmlChannel("testChannel0", "testOwner");
+        Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
         testProperty1.setChannels(Arrays.asList(
-                new XmlChannel(chan.getName(),chan.getOwner(),new ArrayList<XmlProperty>(),new ArrayList<XmlTag>())));
+                new Channel(chan.getName(),chan.getOwner(),new ArrayList<Property>(),new ArrayList<Tag>())));
         propertyManager.validatePropertyRequest(testProperty1);
         channelRepository.deleteById("testChannel0");    
     }
 
     /**
-     * Attempt to XmlProperty request with a null value
+     * Attempt to Property request with a null value
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestNullValue() {
-        XmlChannel chan = new XmlChannel("testChannel0", "testOwner");
+        Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
         testProperty1.setChannels(Arrays.asList(
-                new XmlChannel(chan.getName(),chan.getOwner(),Arrays.asList(new XmlProperty(testProperty1.getName(),testProperty1.getOwner(),null)),new ArrayList<XmlTag>())));
+                new Channel(chan.getName(),chan.getOwner(),Arrays.asList(new Property(testProperty1.getName(),testProperty1.getOwner(),null)),new ArrayList<Tag>())));
         propertyManager.validatePropertyRequest(testProperty1);
         channelRepository.deleteById("testChannel0");
     }
 
     /**
-     * Attempt to XmlProperty request with an empty value
+     * Attempt to Property request with an empty value
      */
     @Test(expected = ResponseStatusException.class)
     public void validateXmlPropertyRequestEmptyValue() {
-        XmlChannel chan = new XmlChannel("testChannel0", "testOwner");
+        Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
         testProperty1.setChannels(Arrays.asList(
-                new XmlChannel(chan.getName(),chan.getOwner(),Arrays.asList(new XmlProperty(testProperty1.getName(),testProperty1.getOwner(),"")),new ArrayList<XmlTag>())));
+                new Channel(chan.getName(),chan.getOwner(),Arrays.asList(new Property(testProperty1.getName(),testProperty1.getOwner(),"")),new ArrayList<Tag>())));
         propertyManager.validatePropertyRequest(testProperty1);
         channelRepository.deleteById("testChannel0");
     }
 
     /**
-     * Attempt to XmlProperty request with valid parameters
+     * Attempt to Property request with valid parameters
      */
     @Test
     public void validateXmlPropertyRequest() {
-        XmlChannel chan = new XmlChannel("testChannel0", "testOwner");
+        Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
         testProperty1.setChannels(Arrays.asList(
-                new XmlChannel(chan.getName(),chan.getOwner(),Arrays.asList(new XmlProperty(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<XmlTag>())));
+                new Channel(chan.getName(),chan.getOwner(),Arrays.asList(new Property(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<Tag>())));
         try {
             propertyManager.validatePropertyRequest(testProperty1);
             assertTrue(true);
@@ -160,11 +165,11 @@ public class PropertyValidationIT {
     }
 
     /**
-     * Attempt to XmlProperty request with other valid parameters
+     * Attempt to Property request with other valid parameters
      */
     @Test
     public void validateXmlPropertyRequest2() {
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
         try {
             propertyManager.validatePropertyRequest(testProperty1);
             assertTrue(true);

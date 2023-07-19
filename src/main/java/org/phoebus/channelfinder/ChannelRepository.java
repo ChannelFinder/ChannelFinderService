@@ -39,6 +39,9 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.google.common.base.Objects;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,7 +58,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 @Configuration
-public class ChannelRepository implements CrudRepository<XmlChannel, String> {
+public class ChannelRepository implements CrudRepository<Channel, String> {
 
     private static final Logger logger = Logger.getLogger(ChannelRepository.class.getName());
 
@@ -70,17 +73,17 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     ElasticsearchClient client;
 
     final ObjectMapper objectMapper = new ObjectMapper()
-            .addMixIn(XmlTag.class, XmlTag.OnlyXmlTag.class)
-            .addMixIn(XmlProperty.class, XmlProperty.OnlyXmlProperty.class);
+            .addMixIn(Tag.class, Tag.OnlyXmlTag.class)
+            .addMixIn(Property.class, Property.OnlyXmlProperty.class);
 
     /**
-     * create a new channel using the given XmlChannel
+     * create a new channel using the given Channel
      *
      * @param channel - channel to be created
      * @return the created channel
      */
     @SuppressWarnings("unchecked")
-    public XmlChannel index(XmlChannel channel) {
+    public Channel index(Channel channel) {
         try {
             IndexRequest request = IndexRequest.of(i -> i.index(ES_CHANNEL_INDEX)
                     .id(channel.getName())
@@ -106,10 +109,10 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @param channels - channels to be created
      * @return the created channels
      */
-    public List<XmlChannel> indexAll(List<XmlChannel> channels) {
+    public List<Channel> indexAll(List<Channel> channels) {
         BulkRequest.Builder br = new BulkRequest.Builder();
 
-        for (XmlChannel channel : channels) {
+        for (Channel channel : channels) {
             br.operations(op -> op
                     .index(idx -> idx
                             .index(ES_CHANNEL_INDEX)
@@ -144,13 +147,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
     }
 
     /**
-     * update/save channel using the given XmlChannel
+     * update/save channel using the given Channel
      *
      * @param channelName - name of channel to be saved
      * @param channel - channel to be saved
      * @return the updated/saved channel
      */
-    public XmlChannel save(String channelName, XmlChannel channel) {
+    public Channel save(String channelName, Channel channel) {
         try {
             IndexResponse response = client.index(i -> i.index(ES_CHANNEL_INDEX)
                     .id(channel.getName())
@@ -173,32 +176,32 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      *
      */
     @Override
-    public XmlChannel save(XmlChannel channel) {
+    public Channel save(Channel channel) {
         return save(channel.getName(),channel);
     }
 
     /**
      * update/save channels using the given XmlChannels
      *
-     * @param <S> extends XmlChannel
+     * @param <S> extends Channel
      * @param channels - channels to be saved
      * @return the updated/saved channels
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends XmlChannel> Iterable<S> saveAll(Iterable<S> channels) {
+    public <S extends Channel> Iterable<S> saveAll(Iterable<S> channels) {
         // Create a list of all channel names
-        List<String> ids = StreamSupport.stream(channels.spliterator(), false).map(XmlChannel::getName).collect(Collectors.toList());
+        List<String> ids = StreamSupport.stream(channels.spliterator(), false).map(Channel::getName).collect(Collectors.toList());
 
         try {
-            Map<String, XmlChannel> existingChannels = findAllById(ids).stream().collect(Collectors.toMap(XmlChannel::getName, c -> c));
+            Map<String, Channel> existingChannels = findAllById(ids).stream().collect(Collectors.toMap(Channel::getName, c -> c));
 
             BulkRequest.Builder br = new BulkRequest.Builder();
 
-            for (XmlChannel channel : channels) {
+            for (Channel channel : channels) {
                 if (existingChannels.containsKey(channel.getName())) {
                     // merge with existing channel
-                    XmlChannel updatedChannel = existingChannels.get(channel.getName());
+                    Channel updatedChannel = existingChannels.get(channel.getName());
                     if (channel.getOwner() != null && !channel.getOwner().isEmpty())
                         updatedChannel.setOwner(channel.getOwner());
                     updatedChannel.addProperties(channel.getProperties());
@@ -243,13 +246,13 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the found channel
      */
     @Override
-    public Optional<XmlChannel> findById(String channelName) {
-        GetResponse<XmlChannel> response;
+    public Optional<Channel> findById(String channelName) {
+        GetResponse<Channel> response;
         try {
-            response = client.get(g -> g.index(ES_CHANNEL_INDEX).id(channelName), XmlChannel.class);
+            response = client.get(g -> g.index(ES_CHANNEL_INDEX).id(channelName), Channel.class);
 
             if (response.found()) {
-                XmlChannel channel = response.source();
+                Channel channel = response.source();
                 logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CHANNEL_FOUND, channel.getName()));
                 return Optional.of(channel);
             } else {
@@ -277,7 +280,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
+            SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
             return new HashSet<>(response.hits()
                     .hits().stream().map(h -> h.source().getName()).collect(Collectors.toList()))
                     .containsAll(channelIds);
@@ -311,7 +314,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the found channels
      */
     @Override
-    public Iterable<XmlChannel> findAll() {
+    public Iterable<Channel> findAll() {
         throw new UnsupportedOperationException(TextUtil.FIND_ALL_CHANNELS_NOT_SUPPORTED);
     }
 
@@ -322,7 +325,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @return the found channels
      */
     @Override
-    public List<XmlChannel> findAllById(Iterable<String> channelIds) {
+    public List<Channel> findAllById(Iterable<String> channelIds) {
         try {
             List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
 
@@ -331,7 +334,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(), XmlChannel.class);
+            SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
@@ -372,12 +375,12 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
      * @param channel - channel to be deleted
      */
     @Override
-    public void delete(XmlChannel channel) {
+    public void delete(Channel channel) {
         deleteById(channel.getName());
     }
 
     @Override
-    public void deleteAll(Iterable<? extends XmlChannel> entities) {
+    public void deleteAll(Iterable<? extends Channel> entities) {
         throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
@@ -388,8 +391,8 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
 
     public static class ResponseSearch {
         private final long count;
-        private final List<XmlChannel> channels;
-        ResponseSearch(List<XmlChannel> channels, long count) {
+        private final List<Channel> channels;
+        ResponseSearch(List<Channel> channels, long count) {
             this.channels = channels;
             this.count = count;
         }
@@ -411,7 +414,7 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
             return count;
         }
 
-        public List<XmlChannel> getChannels() {
+        public List<Channel> getChannels() {
             return channels;
         }
 
@@ -443,11 +446,11 @@ public class ChannelRepository implements CrudRepository<XmlChannel, String> {
                             .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
             builtQuery.searchAfter.ifPresent(searchBuilder::searchAfter);
 
-            SearchResponse<XmlChannel> response = client.search(searchBuilder.build(),
-                                                                XmlChannel.class
+            SearchResponse<Channel> response = client.search(searchBuilder.build(),
+                                                                Channel.class
             );
             long count = response.hits().total().value();
-            List<Hit<XmlChannel>> hits = response.hits().hits();
+            List<Hit<Channel>> hits = response.hits().hits();
             return new ResponseSearch(hits.stream().map(Hit::source).collect(Collectors.toList()), count);
         } catch (Exception e) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());

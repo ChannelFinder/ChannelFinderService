@@ -29,7 +29,9 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import org.phoebus.channelfinder.XmlProperty.OnlyNameOwnerXmlProperty;
+import org.phoebus.channelfinder.entity.Property.OnlyNameOwnerXmlProperty;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,7 +49,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 @Configuration
-public class PropertyRepository implements CrudRepository<XmlProperty, String> {
+public class PropertyRepository implements CrudRepository<Property, String> {
 
     private static final Logger logger = Logger.getLogger(PropertyRepository.class.getName());
 
@@ -63,15 +65,15 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     @Autowired
     ChannelRepository channelRepository;
 
-    ObjectMapper objectMapper = new ObjectMapper().addMixIn(XmlProperty.class, OnlyNameOwnerXmlProperty.class);
+    ObjectMapper objectMapper = new ObjectMapper().addMixIn(Property.class, Property.OnlyNameOwnerXmlProperty.class);
 
     /**
-     * create a new property using the given XmlProperty
+     * create a new property using the given Property
      *
      * @param property - property to be created
      * @return the created property
      */
-    public XmlProperty index(XmlProperty property) {
+    public Property index(Property property) {
         return save(property.getName(), property);
     }
 
@@ -81,9 +83,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @param properties - properties to be created
      * @return the created properties
      */
-    public List<XmlProperty> indexAll(List<XmlProperty> properties) {
+    public List<Property> indexAll(List<Property> properties) {
         BulkRequest.Builder br = new BulkRequest.Builder();
-        for (XmlProperty property : properties) {
+        for (Property property : properties) {
             br.operations(op -> op
                     .index(idx -> idx
                                     .index(ES_PROPERTY_INDEX)
@@ -103,7 +105,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     }
                 }
             } else {
-                return findAllById(properties.stream().map(XmlProperty::getName).collect(Collectors.toList()));
+                return findAllById(properties.stream().map(Property::getName).collect(Collectors.toList()));
             }
         } catch (IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_PROPERTIES, properties);
@@ -115,15 +117,15 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     }
 
     /**
-     * update/save property using the given XmlProperty
+     * update/save property using the given Property
      *
-     * @param <S>          extends XmlProperty
+     * @param <S>          extends Property
      * @param propertyName - name of property to be created
      * @param property     - property to be created
      * @return the updated/saved property
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlProperty> S save(String propertyName, S property) {
+    public <S extends Property> S save(String propertyName, S property) {
         try {
             IndexRequest request = IndexRequest.of(i -> i.index(ES_PROPERTY_INDEX)
                     .id(propertyName)
@@ -145,29 +147,29 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
     }
 
     /**
-     * @param <S> extends XmlProperty
+     * @param <S> extends Property
      */
     @Override
-    public <S extends XmlProperty> S save(S property) {
+    public <S extends Property> S save(S property) {
         return save(property.getName(), property);
     }
 
     /**
      * update/save properties using the given XmlProperties
      *
-     * @param <S>        extends XmlProperty
+     * @param <S>        extends Property
      * @param properties - properties to be created
      * @return the updated/saved properties
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends XmlProperty> Iterable<S> saveAll(Iterable<S> properties) {
+    public <S extends Property> Iterable<S> saveAll(Iterable<S> properties) {
         List<String> ids = StreamSupport.stream(properties.spliterator(), false)
-                .map(XmlProperty::getName).collect(Collectors.toList());
+                .map(Property::getName).collect(Collectors.toList());
 
         BulkRequest.Builder br = new BulkRequest.Builder();
 
-        for (XmlProperty property : properties) {
+        for (Property property : properties) {
             br.operations(op -> op.index(i -> i.index(ES_PROPERTY_INDEX)
                     .id(property.getName())
                     .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))));
@@ -202,7 +204,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @return the found property
      */
     @Override
-    public Optional<XmlProperty> findById(String propertyId) {
+    public Optional<Property> findById(String propertyId) {
         return findById(propertyId, false);
     }
 
@@ -213,13 +215,13 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @param withChannels - whether channels should be included
      * @return the found property
      */
-    public Optional<XmlProperty> findById(String propertyName, boolean withChannels) {
-        GetResponse<XmlProperty> response;
+    public Optional<Property> findById(String propertyName, boolean withChannels) {
+        GetResponse<Property> response;
         try {
-            response = client.get(g -> g.index(ES_PROPERTY_INDEX).id(propertyName), XmlProperty.class);
+            response = client.get(g -> g.index(ES_PROPERTY_INDEX).id(propertyName), Property.class);
 
             if (response.found()) {
-                XmlProperty property = response.source();
+                Property property = response.source();
                 logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -257,14 +259,14 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @return the found properties
      */
     @Override
-    public Iterable<XmlProperty> findAll() {
+    public Iterable<Property> findAll() {
         try {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(ES_PROPERTY_INDEX)
                     .query(new MatchAllQuery.Builder().build()._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-            SearchResponse<XmlProperty> response = client.search(searchBuilder.build(), XmlProperty.class);
+            SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
@@ -279,7 +281,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @return the found properties
      */
     @Override
-    public List<XmlProperty> findAllById(Iterable<String> propertyIds) {
+    public List<Property> findAllById(Iterable<String> propertyIds) {
         try {
             List<String> ids = StreamSupport.stream(propertyIds.spliterator(), false).collect(Collectors.toList());
 
@@ -288,7 +290,7 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-            SearchResponse<XmlProperty> response = client.search(searchBuilder.build(), XmlProperty.class);
+            SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
@@ -321,9 +323,9 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add(propertyName, "*");
-            List<XmlChannel> channels = channelRepository.search(params).getChannels();
+            List<Channel> channels = channelRepository.search(params).getChannels();
             while (channels.size() > 0) {
-                for (XmlChannel channel : channels) {
+                for (Channel channel : channels) {
                     channel.removeProperty(
                             channel.getProperties().stream().filter(prop -> propertyName.equalsIgnoreCase(prop.getName())).findAny().get());
                     br.operations(op -> op.update(
@@ -366,12 +368,12 @@ public class PropertyRepository implements CrudRepository<XmlProperty, String> {
      * @param property - property to be deleted
      */
     @Override
-    public void delete(XmlProperty property) {
+    public void delete(Property property) {
         deleteById(property.getName());
     }
 
     @Override
-    public void deleteAll(Iterable<? extends XmlProperty> entities) {
+    public void deleteAll(Iterable<? extends Property> entities) {
         throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 

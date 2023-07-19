@@ -1,6 +1,6 @@
 package org.phoebus.channelfinder.processors;
 
-import org.phoebus.channelfinder.XmlChannel;
+import org.phoebus.channelfinder.entity.Channel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
@@ -36,8 +36,8 @@ public class ChannelProcessorService {
      *
      * @param channels list of channels to be processed
      */
-    public void sendToProcessors(List<XmlChannel> channels) {
-        logger.log(Level.INFO, channels.stream().map(XmlChannel::toLog).collect(Collectors.joining()));
+    public void sendToProcessors(List<Channel> channels) {
+        logger.log(Level.INFO, channels.stream().map(Channel::toLog).collect(Collectors.joining()));
         if (channelProcessors.isEmpty()) {
             return;
         }

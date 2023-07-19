@@ -17,6 +17,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Scroll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,7 +62,7 @@ public class ChannelScroll {
      * @return list of all channels
      */
     @GetMapping
-    public XmlScroll query(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public Scroll query(@RequestParam MultiValueMap<String, String> allRequestParams) {
         return search(null, allRequestParams);
     }
 
@@ -73,7 +75,7 @@ public class ChannelScroll {
      * @return list of all channels
      */
     @GetMapping("/{scrollId}")
-    public XmlScroll query(@PathVariable("scrollId") String scrollId, @RequestParam MultiValueMap<String, String> searchParameters) {
+    public Scroll query(@PathVariable("scrollId") String scrollId, @RequestParam MultiValueMap<String, String> searchParameters) {
         return search(scrollId, searchParameters);
     }
 
@@ -89,7 +91,7 @@ public class ChannelScroll {
      * @param searchParameters - search parameters for scrolling searches
      * @return search scroll
      */
-    public XmlScroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
+    public Scroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
         Integer size = defaultMaxSize;
         Integer from = 0;
@@ -174,11 +176,11 @@ public class ChannelScroll {
             if(scrollId != null && !scrollId.isEmpty()) {
                 builder.searchAfter(scrollId);
             }
-            SearchResponse<XmlChannel> response = client.search(builder.build(),
-                    XmlChannel.class
+            SearchResponse<Channel> response = client.search(builder.build(),
+                    Channel.class
             );
-            List<Hit<XmlChannel>> hits = response.hits().hits();
-            return new XmlScroll(hits.size() > 0 ? hits.get(hits.size()-1).id() : null, hits.stream().map(Hit::source).collect(Collectors.toList()));
+            List<Hit<Channel>> hits = response.hits().hits();
+            return new Scroll(hits.size() > 0 ? hits.get(hits.size()-1).id() : null, hits.stream().map(Hit::source).collect(Collectors.toList()));
         } catch (Exception e) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
             logger.log(Level.SEVERE, message, e);

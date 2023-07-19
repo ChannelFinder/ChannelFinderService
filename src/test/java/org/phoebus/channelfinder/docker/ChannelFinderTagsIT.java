@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Tag;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
@@ -35,8 +37,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlTag;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 
 /**
@@ -73,11 +73,11 @@ class ChannelFinderTagsIT {
     //     --------------------                                                    --------------------
     //     Retrieve a Tag                    .../tags/<name>                       (GET)    read(String, boolean)
     //     List Tags                         .../tags                              (GET)    list()
-    //     Create/Replace a Tag              .../tags/<name>                       (PUT)    create(String, XmlTag)
-    //     Add Tag to a Single Channel       .../tags/<tag_name>/<channel_name>    (PUT)    addSingle(String, String, XmlTag)
-    //     Create/Replace Tags               .../tags/<name>                       (PUT)    create(Iterable<XmlTag>)
-    //     Add Tag to Multiple Channels      .../tags/<name>                       (POST)   update(String, XmlTag)
-    //     Add Multiple Tags                 .../tags                              (POST)   update(Iterable<XmlTag>)
+    //     Create/Replace a Tag              .../tags/<name>                       (PUT)    create(String, Tag)
+    //     Add Tag to a Single Channel       .../tags/<tag_name>/<channel_name>    (PUT)    addSingle(String, String, Tag)
+    //     Create/Replace Tags               .../tags/<name>                       (PUT)    create(Iterable<Tag>)
+    //     Add Tag to Multiple Channels      .../tags/<name>                       (POST)   update(String, Tag)
+    //     Add Multiple Tags                 .../tags                              (POST)   update(Iterable<Tag>)
     //     Remove Tag from Single Channel    .../tags/<tag_name>/<channel_name>    (DELETE) removeSingle(String, String)
     //     Remove Tag                        .../tags/<name>                       (DELETE) remove(String)
     //     ------------------------------------------------------------------------------------------------
@@ -86,18 +86,18 @@ class ChannelFinderTagsIT {
     //     tags t1 - t10, owner o1
     //     tag  t1,       owner o2
 
-    static XmlTag tag_t1_owner_o1;
-    static XmlTag tag_t2_owner_o1;
-    static XmlTag tag_t3_owner_o1;
-    static XmlTag tag_t4_owner_o1;
-    static XmlTag tag_t5_owner_o1;
-    static XmlTag tag_t6_owner_o1;
-    static XmlTag tag_t7_owner_o1;
-    static XmlTag tag_t8_owner_o1;
-    static XmlTag tag_t9_owner_o1;
-    static XmlTag tag_t10_owner_o1;
+    static Tag tag_t1_owner_o1;
+    static Tag tag_t2_owner_o1;
+    static Tag tag_t3_owner_o1;
+    static Tag tag_t4_owner_o1;
+    static Tag tag_t5_owner_o1;
+    static Tag tag_t6_owner_o1;
+    static Tag tag_t7_owner_o1;
+    static Tag tag_t8_owner_o1;
+    static Tag tag_t9_owner_o1;
+    static Tag tag_t10_owner_o1;
 
-    static XmlTag tag_t1_owner_o2;
+    static Tag tag_t1_owner_o2;
 
 	@Container
     public static final DockerComposeContainer<?> ENVIRONMENT =
@@ -106,18 +106,18 @@ class ChannelFinderTagsIT {
 
     @BeforeAll
     public static void setupObjects() {
-        tag_t1_owner_o1 = new XmlTag("t1", "o1");
-        tag_t2_owner_o1 = new XmlTag("t2", "o1");
-        tag_t3_owner_o1 = new XmlTag("t3", "o1");
-        tag_t4_owner_o1 = new XmlTag("t4", "o1");
-        tag_t5_owner_o1 = new XmlTag("t5", "o1");
-        tag_t6_owner_o1 = new XmlTag("t6", "o1");
-        tag_t7_owner_o1 = new XmlTag("t7", "o1");
-        tag_t8_owner_o1 = new XmlTag("t8", "o1");
-        tag_t9_owner_o1 = new XmlTag("t9", "o1");
-        tag_t10_owner_o1 = new XmlTag("t10", "o1");
+        tag_t1_owner_o1 = new Tag("t1", "o1");
+        tag_t2_owner_o1 = new Tag("t2", "o1");
+        tag_t3_owner_o1 = new Tag("t3", "o1");
+        tag_t4_owner_o1 = new Tag("t4", "o1");
+        tag_t5_owner_o1 = new Tag("t5", "o1");
+        tag_t6_owner_o1 = new Tag("t6", "o1");
+        tag_t7_owner_o1 = new Tag("t7", "o1");
+        tag_t8_owner_o1 = new Tag("t8", "o1");
+        tag_t9_owner_o1 = new Tag("t9", "o1");
+        tag_t10_owner_o1 = new Tag("t10", "o1");
 
-        tag_t1_owner_o2 = new XmlTag("t1", "o2");
+        tag_t1_owner_o2 = new Tag("t1", "o2");
     }
 
     @AfterAll
@@ -304,7 +304,7 @@ class ChannelFinderTagsIT {
         //         Remove Tag from Single Channel
         //         Remove Tag
 
-        XmlTag tag_check = new XmlTag();
+        Tag tag_check = new Tag();
 
         try {
             ITUtilTags.assertListTags(0);
@@ -535,14 +535,14 @@ class ChannelFinderTagsIT {
         //     x   Remove Tag from Single Channel
         //     x   Remove Tag
 
-        XmlChannel channel_c1 = new XmlChannel("c1", "o1");
+        Channel channel_c1 = new Channel("c1", "o1");
 
-        XmlTag tag_t1 = new XmlTag("t1", "o1");
+        Tag tag_t1 = new Tag("t1", "o1");
 
-        XmlChannel channel_c1_tags = new XmlChannel("c1", "o1");
+        Channel channel_c1_tags = new Channel("c1", "o1");
         channel_c1_tags.addTag(tag_t1);
 
-        XmlTag tag_t1_channels = new XmlTag("t1", "o1");
+        Tag tag_t1_channels = new Tag("t1", "o1");
         tag_t1_channels.getChannels().add(channel_c1_tags);
 
         try {
@@ -641,20 +641,20 @@ class ChannelFinderTagsIT {
         //         Remove Tag from Single Channel
         //     x   Remove Tag
 
-        XmlChannel channel_c1 = new XmlChannel("c1", "o1");
-        XmlChannel channel_c2 = new XmlChannel("c2", "o1");
-        XmlChannel channel_c3 = new XmlChannel("c3", "o1");
+        Channel channel_c1 = new Channel("c1", "o1");
+        Channel channel_c2 = new Channel("c2", "o1");
+        Channel channel_c3 = new Channel("c3", "o1");
 
-        XmlTag tag_t1 = new XmlTag("t1", "o1");
+        Tag tag_t1 = new Tag("t1", "o1");
 
-        XmlChannel channel_c1_tags = new XmlChannel("c1", "o1");
-        XmlChannel channel_c2_tags = new XmlChannel("c2", "o1");
-        XmlChannel channel_c3_tags = new XmlChannel("c3", "o1");
+        Channel channel_c1_tags = new Channel("c1", "o1");
+        Channel channel_c2_tags = new Channel("c2", "o1");
+        Channel channel_c3_tags = new Channel("c3", "o1");
         channel_c1_tags.addTag(tag_t1);
         channel_c2_tags.addTag(tag_t1);
         channel_c3_tags.addTag(tag_t1);
 
-        XmlTag tag_t1_channels = new XmlTag("t1", "o1");
+        Tag tag_t1_channels = new Tag("t1", "o1");
         tag_t1_channels.getChannels().add(channel_c1);
         tag_t1_channels.getChannels().add(channel_c2);
         tag_t1_channels.getChannels().add(channel_c3);
@@ -845,7 +845,7 @@ class ChannelFinderTagsIT {
         //         Remove Tag from Single Channel
         //     x   Remove Tag
 
-        XmlTag[] tags_10 = new XmlTag[] {
+        Tag[] tags_10 = new Tag[] {
                 tag_t1_owner_o1,
                 tag_t2_owner_o1,
                 tag_t3_owner_o1,
@@ -931,7 +931,7 @@ class ChannelFinderTagsIT {
         //         Remove Tag from Single Channel
         //     x   Remove Tag
 
-        XmlTag[] tags_10 = new XmlTag[] {
+        Tag[] tags_10 = new Tag[] {
                 tag_t1_owner_o1,
                 tag_t2_owner_o1,
                 tag_t3_owner_o1,

@@ -26,7 +26,7 @@ import java.net.HttpURLConnection;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.phoebus.channelfinder.XmlScroll;
+import org.phoebus.channelfinder.entity.Scroll;
 
 /**
  * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch.
@@ -36,7 +36,7 @@ import org.phoebus.channelfinder.XmlScroll;
 public class ITUtilScroll {
 
     static final ObjectMapper mapper      = new ObjectMapper();
-    static final XmlScroll    SCROLL_NULL = null;
+    static final Scroll SCROLL_NULL = null;
 
     /**
      * This class is not to be instantiated.
@@ -54,7 +54,7 @@ public class ITUtilScroll {
      * @param responseCode expected response code
      * @return scroll object
      */
-    public static XmlScroll assertQueryChannels(String queryString, int responseCode) {
+    public static Scroll assertQueryChannels(String queryString, int responseCode) {
     	return assertQueryChannels(queryString, responseCode, null, -1);
     }
     /**
@@ -65,7 +65,7 @@ public class ITUtilScroll {
      * @param expectedLengthChannels (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertQueryChannels(String queryString, int responseCode, int expectedLengthChannels) {
+    public static Scroll assertQueryChannels(String queryString, int responseCode, int expectedLengthChannels) {
     	return assertQueryChannels(queryString, responseCode, null, expectedLengthChannels);
     }
     /**
@@ -77,16 +77,16 @@ public class ITUtilScroll {
      * @param expectedLengthChannels (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertQueryChannels(String queryString, int responseCode, String expectedId, int expectedLengthChannels) {
+    public static Scroll assertQueryChannels(String queryString, int responseCode, String expectedId, int expectedLengthChannels) {
         try {
             String[] response = null;
-            XmlScroll actual = null;
+            Scroll actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + queryString);
             ITUtil.assertResponseLength2Code(response, responseCode);
 
             if (responseCode == HttpURLConnection.HTTP_OK) {
-            	actual = mapper.readValue(response[1], XmlScroll.class);
+            	actual = mapper.readValue(response[1], Scroll.class);
             }
 
             // (if non-null) expected id
@@ -116,7 +116,7 @@ public class ITUtilScroll {
      * @param responseCode expected response code
      * @return scroll object
      */
-    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode) {
+    public static Scroll assertContinueChannelsQuery(String path, int responseCode) {
     	return assertContinueChannelsQuery(path, responseCode, null, -1);
     }
     /**
@@ -128,7 +128,7 @@ public class ITUtilScroll {
      * @param expectedLengthChannels (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode, int expectedLengthChannels) {
+    public static Scroll assertContinueChannelsQuery(String path, int responseCode, int expectedLengthChannels) {
     	return assertContinueChannelsQuery(path, responseCode, null, expectedLengthChannels);
     }
     /**
@@ -140,16 +140,16 @@ public class ITUtilScroll {
      * @param expectedLengthChannels (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static XmlScroll assertContinueChannelsQuery(String path, int responseCode, String expectedId, int expectedLengthChannels) {
+    public static Scroll assertContinueChannelsQuery(String path, int responseCode, String expectedId, int expectedLengthChannels) {
         try {
             String[] response = null;
-            XmlScroll actual = null;
+            Scroll actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + path);
             ITUtil.assertResponseLength2Code(response, responseCode);
 
             if (responseCode == HttpURLConnection.HTTP_OK) {
-            	actual = mapper.readValue(response[1], XmlScroll.class);
+            	actual = mapper.readValue(response[1], Scroll.class);
             }
 
             // (if non-null) expected id

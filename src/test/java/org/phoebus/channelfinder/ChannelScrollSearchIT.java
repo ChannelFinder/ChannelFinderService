@@ -9,15 +9,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelScroll.class)
+@PropertySource(value = "classpath:application_test.properties")
 public class ChannelScrollSearchIT {
 
     private static final Logger logger = Logger.getLogger(ChannelScrollSearchIT.class.getName());
@@ -61,7 +64,7 @@ public class ChannelScrollSearchIT {
         searchParameters.add("~size", "100");
 
         long start = System.currentTimeMillis();
-        XmlScroll scrollResult = channelScroll.query(searchParameters);
+        Scroll scrollResult = channelScroll.query(searchParameters);
         logger.log(Level.INFO, "Completed the first scroll request in : " + (System.currentTimeMillis() - start) + "ms");
         int totalResult = 0;
         Double avg100 = 0.0;

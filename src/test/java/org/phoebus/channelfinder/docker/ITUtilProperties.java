@@ -30,7 +30,7 @@ import java.net.HttpURLConnection;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.phoebus.channelfinder.XmlProperty;
+import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.docker.ITUtil.EndpointChoice;
 import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
@@ -43,8 +43,8 @@ import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
 public class ITUtilProperties {
 
     static final ObjectMapper  mapper          = new ObjectMapper();
-    static final XmlProperty[] PROPERTIES_NULL = null;
-    static final XmlProperty   PROPERTY_NULL   = null;
+    static final Property[] PROPERTIES_NULL = null;
+    static final Property PROPERTY_NULL   = null;
 
     /**
      * This class is not to be instantiated.
@@ -62,11 +62,11 @@ public class ITUtilProperties {
     //     --------------------                                                                    --------------------
     //     Retrieve a Property                    .../properties/<name>                            (GET)       read(String, boolean)
     //     List Properties                        .../properties                                   (GET)       list()
-    //     Create/Replace a Property              .../properties/<name>                            (PUT)       create(String, XmlProperty)
-    //     Add Property to a Single Channel       .../properties/<property_name>/<channel_name>    (PUT)       addSingle(String, String, XmlProperty)
-    //     Create/Replace Properties              .../properties                                   (PUT)       create(Iterable<XmlProperty>)
-    //     Add Property to Multiple Channels      .../properties/<name>                            (POST)      update(String, XmlProperty)
-    //     Add Multiple Properties                .../properties                                   (POST)      update(Iterable<XmlProperty>)
+    //     Create/Replace a Property              .../properties/<name>                            (PUT)       create(String, Property)
+    //     Add Property to a Single Channel       .../properties/<property_name>/<channel_name>    (PUT)       addSingle(String, String, Property)
+    //     Create/Replace Properties              .../properties                                   (PUT)       create(Iterable<Property>)
+    //     Add Property to Multiple Channels      .../properties/<name>                            (POST)      update(String, Property)
+    //     Add Multiple Properties                .../properties                                   (POST)      update(Iterable<Property>)
     //     Remove Property from Single Channel    .../properties/<property_name>/<channel_name>    (DELETE)    removeSingle(String, String)
     //     Remove Property                        .../properties/<name>                            (DELETE)    remove(String)
     //     ------------------------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ public class ITUtilProperties {
      * @param value property
      * @return string for property
      */
-    static String object2Json(XmlProperty value) {
+    static String object2Json(Property value) {
         try {
             return mapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -91,7 +91,7 @@ public class ITUtilProperties {
      * @param value property array
      * @return string for property array
      */
-    static String object2Json(XmlProperty[] value) {
+    static String object2Json(Property[] value) {
         try {
             return mapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -103,15 +103,15 @@ public class ITUtilProperties {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilProperties#assertRetrieveProperty(String, int, XmlProperty)
+     * @see ITUtilProperties#assertRetrieveProperty(String, int, Property)
      */
     public static void assertRetrieveProperty(String path, int responseCode) {
         assertRetrieveProperty(path, responseCode, PROPERTY_NULL);
     }
     /**
-     * @see ITUtilProperties#assertRetrieveProperty(String, int, XmlProperty)
+     * @see ITUtilProperties#assertRetrieveProperty(String, int, Property)
      */
-    public static void assertRetrieveProperty(String path, XmlProperty expected) {
+    public static void assertRetrieveProperty(String path, Property expected) {
         assertRetrieveProperty(path, HttpURLConnection.HTTP_OK, expected);
     }
     /**
@@ -121,17 +121,17 @@ public class ITUtilProperties {
      * @param responseCode expected response code
      * @param expected expected response property
      */
-    public static void assertRetrieveProperty(String path, int responseCode, XmlProperty expected) {
+    public static void assertRetrieveProperty(String path, int responseCode, Property expected) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
-            XmlProperty actual = null;
+            Property actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES + path);
             ITUtil.assertResponseLength2Code(response, responseCode);
 
             if (expected != null) {
-                actual = mapper.readValue(response[1], XmlProperty.class);
+                actual = mapper.readValue(response[1], Property.class);
                 assertEquals(expected, actual);
             }
         } catch (IOException e) {
@@ -150,7 +150,7 @@ public class ITUtilProperties {
      * @param expected expected response properties
      * @return number of properties
      */
-    public static Integer assertListProperties(int expectedEqual, XmlProperty... expected) {
+    public static Integer assertListProperties(int expectedEqual, Property... expected) {
     	return assertListProperties(expectedEqual, expectedEqual, expected);
     }
     /**
@@ -161,15 +161,15 @@ public class ITUtilProperties {
      * @param expected expected response properties
      * @return number of properties
      */
-    public static Integer assertListProperties(int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, XmlProperty... expected) {
+    public static Integer assertListProperties(int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Property... expected) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
-            XmlProperty[] actual = null;
+            Property[] actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES);
             ITUtil.assertResponseLength2CodeOK(response);
-            actual = mapper.readValue(response[1], XmlProperty[].class);
+            actual = mapper.readValue(response[1], Property[].class);
 
             // expected number of items in list
             //     (if non-negative number)
@@ -198,25 +198,25 @@ public class ITUtilProperties {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, XmlProperty)
+     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, Property)
      */
-    public static void assertCreateReplaceProperty(String path, XmlProperty value) {
+    public static void assertCreateReplaceProperty(String path, Property value) {
         assertCreateReplaceProperty(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, PROPERTY_NULL);
     }
     /**
-     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, XmlProperty)
+     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, Property)
      */
-    public static void assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, XmlProperty value) {
+    public static void assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, Property value) {
         assertCreateReplaceProperty(authorizationChoice, path, object2Json(value), HttpURLConnection.HTTP_OK, PROPERTY_NULL);
     }
     /**
-     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, XmlProperty)
+     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, Property)
      */
-    public static void assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, XmlProperty value, int responseCode) {
+    public static void assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, Property value, int responseCode) {
         assertCreateReplaceProperty(authorizationChoice, path, object2Json(value), responseCode, PROPERTY_NULL);
     }
     /**
-     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, XmlProperty)
+     * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, Property)
      */
     public static void assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         assertCreateReplaceProperty(authorizationChoice, path, json, responseCode, PROPERTY_NULL);
@@ -230,17 +230,17 @@ public class ITUtilProperties {
      * @param responseCode expected response code
      * @param expected expected response property
      */
-    public static void assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlProperty expected) {
+    public static void assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Property expected) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
-            XmlProperty actual = null;
+            Property actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.PROPERTIES, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
 
             if (expected != null) {
-                actual = mapper.readValue(response[1], XmlProperty.class);
+                actual = mapper.readValue(response[1], Property.class);
                 assertEquals(expected, actual);
             }
         } catch (IOException e) {
@@ -253,9 +253,9 @@ public class ITUtilProperties {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilProperties#assertAddPropertySingleChannel(String, XmlProperty, XmlProperty)
+     * @see ITUtilProperties#assertAddPropertySingleChannel(String, Property, Property)
      */
-    public static void assertAddPropertySingleChannel(String path, XmlProperty value) {
+    public static void assertAddPropertySingleChannel(String path, Property value) {
         assertAddPropertySingleChannel(path, value, PROPERTY_NULL);
     }
     /**
@@ -265,17 +265,17 @@ public class ITUtilProperties {
      * @param value property
      * @param expected expected response property
      */
-    public static void assertAddPropertySingleChannel(String path, XmlProperty value, XmlProperty expected) {
+    public static void assertAddPropertySingleChannel(String path, Property value, Property expected) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
-            XmlProperty actual = null;
+            Property actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, AuthorizationChoice.ADMIN, EndpointChoice.PROPERTIES, path, mapper.writeValueAsString(value)));
             ITUtil.assertResponseLength2CodeOK(response);
 
             if (expected != null) {
-                actual = mapper.readValue(response[1], XmlProperty.class);
+                actual = mapper.readValue(response[1], Property.class);
                 assertEquals(expected, actual);
             }
         } catch (IOException e) {
@@ -288,13 +288,13 @@ public class ITUtilProperties {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilProperties#assertCreateReplaceProperties(AuthorizationChoice, String, String, int, XmlProperty[])
+     * @see ITUtilProperties#assertCreateReplaceProperties(AuthorizationChoice, String, String, int, Property[])
      */
-    public static void assertCreateReplaceProperties(String path, XmlProperty[] value) {
+    public static void assertCreateReplaceProperties(String path, Property[] value) {
         assertCreateReplaceProperties(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, PROPERTIES_NULL);
     }
     /**
-     * @see ITUtilProperties#assertCreateReplaceProperties(AuthorizationChoice, String, String, int, XmlProperty[])
+     * @see ITUtilProperties#assertCreateReplaceProperties(AuthorizationChoice, String, String, int, Property[])
      */
     public static void assertCreateReplaceProperties(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         assertCreateReplaceProperties(authorizationChoice, path, json, responseCode, PROPERTIES_NULL);
@@ -308,7 +308,7 @@ public class ITUtilProperties {
      * @param responseCode expected response code
      * @param expected expected response properties
      */
-    public static void assertCreateReplaceProperties(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlProperty[] expected) {
+    public static void assertCreateReplaceProperties(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Property[] expected) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
@@ -317,7 +317,7 @@ public class ITUtilProperties {
             ITUtil.assertResponseLength2Code(response, responseCode);
 
             if (expected != null) {
-                assertEqualsXmlProperties(mapper.readValue(response[1], XmlProperty[].class), expected);
+                assertEqualsXmlProperties(mapper.readValue(response[1], Property[].class), expected);
             }
         } catch (IOException e) {
             fail();
@@ -329,19 +329,19 @@ public class ITUtilProperties {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, XmlProperty)
+     * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, Property)
      */
-    public static void assertAddPropertyMultipleChannels(String path, XmlProperty value) {
+    public static void assertAddPropertyMultipleChannels(String path, Property value) {
         assertAddPropertyMultipleChannels(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, PROPERTY_NULL);
     }
     /**
-     * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, XmlProperty)
+     * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, Property)
      */
-    public static void assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, XmlProperty value, int responseCode) {
+    public static void assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, Property value, int responseCode) {
         assertAddPropertyMultipleChannels(authorizationChoice, path, object2Json(value), responseCode, PROPERTY_NULL);
     }
     /**
-     * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, XmlProperty)
+     * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, Property)
      */
     public static void assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         assertAddPropertyMultipleChannels(authorizationChoice, path, json, responseCode, PROPERTY_NULL);
@@ -355,17 +355,17 @@ public class ITUtilProperties {
      * @param responseCode expected response code
      * @param expected expected response property
      */
-    public static void assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlProperty expected) {
+    public static void assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Property expected) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
-            XmlProperty actual = null;
+            Property actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, authorizationChoice, EndpointChoice.PROPERTIES, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
 
             if (expected != null) {
-                actual = mapper.readValue(response[1], XmlProperty.class);
+                actual = mapper.readValue(response[1], Property.class);
                 assertEquals(expected, actual);
             }
         } catch (IOException e) {
@@ -378,13 +378,13 @@ public class ITUtilProperties {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilProperties#assertAddMultipleProperties(String, String, int, XmlProperty[])
+     * @see ITUtilProperties#assertAddMultipleProperties(String, String, int, Property[])
      */
-    public static void assertAddMultipleProperties(String path, XmlProperty[] value) {
+    public static void assertAddMultipleProperties(String path, Property[] value) {
         assertAddMultipleProperties(path, object2Json(value), HttpURLConnection.HTTP_OK, PROPERTIES_NULL);
     }
     /**
-     * @see ITUtilProperties#assertAddMultipleProperties(String, String, int, XmlProperty[])
+     * @see ITUtilProperties#assertAddMultipleProperties(String, String, int, Property[])
      */
     public static void assertAddMultipleProperties(String path, String json, int responseCode) {
         assertAddMultipleProperties(path, json, responseCode, PROPERTIES_NULL);
@@ -397,7 +397,7 @@ public class ITUtilProperties {
      * @param responseCode expected response code
      * @param expected expected response properties
      */
-    public static void assertAddMultipleProperties(String path, String json, int responseCode, XmlProperty[] expected) {
+    public static void assertAddMultipleProperties(String path, String json, int responseCode, Property[] expected) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String[] response = null;
@@ -406,7 +406,7 @@ public class ITUtilProperties {
             ITUtil.assertResponseLength2Code(response, responseCode);
 
             if (expected != null) {
-                assertEqualsXmlProperties(mapper.readValue(response[1], XmlProperty[].class), expected);
+                assertEqualsXmlProperties(mapper.readValue(response[1], Property[].class), expected);
             }
         } catch (IOException e) {
             fail();
@@ -468,10 +468,10 @@ public class ITUtilProperties {
     /**
      * Assert that arrays are equal with same length and same content in each array position.
      *
-     * @param actual actual array of XmlProperty objects
-     * @param expected expected arbitrary number of XmlProperty objects
+     * @param actual actual array of Property objects
+     * @param expected expected arbitrary number of Property objects
      */
-    static void assertEqualsXmlProperties(XmlProperty[] actual, XmlProperty... expected) {
+    static void assertEqualsXmlProperties(Property[] actual, Property... expected) {
         if (expected != null) {
             assertNotNull(actual);
             assertEquals(expected.length, actual.length);

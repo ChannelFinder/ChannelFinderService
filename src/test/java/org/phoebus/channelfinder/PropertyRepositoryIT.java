@@ -10,8 +10,12 @@ import java.util.Set;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -25,6 +29,7 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(PropertyRepository.class)
+@PropertySource(value = "classpath:application_test.properties")
 public class PropertyRepositoryIT {
 
     @Autowired
@@ -41,10 +46,10 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void indexXmlProperty() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
+        Property testProperty = new Property("testProperty","testOwner");
         cleanupTestProperties = Arrays.asList(testProperty);
 
-        XmlProperty createdProperty = propertyRepository.index(testProperty);
+        Property createdProperty = propertyRepository.index(testProperty);
         // verify the property was created as expected
         assertEquals("Failed to create the property", testProperty, createdProperty);
     }
@@ -54,12 +59,12 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void indexXmlProperties() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
-        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
+        Property testProperty = new Property("testProperty","testOwner");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
+        List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
         cleanupTestProperties = testProperties;
 
-        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
+        Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
         // verify the properties were created as expected
         assertTrue("Failed to create the list of properties", Iterables.elementsEqual(testProperties, createdProperties));
     }
@@ -69,17 +74,17 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void saveXmlProperty() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        XmlProperty updateTestProperty = new XmlProperty("testProperty","updateTestOwner");
-        XmlProperty updateTestProperty1 = new XmlProperty("testProperty1","updateTestOwner1");
+        Property testProperty = new Property("testProperty","testOwner");
+        Property updateTestProperty = new Property("testProperty","updateTestOwner");
+        Property updateTestProperty1 = new Property("testProperty1","updateTestOwner1");
         cleanupTestProperties = Arrays.asList(testProperty,updateTestProperty,updateTestProperty1);
 
-        XmlProperty createdProperty = propertyRepository.index(testProperty);
-        XmlProperty updatedTestProperty = propertyRepository.save(updateTestProperty);
+        Property createdProperty = propertyRepository.index(testProperty);
+        Property updatedTestProperty = propertyRepository.save(updateTestProperty);
         // verify the property was updated as expected
         assertEquals("Failed to update the property with the same name", updateTestProperty, updatedTestProperty);
 
-        XmlProperty updatedTestProperty1 = propertyRepository.save("testProperty",updateTestProperty1);
+        Property updatedTestProperty1 = propertyRepository.save("testProperty",updateTestProperty1);
         // verify the property was updated as expected
         assertEquals("Failed to update the property with a different name", updateTestProperty1, updatedTestProperty1);
     }
@@ -89,16 +94,16 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void saveXmlProperties() {
-        XmlProperty testProperty = new XmlProperty("testProperty", "testOwner");
-        XmlProperty updateTestProperty = new XmlProperty("testProperty", "updateTestOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1", "testOwner1");
-        XmlProperty updateTestProperty1 = new XmlProperty("testProperty1", "updateTestOwner1");
-        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
-        List<XmlProperty> updateTestProperties = Arrays.asList(updateTestProperty, updateTestProperty1);
+        Property testProperty = new Property("testProperty", "testOwner");
+        Property updateTestProperty = new Property("testProperty", "updateTestOwner");
+        Property testProperty1 = new Property("testProperty1", "testOwner1");
+        Property updateTestProperty1 = new Property("testProperty1", "updateTestOwner1");
+        List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
+        List<Property> updateTestProperties = Arrays.asList(updateTestProperty, updateTestProperty1);
         cleanupTestProperties = updateTestProperties;
 
-        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        Iterable<XmlProperty> updatedTestProperties = propertyRepository.saveAll(updateTestProperties);
+        Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
+        Iterable<Property> updatedTestProperties = propertyRepository.saveAll(updateTestProperties);
         // verify the properties were updated as expected
         assertTrue("Failed to update the properties", Iterables.elementsEqual(updateTestProperties, updatedTestProperties));
     }
@@ -108,29 +113,29 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void findXmlProperty() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
+        Property testProperty = new Property("testProperty","testOwner");
         cleanupTestProperties = Arrays.asList(testProperty);
         
-        Optional<XmlProperty> notFoundProperty = propertyRepository.findById(testProperty.getName());
+        Optional<Property> notFoundProperty = propertyRepository.findById(testProperty.getName());
         // verify the property was not found as expected
         assertTrue("Found the property " + testProperty.getName() + " which should not exist.",
                 notFoundProperty.isEmpty());
 
-        XmlProperty createdProperty = propertyRepository.index(testProperty);
+        Property createdProperty = propertyRepository.index(testProperty);
 
-        Optional<XmlProperty> foundProperty = propertyRepository.findById(createdProperty.getName());
+        Optional<Property> foundProperty = propertyRepository.findById(createdProperty.getName());
         // verify the property was found as expected
         assertEquals("Failed to find the property",createdProperty,foundProperty.get());
 
         testProperty.setValue("test");
-        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(testProperty),new ArrayList<XmlTag>());
-        XmlChannel createdChannel = channelRepository.index(channel);
+        Channel channel = new Channel("testChannel","testOwner",Arrays.asList(testProperty),new ArrayList<Tag>());
+        Channel createdChannel = channelRepository.index(channel);
         cleanupTestChannels = Arrays.asList(createdChannel);
 
         foundProperty = propertyRepository.findById(createdProperty.getName(),true);
         createdProperty.setChannels(Arrays.asList(channel));
         // verify the property was found as expected
-        XmlProperty expectedProperty = new XmlProperty(createdProperty.getName(), createdProperty.getOwner());
+        Property expectedProperty = new Property(createdProperty.getName(), createdProperty.getOwner());
         expectedProperty.setChannels(Arrays.asList(createdChannel));
         assertEquals("Failed to find the property", expectedProperty, foundProperty.get());
 
@@ -145,9 +150,9 @@ public class PropertyRepositoryIT {
         // check that non existing property returns false
         assertFalse("Failed to check the non existing property :" + "no-property", propertyRepository.existsById("no-property"));
 
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
+        Property testProperty = new Property("testProperty","testOwner");
         assertFalse("Test property " + testProperty.getName() + " already exists", propertyRepository.existsById(testProperty.getName()));
-        XmlProperty createdProperty = propertyRepository.index(testProperty);
+        Property createdProperty = propertyRepository.index(testProperty);
         cleanupTestProperties = Arrays.asList(createdProperty);
 
         // verify the property exists as expected
@@ -159,14 +164,14 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void findAllXmlProperties() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
-        List<XmlProperty> testProperties = Arrays.asList(testProperty, testProperty1);
+        Property testProperty = new Property("testProperty","testOwner");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
+        List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
         cleanupTestProperties = testProperties;
 
         try {
-            Set<XmlProperty> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
-            Set<XmlProperty> listedProperties = Sets.newHashSet(propertyRepository.findAll());
+            Set<Property> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
+            Set<Property> listedProperties = Sets.newHashSet(propertyRepository.findAll());
             // verify the properties were listed as expected
             assertEquals("Failed to list all created properties", createdProperties, listedProperties);
         } catch (Exception e) {
@@ -179,12 +184,12 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void findXmlProperties() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        XmlProperty testProperty1 = new XmlProperty("testProperty1","testOwner1");    
-        List<XmlProperty> testProperties = Arrays.asList(testProperty,testProperty1);
+        Property testProperty = new Property("testProperty","testOwner");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
+        List<Property> testProperties = Arrays.asList(testProperty,testProperty1);
         List<String> propertyNames = Arrays.asList(testProperty.getName(),testProperty1.getName());
-        Iterable<XmlProperty> notFoundProperties = null;
-        Iterable<XmlProperty> foundProperties = null;
+        Iterable<Property> notFoundProperties = null;
+        Iterable<Property> foundProperties = null;
         cleanupTestProperties = testProperties;
 
         try {
@@ -195,7 +200,7 @@ public class PropertyRepositoryIT {
             assertNotEquals("Found the properties",testProperties,notFoundProperties);
         }
 
-        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
+        Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
 
         try {
             foundProperties = propertyRepository.findAllById(propertyNames);
@@ -211,34 +216,34 @@ public class PropertyRepositoryIT {
      */
     @Test
     public void deleteXmlProperty() {
-        XmlProperty testProperty = new XmlProperty("testProperty","testOwner");
-        Optional<XmlProperty> notFoundProperty = propertyRepository.findById(testProperty.getName());
-        XmlProperty createdProperty = propertyRepository.index(testProperty);
+        Property testProperty = new Property("testProperty","testOwner");
+        Optional<Property> notFoundProperty = propertyRepository.findById(testProperty.getName());
+        Property createdProperty = propertyRepository.index(testProperty);
         createdProperty.setValue("testValue");
-        XmlChannel channel = new XmlChannel("testChannel","testOwner",Arrays.asList(createdProperty),null);        
+        Channel channel = new Channel("testChannel","testOwner",Arrays.asList(createdProperty),null);
         cleanupTestProperties = Arrays.asList(testProperty);
 
-        XmlChannel createdChannel = channelRepository.index(channel);
+        Channel createdChannel = channelRepository.index(channel);
         cleanupTestChannels = Arrays.asList(createdChannel);
         propertyRepository.deleteById(createdProperty.getName());
         // verify the property was deleted as expected
         assertNotEquals("Failed to delete property",testProperty,propertyRepository.findById(testProperty.getName()));
 
-        XmlChannel foundChannel = channelRepository.findById("testChannel").get();
+        Channel foundChannel = channelRepository.findById("testChannel").get();
         // verify the property was deleted from channels as expected
         assertTrue("Failed to remove property from channel",foundChannel.getProperties().isEmpty());
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("testProperty","*");
-        List<XmlChannel> chans = channelRepository.search(params).getChannels();
+        List<Channel> chans = channelRepository.search(params).getChannels();
         // verify the property was deleted from channels as expected
         assertTrue("Failed to remove property from channel", chans.isEmpty());
     }
 
     // helper operations to clean up proprepoIT
-    private List<XmlProperty> cleanupTestProperties = Collections.emptyList();
+    private List<Property> cleanupTestProperties = Collections.emptyList();
 
-    private List<XmlChannel> cleanupTestChannels = Collections.emptyList();
+    private List<Channel> cleanupTestChannels = Collections.emptyList();
 
     @After
     public void cleanup() {

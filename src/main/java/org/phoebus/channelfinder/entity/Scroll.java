@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.entity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,24 +8,24 @@ import javax.xml.bind.annotation.XmlType;
 
 @XmlRootElement(name="scroll")
 @XmlType (propOrder={"id","channels"})
-public class XmlScroll {
+public class Scroll {
     private String id;
-    private List<XmlChannel> channels = new ArrayList<>();
+    private List<Channel> channels = new ArrayList<>();
     
     /**
-     * Creates a new instance of XmlScroll.
+     * Creates a new instance of Scroll.
      *
      */
-    public XmlScroll() {
+    public Scroll() {
     }
     
     /**
-     * Creates a new instance of XmlScroll.
+     * Creates a new instance of Scroll.
      *
      * @param id - scroll name
      * @param channels - list of channels
      */
-    public XmlScroll(String id, List<XmlChannel> channels) {
+    public Scroll(String id, List<Channel> channels) {
         super();
         this.id = id;
         this.channels = channels;
@@ -39,11 +39,11 @@ public class XmlScroll {
         this.id = id;
     }
 
-    public List<XmlChannel> getChannels() {
+    public List<Channel> getChannels() {
         return channels;
     }
 
-    public void setChannels(List<XmlChannel> channels) {
+    public void setChannels(List<Channel> channels) {
         this.channels = channels;
     }
 }

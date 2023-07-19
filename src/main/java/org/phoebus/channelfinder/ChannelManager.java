@@ -14,6 +14,9 @@ import javax.servlet.ServletContext;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.processors.ChannelProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -69,7 +72,7 @@ public class ChannelManager {
      * @return list of all channels
      */
     @GetMapping
-    public List<XmlChannel> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public List<Channel> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.search(allRequestParams).getChannels();
     }
 
@@ -92,10 +95,10 @@ public class ChannelManager {
      * @return found channel
      */
     @GetMapping("/{channelName}")
-    public XmlChannel read(@PathVariable("channelName") String channelName) {
+    public Channel read(@PathVariable("channelName") String channelName) {
         channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_CHANNEL, channelName));
 
-        Optional<XmlChannel> foundChannel = channelRepository.findById(channelName);
+        Optional<Channel> foundChannel = channelRepository.findById(channelName);
         if (foundChannel.isPresent())
             return foundChannel.get();
         else {
@@ -115,7 +118,7 @@ public class ChannelManager {
      * @return the created channel
      */
     @PutMapping("/{channelName}")
-    public XmlChannel create(@PathVariable("channelName") String channelName, @RequestBody XmlChannel channel) {
+    public Channel create(@PathVariable("channelName") String channelName, @RequestBody Channel channel) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
@@ -128,7 +131,7 @@ public class ChannelManager {
                 logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
-            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
+            Optional<Channel> existingChannel = channelRepository.findById(channelName);
             boolean present = existingChannel.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
@@ -144,7 +147,7 @@ public class ChannelManager {
             channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
             channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
 
-            XmlChannel createdChannel = channelRepository.index(channel);
+            Channel createdChannel = channelRepository.index(channel);
             // process the results
             channelProcessorService.sendToProcessors(List.of(createdChannel));
             // create new channel
@@ -163,13 +166,13 @@ public class ChannelManager {
      * @return the list of channels created
      */
     @PutMapping
-    public Iterable<XmlChannel> create(@RequestBody Iterable<XmlChannel> channels) {
+    public Iterable<Channel> create(@RequestBody Iterable<Channel> channels) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {           
             // check if authorized owner
-            for(XmlChannel channel: channels) {
+            for(Channel channel: channels) {
 
-                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+                Optional<Channel> existingChannel = channelRepository.findById(channel.getName());
                 boolean present = existingChannel.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
@@ -191,7 +194,7 @@ public class ChannelManager {
             validateChannelRequest(channels);
 
             // delete existing channels
-            for(XmlChannel channel: channels) {
+            for(Channel channel: channels) {
                 if(channelRepository.existsById(channel.getName())) {
                     // delete existing channel
                     channelRepository.deleteById(channel.getName());
@@ -199,8 +202,8 @@ public class ChannelManager {
             }
 
             // reset owners of attached tags/props back to existing owners
-            for(XmlChannel channel: channels) {
-                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));            
+            for(Channel channel: channels) {
+                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
                 channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
             }
 
@@ -208,7 +211,7 @@ public class ChannelManager {
                 channelManagerAudit.log(Level.INFO, MessageFormat.format(TextUtil.CREATE_CHANNEL, log.toLog()))
             );
 
-            List<XmlChannel> createdChannels = channelRepository.indexAll(Lists.newArrayList(channels));
+            List<Channel> createdChannels = channelRepository.indexAll(Lists.newArrayList(channels));
             // process the results
             channelProcessorService.sendToProcessors(createdChannels);
             // created new channel
@@ -225,11 +228,11 @@ public class ChannelManager {
      * payload into an existing channel.
      *
      * @param channelName - name of channel to add
-     * @param channel - new XmlChannel data (properties/tags) to be merged into channel <code>channelName</code>
+     * @param channel - new Channel data (properties/tags) to be merged into channel <code>channelName</code>
      * @return the updated channel         
      */
     @PostMapping("/{channelName}")
-    public XmlChannel update(@PathVariable("channelName") String channelName, @RequestBody XmlChannel channel) {
+    public Channel update(@PathVariable("channelName") String channelName, @RequestBody Channel channel) {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
 
@@ -245,10 +248,10 @@ public class ChannelManager {
                 logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
-            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
+            Optional<Channel> existingChannel = channelRepository.findById(channelName);
             boolean present = existingChannel.isPresent();
 
-            XmlChannel newChannel;
+            Channel newChannel;
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, existingChannel.get().toLog());
@@ -273,7 +276,7 @@ public class ChannelManager {
             channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
             channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
 
-            XmlChannel updatedChannels = channelRepository.save(newChannel);
+            Channel updatedChannels = channelRepository.save(newChannel);
             // process the results
             channelProcessorService.sendToProcessors(List.of(updatedChannels));
             // created new channel
@@ -293,13 +296,13 @@ public class ChannelManager {
      * @return the updated channels
      */
     @PostMapping()
-    public Iterable<XmlChannel> update(@RequestBody Iterable<XmlChannel> channels) {
+    public Iterable<Channel> update(@RequestBody Iterable<Channel> channels) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             long start = System.currentTimeMillis();
 
-            for(XmlChannel channel: channels) {                
-                Optional<XmlChannel> existingChannel = channelRepository.findById(channel.getName());
+            for(Channel channel: channels) {
+                Optional<Channel> existingChannel = channelRepository.findById(channel.getName());
                 boolean present = existingChannel.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
@@ -324,13 +327,13 @@ public class ChannelManager {
             channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_VALIDATION_TIME, servletContext.getContextPath(), time));
 
             // reset owners of attached tags/props back to existing owners
-            for(XmlChannel channel: channels) {
+            for(Channel channel: channels) {
                 channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));            
                 channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
             }
 
             // update channels
-            List<XmlChannel> updatedChannels =  FluentIterable.from(channelRepository.saveAll(channels)).toList();
+            List<Channel> updatedChannels =  FluentIterable.from(channelRepository.saveAll(channels)).toList();
             // process the results
             channelProcessorService.sendToProcessors(updatedChannels);
             // created new channel
@@ -353,7 +356,7 @@ public class ChannelManager {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
-            Optional<XmlChannel> existingChannel = channelRepository.findById(channelName);
+            Optional<Channel> existingChannel = channelRepository.findById(channelName);
             if(existingChannel.isPresent()) {
                 // check if authorized owner
                 if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
@@ -383,7 +386,7 @@ public class ChannelManager {
      * @param request
      * @return
      */
-    boolean validateChannel(XmlChannel existing, XmlChannel request) {
+    boolean validateChannel(Channel existing, Channel request) {
         return existing.getName().equals(request.getName());
     }
 
@@ -395,7 +398,7 @@ public class ChannelManager {
      * 
      * @param channel channel to be validated
      */
-    public void validateChannelRequest(XmlChannel channel) {
+    public void validateChannelRequest(Channel channel) {
         // 1 
         if (channel.getName() == null || channel.getName().isEmpty()) {
             String message = MessageFormat.format(TextUtil.CHANNEL_NAME_CANNOT_BE_NULL_OR_EMPTY, channel.toLog());
@@ -409,7 +412,7 @@ public class ChannelManager {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 3 
-        List <String> tagNames = channel.getTags().stream().map(XmlTag::getName).collect(Collectors.toList());
+        List <String> tagNames = channel.getTags().stream().map(Tag::getName).collect(Collectors.toList());
         for(String tagName:tagNames) {
             if(!tagRepository.existsById(tagName)) {
                 String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
@@ -418,8 +421,8 @@ public class ChannelManager {
             }
         }
         // 3 
-        List <String> propertyNames = channel.getProperties().stream().map(XmlProperty::getName).collect(Collectors.toList());
-        List <String> propertyValues = channel.getProperties().stream().map(XmlProperty::getValue).collect(Collectors.toList());
+        List <String> propertyNames = channel.getProperties().stream().map(Property::getName).collect(Collectors.toList());
+        List <String> propertyValues = channel.getProperties().stream().map(Property::getValue).collect(Collectors.toList());
         for(String propertyName:propertyNames) {
             if(!propertyRepository.existsById(propertyName)) {
                 String message = MessageFormat.format(TextUtil.PROPERTY_NAME_DOES_NOT_EXIST, propertyName);
@@ -444,8 +447,8 @@ public class ChannelManager {
      * 
      * @param channels list of channels to be validated
      */
-    public void validateChannelRequest(Iterable<XmlChannel> channels) {
-        for(XmlChannel channel: channels) {
+    public void validateChannelRequest(Iterable<Channel> channels) {
+        for(Channel channel: channels) {
             validateChannelRequest(channel);
         }
     }
