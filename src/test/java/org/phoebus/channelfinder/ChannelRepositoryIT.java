@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -244,30 +245,30 @@ public class ChannelRepositoryIT {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
         List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
-        ChannelRepository.ResponseSearch foundChannelsResponse = null;
+        SearchResult foundChannelsResponse = null;
 
         List<Channel> createdChannels = channelRepository.indexAll(testChannels);
-        ChannelRepository.ResponseSearch createdResponseSearch = new ChannelRepository.ResponseSearch(createdChannels, 2);
+        SearchResult createdSearchResult = new SearchResult(createdChannels, 2);
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         try {
             MultiValueMap searchParameters = new LinkedMultiValueMap();
             searchParameters.set(testProperties.get(0).getName().toLowerCase(), "*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on property name search (all lower case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on property name search (all lower case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set(testProperties.get(0).getName().toUpperCase(), "*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on property name search (all upper case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on property name search (all upper case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.clear();
             searchParameters.set("~tag", testTags.get(0).getName().toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on tags name search (all lower case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on tags name search (all lower case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set("~tag", testTags.get(0).getName().toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on tags name search (all upper case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on tags name search (all upper case)", createdSearchResult, foundChannelsResponse);
 
         } catch (ResponseStatusException e) {
         }
@@ -281,10 +282,10 @@ public class ChannelRepositoryIT {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
         List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
-        ChannelRepository.ResponseSearch foundChannelsResponse = null;
+        SearchResult foundChannelsResponse = null;
 
         List<Channel> createdChannels = channelRepository.indexAll(testChannels);
-        ChannelRepository.ResponseSearch createdResponseSearch = new ChannelRepository.ResponseSearch(createdChannels, 2);
+        SearchResult createdSearchResult = new SearchResult(createdChannels, 2);
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         try {
@@ -293,29 +294,29 @@ public class ChannelRepositoryIT {
             // Search for a single channel
             searchParameters.set("~name", "testChannel");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (exact)", new ChannelRepository.ResponseSearch(List.of(testChannel), 1), foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (exact)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel".toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all lower case)", new ChannelRepository.ResponseSearch(List.of(testChannel), 1), foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all lower case)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel".toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all upper case)", new ChannelRepository.ResponseSearch(List.of(testChannel), 1), foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all upper case)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
 
             // Search for multiple channels using case insensitive name searches
             searchParameters.clear();
             searchParameters.set("~name", "testChannel*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (exact)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (exact)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel*".toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all lower case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all lower case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel*".toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all upper case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all upper case)", createdSearchResult, foundChannelsResponse);
 
 
         } catch (ResponseStatusException e) {

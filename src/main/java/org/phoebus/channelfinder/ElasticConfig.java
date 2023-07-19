@@ -79,8 +79,8 @@ public class ElasticConfig implements ServletContextListener {
     private String ES_QUERY_SIZE;
 
     ObjectMapper objectMapper = new ObjectMapper()
-            .addMixIn(Tag.class, Tag.OnlyXmlTag.class)
-            .addMixIn(Property.class, Property.OnlyXmlProperty.class);
+            .addMixIn(Tag.class, Tag.OnlyTag.class)
+            .addMixIn(Property.class, Property.OnlyProperty.class);
 
 
     @Bean({ "searchClient" })

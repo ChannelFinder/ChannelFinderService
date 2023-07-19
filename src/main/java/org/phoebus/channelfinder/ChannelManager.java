@@ -16,6 +16,7 @@ import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.processors.ChannelProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +79,7 @@ public class ChannelManager {
 
     @GetMapping("/combined")
     @ResponseBody
-    public ChannelRepository.ResponseSearch combinedQuery(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public SearchResult combinedQuery(@RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.search(allRequestParams);
     }
 

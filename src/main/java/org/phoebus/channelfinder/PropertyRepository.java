@@ -29,7 +29,7 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import org.phoebus.channelfinder.entity.Property.OnlyNameOwnerXmlProperty;
+import org.phoebus.channelfinder.entity.Property.OnlyNameOwnerProperty;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +65,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     @Autowired
     ChannelRepository channelRepository;
 
-    ObjectMapper objectMapper = new ObjectMapper().addMixIn(Property.class, Property.OnlyNameOwnerXmlProperty.class);
+    ObjectMapper objectMapper = new ObjectMapper().addMixIn(Property.class, OnlyNameOwnerProperty.class);
 
     /**
      * create a new property using the given Property

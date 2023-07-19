@@ -28,7 +28,7 @@ import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
-import org.phoebus.channelfinder.entity.Tag.OnlyXmlTag;
+import org.phoebus.channelfinder.entity.Tag.OnlyTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,7 +65,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     @Autowired
     ChannelRepository channelRepository;
 
-    ObjectMapper objectMapper = new ObjectMapper().addMixIn(Tag.class, OnlyXmlTag.class);
+    ObjectMapper objectMapper = new ObjectMapper().addMixIn(Tag.class, OnlyTag.class);
 
     /**
      * create a new tag using the given Tag

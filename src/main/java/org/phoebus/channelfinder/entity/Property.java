@@ -196,7 +196,7 @@ public class Property {
      * @author Kunal Shroff
      *
      */
-    public abstract class OnlyXmlProperty {
+    public abstract class OnlyProperty {
         @JsonIgnore
         private List<Channel> channels;
     }
@@ -208,7 +208,7 @@ public class Property {
      * @author Kunal Shroff
      *
      */
-    public abstract class OnlyNameOwnerXmlProperty {
+    public abstract class OnlyNameOwnerProperty {
         @JsonIgnore
         private String value;
         @JsonIgnore

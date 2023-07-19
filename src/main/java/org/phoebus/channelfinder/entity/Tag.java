@@ -169,7 +169,7 @@ public class Tag {
      * @author Kunal Shroff
      *
      */
-    public abstract class OnlyXmlTag {
+    public abstract class OnlyTag {
         @JsonIgnore
         private List<Channel> channels;
     }

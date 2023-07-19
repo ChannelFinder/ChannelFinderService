@@ -38,9 +38,9 @@ import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import com.google.common.base.Objects;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -73,8 +73,8 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     ElasticsearchClient client;
 
     final ObjectMapper objectMapper = new ObjectMapper()
-            .addMixIn(Tag.class, Tag.OnlyXmlTag.class)
-            .addMixIn(Property.class, Property.OnlyXmlProperty.class);
+            .addMixIn(Tag.class, Tag.OnlyTag.class)
+            .addMixIn(Property.class, Property.OnlyProperty.class);
 
     /**
      * create a new channel using the given Channel
@@ -389,37 +389,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 
-    public static class ResponseSearch {
-        private final long count;
-        private final List<Channel> channels;
-        ResponseSearch(List<Channel> channels, long count) {
-            this.channels = channels;
-            this.count = count;
-        }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ResponseSearch that = (ResponseSearch) o;
-            return count == that.count && Objects.equal(channels, that.channels);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(count, channels);
-        }
-
-        public long getCount() {
-            return count;
-        }
-
-        public List<Channel> getChannels() {
-            return channels;
-        }
-
-
-    }
     /**
      * Search for a list of channels based on their name, tags, and/or properties.
      * Search parameters ~name - The name of the channel ~tags - A list of comma
@@ -431,7 +401,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
      * @param searchParameters channel search parameters
      * @return matching channels
      */
-    public ResponseSearch search(MultiValueMap<String, String> searchParameters) {
+    public SearchResult search(MultiValueMap<String, String> searchParameters) {
         BuiltQuery builtQuery = getBuiltQuery(searchParameters);
 
         try {
@@ -451,7 +421,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             );
             long count = response.hits().total().value();
             List<Hit<Channel>> hits = response.hits().hits();
-            return new ResponseSearch(hits.stream().map(Hit::source).collect(Collectors.toList()), count);
+            return new SearchResult(hits.stream().map(Hit::source).collect(Collectors.toList()), count);
         } catch (Exception e) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
             logger.log(Level.SEVERE, message, e);
