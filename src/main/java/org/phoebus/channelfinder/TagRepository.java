@@ -26,7 +26,9 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import org.phoebus.channelfinder.XmlTag.OnlyXmlTag;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.entity.Tag.OnlyTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,7 +49,7 @@ import co.elastic.clients.elasticsearch.core.search.Hit;
 
 @Repository
 @Configuration
-public class TagRepository implements CrudRepository<XmlTag, String> {
+public class TagRepository implements CrudRepository<Tag, String> {
 
     private static final Logger logger = Logger.getLogger(TagRepository.class.getName());
 
@@ -63,16 +65,16 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     @Autowired
     ChannelRepository channelRepository;
 
-    ObjectMapper objectMapper = new ObjectMapper().addMixIn(XmlTag.class, OnlyXmlTag.class);
+    ObjectMapper objectMapper = new ObjectMapper().addMixIn(Tag.class, OnlyTag.class);
 
     /**
-     * create a new tag using the given XmlTag
+     * create a new tag using the given Tag
      * 
-     * @param <S> extends XmlTag
+     * @param <S> extends Tag
      * @param tag - tag to be created
      * @return the created tag
      */
-    public <S extends XmlTag> S index(S tag) {
+    public <S extends Tag> S index(S tag) {
         return save(tag.getName(), tag);
     }
 
@@ -82,9 +84,9 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @param tags - tags to be created
      * @return the created tags
      */
-    public List<XmlTag> indexAll(List<XmlTag> tags) {
+    public List<Tag> indexAll(List<Tag> tags) {
         BulkRequest.Builder br = new BulkRequest.Builder();
-        for (XmlTag tag : tags) {
+        for (Tag tag : tags) {
             br.operations(op -> op
                     .index(idx -> idx
                             .index(ES_TAG_INDEX)
@@ -103,7 +105,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                 }
                 // TODO cleanup? or throw exception?
             } else {
-                return findAllById(tags.stream().map(XmlTag::getName).collect(Collectors.toList()));
+                return findAllById(tags.stream().map(Tag::getName).collect(Collectors.toList()));
             }
         } catch (IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
@@ -114,15 +116,15 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     }
 
     /**
-     * update/save tag using the given XmlTag
+     * update/save tag using the given Tag
      * 
-     * @param <S>     extends XmlTag
+     * @param <S>     extends Tag
      * @param tagName - name of tag to be created
      * @param tag     - tag to be created
      * @return the updated/saved tag
      */
     @SuppressWarnings("unchecked")
-    public <S extends XmlTag> S save(String tagName, S tag) {
+    public <S extends Tag> S save(String tagName, S tag) {
         try{
             IndexResponse response = client
                     .index(i -> i.index(ES_TAG_INDEX)
@@ -143,23 +145,23 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
     }
 
     @Override
-    public <S extends XmlTag> S save(S tag) {
+    public <S extends Tag> S save(S tag) {
         return save(tag.getName(), tag);
     }
 
     /**
      * update/save tags using the given XmlTags
      * 
-     * @param <S>  extends XmlTag
+     * @param <S>  extends Tag
      * @param tags - tags to be created
      * @return the updated/saved tags
      */
     @SuppressWarnings("unchecked")
     @Override
-    public <S extends XmlTag> Iterable<S> saveAll(Iterable<S> tags) {
+    public <S extends Tag> Iterable<S> saveAll(Iterable<S> tags) {
 
         BulkRequest.Builder br = new BulkRequest.Builder();
-        for (XmlTag tag : tags) {
+        for (Tag tag : tags) {
             br.operations(op -> op
                     .index(idx -> idx
                             .index(ES_TAG_INDEX)
@@ -184,7 +186,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             } else {
                 return (Iterable<S>) findAllById(
                         StreamSupport.stream(tags.spliterator(), false)
-                                .map(XmlTag::getName)
+                                .map(Tag::getName)
                                 .collect(Collectors.toList()));
             }
         } catch (IOException e) {
@@ -203,7 +205,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @return the found tag
      */
     @Override
-    public Optional<XmlTag> findById(String tagId) {
+    public Optional<Tag> findById(String tagId) {
         return findById(tagId, false);
     }
 
@@ -214,13 +216,13 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @param withChannels - whether channels should be included
      * @return the found tag
      */
-    public Optional<XmlTag> findById(String tagId, boolean withChannels) {
-        GetResponse<XmlTag> response;
+    public Optional<Tag> findById(String tagId, boolean withChannels) {
+        GetResponse<Tag> response;
         try {
-            response = client.get(g -> g.index(ES_TAG_INDEX).id(tagId), XmlTag.class);
+            response = client.get(g -> g.index(ES_TAG_INDEX).id(tagId), Tag.class);
 
             if (response.found()) {
-                XmlTag tag = response.source();
+                Tag tag = response.source();
                 logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -258,14 +260,14 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @return the found tags
      */
     @Override
-    public Iterable<XmlTag> findAll() {
+    public Iterable<Tag> findAll() {
         try {
             SearchRequest.Builder searchBuilder = new Builder()
                     .index(ES_TAG_INDEX)
                     .query(new MatchAllQuery.Builder().build()._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-            SearchResponse<XmlTag> response = client.search(searchBuilder.build(), XmlTag.class);
+            SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
@@ -280,7 +282,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @return the found tags
      */
     @Override
-    public List<XmlTag> findAllById(Iterable<String> tagIds) {
+    public List<Tag> findAllById(Iterable<String> tagIds) {
         try {
             List<String> ids = StreamSupport.stream(tagIds.spliterator(), false).collect(Collectors.toList());
             SearchRequest.Builder searchBuilder = new Builder()
@@ -288,7 +290,7 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-            SearchResponse<XmlTag> response = client.search(searchBuilder.build(), XmlTag.class);
+            SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
@@ -319,10 +321,10 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("~tag", tagName);
-            List<XmlChannel> channels = channelRepository.search(params).getChannels();
+            List<Channel> channels = channelRepository.search(params).getChannels();
             while (channels.size() > 0) {
 
-                for (XmlChannel channel : channels) {
+                for (Channel channel : channels) {
 //                    br.operations(op -> op.update(
 //                            u -> u.index(ES_CHANNEL_INDEX)
 //                                    .id(channel.getName())
@@ -373,12 +375,12 @@ public class TagRepository implements CrudRepository<XmlTag, String> {
      * @param tag - tag to be deleted
      */
     @Override
-    public void delete(XmlTag tag) {
+    public void delete(Tag tag) {
         deleteById(tag.getName());
     }
 
     @Override
-    public void deleteAll(Iterable<? extends XmlTag> entities) {
+    public void deleteAll(Iterable<? extends Tag> entities) {
         throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
     }
 

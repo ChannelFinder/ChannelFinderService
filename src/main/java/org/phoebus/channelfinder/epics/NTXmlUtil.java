@@ -13,31 +13,31 @@ import org.epics.pvdata.pv.PVStringArray;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.ScalarType;
 import org.epics.pvdata.pv.StringArrayData;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlProperty;
-import org.phoebus.channelfinder.XmlTag;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 
 public class NTXmlUtil {
 
     /**
      * A helper method to convert the the result of the channelfinder v4 service
-     * to the a list of {@link XmlChannel}
+     * to the a list of {@link Channel}
      * 
      * @param result - NTTable returned by the channelfinder service
      * @return list of channels
      * @throws Exception failed to convert to NTTable
      */
-    public static synchronized List<XmlChannel> parse(PVStructure result) throws Exception {
+    public static synchronized List<Channel> parse(PVStructure result) throws Exception {
         if (NTTable.isCompatible(result)) {
             NTTable table = NTTable.wrap(result);
             List<String> names = Arrays.asList(table.getColumnNames());
-            List<XmlChannel> channels = new ArrayList<>();
+            List<Channel> channels = new ArrayList<>();
             
             if(names.contains("channelName")){
                 PVStringArray array = (PVStringArray) table.getColumn("channelName");
                 StringArrayData data = new StringArrayData();
                 int len = array.get(0, array.getLength(), data);
-                Arrays.asList(data.data).forEach(name -> channels.add(new XmlChannel(name)));
+                Arrays.asList(data.data).forEach(name -> channels.add(new Channel(name)));
             }
             
             if(names.contains("owner")){
@@ -63,7 +63,7 @@ public class NTXmlUtil {
                         for (int i = 0; i < array.getLength(); i++) {
                             tag.add(data.data[i]);
                             if(data.data[i]){
-                                channels.get(i).getTags().add(new XmlTag(name));
+                                channels.get(i).getTags().add(new Tag(name));
                             }
                         }
                     }
@@ -75,7 +75,7 @@ public class NTXmlUtil {
                                 .collect(Collectors.toList());
                         for (int i = 0; i < channels.size(); i++) {
                             if (list.get(i).isPresent())
-                                channels.get(i).getProperties().add(new XmlProperty(name, null, list.get(i).get()));
+                                channels.get(i).getProperties().add(new Property(name, null, list.get(i).get()));
                         }
                     }
                 }

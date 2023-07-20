@@ -28,10 +28,11 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -78,8 +79,8 @@ public class ElasticConfig implements ServletContextListener {
     private String ES_QUERY_SIZE;
 
     ObjectMapper objectMapper = new ObjectMapper()
-            .addMixIn(XmlTag.class, XmlTag.OnlyXmlTag.class)
-            .addMixIn(XmlProperty.class, XmlProperty.OnlyXmlProperty.class);
+            .addMixIn(Tag.class, Tag.OnlyTag.class)
+            .addMixIn(Property.class, Property.OnlyProperty.class);
 
 
     @Bean({ "searchClient" })

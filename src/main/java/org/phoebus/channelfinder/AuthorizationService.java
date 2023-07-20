@@ -7,6 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -58,7 +61,7 @@ public class AuthorizationService {
         }
     }
 
-    public boolean isAuthorizedOwner(Authentication authentication, XmlTag data) {
+    public boolean isAuthorizedOwner(Authentication authentication, Tag data) {
         ArrayList<String> auth = new ArrayList<>();
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         for(GrantedAuthority a: auths)
@@ -71,7 +74,7 @@ public class AuthorizationService {
         return false;
     }
 
-    public boolean isAuthorizedOwner(Authentication authentication, XmlProperty data) {
+    public boolean isAuthorizedOwner(Authentication authentication, Property data) {
         ArrayList<String> auth = new ArrayList<>();
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         for(GrantedAuthority a: auths)
@@ -84,7 +87,7 @@ public class AuthorizationService {
         return false;
     }
 
-    public boolean isAuthorizedOwner(Authentication authentication, XmlChannel data) {
+    public boolean isAuthorizedOwner(Authentication authentication, Channel data) {
         ArrayList<String> auth = new ArrayList<>();
         Collection<? extends GrantedAuthority> auths = authentication.getAuthorities();
         for(GrantedAuthority a: auths)

@@ -22,10 +22,10 @@ import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.bulk.IndexOperation;
+import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.ElasticConfig;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlProperty;
-import org.phoebus.channelfinder.XmlTag;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -78,8 +78,8 @@ public class PopulateService {
     static List<Integer> val_bucket = Arrays.asList(0, 1, 2, 5, 10, 20, 50, 100, 200, 500);
 
     // A static list of props, tags, channels handled by this class which must be cleaned up on closure.
-    static Set<XmlProperty> prop_list = new HashSet<>();
-    Set<XmlTag> tag_list = new HashSet<>();
+    static Set<Property> prop_list = new HashSet<>();
+    Set<Tag> tag_list = new HashSet<>();
     Set<String> channel_list = new HashSet<>();
 
     @Autowired
@@ -114,7 +114,7 @@ public class PopulateService {
     // Create a list of properties
     static {
         for (int i = 10; i < 70; i++) {
-            prop_list.add(new XmlProperty("prop" + String.format("%03d", i), powner));
+            prop_list.add(new Property("prop" + String.format("%03d", i), powner));
         }
 
         index = 0;
@@ -144,7 +144,7 @@ public class PopulateService {
                     )
             );
         }
-        for (XmlTag tag : tag_list) {
+        for (Tag tag : tag_list) {
             br.operations(op -> op
                     .delete(idx -> idx
                             .index(ES_TAG_INDEX)
@@ -152,7 +152,7 @@ public class PopulateService {
                     )
             );
         }
-        for (XmlProperty property : prop_list) {
+        for (Property property : prop_list) {
             br.operations(op -> op
                     .delete(idx -> idx
                             .index(ES_PROPERTY_INDEX)
@@ -214,10 +214,10 @@ public class PopulateService {
         );
 
         BulkRequest.Builder br = new BulkRequest.Builder();
-        for (XmlProperty property : prop_list) {
+        for (Property property : prop_list) {
             br.operations(op -> op.index(index -> index.index(ES_PROPERTY_INDEX).id(property.getName()).document(property)));
         }
-        for (XmlTag tag : tag_list) {
+        for (Tag tag : tag_list) {
             br.operations(op -> op.index(index -> index.index(ES_TAG_INDEX).id(tag.getName()).document(tag)));
         }
         br.refresh(Refresh.True);
@@ -250,7 +250,7 @@ public class PopulateService {
 
         AtomicInteger channelCounter = new AtomicInteger(0);
 
-        Collection<XmlChannel> result = new ArrayList<>(1000);
+        Collection<Channel> result = new ArrayList<>(1000);
         result.addAll(insert_big_magnets(tokens, channelCounter, 2, pre, "DP", loc, cell, "dipole"));
         result.addAll(insert_big_magnets(tokens, channelCounter, 5, pre, "QDP:D", loc, cell, "defocusing quadrupole"));
         result.addAll(insert_big_magnets(tokens, channelCounter, 5, pre, "QDP:F", loc, cell, "focusing quadrupole"));
@@ -277,7 +277,7 @@ public class PopulateService {
 
         long start = System.currentTimeMillis();
         BulkRequest.Builder br = new BulkRequest.Builder();
-        for (XmlChannel channel : result) {
+        for (Channel channel : result) {
             br.operations(op -> op.index(IndexOperation.of(i -> i.index(ES_CHANNEL_INDEX).id(channel.getName()).document(channel))));
         }
         String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
@@ -312,7 +312,7 @@ public class PopulateService {
 
         AtomicInteger channelCounter = new AtomicInteger(0);
 
-        Collection<XmlChannel> result = new ArrayList<>(500);
+        Collection<Channel> result = new ArrayList<>(500);
 
         result.addAll(insert_big_magnets(tokens, channelCounter, 2, pre, "DP", loc, cell, "dipole"));
         result.addAll(insert_big_magnets(tokens, channelCounter, 4, pre, "QDP:D", loc, cell, "defocusing quadrupole"));
@@ -335,7 +335,7 @@ public class PopulateService {
 
         long start = System.currentTimeMillis();
         BulkRequest.Builder br = new BulkRequest.Builder();
-        for (XmlChannel channel : result) {
+        for (Channel channel : result) {
             br.operations(op -> op.index(IndexOperation.of(i -> i.index(ES_CHANNEL_INDEX).id(channel.getName()).document(channel))));
         }
         String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
@@ -358,9 +358,9 @@ public class PopulateService {
         return false;
     }
 
-    private Collection<XmlChannel> insert_big_magnets(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix,
-                                                      String dev, String loc, String cell, String element) {
-        List<XmlChannel> channels = new ArrayList<>();
+    private Collection<Channel> insert_big_magnets(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix,
+                                                   String dev, String loc, String cell, String element) {
+        List<Channel> channels = new ArrayList<>();
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PS:", "{" + dev + "}I-RB", loc, cell, element, "power supply", "current", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PS:", "{" + dev + "}I-SP", loc, cell, element, "power supply", "current", "setpoint"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PS:", "{" + dev + "}On-Sw", loc, cell, element, "power supply", "power", "switch"));
@@ -384,8 +384,8 @@ public class PopulateService {
         return channels;
     }
 
-    private Collection<XmlChannel> insert_air_magnets(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev, String loc, String cell, String element) {
-        List<XmlChannel> channels = new ArrayList<>();
+    private Collection<Channel> insert_air_magnets(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev, String loc, String cell, String element) {
+        List<Channel> channels = new ArrayList<>();
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PS:", "{" + dev + "}I-RB", loc, cell, element, "power supply", "current", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PS:", "{" + dev + "}I-SP", loc, cell, element, "power supply", "current", "setpoint"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PS:", "{" + dev + "}On-Sw", loc, cell, element, "power supply", "power", "switch"));
@@ -400,24 +400,24 @@ public class PopulateService {
     }
 
 
-    private Collection<XmlChannel> insert_valves(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev, String loc, String cell, String element) {
-        List<XmlChannel> channels = new ArrayList<>();
+    private Collection<Channel> insert_valves(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev, String loc, String cell, String element) {
+        List<Channel> channels = new ArrayList<>();
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "VA:", "{" + dev + "}Opn-Sw", loc, cell, element, "valve", "position", "switch"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "VA:", "{" + dev + "}Opn-St", loc, cell, element, "valve", "position", "status"));
         return channels;
     }
 
-    private Collection<XmlChannel> insert_gauges(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev, String loc, String cell, String element) {
-        List<XmlChannel> channels = new ArrayList<>();
+    private Collection<Channel> insert_gauges(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev, String loc, String cell, String element) {
+        List<Channel> channels = new ArrayList<>();
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "VA:", "{" + dev + "}P-RB", loc, cell, element, "gauge", "pressure", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "VA:", "{" + dev + "}OK-St", loc, cell, element, "gauge", "error", "status"));
         return channels;
     }
 
 
-    private Collection<XmlChannel> insert_pumps(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix,
-                                                String dev, String loc, String cell, String element) {
-        List<XmlChannel> channels = new ArrayList<>();
+    private Collection<Channel> insert_pumps(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix,
+                                             String dev, String loc, String cell, String element) {
+        List<Channel> channels = new ArrayList<>();
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "VA:", "{" + dev + "}I-RB", loc, cell, element, "pump", "current", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "VA:", "{" + dev + "}P-RB", loc, cell, element, "pump", "pressure", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "VA:", "{" + dev + "}On-Sw", loc, cell, element, "pump", "power", "switch"));
@@ -426,9 +426,9 @@ public class PopulateService {
         return channels;
     }
 
-    private Collection<XmlChannel> insert_temps(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix,
-                                                String dev, String loc, String cell, String element) {
-        List<XmlChannel> channels = new ArrayList<>();
+    private Collection<Channel> insert_temps(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix,
+                                             String dev, String loc, String cell, String element) {
+        List<Channel> channels = new ArrayList<>();
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PU:T", "{" + dev + "}T:1-RB", loc, cell, element, "sensor", "temperature 1", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PU:T", "{" + dev + "}T:2-RB", loc, cell, element, "sensor", "temperature 2", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "PU:T", "{" + dev + "}T:3-RB", loc, cell, element, "sensor", "temperature 3", "readback"));
@@ -437,9 +437,9 @@ public class PopulateService {
         return channels;
     }
 
-    private Collection<XmlChannel> insert_bpms(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev,
-                                               String loc, String cell, String element) {
-        List<XmlChannel> channels = new ArrayList<>();
+    private Collection<Channel> insert_bpms(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCell, int count, String prefix, String dev,
+                                            String loc, String cell, String element) {
+        List<Channel> channels = new ArrayList<>();
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "BI:", "{" + dev + "}Pos:X-RB", loc, cell, element, "bpm", "x position", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "BI:", "{" + dev + "}Pos:Y-RB", loc, cell, element, "bpm", "y position", "readback"));
         channels.addAll(insert_bunch(tokens, channelInCell, count, prefix, "BI:", "{" + dev + "}Sig:X-RB", loc, cell, element, "bpm", "x sigma", "readback"));
@@ -448,211 +448,211 @@ public class PopulateService {
         return channels;
     }
 
-    private Collection<XmlChannel> insert_bunch(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCellCounter, int count, String prefix,
-                                                String midfix, String postfix, String location, String cell, String element, String device, String unit,
-                                                String sigtype) {
+    private Collection<Channel> insert_bunch(Map<Integer, List<Integer>> tokens, AtomicInteger channelInCellCounter, int count, String prefix,
+                                             String midfix, String postfix, String location, String cell, String element, String device, String unit,
+                                             String sigtype) {
         int cw = count > 9 ? 2 : 1;
-        List<XmlChannel> result = new ArrayList<>(count);
+        List<Channel> result = new ArrayList<>(count);
         for (int i = 1; i < count + 1; i++) {
-            XmlChannel channel;
+            Channel channel;
             if (count == 1) {
-                channel = new XmlChannel(prefix + cell + "-" + midfix + postfix, cowner);
+                channel = new Channel(prefix + cell + "-" + midfix + postfix, cowner);
             } else {
-                channel = new XmlChannel(prefix + cell + "-" + midfix + String.format("%0" + cw + "d", i) + postfix,
+                channel = new Channel(prefix + cell + "-" + midfix + String.format("%0" + cw + "d", i) + postfix,
                         cowner);
             }
             int channelInCell = channelInCellCounter.getAndIncrement();
 
-            channel.getProperties().add(new XmlProperty("location", powner, location));
-            channel.getProperties().add(new XmlProperty("cell", powner, cell));
-            channel.getProperties().add(new XmlProperty("element", powner, element));
-            channel.getProperties().add(new XmlProperty("device", powner, device));
+            channel.getProperties().add(new Property("location", powner, location));
+            channel.getProperties().add(new Property("cell", powner, cell));
+            channel.getProperties().add(new Property("element", powner, element));
+            channel.getProperties().add(new Property("device", powner, device));
             if (count != 1) {
-                channel.getProperties().add(new XmlProperty("family", powner, String.format("%0" + cw + "d", i)));
+                channel.getProperties().add(new Property("family", powner, String.format("%0" + cw + "d", i)));
             }
-            channel.getProperties().add(new XmlProperty("unit", powner, unit));
-            channel.getProperties().add(new XmlProperty("type", powner, sigtype));
+            channel.getProperties().add(new Property("unit", powner, unit));
+            channel.getProperties().add(new Property("type", powner, sigtype));
 
             String pos_c = String.format("%03d", Math.round((10.0 / (count + 1)) * i));
-            channel.getProperties().add(new XmlProperty("z_pos_r", powner, pos_c));
+            channel.getProperties().add(new Property("z_pos_r", powner, pos_c));
 
             if (postfix.endsWith("}T:1-RB")) {
-                channel.getProperties().add(new XmlProperty("mount", powner, "outside"));
+                channel.getProperties().add(new Property("mount", powner, "outside"));
             } else if (postfix.endsWith("}T:2-RB")) {
-                channel.getProperties().add(new XmlProperty("mount", powner, "inside"));
+                channel.getProperties().add(new Property("mount", powner, "inside"));
             } else if (postfix.endsWith("}T:3-RB")) {
-                channel.getProperties().add(new XmlProperty("mount", powner, "top"));
+                channel.getProperties().add(new Property("mount", powner, "top"));
             } else if (postfix.endsWith("}T:4-RB")) {
-                channel.getProperties().add(new XmlProperty("mount", powner, "bottom"));
+                channel.getProperties().add(new Property("mount", powner, "bottom"));
             } else {
-                channel.getProperties().add(new XmlProperty("mount", powner, "center"));
+                channel.getProperties().add(new Property("mount", powner, "center"));
             }
 
             for (Entry<Integer, List<Integer>> entry : tokens.entrySet()) {
                 // pop val from the tokens
                 Integer val = entry.getValue().remove(ThreadLocalRandom.current().nextInt(entry.getValue().size()));
-                channel.getProperties().add(new XmlProperty("group" + String.valueOf(entry.getKey()), powner, String.valueOf(val)));
-                channel.getTags().add(new XmlTag("group" + String.valueOf(entry.getKey()) + "_" + val, towner));
+                channel.getProperties().add(new Property("group" + String.valueOf(entry.getKey()), powner, String.valueOf(val)));
+                channel.getTags().add(new Tag("group" + String.valueOf(entry.getKey()) + "_" + val, towner));
             }
 
             if (channelInCell % 2 == 1) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "500"));
-                channel.getTags().add(new XmlTag("group6_500", towner));
+                channel.getProperties().add(new Property("group6", powner, "500"));
+                channel.getTags().add(new Tag("group6_500", towner));
             } else if (channelInCell <= 2 * 200) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "200"));
-                channel.getTags().add(new XmlTag("group6_200", towner));
+                channel.getProperties().add(new Property("group6", powner, "200"));
+                channel.getTags().add(new Tag("group6_200", towner));
             } else if (channelInCell <= 2 * (200 + 100)) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "100"));
-                channel.getTags().add(new XmlTag("group6_100", towner));
+                channel.getProperties().add(new Property("group6", powner, "100"));
+                channel.getTags().add(new Tag("group6_100", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50)) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "50"));
-                channel.getTags().add(new XmlTag("group6_50", towner));
+                channel.getProperties().add(new Property("group6", powner, "50"));
+                channel.getTags().add(new Tag("group6_50", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20)) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "20"));
-                channel.getTags().add(new XmlTag("group6_20", towner));
+                channel.getProperties().add(new Property("group6", powner, "20"));
+                channel.getTags().add(new Tag("group6_20", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10)) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "10"));
-                channel.getTags().add(new XmlTag("group6_10", towner));
+                channel.getProperties().add(new Property("group6", powner, "10"));
+                channel.getTags().add(new Tag("group6_10", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5)) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "5"));
-                channel.getTags().add(new XmlTag("group6_5", towner));
+                channel.getProperties().add(new Property("group6", powner, "5"));
+                channel.getTags().add(new Tag("group6_5", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2)) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "2"));
-                channel.getTags().add(new XmlTag("group6_2", towner));
+                channel.getProperties().add(new Property("group6", powner, "2"));
+                channel.getTags().add(new Tag("group6_2", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2 + 1)) {
-                channel.getProperties().add(new XmlProperty("group6", powner, "1"));
-                channel.getTags().add(new XmlTag("group6_1", towner));
+                channel.getProperties().add(new Property("group6", powner, "1"));
+                channel.getTags().add(new Tag("group6_1", towner));
             } else {
-                channel.getProperties().add(new XmlProperty("group6", powner, "0"));
-                channel.getTags().add(new XmlTag("group6_0", towner));
+                channel.getProperties().add(new Property("group6", powner, "0"));
+                channel.getTags().add(new Tag("group6_0", towner));
             }
 
             if (channelInCell % 2 == 0) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "500"));
-                channel.getTags().add(new XmlTag("group7_500", towner));
+                channel.getProperties().add(new Property("group7", powner, "500"));
+                channel.getTags().add(new Tag("group7_500", towner));
             } else if (channelInCell <= 2 * 200) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "200"));
-                channel.getTags().add(new XmlTag("group7_200", towner));
+                channel.getProperties().add(new Property("group7", powner, "200"));
+                channel.getTags().add(new Tag("group7_200", towner));
             } else if (channelInCell <= 2 * (200 + 100)) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "100"));
-                channel.getTags().add(new XmlTag("group7_100", towner));
+                channel.getProperties().add(new Property("group7", powner, "100"));
+                channel.getTags().add(new Tag("group7_100", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50)) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "50"));
-                channel.getTags().add(new XmlTag("group7_50", towner));
+                channel.getProperties().add(new Property("group7", powner, "50"));
+                channel.getTags().add(new Tag("group7_50", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20)) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "20"));
-                channel.getTags().add(new XmlTag("group7_20", towner));
+                channel.getProperties().add(new Property("group7", powner, "20"));
+                channel.getTags().add(new Tag("group7_20", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10)) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "10"));
-                channel.getTags().add(new XmlTag("group7_10", towner));
+                channel.getProperties().add(new Property("group7", powner, "10"));
+                channel.getTags().add(new Tag("group7_10", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5)) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "5"));
-                channel.getTags().add(new XmlTag("group7_5", towner));
+                channel.getProperties().add(new Property("group7", powner, "5"));
+                channel.getTags().add(new Tag("group7_5", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2)) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "2"));
-                channel.getTags().add(new XmlTag("group7_2", towner));
+                channel.getProperties().add(new Property("group7", powner, "2"));
+                channel.getTags().add(new Tag("group7_2", towner));
             } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2 + 1)) {
-                channel.getProperties().add(new XmlProperty("group7", powner, "1"));
-                channel.getTags().add(new XmlTag("group7_1", towner));
+                channel.getProperties().add(new Property("group7", powner, "1"));
+                channel.getTags().add(new Tag("group7_1", towner));
             } else {
-                channel.getProperties().add(new XmlProperty("group7", powner, "0"));
-                channel.getTags().add(new XmlTag("group7_0", towner));
+                channel.getProperties().add(new Property("group7", powner, "0"));
+                channel.getTags().add(new Tag("group7_0", towner));
             }
             if (channelInCell <= 500) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "500"));
-                channel.getTags().add(new XmlTag("group8_500", towner));
+                channel.getProperties().add(new Property("group8", powner, "500"));
+                channel.getTags().add(new Tag("group8_500", towner));
             } else if (channelInCell <= 500 + 200) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "200"));
-                channel.getTags().add(new XmlTag("group8_200", towner));
+                channel.getProperties().add(new Property("group8", powner, "200"));
+                channel.getTags().add(new Tag("group8_200", towner));
             } else if (channelInCell <= 500 + (200 + 100)) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "100"));
-                channel.getTags().add(new XmlTag("group8_100", towner));
+                channel.getProperties().add(new Property("group8", powner, "100"));
+                channel.getTags().add(new Tag("group8_100", towner));
             } else if (channelInCell <= 500 + (200 + 100 + 50)) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "50"));
-                channel.getTags().add(new XmlTag("group8_50", towner));
+                channel.getProperties().add(new Property("group8", powner, "50"));
+                channel.getTags().add(new Tag("group8_50", towner));
             } else if (channelInCell <= 500 + (200 + 100 + 50 + 20)) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "20"));
-                channel.getTags().add(new XmlTag("group8_20", towner));
+                channel.getProperties().add(new Property("group8", powner, "20"));
+                channel.getTags().add(new Tag("group8_20", towner));
             } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10)) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "10"));
-                channel.getTags().add(new XmlTag("group8_10", towner));
+                channel.getProperties().add(new Property("group8", powner, "10"));
+                channel.getTags().add(new Tag("group8_10", towner));
             } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10 + 5)) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "5"));
-                channel.getTags().add(new XmlTag("group8_5", towner));
+                channel.getProperties().add(new Property("group8", powner, "5"));
+                channel.getTags().add(new Tag("group8_5", towner));
             } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10 + 5 + 2)) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "2"));
-                channel.getTags().add(new XmlTag("group8_2", towner));
+                channel.getProperties().add(new Property("group8", powner, "2"));
+                channel.getTags().add(new Tag("group8_2", towner));
             } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10 + 5 + 2 + 1)) {
-                channel.getProperties().add(new XmlProperty("group8", powner, "1"));
-                channel.getTags().add(new XmlTag("group8_1", towner));
+                channel.getProperties().add(new Property("group8", powner, "1"));
+                channel.getTags().add(new Tag("group8_1", towner));
             } else {
-                channel.getProperties().add(new XmlProperty("group8", powner, "0"));
-                channel.getTags().add(new XmlTag("group8_0", towner));
+                channel.getProperties().add(new Property("group8", powner, "0"));
+                channel.getTags().add(new Tag("group8_0", towner));
             }
 
             if (channelInCell > 500) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "500"));
-                channel.getTags().add(new XmlTag("group9_500", towner));
+                channel.getProperties().add(new Property("group9", powner, "500"));
+                channel.getTags().add(new Tag("group9_500", towner));
             } else if (channelInCell > 500 - 200) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "200"));
-                channel.getTags().add(new XmlTag("group9_200", towner));
+                channel.getProperties().add(new Property("group9", powner, "200"));
+                channel.getTags().add(new Tag("group9_200", towner));
             } else if (channelInCell > 500 - 200 - 100) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "100"));
-                channel.getTags().add(new XmlTag("group9_100", towner));
+                channel.getProperties().add(new Property("group9", powner, "100"));
+                channel.getTags().add(new Tag("group9_100", towner));
             } else if (channelInCell > 500 - 200 - 100 - 50) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "50"));
-                channel.getTags().add(new XmlTag("group9_50", towner));
+                channel.getProperties().add(new Property("group9", powner, "50"));
+                channel.getTags().add(new Tag("group9_50", towner));
             } else if (channelInCell > 500 - 200 - 100 - 50 - 20) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "20"));
-                channel.getTags().add(new XmlTag("group9_20", towner));
+                channel.getProperties().add(new Property("group9", powner, "20"));
+                channel.getTags().add(new Tag("group9_20", towner));
             } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "10"));
-                channel.getTags().add(new XmlTag("group9_10", towner));
+                channel.getProperties().add(new Property("group9", powner, "10"));
+                channel.getTags().add(new Tag("group9_10", towner));
             } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10 - 5) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "5"));
-                channel.getTags().add(new XmlTag("group9_5", towner));
+                channel.getProperties().add(new Property("group9", powner, "5"));
+                channel.getTags().add(new Tag("group9_5", towner));
             } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10 - 5 - 2) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "2"));
-                channel.getTags().add(new XmlTag("group9_2", towner));
+                channel.getProperties().add(new Property("group9", powner, "2"));
+                channel.getTags().add(new Tag("group9_2", towner));
             } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10 - 5 - 2 - 1) {
-                channel.getProperties().add(new XmlProperty("group9", powner, "1"));
-                channel.getTags().add(new XmlTag("group9_1", towner));
+                channel.getProperties().add(new Property("group9", powner, "1"));
+                channel.getTags().add(new Tag("group9_1", towner));
             } else {
-                channel.getProperties().add(new XmlProperty("group9", powner, "0"));
-                channel.getTags().add(new XmlTag("group9_0", towner));
+                channel.getProperties().add(new Property("group9", powner, "0"));
+                channel.getTags().add(new Tag("group9_0", towner));
             }
 
             for (int j = 20; j < max_prop; j++) {
-                channel.getProperties().add(new XmlProperty("prop" + String.format("%02d", j), powner,
+                channel.getProperties().add(new Property("prop" + String.format("%02d", j), powner,
                         channelInCell + "-" + String.format("%02d", j)));
             }
             for (int k = 11; k < max_tag; k++) {
-                channel.getTags().add(new XmlTag("tag" + String.format("%02d", k), towner));
+                channel.getTags().add(new Tag("tag" + String.format("%02d", k), towner));
             }
             Integer cellCount = Integer.valueOf(cell);
             if (cellCount % 9 == 0) {
-                channel.getTags().add(new XmlTag("tagnine", towner));
+                channel.getTags().add(new Tag("tagnine", towner));
             } else if (cellCount % 8 == 0) {
-                channel.getTags().add(new XmlTag("tageight", towner));
+                channel.getTags().add(new Tag("tageight", towner));
             } else if (cellCount % 7 == 0) {
-                channel.getTags().add(new XmlTag("tagseven", towner));
+                channel.getTags().add(new Tag("tagseven", towner));
             } else if (cellCount % 6 == 0) {
-                channel.getTags().add(new XmlTag("tagsix", towner));
+                channel.getTags().add(new Tag("tagsix", towner));
             } else if (cellCount % 5 == 0) {
-                channel.getTags().add(new XmlTag("tagfive", towner));
+                channel.getTags().add(new Tag("tagfive", towner));
             } else if (cellCount % 4 == 0) {
-                channel.getTags().add(new XmlTag("tagfour", towner));
+                channel.getTags().add(new Tag("tagfour", towner));
             } else if (cellCount % 3 == 0) {
-                channel.getTags().add(new XmlTag("tagthree", towner));
+                channel.getTags().add(new Tag("tagthree", towner));
             } else if (cellCount % 2 == 0) {
-                channel.getTags().add(new XmlTag("tagtwo", towner));
+                channel.getTags().add(new Tag("tagtwo", towner));
             } else {
-                channel.getTags().add(new XmlTag("tagone", towner));
+                channel.getTags().add(new Tag("tagone", towner));
             }
 
             channel_list.add(channel.getName());
             prop_list.addAll(channel.getProperties().stream().map(p ->
-                new XmlProperty(p.getName(), p.getOwner())
+                new Property(p.getName(), p.getOwner())
             ).collect(Collectors.toSet()));
             tag_list.addAll(channel.getTags());
             result.add(channel);

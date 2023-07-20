@@ -2,8 +2,8 @@ package org.phoebus.channelfinder.processors;
 
 import org.phoebus.channelfinder.AuthorizationService;
 import org.phoebus.channelfinder.ChannelScroll;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlScroll;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Scroll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -81,7 +80,7 @@ public class ChannelProcessorManager {
     @PutMapping("/process/query")
     public long processChannels(@RequestParam MultiValueMap<String, String> allRequestParams) {
         long channelCount = 0;
-        XmlScroll scrollResult = channelScroll.query(allRequestParams);
+        Scroll scrollResult = channelScroll.query(allRequestParams);
         channelCount += scrollResult.getChannels().size();
         processChannels(scrollResult.getChannels());
         while(scrollResult.getChannels().size() == defaultMaxSize) {
@@ -93,7 +92,7 @@ public class ChannelProcessorManager {
     }
 
     @PutMapping("/process/channels")
-    public void processChannels(List<XmlChannel> channels) {
+    public void processChannels(List<Channel> channels) {
         channelProcessorService.sendToProcessors(channels);
     }
 }

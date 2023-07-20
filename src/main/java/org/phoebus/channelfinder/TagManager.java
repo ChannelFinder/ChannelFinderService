@@ -16,6 +16,8 @@ import java.util.stream.StreamSupport;
 
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
@@ -56,7 +58,7 @@ public class TagManager {
      * @return list of all tags
      */
     @GetMapping
-    public Iterable<XmlTag> list() {
+    public Iterable<Tag> list() {
         return tagRepository.findAll();
     }
 
@@ -70,12 +72,12 @@ public class TagManager {
      * @return found tag
      */
     @GetMapping("/{tagName}")
-    public XmlTag read(@PathVariable("tagName") String tagName,
-            @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
+    public Tag read(@PathVariable("tagName") String tagName,
+                    @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
         tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_TAG, tagName));
 
         if(withChannels) {
-            Optional<XmlTag> foundTag = tagRepository.findById(tagName,true);
+            Optional<Tag> foundTag = tagRepository.findById(tagName,true);
             if(foundTag.isPresent()) {
                 return foundTag.get();
             } else {
@@ -84,7 +86,7 @@ public class TagManager {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
             }
         } else {
-            Optional<XmlTag> foundTag = tagRepository.findById(tagName);
+            Optional<Tag> foundTag = tagRepository.findById(tagName);
             if(foundTag.isPresent()) {
                 return foundTag.get();
             } else {
@@ -102,11 +104,11 @@ public class TagManager {
      * is mandatory.
      * 
      * @param tagName - name of tag to be created
-     * @param tag - XmlTag structure containing the list of channels to be tagged
+     * @param tag - Tag structure containing the list of channels to be tagged
      * @return the created tag
      */
     @PutMapping("/{tagName}")
-    public XmlTag create(@PathVariable("tagName") String tagName, @RequestBody XmlTag tag) {
+    public Tag create(@PathVariable("tagName") String tagName, @RequestBody Tag tag) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
@@ -120,7 +122,7 @@ public class TagManager {
                 logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
-            Optional<XmlTag> existingTag = tagRepository.findById(tagName);
+            Optional<Tag> existingTag = tagRepository.findById(tagName);
             boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
@@ -133,14 +135,14 @@ public class TagManager {
             } 
 
             // create new tag
-            XmlTag createdTag = tagRepository.index(tag);
+            Tag createdTag = tagRepository.index(tag);
 
             if (!tag.getChannels().isEmpty()) {
                 tag.getChannels().forEach(chan -> chan.addTag(createdTag));
                 // update the listed channels in the tag's payloads with the new tag
-                Iterable<XmlChannel> chans = channelRepository.saveAll(tag.getChannels());
-                List<XmlChannel> chanList = new ArrayList<>();
-                for (XmlChannel chan : chans) {
+                Iterable<Channel> chans = channelRepository.saveAll(tag.getChannels());
+                List<Channel> chanList = new ArrayList<>();
+                for (Channel chan : chans) {
                     chanList.add(chan);
                 }
                 createdTag.setChannels(chanList);
@@ -160,15 +162,15 @@ public class TagManager {
      * @return the list of tags created
      */
     @PutMapping()
-    public Iterable<XmlTag> create(@RequestBody Iterable<XmlTag> tags) {
+    public Iterable<Tag> create(@RequestBody Iterable<Tag> tags) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
-            for(XmlTag tag: tags) {       
-                Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
+            for(Tag tag: tags) {
+                Optional<Tag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
@@ -190,7 +192,7 @@ public class TagManager {
             validateTagRequest(tags);
 
             // delete existing tags
-            for(XmlTag tag: tags) {
+            for(Tag tag: tags) {
                 if(tagRepository.existsById(tag.getName())) {
                     // delete existing tag
                     tagRepository.deleteById(tag.getName());
@@ -198,23 +200,23 @@ public class TagManager {
             }
 
             // create new tags
-            Iterable<XmlTag> createdTags = tagRepository.indexAll(Lists.newArrayList(tags));
+            Iterable<Tag> createdTags = tagRepository.indexAll(Lists.newArrayList(tags));
 
             // update the listed channels in the tags' payloads with new tags
-            Map<String, XmlChannel> channels = new HashMap<>();
-            for (XmlTag tag : tags) {
-                for (XmlChannel channel : tag.getChannels()) {
+            Map<String, Channel> channels = new HashMap<>();
+            for (Tag tag : tags) {
+                for (Channel channel : tag.getChannels()) {
                     if (channels.get(channel.getName()) != null) {
-                        channels.get(channel.getName()).addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                        channels.get(channel.getName()).addTag(new Tag(tag.getName(), tag.getOwner()));
                     } else {
-                        channel.addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                        channel.addTag(new Tag(tag.getName(), tag.getOwner()));
                         channels.put(channel.getName(), channel);
                     }
                 }
             }
 
             if(!channels.isEmpty()) {
-                Iterable<XmlChannel> chans = channelRepository.saveAll(channels.values());
+                Iterable<Channel> chans = channelRepository.saveAll(channels.values());
             }
             // TODO should return created tags with properly organized saved channels, but it would be very complicated...
             return tags;
@@ -237,7 +239,7 @@ public class TagManager {
      * @return added tag
      */
     @PutMapping("/{tagName}/{channelName}")
-    public XmlTag addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName) {
+    public Tag addSingle(@PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
@@ -246,7 +248,7 @@ public class TagManager {
             validateTagWithChannelRequest(channelName);
 
             // check if authorized owner
-            Optional<XmlTag> existingTag = tagRepository.findById(tagName);
+            Optional<Tag> existingTag = tagRepository.findById(tagName);
             boolean present = existingTag.isPresent();
             if(present) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
@@ -255,10 +257,10 @@ public class TagManager {
                     throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                 } 
                 // add tag to channel
-                XmlChannel channel = channelRepository.findById(channelName).get();
+                Channel channel = channelRepository.findById(channelName).get();
                 channel.addTag(existingTag.get());
-                XmlChannel taggedChannel = channelRepository.save(channel);
-                XmlTag addedTag = existingTag.get();
+                Channel taggedChannel = channelRepository.save(channel);
+                Tag addedTag = existingTag.get();
                 addedTag.setChannels(Arrays.asList(taggedChannel));
                 return addedTag;
             } else {
@@ -282,11 +284,11 @@ public class TagManager {
      * TODO: Optimize the bulk channel update
      *
      * @param tagName - name of tag to be updated
-     * @param tag - XmlTag with list of channels to addSingle the tag <code>name</code> to
+     * @param tag - Tag with list of channels to addSingle the tag <code>name</code> to
      * @return the updated tag
      */
     @PostMapping("/{tagName}")
-    public XmlTag update(@PathVariable("tagName") String tagName, @RequestBody XmlTag tag) {
+    public Tag update(@PathVariable("tagName") String tagName, @RequestBody Tag tag) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
@@ -300,10 +302,10 @@ public class TagManager {
                 logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
             }
-            List<XmlChannel> channels = new ArrayList<>();
-            Optional<XmlTag> existingTag = tagRepository.findById(tagName,true);
+            List<Channel> channels = new ArrayList<>();
+            Optional<Tag> existingTag = tagRepository.findById(tagName,true);
 
-            XmlTag newTag;
+            Tag newTag;
             if(existingTag.isPresent()) {
                 if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
                     String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
@@ -324,7 +326,7 @@ public class TagManager {
             }
 
             // update tag
-            XmlTag updatedTag = tagRepository.save(newTag);
+            Tag updatedTag = tagRepository.save(newTag);
 
             // update channels of existing tag
             if(!channels.isEmpty()) {
@@ -339,7 +341,7 @@ public class TagManager {
             }
 
             if(!channels.isEmpty()) {
-                Iterable<XmlChannel> updatedChannels = channelRepository.saveAll(channels);
+                Iterable<Channel> updatedChannels = channelRepository.saveAll(channels);
                 updatedTag.setChannels(StreamSupport.stream(updatedChannels.spliterator(), false)
                         .collect(Collectors.toList()));
             }
@@ -362,15 +364,15 @@ public class TagManager {
      * @return the updated tags
      */
     @PostMapping()
-    public Iterable<XmlTag> update(@RequestBody Iterable<XmlTag> tags) {
+    public Iterable<Tag> update(@RequestBody Iterable<Tag> tags) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
             long start = System.currentTimeMillis();
             tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
-            for(XmlTag tag:tags) {
-                Optional<XmlTag> existingTag = tagRepository.findById(tag.getName());
+            for(Tag tag:tags) {
+                Optional<Tag> existingTag = tagRepository.findById(tag.getName());
                 boolean present = existingTag.isPresent();
                 if(present) {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
@@ -392,20 +394,20 @@ public class TagManager {
             validateTagRequest(tags);
 
             // update the listed channels in the tags' payloads with new tags
-            Map<String, XmlChannel> channels = new HashMap<>();
-            for (XmlTag tag : tags) {
-                for (XmlChannel channel : tag.getChannels()) {
+            Map<String, Channel> channels = new HashMap<>();
+            for (Tag tag : tags) {
+                for (Channel channel : tag.getChannels()) {
                     if (channels.get(channel.getName()) != null) {
-                        channels.get(channel.getName()).addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                        channels.get(channel.getName()).addTag(new Tag(tag.getName(), tag.getOwner()));
                     } else {
-                        channel.addTag(new XmlTag(tag.getName(), tag.getOwner()));
+                        channel.addTag(new Tag(tag.getName(), tag.getOwner()));
                         channels.put(channel.getName(), channel);
                     }
                 }
             }
 
             // update tags
-            Iterable<XmlTag> updatedTags = tagRepository.saveAll(tags);
+            Iterable<Tag> updatedTags = tagRepository.saveAll(tags);
 
             // update channels
             if(!channels.isEmpty()) {
@@ -430,7 +432,7 @@ public class TagManager {
     public void remove(@PathVariable("tagName") String tagName) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
-            Optional<XmlTag> existingTag = tagRepository.findById(tagName);
+            Optional<Tag> existingTag = tagRepository.findById(tagName);
             if(existingTag.isPresent()) {
                 // check if authorized owner
                 if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
@@ -464,15 +466,15 @@ public class TagManager {
     public void removeSingle(@PathVariable("tagName") final String tagName, @PathVariable("channelName") String channelName) {
         // check if authorized role
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
-            Optional<XmlTag> existingTag = tagRepository.findById(tagName);
+            Optional<Tag> existingTag = tagRepository.findById(tagName);
             if(existingTag.isPresent()) {
                 // check if authorized owner
                 if(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
-                    Optional<XmlChannel> ch = channelRepository.findById(channelName);
+                    Optional<Channel> ch = channelRepository.findById(channelName);
                     if(ch.isPresent()) {
                         // remove tag from channel
-                        XmlChannel channel = ch.get();
-                        channel.removeTag(new XmlTag(tagName, ""));
+                        Channel channel = ch.get();
+                        channel.removeTag(new Tag(tagName, ""));
                         channelRepository.index(channel);
                     } else {
                         String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
@@ -507,8 +509,8 @@ public class TagManager {
      *
      * @param tags the list of tags to be validated
      */
-    public void validateTagRequest(Iterable<XmlTag> tags) {
-        for(XmlTag tag: tags) {
+    public void validateTagRequest(Iterable<Tag> tags) {
+        for(Tag tag: tags) {
             validateTagRequest(tag);
         }
     }
@@ -524,7 +526,7 @@ public class TagManager {
      *
      * @param tag the tag to be validates
      */
-    public void validateTagRequest(XmlTag tag) {
+    public void validateTagRequest(Tag tag) {
         // 1 
         if (tag.getName() == null || tag.getName().isEmpty()) {
             String message = MessageFormat.format(TextUtil.TAG_NAME_CANNOT_BE_NULL_OR_EMPTY, tag.toLog());
@@ -538,7 +540,7 @@ public class TagManager {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
         }
         // 3
-        List <String> channelNames = tag.getChannels().stream().map(XmlChannel::getName).collect(Collectors.toList());
+        List <String> channelNames = tag.getChannels().stream().map(Channel::getName).collect(Collectors.toList());
         for(String channelName:channelNames) {
             if(!channelRepository.existsById(channelName)) {
                 String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);

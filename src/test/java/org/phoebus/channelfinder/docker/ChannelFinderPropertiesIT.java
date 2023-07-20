@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
@@ -35,8 +37,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlProperty;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 
 /**
@@ -73,11 +73,11 @@ class ChannelFinderPropertiesIT {
     //     --------------------                                                                    --------------------
     //     Retrieve a Property                    .../properties/<name>                            (GET)       read(String, boolean)
     //     List Properties                        .../properties                                   (GET)       list()
-    //     Create/Replace a Property              .../properties/<name>                            (PUT)       create(String, XmlProperty)
-    //     Add Property to a Single Channel       .../properties/<property_name>/<channel_name>    (PUT)       addSingle(String, String, XmlProperty)
-    //     Create/Replace Properties              .../properties                                   (PUT)       create(Iterable<XmlProperty>)
-    //     Add Property to Multiple Channels      .../properties/<name>                            (POST)      update(String, XmlProperty)
-    //     Add Multiple Properties                .../properties                                   (POST)      update(Iterable<XmlProperty>)
+    //     Create/Replace a Property              .../properties/<name>                            (PUT)       create(String, Property)
+    //     Add Property to a Single Channel       .../properties/<property_name>/<channel_name>    (PUT)       addSingle(String, String, Property)
+    //     Create/Replace Properties              .../properties                                   (PUT)       create(Iterable<Property>)
+    //     Add Property to Multiple Channels      .../properties/<name>                            (POST)      update(String, Property)
+    //     Add Multiple Properties                .../properties                                   (POST)      update(Iterable<Property>)
     //     Remove Property from Single Channel    .../properties/<property_name>/<channel_name>    (DELETE)    removeSingle(String, String)
     //     Remove Property                        .../properties/<name>                            (DELETE)    remove(String)
     //     ------------------------------------------------------------------------------------------------
@@ -86,20 +86,20 @@ class ChannelFinderPropertiesIT {
     //     properties p1 - p10, owner o1
     //     property   p1,       owner o2
 
-    static XmlProperty property_p1_owner_o1;
-    static XmlProperty property_p2_owner_o1;
-    static XmlProperty property_p3_owner_o1;
-    static XmlProperty property_p4_owner_o1;
-    static XmlProperty property_p5_owner_o1;
-    static XmlProperty property_p6_owner_o1;
-    static XmlProperty property_p7_owner_o1;
-    static XmlProperty property_p8_owner_o1;
-    static XmlProperty property_p9_owner_o1;
-    static XmlProperty property_p10_owner_o1;
+    static Property property_p1_owner_o1;
+    static Property property_p2_owner_o1;
+    static Property property_p3_owner_o1;
+    static Property property_p4_owner_o1;
+    static Property property_p5_owner_o1;
+    static Property property_p6_owner_o1;
+    static Property property_p7_owner_o1;
+    static Property property_p8_owner_o1;
+    static Property property_p9_owner_o1;
+    static Property property_p10_owner_o1;
 
-    static XmlProperty property_p1_owner_o2;
-    static XmlProperty property_p2_owner_o2;
-    static XmlProperty property_p3_owner_o2;
+    static Property property_p1_owner_o2;
+    static Property property_p2_owner_o2;
+    static Property property_p3_owner_o2;
 
 	@Container
     public static final DockerComposeContainer<?> ENVIRONMENT =
@@ -108,20 +108,20 @@ class ChannelFinderPropertiesIT {
 
     @BeforeAll
     public static void setupObjects() {
-        property_p1_owner_o1 = new XmlProperty("p1", "o1", null);
-        property_p2_owner_o1 = new XmlProperty("p2", "o1", null);
-        property_p3_owner_o1 = new XmlProperty("p3", "o1", null);
-        property_p4_owner_o1 = new XmlProperty("p4", "o1", null);
-        property_p5_owner_o1 = new XmlProperty("p5", "o1", null);
-        property_p6_owner_o1 = new XmlProperty("p6", "o1", null);
-        property_p7_owner_o1 = new XmlProperty("p7", "o1", null);
-        property_p8_owner_o1 = new XmlProperty("p8", "o1", null);
-        property_p9_owner_o1 = new XmlProperty("p9", "o1", null);
-        property_p10_owner_o1 = new XmlProperty("p10", "o1", null);
+        property_p1_owner_o1 = new Property("p1", "o1", null);
+        property_p2_owner_o1 = new Property("p2", "o1", null);
+        property_p3_owner_o1 = new Property("p3", "o1", null);
+        property_p4_owner_o1 = new Property("p4", "o1", null);
+        property_p5_owner_o1 = new Property("p5", "o1", null);
+        property_p6_owner_o1 = new Property("p6", "o1", null);
+        property_p7_owner_o1 = new Property("p7", "o1", null);
+        property_p8_owner_o1 = new Property("p8", "o1", null);
+        property_p9_owner_o1 = new Property("p9", "o1", null);
+        property_p10_owner_o1 = new Property("p10", "o1", null);
 
-        property_p1_owner_o2 = new XmlProperty("p1", "o2", null);
-        property_p2_owner_o2 = new XmlProperty("p2", "o2", null);
-        property_p3_owner_o2 = new XmlProperty("p3", "o2", null);
+        property_p1_owner_o2 = new Property("p1", "o2", null);
+        property_p2_owner_o2 = new Property("p2", "o2", null);
+        property_p3_owner_o2 = new Property("p3", "o2", null);
     }
 
     @AfterAll
@@ -312,7 +312,7 @@ class ChannelFinderPropertiesIT {
         //         Remove Property from Single Channel
         //         Remove Property
 
-        XmlProperty property_check = new XmlProperty();
+        Property property_check = new Property();
 
         try {
             ITUtilProperties.assertListProperties(0);
@@ -544,14 +544,14 @@ class ChannelFinderPropertiesIT {
         //     x   Remove Property from Single Channel
         //     x   Remove Property
 
-        XmlChannel channel_c1 = new XmlChannel("c1", "o1");
+        Channel channel_c1 = new Channel("c1", "o1");
 
-        XmlProperty property_p1_value    = new XmlProperty(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "asdf");
+        Property property_p1_value    = new Property(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "asdf");
 
-        XmlChannel channel_c1_properties = new XmlChannel("c1", "o1");
+        Channel channel_c1_properties = new Channel("c1", "o1");
         channel_c1_properties.addProperty(property_p1_value);
 
-        XmlProperty property_p1_channels = new XmlProperty(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner());
+        Property property_p1_channels = new Property(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner());
         property_p1_channels.getChannels().add(channel_c1_properties);
 
         try {
@@ -649,22 +649,22 @@ class ChannelFinderPropertiesIT {
         //         Remove Property from Single Channel
         //     x   Remove Property
 
-        XmlChannel channel_c1 = new XmlChannel("c1", "o1");
-        XmlChannel channel_c2 = new XmlChannel("c2", "o1");
-        XmlChannel channel_c3 = new XmlChannel("c3", "o1");
+        Channel channel_c1 = new Channel("c1", "o1");
+        Channel channel_c2 = new Channel("c2", "o1");
+        Channel channel_c3 = new Channel("c3", "o1");
 
-        XmlProperty property_p1_value1 = new XmlProperty(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "qwer");
-        XmlProperty property_p1_value2 = new XmlProperty(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "asdf");
-        XmlProperty property_p1_value3 = new XmlProperty(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "zxcv");
+        Property property_p1_value1 = new Property(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "qwer");
+        Property property_p1_value2 = new Property(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "asdf");
+        Property property_p1_value3 = new Property(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), "zxcv");
 
-        XmlChannel channel_c1_properties = new XmlChannel("c1", "o1");
-        XmlChannel channel_c2_properties = new XmlChannel("c2", "o1");
-        XmlChannel channel_c3_properties = new XmlChannel("c3", "o1");
+        Channel channel_c1_properties = new Channel("c1", "o1");
+        Channel channel_c2_properties = new Channel("c2", "o1");
+        Channel channel_c3_properties = new Channel("c3", "o1");
         channel_c1_properties.addProperty(property_p1_value1);
         channel_c2_properties.addProperty(property_p1_value2);
         channel_c3_properties.addProperty(property_p1_value3);
 
-        XmlProperty property_p1_channels = new XmlProperty(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), null);
+        Property property_p1_channels = new Property(property_p1_owner_o1.getName(), property_p1_owner_o1.getOwner(), null);
         property_p1_channels.getChannels().add(channel_c1_properties);
         property_p1_channels.getChannels().add(channel_c2_properties);
         property_p1_channels.getChannels().add(channel_c3_properties);
@@ -855,7 +855,7 @@ class ChannelFinderPropertiesIT {
         //         Remove Property from Single Channel
         //     x   Remove Property
 
-        XmlProperty[] properties_10 = new XmlProperty[] {
+        Property[] properties_10 = new Property[] {
                 property_p1_owner_o1,
                 property_p2_owner_o1,
                 property_p3_owner_o1,
@@ -941,7 +941,7 @@ class ChannelFinderPropertiesIT {
         //         Remove Property from Single Channel
         //     x   Remove Property
 
-        XmlProperty[] properties_10 = new XmlProperty[] {
+        Property[] properties_10 = new Property[] {
                 property_p1_owner_o1,
                 property_p2_owner_o1,
                 property_p3_owner_o1,

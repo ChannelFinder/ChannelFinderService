@@ -1,33 +1,36 @@
 package org.phoebus.channelfinder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.SearchResult;
+import org.phoebus.channelfinder.entity.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.server.ResponseStatusException;
-
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelRepository.class)
+@TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelRepositoryIT {
 
     @Autowired
@@ -47,10 +50,10 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void indexXmlChannel() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         cleanupTestChannels = Arrays.asList(testChannel);
         
-        XmlChannel createdChannel = channelRepository.index(testChannel);
+        Channel createdChannel = channelRepository.index(testChannel);
         // verify the channel was created as expected
         assertEquals("Failed to create the channel", testChannel, createdChannel);
     }
@@ -60,12 +63,12 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void indexXmlChannels() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
-        List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
+        Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
+        List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
         cleanupTestChannels = testChannels;
 
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
         // verify the channels were created as expected
         assertTrue("Failed to create the channels", Iterables.elementsEqual(testChannels, createdChannels));
     }
@@ -75,25 +78,25 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void saveXmlChannel() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner");
-        XmlChannel updateTestChannel =
-                new XmlChannel("testChannel","updateTestOwner", testProperties.subList(0,1), testTags.subList(0,1));
-        XmlChannel updateTestChannel1 =
-                new XmlChannel("testChannel","updateTestOwner", testProperties.subList(1,2), testTags.subList(1,2));
-        XmlChannel updateTestChannel2 =
-                new XmlChannel("updateTestChannel1","updateTestOwner1",testUpdatedProperties, testUpdatedTags);
-        XmlChannel createdChannel = channelRepository.index(testChannel);
+        Channel testChannel = new Channel("testChannel","testOwner");
+        Channel updateTestChannel =
+                new Channel("testChannel","updateTestOwner", testProperties.subList(0,1), testTags.subList(0,1));
+        Channel updateTestChannel1 =
+                new Channel("testChannel","updateTestOwner", testProperties.subList(1,2), testTags.subList(1,2));
+        Channel updateTestChannel2 =
+                new Channel("updateTestChannel1","updateTestOwner1",testUpdatedProperties, testUpdatedTags);
+        Channel createdChannel = channelRepository.index(testChannel);
         cleanupTestChannels = Arrays.asList(testChannel, updateTestChannel, updateTestChannel1, updateTestChannel2);
 
         // Update Channel with new owner a new property and a new tag
-        XmlChannel updatedTestChannel = channelRepository.save(updateTestChannel);
+        Channel updatedTestChannel = channelRepository.save(updateTestChannel);
         // verify that the channel was updated as expected
         assertEquals("Failed to update the channel with the same name", updateTestChannel, updatedTestChannel);
 
         // Update Channel with a second property and tag
-        XmlChannel updatedTestChannel1 = channelRepository.save(updateTestChannel1);
+        Channel updatedTestChannel1 = channelRepository.save(updateTestChannel1);
         // verify that the channel was updated with the new tags and properties while preserving the old ones
-        XmlChannel expectedChannel = new XmlChannel("testChannel","updateTestOwner");
+        Channel expectedChannel = new Channel("testChannel","updateTestOwner");
         expectedChannel.addProperties(testProperties);
         expectedChannel.addTags(testTags);
         assertEquals("Failed to update the channel with the same name", updateTestChannel, updatedTestChannel);
@@ -105,20 +108,20 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void saveXmlChannels() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner", testProperties, testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1", "testOwner1", testProperties, testTags);
-        XmlChannel updateTestChannel = new XmlChannel("testChannel", "updateTestOwner", testUpdatedProperties, testUpdatedTags);
-        XmlChannel updateTestChannel1 = new XmlChannel("testChannel1", "updateTestOwner1", testUpdatedProperties, testUpdatedTags);
-        List<XmlChannel> testChannels = Arrays.asList(testChannel,testChannel1);
-        List<XmlChannel> updateTestChannels = Arrays.asList(updateTestChannel,updateTestChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        Channel testChannel = new Channel("testChannel","testOwner", testProperties, testTags);
+        Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
+        Channel updateTestChannel = new Channel("testChannel", "updateTestOwner", testUpdatedProperties, testUpdatedTags);
+        Channel updateTestChannel1 = new Channel("testChannel1", "updateTestOwner1", testUpdatedProperties, testUpdatedTags);
+        List<Channel> testChannels = Arrays.asList(testChannel,testChannel1);
+        List<Channel> updateTestChannels = Arrays.asList(updateTestChannel,updateTestChannel1);
+        Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1,updateTestChannel,updateTestChannel1);
 
-        Iterable<XmlChannel> updatedTestChannels = channelRepository.saveAll(updateTestChannels);
+        Iterable<Channel> updatedTestChannels = channelRepository.saveAll(updateTestChannels);
         // verify the channels were updated as expected
-        List<XmlChannel> expectedChannels = Arrays.asList(
-                new XmlChannel("testChannel","updateTestOwner", testUpdatedProperties, testUpdatedTags),
-                new XmlChannel("testChannel1","updateTestOwner1", testUpdatedProperties, testUpdatedTags)
+        List<Channel> expectedChannels = Arrays.asList(
+                new Channel("testChannel","updateTestOwner", testUpdatedProperties, testUpdatedTags),
+                new Channel("testChannel1","updateTestOwner1", testUpdatedProperties, testUpdatedTags)
         );
         assertEquals("Failed to update the channels: ",expectedChannels, updatedTestChannels);
     }
@@ -128,16 +131,16 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void findXmlChannel() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         cleanupTestChannels = Arrays.asList(testChannel);
 
-        Optional<XmlChannel> notFoundChannel = channelRepository.findById(testChannel.getName());
+        Optional<Channel> notFoundChannel = channelRepository.findById(testChannel.getName());
         // verify the channel was not found as expected
         assertNotEquals("Found the channel",testChannel,notFoundChannel);
 
-        XmlChannel createdChannel = channelRepository.index(testChannel);
+        Channel createdChannel = channelRepository.index(testChannel);
 
-        Optional<XmlChannel> foundChannel = channelRepository.findById(createdChannel.getName());
+        Optional<Channel> foundChannel = channelRepository.findById(createdChannel.getName());
         // verify the channel was found as expected
         if(foundChannel.isPresent()) {
             assertEquals("Failed to find the channel", createdChannel, foundChannel.get());
@@ -151,10 +154,10 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void testChannelExists() {
-        Iterable<XmlTag> createdTags = tagRepository.indexAll(testTags);
-        Iterable<XmlProperty> createdProperties = propertyRepository.indexAll(testProperties);
-        XmlChannel testChannel = new XmlChannel("testChannel", "testOwner", testProperties, testTags);
-        XmlChannel createdChannel = channelRepository.index(testChannel);
+        Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
+        Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
+        Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
+        Channel createdChannel = channelRepository.index(testChannel);
         cleanupTestChannels = Arrays.asList(testChannel);
 
         // verify the channel exists as expected
@@ -168,10 +171,10 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void testChannelsExist() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
-        List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
+        Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
+        List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
+        Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         // verify the channels exist as expected
@@ -181,38 +184,16 @@ public class ChannelRepositoryIT {
     }
 
     /**
-     * find all channels
-     */
-    @Test
-    public void findAllXmlChannels() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
-        List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
-        Set<XmlChannel> createdChannels = Sets.newHashSet(channelRepository.indexAll(testChannels));
-        cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
-
-        try {
-            //Thread.sleep(2000);
-            Set<XmlChannel> listedChannels = Sets.newHashSet(channelRepository.findAll());
-            // verify the channel was created as expected
-            //assertEquals("Failed to list all created channel", createdChannels, listedChannels);
-            assertTrue("Failed to list all created channel", listedChannels.containsAll(createdChannels));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } 
-    }
-
-    /**
      * find multiple channels
      */
     @Test
     public void findXmlChannels() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
-        List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
+        Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
+        List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
         List<String> channelNames = Arrays.asList(testChannel.getName(),testChannel1.getName());
-        Iterable<XmlChannel> notFoundChannels= null;
-        Iterable<XmlChannel> foundChannels = null;
+        Iterable<Channel> notFoundChannels= null;
+        Iterable<Channel> foundChannels = null;
 
         try { 
             notFoundChannels = channelRepository.findAllById(channelNames);
@@ -222,7 +203,7 @@ public class ChannelRepositoryIT {
             assertNotEquals("Found the channels",testChannels,notFoundChannels);           
         }
 
-        Iterable<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
+        Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         try {
@@ -239,33 +220,33 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void findChannels() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
-        List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
-        ChannelRepository.ResponseSearch foundChannelsResponse = null;
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
+        Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
+        List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
+        SearchResult foundChannelsResponse = null;
 
-        List<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
-        ChannelRepository.ResponseSearch createdResponseSearch = new ChannelRepository.ResponseSearch(createdChannels, 2);
+        List<Channel> createdChannels = channelRepository.indexAll(testChannels);
+        SearchResult createdSearchResult = new SearchResult(createdChannels, 2);
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         try {
             MultiValueMap searchParameters = new LinkedMultiValueMap();
             searchParameters.set(testProperties.get(0).getName().toLowerCase(), "*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on property name search (all lower case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on property name search (all lower case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set(testProperties.get(0).getName().toUpperCase(), "*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on property name search (all upper case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on property name search (all upper case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.clear();
             searchParameters.set("~tag", testTags.get(0).getName().toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on tags name search (all lower case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on tags name search (all lower case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set("~tag", testTags.get(0).getName().toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on tags name search (all upper case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on tags name search (all upper case)", createdSearchResult, foundChannelsResponse);
 
         } catch (ResponseStatusException e) {
         }
@@ -276,13 +257,13 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void findChannelByCaseInsensitiveSearch() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel testChannel1 = new XmlChannel("testChannel1","testOwner1",testProperties,testTags);
-        List<XmlChannel> testChannels = Arrays.asList(testChannel, testChannel1);
-        ChannelRepository.ResponseSearch foundChannelsResponse = null;
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
+        Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
+        List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
+        SearchResult foundChannelsResponse = null;
 
-        List<XmlChannel> createdChannels = channelRepository.indexAll(testChannels);
-        ChannelRepository.ResponseSearch createdResponseSearch = new ChannelRepository.ResponseSearch(createdChannels, 2);
+        List<Channel> createdChannels = channelRepository.indexAll(testChannels);
+        SearchResult createdSearchResult = new SearchResult(createdChannels, 2);
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         try {
@@ -291,29 +272,29 @@ public class ChannelRepositoryIT {
             // Search for a single channel
             searchParameters.set("~name", "testChannel");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (exact)", new ChannelRepository.ResponseSearch(List.of(testChannel), 1), foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (exact)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel".toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all lower case)", new ChannelRepository.ResponseSearch(List.of(testChannel), 1), foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all lower case)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel".toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all upper case)", new ChannelRepository.ResponseSearch(List.of(testChannel), 1), foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all upper case)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
 
             // Search for multiple channels using case insensitive name searches
             searchParameters.clear();
             searchParameters.set("~name", "testChannel*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (exact)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (exact)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel*".toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all lower case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all lower case)", createdSearchResult, foundChannelsResponse);
 
             searchParameters.set("~name", "testChannel*".toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all upper case)", createdResponseSearch, foundChannelsResponse);
+            assertEquals("Failed to find the based on channel name search (all upper case)", createdSearchResult, foundChannelsResponse);
 
 
         } catch (ResponseStatusException e) {
@@ -324,8 +305,8 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void deleteXmlTag() {
-        XmlChannel testChannel = new XmlChannel("testChannel","testOwner",testProperties,testTags);
-        XmlChannel createdChannel = channelRepository.index(testChannel);
+        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
+        Channel createdChannel = channelRepository.index(testChannel);
         cleanupTestChannels = Arrays.asList(testChannel);
 
         channelRepository.deleteById(createdChannel.getName());
@@ -340,22 +321,22 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void updateChannelWithTagsAndProperties() {
-        XmlChannel testChannel = new XmlChannel();
+        Channel testChannel = new Channel();
         testChannel.setName("test-channel1");
         testChannel.setOwner("test-owner");
         cleanupTestChannels = Arrays.asList(testChannel);
 
-        List<XmlProperty> props = createTestProperties(2);
+        List<Property> props = createTestProperties(2);
         try {
             testChannel.addProperty(testProperties.get(0));
             testChannel.addTag(testTags.get(0));
-            XmlChannel createdChannel = channelRepository.index(testChannel);
+            Channel createdChannel = channelRepository.index(testChannel);
             // verify the tag was created as expected
             assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
             // update the channel with new tags and properties
             testChannel.setTags(testTags);
             testChannel.setProperties(testProperties);
-            XmlChannel updatedChannel = channelRepository.save(testChannel);
+            Channel updatedChannel = channelRepository.save(testChannel);
             assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, updatedChannel);
             assertTrue("Failed updated the channel with new tags", testChannel.getTags().containsAll(testTags));
             assertTrue("Failed updated the channel with new properties", testChannel.getProperties().containsAll(testProperties));
@@ -363,7 +344,7 @@ public class ChannelRepositoryIT {
             testProperties.get(0).setValue("new-value0");
             testProperties.get(1).setValue("new-value1");
             testChannel.setProperties(testProperties);
-            XmlChannel updatedValueChannel = channelRepository.save(testChannel);
+            Channel updatedValueChannel = channelRepository.save(testChannel);
             assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, updatedValueChannel);
             assertTrue("Failed updated the channel with new tags", testChannel.getTags().containsAll(testTags));
             assertTrue("Failed updated the channel with new properties", testChannel.getProperties().containsAll(testProperties));
@@ -379,30 +360,30 @@ public class ChannelRepositoryIT {
      */
     @Test
     public void updateChannelWithPartialObjects() {
-        XmlChannel testChannel = new XmlChannel();
+        Channel testChannel = new Channel();
         testChannel.setName("testChannel");
         testChannel.setOwner("testOwner");
         cleanupTestChannels = Arrays.asList(testChannel);
         
-        List<XmlProperty> props = createTestProperties(2);
+        List<Property> props = createTestProperties(2);
         try {
             testChannel.addTag(testTags.get(0));
             testChannel.addProperty(testProperties.get(4));
-            XmlChannel createdChannel = channelRepository.index(testChannel);
+            Channel createdChannel = channelRepository.index(testChannel);
             // verify the tag was created as expected
             assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
             // update the channel with new tags and properties provided via partial object
 
-            XmlChannel updateTestChannel = new XmlChannel();
+            Channel updateTestChannel = new Channel();
             updateTestChannel.setName("test-update-channel1");
             updateTestChannel.setOwner("test-owner");
             updateTestChannel.addTag(testTags.get(1));
             updateTestChannel.addProperty(testProperties.get(1));
             cleanupTestChannels.add(updateTestChannel);
 
-            XmlChannel updatedChannel = channelRepository.save(updateTestChannel);
+            Channel updatedChannel = channelRepository.save(updateTestChannel);
 
-            XmlChannel expectedTestChannel = new XmlChannel();
+            Channel expectedTestChannel = new Channel();
             expectedTestChannel.setName("test-update-channel1");
             expectedTestChannel.setOwner("test-owner");
             expectedTestChannel.addTag(testTags.get(0));
@@ -422,10 +403,10 @@ public class ChannelRepositoryIT {
      * A utility class which will create the requested number of test properties named 'test-property#' 
      * @return list of created properties
      */
-    private List<XmlProperty> createTestProperties(int count){
-        List<XmlProperty> testProperties = new ArrayList<XmlProperty>();
+    private List<Property> createTestProperties(int count){
+        List<Property> testProperties = new ArrayList<Property>();
         for (int i = 0; i < count; i++) {
-            XmlProperty testProperty = new XmlProperty();
+            Property testProperty = new Property();
             testProperty.setName("test-property"+i);
             testProperty.setOwner("test-owner");
             testProperty.setValue("test-property"+i+"-value");
@@ -444,10 +425,10 @@ public class ChannelRepositoryIT {
      * A utility class which will create the requested number of test tags named 'test-tag#' 
      * @return list of created tags
      */
-    private List<XmlTag> createTestTags(int count){
-        List<XmlTag> testTags = new ArrayList<XmlTag>();
+    private List<Tag> createTestTags(int count){
+        List<Tag> testTags = new ArrayList<Tag>();
         for (int i = 0; i < count; i++) {
-            XmlTag testTag = new XmlTag();
+            Tag testTag = new Tag();
             testTag.setName("test-tag"+i);
             testTag.setOwner("test-owner");
             testTags.add(testTag);
@@ -464,23 +445,23 @@ public class ChannelRepositoryIT {
     // Helper operations to create and clean up the resources needed for successful
     // testing of the channelRepository operations
 
-    private final List<XmlTag> testTags = Arrays.asList(
-            new XmlTag("testTag","testOwner"),
-            new XmlTag("testTag1","testOwner1"));
+    private final List<Tag> testTags = Arrays.asList(
+            new Tag("testTag","testOwner"),
+            new Tag("testTag1","testOwner1"));
 
-    private final List<XmlTag> testUpdatedTags = Arrays.asList(
-            new XmlTag("testTag","updateTestOwner"),
-            new XmlTag("testTag1","updateTestOwner1"));
+    private final List<Tag> testUpdatedTags = Arrays.asList(
+            new Tag("testTag","updateTestOwner"),
+            new Tag("testTag1","updateTestOwner1"));
     
-    private final List<XmlProperty> testProperties = Arrays.asList(
-            new XmlProperty("testProperty","testOwner","value"),
-            new XmlProperty("testProperty1","testOwner1","value"));
+    private final List<Property> testProperties = Arrays.asList(
+            new Property("testProperty","testOwner","value"),
+            new Property("testProperty1","testOwner1","value"));
 
-    private final List<XmlProperty> testUpdatedProperties = Arrays.asList(
-            new XmlProperty("testProperty","updateTestOwner","updatedValue"),
-            new XmlProperty("testProperty1","updateTestOwner1","updatedValue"));
+    private final List<Property> testUpdatedProperties = Arrays.asList(
+            new Property("testProperty","updateTestOwner","updatedValue"),
+            new Property("testProperty1","updateTestOwner1","updatedValue"));
 
-    private List<XmlChannel> cleanupTestChannels = Collections.emptyList();
+    private List<Channel> cleanupTestChannels = Collections.emptyList();
 
     @Before
     public void setup() {

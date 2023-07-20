@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.entity;
 /**
  * #%L
  * ChannelFinder Directory Service
@@ -24,38 +24,38 @@ import java.util.List;
  */
 @XmlRootElement(name="property")
 @XmlType (propOrder={"name","owner","value","channels"})
-public class XmlProperty {
+public class Property {
     private String name;
     private String owner;
     private String value;
-    private List<XmlChannel> channels = new ArrayList<>();
+    private List<Channel> channels = new ArrayList<>();
 
     /**
-     * Creates a new instance of XmlProperty.
+     * Creates a new instance of Property.
      *
      */
-    public XmlProperty() {
+    public Property() {
     }
 
     /**
-     * Creates a new instance of XmlProperty.
+     * Creates a new instance of Property.
      *
      * @param name property name
      * @param owner property owner
      */
-    public XmlProperty(String name, String owner) {
+    public Property(String name, String owner) {
         this.owner = owner;
         this.name = name;
     }
 
     /**
-     * Creates a new instance of XmlProperty.
+     * Creates a new instance of Property.
      *
      * @param name property name
      * @param owner property owner
      * @param value property value
      */
-    public XmlProperty(String name, String owner, String value) {
+    public Property(String name, String owner, String value) {
         this.value = value;
         this.owner = owner;
         this.name = name;
@@ -119,7 +119,7 @@ public class XmlProperty {
      * Get the list of channels associated with this property
      * @return {@link List} of channels
      */
-    public List<XmlChannel> getChannels() {
+    public List<Channel> getChannels() {
         return channels;
     }
 
@@ -128,7 +128,7 @@ public class XmlProperty {
      * 
      * @param channels - list of channels
      */
-    public void setChannels(List<XmlChannel> channels) {
+    public void setChannels(List<Channel> channels) {
         this.channels = channels;
     }
 
@@ -165,7 +165,7 @@ public class XmlProperty {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        XmlProperty other = (XmlProperty) obj;
+        Property other = (Property) obj;
         if (channels == null) {
             if (other.channels != null)
                 return false;
@@ -196,9 +196,9 @@ public class XmlProperty {
      * @author Kunal Shroff
      *
      */
-    abstract class OnlyXmlProperty {
+    public abstract class OnlyProperty {
         @JsonIgnore
-        private List<XmlChannel> channels;
+        private List<Channel> channels;
     }
 
     /**
@@ -208,10 +208,10 @@ public class XmlProperty {
      * @author Kunal Shroff
      *
      */
-    abstract class OnlyNameOwnerXmlProperty {
+    public abstract class OnlyNameOwnerProperty {
         @JsonIgnore
         private String value;
         @JsonIgnore
-        private List<XmlChannel> channels;
+        private List<Channel> channels;
     }
 }

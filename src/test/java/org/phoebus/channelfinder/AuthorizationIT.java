@@ -4,20 +4,26 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(AuthorizationService.class)
+@TestPropertySource(value = "classpath:application_test.properties")
 public class AuthorizationIT { 
     @Autowired AuthorizationService authorizationService;
     
-    XmlTag testTag = new XmlTag("testTag","valid");
-    XmlProperty testProperty = new XmlProperty("testProperty","valid");
-    XmlChannel testChannel = new XmlChannel("testChannel","valid");  
+    Tag testTag = new Tag("testTag","valid");
+    Property testProperty = new Property("testProperty","valid");
+    Channel testChannel = new Channel("testChannel","valid");
     
     /**
      * 

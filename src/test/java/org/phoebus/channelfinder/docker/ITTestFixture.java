@@ -22,9 +22,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.HttpURLConnection;
 
-import org.phoebus.channelfinder.XmlChannel;
-import org.phoebus.channelfinder.XmlProperty;
-import org.phoebus.channelfinder.XmlTag;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
 
 /**
  * Purpose to provide test fixture that can be used in multiple test classes and tests.
@@ -83,30 +83,30 @@ public class ITTestFixture {
     //         ABC:DEF-XYZ:JKL:010
     //         ABC:DEF-XYZ:JKL:011
 
-    static XmlChannel channel_ghi001;
-    static XmlChannel channel_ghi002;
-    static XmlChannel channel_ghi003;
-    static XmlChannel channel_ghi010;
-    static XmlChannel channel_ghi011;
-    static XmlChannel channel_xyz001;
-    static XmlChannel channel_xyz002;
-    static XmlChannel channel_xyz003;
-    static XmlChannel channel_xyz010;
-    static XmlChannel channel_xyz011;
+    static Channel channel_ghi001;
+    static Channel channel_ghi002;
+    static Channel channel_ghi003;
+    static Channel channel_ghi010;
+    static Channel channel_ghi011;
+    static Channel channel_xyz001;
+    static Channel channel_xyz002;
+    static Channel channel_xyz003;
+    static Channel channel_xyz010;
+    static Channel channel_xyz011;
 
-    static XmlChannel channel_ghi001_properties_tags;
-    static XmlChannel channel_ghi002_properties_tags;
-    static XmlChannel channel_ghi003_properties_tags;
-    static XmlChannel channel_ghi010_properties_tags;
-    static XmlChannel channel_ghi011_properties_tags;
-    static XmlChannel channel_xyz001_properties_tags;
-    static XmlChannel channel_xyz002_properties_tags;
-    static XmlChannel channel_xyz003_properties_tags;
-    static XmlChannel channel_xyz010_properties_tags;
-    static XmlChannel channel_xyz011_properties_tags;
+    static Channel channel_ghi001_properties_tags;
+    static Channel channel_ghi002_properties_tags;
+    static Channel channel_ghi003_properties_tags;
+    static Channel channel_ghi010_properties_tags;
+    static Channel channel_ghi011_properties_tags;
+    static Channel channel_xyz001_properties_tags;
+    static Channel channel_xyz002_properties_tags;
+    static Channel channel_xyz003_properties_tags;
+    static Channel channel_xyz010_properties_tags;
+    static Channel channel_xyz011_properties_tags;
 
     // convenience
-    static XmlChannel[] channels_all_properties_tags;
+    static Channel[] channels_all_properties_tags;
 
     // test data
     //     properties, owner o1
@@ -115,15 +115,15 @@ public class ITTestFixture {
     //         type
     //         cell
 
-    static XmlProperty property_domain;
-    static XmlProperty property_element;
-    static XmlProperty property_type;
-    static XmlProperty property_cell;
+    static Property property_domain;
+    static Property property_element;
+    static Property property_type;
+    static Property property_cell;
 
-    static XmlProperty property_domain_channels;
-    static XmlProperty property_element_channels;
-    static XmlProperty property_type_channels;
-    static XmlProperty property_cell_channels;
+    static Property property_domain_channels;
+    static Property property_element_channels;
+    static Property property_type_channels;
+    static Property property_cell_channels;
 
     // test data
     //     tags, owner o1
@@ -132,15 +132,15 @@ public class ITTestFixture {
     //         noteworthy
     //         not_used
 
-    static XmlTag tag_archived;
-    static XmlTag tag_handle_this;
-    static XmlTag tag_noteworthy;
-    static XmlTag tag_not_used;
+    static Tag tag_archived;
+    static Tag tag_handle_this;
+    static Tag tag_noteworthy;
+    static Tag tag_not_used;
 
-    static XmlTag tag_archived_channels;
-    static XmlTag tag_handle_this_channels;
-    static XmlTag tag_noteworthy_channels;
-    static XmlTag tag_not_used_channels;
+    static Tag tag_archived_channels;
+    static Tag tag_handle_this_channels;
+    static Tag tag_noteworthy_channels;
+    static Tag tag_not_used_channels;
 
     /**
      * This class is not to be instantiated.
@@ -188,64 +188,64 @@ public class ITTestFixture {
      * Set up test fixture, properties.
      */
     private static void setupProperties() {
-        property_domain  = new XmlProperty("domain",  "o1");
-        property_element = new XmlProperty("element", "o1");
-        property_type    = new XmlProperty("type",    "o1");
-        property_cell    = new XmlProperty("cell",    "o1");
+        property_domain  = new Property("domain",  "o1");
+        property_element = new Property("element", "o1");
+        property_type    = new Property("type",    "o1");
+        property_cell    = new Property("cell",    "o1");
 
-        property_domain_channels  = new XmlProperty("domain",  "o1");
-        property_element_channels = new XmlProperty("element", "o1");
-        property_type_channels    = new XmlProperty("type",    "o1");
-        property_cell_channels    = new XmlProperty("cell",    "o1");
+        property_domain_channels  = new Property("domain",  "o1");
+        property_element_channels = new Property("element", "o1");
+        property_type_channels    = new Property("type",    "o1");
+        property_cell_channels    = new Property("cell",    "o1");
     }
 
     /**
      * Set up test fixture, tags.
      */
     private static void setupTags() {
-        tag_archived    = new XmlTag("archived",    "o1");
-        tag_handle_this = new XmlTag("handle_this", "o1");
-        tag_noteworthy  = new XmlTag("noteworthy",  "o1");
-        tag_not_used    = new XmlTag("not_used",    "o1");
+        tag_archived    = new Tag("archived",    "o1");
+        tag_handle_this = new Tag("handle_this", "o1");
+        tag_noteworthy  = new Tag("noteworthy",  "o1");
+        tag_not_used    = new Tag("not_used",    "o1");
 
-        tag_archived_channels    = new XmlTag("archived",    "o1");
-        tag_handle_this_channels = new XmlTag("handle_this", "o1");
-        tag_noteworthy_channels  = new XmlTag("noteworthy",  "o1");
-        tag_not_used_channels    = new XmlTag("not_used",    "o1");
+        tag_archived_channels    = new Tag("archived",    "o1");
+        tag_handle_this_channels = new Tag("handle_this", "o1");
+        tag_noteworthy_channels  = new Tag("noteworthy",  "o1");
+        tag_not_used_channels    = new Tag("not_used",    "o1");
     }
 
     /**
      * Set up test fixture, channels.
      */
     private static void setupChannels() {
-        channel_ghi001 = new XmlChannel("ABC:DEF-GHI:JKL:001", "o1");
-        channel_ghi002 = new XmlChannel("ABC:DEF-GHI:JKL:002", "o1");
-        channel_ghi003 = new XmlChannel("ABC:DEF-GHI:JKL:003", "o1");
-        channel_ghi010 = new XmlChannel("ABC:DEF-GHI:JKL:010", "o1");
-        channel_ghi011 = new XmlChannel("ABC:DEF-GHI:JKL:011", "o1");
-        channel_xyz001 = new XmlChannel("ABC:DEF-XYZ:JKL:001", "o1");
-        channel_xyz002 = new XmlChannel("ABC:DEF-XYZ:JKL:002", "o1");
-        channel_xyz003 = new XmlChannel("ABC:DEF-XYZ:JKL:003", "o1");
-        channel_xyz010 = new XmlChannel("ABC:DEF-XYZ:JKL:010", "o1");
-        channel_xyz011 = new XmlChannel("ABC:DEF-XYZ:JKL:011", "o1");
+        channel_ghi001 = new Channel("ABC:DEF-GHI:JKL:001", "o1");
+        channel_ghi002 = new Channel("ABC:DEF-GHI:JKL:002", "o1");
+        channel_ghi003 = new Channel("ABC:DEF-GHI:JKL:003", "o1");
+        channel_ghi010 = new Channel("ABC:DEF-GHI:JKL:010", "o1");
+        channel_ghi011 = new Channel("ABC:DEF-GHI:JKL:011", "o1");
+        channel_xyz001 = new Channel("ABC:DEF-XYZ:JKL:001", "o1");
+        channel_xyz002 = new Channel("ABC:DEF-XYZ:JKL:002", "o1");
+        channel_xyz003 = new Channel("ABC:DEF-XYZ:JKL:003", "o1");
+        channel_xyz010 = new Channel("ABC:DEF-XYZ:JKL:010", "o1");
+        channel_xyz011 = new Channel("ABC:DEF-XYZ:JKL:011", "o1");
 
-        channel_ghi001_properties_tags = new XmlChannel("ABC:DEF-GHI:JKL:001", "o1");
-        channel_ghi002_properties_tags = new XmlChannel("ABC:DEF-GHI:JKL:002", "o1");
-        channel_ghi003_properties_tags = new XmlChannel("ABC:DEF-GHI:JKL:003", "o1");
-        channel_ghi010_properties_tags = new XmlChannel("ABC:DEF-GHI:JKL:010", "o1");
-        channel_ghi011_properties_tags = new XmlChannel("ABC:DEF-GHI:JKL:011", "o1");
-        channel_xyz001_properties_tags = new XmlChannel("ABC:DEF-XYZ:JKL:001", "o1");
-        channel_xyz002_properties_tags = new XmlChannel("ABC:DEF-XYZ:JKL:002", "o1");
-        channel_xyz003_properties_tags = new XmlChannel("ABC:DEF-XYZ:JKL:003", "o1");
-        channel_xyz010_properties_tags = new XmlChannel("ABC:DEF-XYZ:JKL:010", "o1");
-        channel_xyz011_properties_tags = new XmlChannel("ABC:DEF-XYZ:JKL:011", "o1");
+        channel_ghi001_properties_tags = new Channel("ABC:DEF-GHI:JKL:001", "o1");
+        channel_ghi002_properties_tags = new Channel("ABC:DEF-GHI:JKL:002", "o1");
+        channel_ghi003_properties_tags = new Channel("ABC:DEF-GHI:JKL:003", "o1");
+        channel_ghi010_properties_tags = new Channel("ABC:DEF-GHI:JKL:010", "o1");
+        channel_ghi011_properties_tags = new Channel("ABC:DEF-GHI:JKL:011", "o1");
+        channel_xyz001_properties_tags = new Channel("ABC:DEF-XYZ:JKL:001", "o1");
+        channel_xyz002_properties_tags = new Channel("ABC:DEF-XYZ:JKL:002", "o1");
+        channel_xyz003_properties_tags = new Channel("ABC:DEF-XYZ:JKL:003", "o1");
+        channel_xyz010_properties_tags = new Channel("ABC:DEF-XYZ:JKL:010", "o1");
+        channel_xyz011_properties_tags = new Channel("ABC:DEF-XYZ:JKL:011", "o1");
     }
 
     /**
      * Create test fixture, properties.
      */
     private static void createProperties() {
-        XmlProperty[] properties_4 = new XmlProperty[] {
+        Property[] properties_4 = new Property[] {
                 property_domain,
                 property_element,
                 property_type,
@@ -295,7 +295,7 @@ public class ITTestFixture {
      * Create test fixture, tags.
      */
     private static void createTags() {
-        XmlTag[] tags_4 = new XmlTag[] {
+        Tag[] tags_4 = new Tag[] {
                 tag_archived,
                 tag_handle_this,
                 tag_noteworthy,
@@ -345,7 +345,7 @@ public class ITTestFixture {
      * Create test fixture, channels.
      */
     private static void createChannels() {
-        XmlChannel[] channels_10 = new XmlChannel[] {
+        Channel[] channels_10 = new Channel[] {
                 channel_ghi001,
                 channel_ghi002,
                 channel_ghi003,
@@ -413,8 +413,8 @@ public class ITTestFixture {
             // add property (domain) to multiple channels
             // --------------------------------------------------------------------------------
 
-            XmlProperty property_domain_cryo     = new XmlProperty(property_domain.getName(), property_domain.getOwner(), "cryo");
-            XmlProperty property_domain_power    = new XmlProperty(property_domain.getName(), property_domain.getOwner(), "power");
+            Property property_domain_cryo     = new Property(property_domain.getName(), property_domain.getOwner(), "cryo");
+            Property property_domain_power    = new Property(property_domain.getName(), property_domain.getOwner(), "power");
 
             channel_ghi001_properties_tags.addProperty(property_domain_cryo);
             channel_ghi002_properties_tags.addProperty(property_domain_cryo);
@@ -453,11 +453,11 @@ public class ITTestFixture {
             // add property (element) to multiple channels
             // --------------------------------------------------------------------------------
 
-            XmlProperty property_element_source   = new XmlProperty(property_element.getName(), property_element.getOwner(), "source");
-            XmlProperty property_element_initial  = new XmlProperty(property_element.getName(), property_element.getOwner(), "initial");
-            XmlProperty property_element_radio    = new XmlProperty(property_element.getName(), property_element.getOwner(), "radio");
-            XmlProperty property_element_magnet   = new XmlProperty(property_element.getName(), property_element.getOwner(), "magnet");
-            XmlProperty property_element_supra    = new XmlProperty(property_element.getName(), property_element.getOwner(), "supra");
+            Property property_element_source   = new Property(property_element.getName(), property_element.getOwner(), "source");
+            Property property_element_initial  = new Property(property_element.getName(), property_element.getOwner(), "initial");
+            Property property_element_radio    = new Property(property_element.getName(), property_element.getOwner(), "radio");
+            Property property_element_magnet   = new Property(property_element.getName(), property_element.getOwner(), "magnet");
+            Property property_element_supra    = new Property(property_element.getName(), property_element.getOwner(), "supra");
 
             channel_ghi001_properties_tags.addProperty(property_element_source);
             channel_ghi002_properties_tags.addProperty(property_element_initial);
@@ -496,9 +496,9 @@ public class ITTestFixture {
             // add property (type) to multiple channels
             // --------------------------------------------------------------------------------
 
-            XmlProperty property_type_read      = new XmlProperty(property_type.getName(), property_type.getOwner(), "read");
-            XmlProperty property_type_write     = new XmlProperty(property_type.getName(), property_type.getOwner(), "write");
-            XmlProperty property_type_readwrite = new XmlProperty(property_type.getName(), property_type.getOwner(), "readwrite");
+            Property property_type_read      = new Property(property_type.getName(), property_type.getOwner(), "read");
+            Property property_type_write     = new Property(property_type.getName(), property_type.getOwner(), "write");
+            Property property_type_readwrite = new Property(property_type.getName(), property_type.getOwner(), "readwrite");
 
             channel_ghi001_properties_tags.addProperty(property_type_read);
             channel_ghi002_properties_tags.addProperty(property_type_read);
@@ -537,11 +537,11 @@ public class ITTestFixture {
             // add property (cell) to multiple channels
             // --------------------------------------------------------------------------------
 
-            XmlProperty property_cell_block1   = new XmlProperty(property_cell.getName(), property_cell.getOwner(), "block1");
-            XmlProperty property_cell_block2   = new XmlProperty(property_cell.getName(), property_cell.getOwner(), "block2");
-            XmlProperty property_cell_block3   = new XmlProperty(property_cell.getName(), property_cell.getOwner(), "block3");
-            XmlProperty property_cell_block4   = new XmlProperty(property_cell.getName(), property_cell.getOwner(), "block4");
-            XmlProperty property_cell_block5   = new XmlProperty(property_cell.getName(), property_cell.getOwner(), "block5");
+            Property property_cell_block1   = new Property(property_cell.getName(), property_cell.getOwner(), "block1");
+            Property property_cell_block2   = new Property(property_cell.getName(), property_cell.getOwner(), "block2");
+            Property property_cell_block3   = new Property(property_cell.getName(), property_cell.getOwner(), "block3");
+            Property property_cell_block4   = new Property(property_cell.getName(), property_cell.getOwner(), "block4");
+            Property property_cell_block5   = new Property(property_cell.getName(), property_cell.getOwner(), "block5");
 
             channel_ghi001_properties_tags.addProperty(property_cell_block1);
             channel_ghi002_properties_tags.addProperty(property_cell_block2);

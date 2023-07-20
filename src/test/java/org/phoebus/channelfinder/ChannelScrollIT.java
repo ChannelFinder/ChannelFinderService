@@ -4,9 +4,13 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -21,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(ChannelScroll.class)
+@TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelScrollIT {
     
     @Autowired
@@ -68,8 +73,8 @@ public class ChannelScrollIT {
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         // Search for a single unique channel
         searchParameters.add("~name", channelNames.get(0));
-        XmlScroll scrollResult = channelScroll.search(null,searchParameters);
-        List<XmlChannel> result = scrollResult.getChannels();
+        Scroll scrollResult = channelScroll.search(null,searchParameters);
+        List<Channel> result = scrollResult.getChannels();
         while(scrollResult.getChannels().size()==100) {
             scrollResult = channelScroll.search(scrollResult.getId(), searchParameters);
             result.addAll(scrollResult.getChannels());

@@ -29,8 +29,8 @@ import org.epics.pvdata.pv.PVString;
 import org.epics.pvdata.pv.PVStringArray;
 import org.epics.pvdata.pv.PVStructure;
 import org.epics.pvdata.pv.ScalarType;
+import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.ChannelRepository;
-import org.phoebus.channelfinder.XmlChannel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
@@ -164,7 +164,7 @@ public class ChannelFinderEpicsService {
                     }
                 }
 
-                List<XmlChannel> result = channelRepository.search(searchParameters).getChannels();
+                List<Channel> result = channelRepository.search(searchParameters).getChannels();
 
                 final Map<String, List<String>> channelTable = new HashMap<>();
                 final Map<String, List<String>> channelPropertyTable = new HashMap<>();

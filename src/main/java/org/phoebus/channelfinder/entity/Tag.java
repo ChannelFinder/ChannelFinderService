@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.entity;
 /**
  * #%L
  * ChannelFinder Directory Service
@@ -25,34 +25,34 @@ import java.util.stream.Collectors;
  */
 @XmlRootElement(name="tag")
 @XmlType (propOrder={"name","owner","channels"})
-public class XmlTag {
+public class Tag {
     private String name;
     private String owner;
-    private List<XmlChannel> channels = new ArrayList<>();
+    private List<Channel> channels = new ArrayList<>();
 
     /**
-     * Creates a new instance of XmlTag.
+     * Creates a new instance of Tag.
      *
      */
-    public XmlTag() {
+    public Tag() {
     }
 
     /**
-     * Creates a new instance of XmlTag.
+     * Creates a new instance of Tag.
      *
      * @param name name of new tag
      */
-    public XmlTag(String name) {
+    public Tag(String name) {
         this.name = name;
     }
 
     /**
-     * Creates a new instance of XmlTag.
+     * Creates a new instance of Tag.
      *
      * @param name name of new tag
      * @param owner owner of new tag
      */
-    public XmlTag(String name, String owner) {
+    public Tag(String name, String owner) {
         this.name = name;
         this.owner = owner;
     }
@@ -98,7 +98,7 @@ public class XmlTag {
      *
      * @return XmlChannels object
      */
-    public List<XmlChannel> getChannels() {
+    public List<Channel> getChannels() {
         return channels;
     }
 
@@ -107,7 +107,7 @@ public class XmlTag {
      *
      * @param channels XmlChannels object
      */
-    public void setChannels(List<XmlChannel> channels) {
+    public void setChannels(List<Channel> channels) {
         this.channels = channels;
     }
 
@@ -121,7 +121,7 @@ public class XmlTag {
             return this.getName() + "(" + this.getOwner() + ")";
         } else {
             return this.getName() + "(" + this.getOwner() + ")" + " [ "
-                    + (this.channels.stream().map(XmlChannel::toLog).collect(Collectors.joining(","))) + " ] ";
+                    + (this.channels.stream().map(Channel::toLog).collect(Collectors.joining(","))) + " ] ";
         }
     }
 
@@ -143,7 +143,7 @@ public class XmlTag {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        XmlTag other = (XmlTag) obj;
+        Tag other = (Tag) obj;
         if (channels == null) {
             if (other.channels != null)
                 return false;
@@ -169,9 +169,9 @@ public class XmlTag {
      * @author Kunal Shroff
      *
      */
-    abstract class OnlyXmlTag {
+    public abstract class OnlyTag {
         @JsonIgnore
-        private List<XmlChannel> channels;
+        private List<Channel> channels;
     }
 
 }

@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.entity;
 /**
  * #%L
  * ChannelFinder Directory Service
@@ -24,32 +24,32 @@ import java.util.stream.Collectors;
 
 @XmlRootElement(name="channel")
 @XmlType (propOrder={"name","owner","properties","tags"})
-public class XmlChannel {
+public class Channel {
     private String name;
     private String owner;
-    private List<XmlProperty> properties = new ArrayList<>();
-    private List<XmlTag> tags = new ArrayList<>();
+    private List<Property> properties = new ArrayList<>();
+    private List<Tag> tags = new ArrayList<>();
 
-    /** Creates a new instance of XmlChannel */
-    public XmlChannel() {
+    /** Creates a new instance of Channel */
+    public Channel() {
     }
 
     /**
-     * Creates a new instance of XmlChannel.
+     * Creates a new instance of Channel.
      *
      * @param name - channel name
      */
-    public XmlChannel(String name) {
+    public Channel(String name) {
         this.name = name;
     }
 
     /**
-     * Creates a new instance of XmlChannel.
+     * Creates a new instance of Channel.
      *
      * @param name - channel name
      * @param owner - owner name
      */
-    public XmlChannel(String name, String owner) {
+    public Channel(String name, String owner) {
         this.name = name;
         this.owner = owner;
     }
@@ -61,7 +61,7 @@ public class XmlChannel {
      * @param properties - list of channel properties
      * @param tags - list of channel tags
      */
-    public XmlChannel(String name, String owner, List<XmlProperty> properties, List<XmlTag> tags) {
+    public Channel(String name, String owner, List<Property> properties, List<Tag> tags) {
         this.name = name;
         this.owner = owner;
         this.properties = properties;
@@ -104,19 +104,19 @@ public class XmlChannel {
         this.owner = owner;
     }
 
-    public List<XmlProperty> getProperties() {
+    public List<Property> getProperties() {
         return properties;
     }
 
-    public void setProperties(List<XmlProperty> properties) {
+    public void setProperties(List<Property> properties) {
         this.properties = properties;
     }
 
-    public List<XmlTag> getTags() {
+    public List<Tag> getTags() {
         return tags;
     }
 
-    public void setTags(List<XmlTag> tags) {
+    public void setTags(List<Tag> tags) {
         this.tags = tags;
     }
 
@@ -125,7 +125,7 @@ public class XmlChannel {
      * If the tag already exists then it is replaced with <code>tag</code>
      * @param tag the tag to be added to the channel
      */
-    public void addTag(XmlTag tag) {
+    public void addTag(Tag tag) {
         // If the tag already exists, then filter it out
         this.tags = this.tags.stream().filter(t ->
             !t.getName().equals(tag.getName())
@@ -138,7 +138,7 @@ public class XmlChannel {
      * Remove the given tag to the list of tags associated with this channel
      * @param tag the tag to be removed from channel
      */
-    public void removeTag(XmlTag tag) {
+    public void removeTag(Tag tag) {
         this.tags = this.tags.stream().filter(t ->
             !t.getName().equals(tag.getName())
         ).collect(Collectors.toList());
@@ -148,7 +148,7 @@ public class XmlChannel {
      * Add the given list of tags to the list of tags associated with this channel
      * @param tags the tags to be added to the channel
      */
-    public void addTags(List<XmlTag> tags) {
+    public void addTags(List<Tag> tags) {
         tags.forEach(this::addTag);
     }
 
@@ -157,7 +157,7 @@ public class XmlChannel {
      * If the property already exists then it is replaced with the provided one
      * @param property the property to be added to the channel
      */
-    public void addProperty(XmlProperty property) {
+    public void addProperty(Property property) {
         // If the property already exists, then filter it out
         this.properties = this.properties.stream().filter(p ->
             !p.getName().equals(property.getName())
@@ -170,7 +170,7 @@ public class XmlChannel {
      * Remove the given property to the list of properties associated with this channel
      * @param property the property to be removed from the channel
      */
-    public void removeProperty(XmlProperty property) {
+    public void removeProperty(Property property) {
         this.properties = this.properties.stream().filter(p ->
             !p.getName().equals(property.getName())
         ).collect(Collectors.toList());
@@ -180,7 +180,7 @@ public class XmlChannel {
      * Add the given list of properties to the properties associated with this channel
      * @param properties the properties to be added to the channel
      */
-    public void addProperties(List<XmlProperty> properties) {
+    public void addProperties(List<Property> properties) {
         properties.forEach(this::addProperty);
     }
     /**
@@ -214,7 +214,7 @@ public class XmlChannel {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        XmlChannel other = (XmlChannel) obj;
+        Channel other = (Channel) obj;
         if (name == null) {
             if (other.name != null)
                 return false;
