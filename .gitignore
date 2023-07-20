@@ -5,6 +5,7 @@
 /.classpath
 .pydevproject
 *.iml
+*.log
 **/site/sphinx/build/*
 .idea
 
@@ -13,3 +14,6 @@
 
 ### Docker ###
 docker-compose-local*
+
+### Spring ###
+spring-shell.log
