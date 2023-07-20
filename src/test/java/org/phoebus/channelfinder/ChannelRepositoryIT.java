@@ -183,28 +183,6 @@ public class ChannelRepositoryIT {
         assertTrue("Failed to check the non-existance of 'non-existant-channel'", !channelRepository.existsByIds(Arrays.asList("test-channel1", "non-existant-channel")));    
     }
 
-//    /**
-//     * find all channels
-//     */
-//    @Test
-//    public void findAllXmlChannels() {
-//        Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
-//        Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
-//        List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
-//        Set<Channel> createdChannels = Sets.newHashSet(channelRepository.indexAll(testChannels));
-//        cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
-//
-//        try {
-//            //Thread.sleep(2000);
-//            Set<Channel> listedChannels = Sets.newHashSet(channelRepository.findAll());
-//            // verify the channel was created as expected
-//            //assertEquals("Failed to list all created channel", createdChannels, listedChannels);
-//            assertTrue("Failed to list all created channel", listedChannels.containsAll(createdChannels));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     /**
      * find multiple channels
      */
