@@ -26,7 +26,8 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 
 import org.junit.jupiter.api.Test;
-import org.phoebus.channelfinder.XmlScroll;
+
+import org.phoebus.channelfinder.entity.Scroll;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
@@ -151,7 +152,7 @@ class ChannelFinderScrollIT {
         ITTestFixture.setup();
 
         try {
-            XmlScroll actual = null;
+            Scroll actual = null;
 
             // channels (all)
 

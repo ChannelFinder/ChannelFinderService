@@ -30,7 +30,7 @@ import java.net.HttpURLConnection;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.phoebus.channelfinder.XmlChannel;
+import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.docker.ITUtil.EndpointChoice;
 import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
@@ -43,8 +43,8 @@ import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
 public class ITUtilChannels {
 
     static final ObjectMapper mapper        = new ObjectMapper();
-    static final XmlChannel[] CHANNELS_NULL = null;
-    static final XmlChannel   CHANNEL_NULL  = null;
+    static final Channel[] CHANNELS_NULL = null;
+    static final Channel   CHANNEL_NULL  = null;
 
     /**
      * This class is not to be instantiated.
@@ -63,10 +63,10 @@ public class ITUtilChannels {
     //     Retrieve a Channel                    .../channels/<name>    (GET)       read(String)
     //     List Channels / Query by Pattern      .../channels?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...
     //                                                                  (GET)       query(MultiValueMap<String, String>)
-    //     Create / Replace Channel              .../channels/<name>    (PUT)       create(String, XmlChannel)
-    //     Create / Replace Multiple Channels    .../channels           (PUT)       create(Iterable<XmlChannel>)
-    //     Update Channel                        .../channels/<name>    (POST)      update(String, XmlChannel)
-    //     Update Channels                       .../channels           (POST)      update(Iterable<XmlChannel>)
+    //     Create / Replace Channel              .../channels/<name>    (PUT)       create(String, Channel)
+    //     Create / Replace Multiple Channels    .../channels           (PUT)       create(Iterable<Channel>)
+    //     Update Channel                        .../channels/<name>    (POST)      update(String, Channel)
+    //     Update Channels                       .../channels           (POST)      update(Iterable<Channel>)
     //     Delete a Channel                      .../channels/<name>    (DELETE)    remove(String)
     //     ------------------------------------------------------------------------------------------------
 
@@ -76,7 +76,7 @@ public class ITUtilChannels {
      * @param value channel
      * @return string for channel
      */
-    static String object2Json(XmlChannel value) {
+    static String object2Json(Channel value) {
         try {
             return mapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -90,7 +90,7 @@ public class ITUtilChannels {
      * @param value channel array
      * @return string for channel array
      */
-    static String object2Json(XmlChannel[] value) {
+    static String object2Json(Channel[] value) {
         try {
             return mapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -102,15 +102,15 @@ public class ITUtilChannels {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilChannels#assertRetrieveChannel(String, int, XmlChannel)
+     * @see ITUtilChannels#assertRetrieveChannel(String, int, Channel)
      */
-    public static XmlChannel assertRetrieveChannel(String path, int responseCode) {
+    public static Channel assertRetrieveChannel(String path, int responseCode) {
         return assertRetrieveChannel(path, responseCode, CHANNEL_NULL);
     }
     /**
-     * @see ITUtilChannels#assertRetrieveChannel(String, int, XmlChannel)
+     * @see ITUtilChannels#assertRetrieveChannel(String, int, Channel)
      */
-    public static XmlChannel assertRetrieveChannel(String path, XmlChannel expected) {
+    public static Channel assertRetrieveChannel(String path, Channel expected) {
         return assertRetrieveChannel(path, HttpURLConnection.HTTP_OK, expected);
     }
     /**
@@ -120,15 +120,15 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channel
      */
-    public static XmlChannel assertRetrieveChannel(String path, int responseCode, XmlChannel expected) {
+    public static Channel assertRetrieveChannel(String path, int responseCode, Channel expected) {
         try {
             String[] response = null;
-            XmlChannel actual = null;
+            Channel actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + path);
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlChannel.class);
+                actual = mapper.readValue(response[1], Channel.class);
             }
 
             if (expected != null) {
@@ -147,33 +147,33 @@ public class ITUtilChannels {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
+     * @see ITUtilChannels#assertListChannels(String, int, int, int, Channel...)
      */
-    public static XmlChannel[] assertListChannels(int expectedEqual) {
+    public static Channel[] assertListChannels(int expectedEqual) {
         return assertListChannels("", HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, CHANNELS_NULL);
     }
     /**
-     * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
+     * @see ITUtilChannels#assertListChannels(String, int, int, int, Channel...)
      */
-    public static XmlChannel[] assertListChannels(int expectedEqual, XmlChannel... expected) {
+    public static Channel[] assertListChannels(int expectedEqual, Channel... expected) {
         return assertListChannels("", HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, expected);
     }
     /**
-     * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
+     * @see ITUtilChannels#assertListChannels(String, int, int, int, Channel...)
      */
-    public static XmlChannel[] assertListChannels(String queryString, XmlChannel... expected) {
+    public static Channel[] assertListChannels(String queryString, Channel... expected) {
         return assertListChannels(queryString, HttpURLConnection.HTTP_OK, -1, -1, expected);
     }
     /**
-     * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
+     * @see ITUtilChannels#assertListChannels(String, int, int, int, Channel...)
      */
-    public static XmlChannel[] assertListChannels(String queryString, int expectedEqual) {
+    public static Channel[] assertListChannels(String queryString, int expectedEqual) {
         return assertListChannels(queryString, HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, CHANNELS_NULL);
     }
     /**
-     * @see ITUtilChannels#assertListChannels(String, int, int, int, XmlChannel...)
+     * @see ITUtilChannels#assertListChannels(String, int, int, int, Channel...)
      */
-    public static XmlChannel[] assertListChannels(String queryString, int responseCode, int expectedEqual) {
+    public static Channel[] assertListChannels(String queryString, int responseCode, int expectedEqual) {
         return assertListChannels(queryString, responseCode, expectedEqual, expectedEqual, CHANNELS_NULL);
     }
     /**
@@ -186,15 +186,15 @@ public class ITUtilChannels {
      * @param expected expected response channels
      * @return number of channels
      */
-    public static XmlChannel[] assertListChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, XmlChannel... expected) {
+    public static Channel[] assertListChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Channel... expected) {
         try {
             String[] response = null;
-            XmlChannel[] actual = null;
+            Channel[] actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + queryString);
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlChannel[].class);
+                actual = mapper.readValue(response[1], Channel[].class);
             }
 
             // expected number of items in list
@@ -209,7 +209,7 @@ public class ITUtilChannels {
 
             // expected content
             if (expected != null) {
-                assertEqualsXmlChannels(actual, expected);
+                assertEqualsChannels(actual, expected);
             }
 
             return actual;
@@ -279,21 +279,21 @@ public class ITUtilChannels {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, XmlChannel)
+     * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static XmlChannel assertCreateReplaceChannel(String path, XmlChannel value) {
+    public static Channel assertCreateReplaceChannel(String path, Channel value) {
         return assertCreateReplaceChannel(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNEL_NULL);
     }
     /**
-     * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, XmlChannel)
+     * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static XmlChannel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, XmlChannel value, int responseCode) {
+    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, Channel value, int responseCode) {
         return assertCreateReplaceChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
     }
     /**
-     * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, XmlChannel)
+     * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static XmlChannel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         return assertCreateReplaceChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
     }
     /**
@@ -305,15 +305,15 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channel
      */
-    public static XmlChannel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel expected) {
+    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Channel expected) {
         try {
             String[] response = null;
-            XmlChannel actual = null;
+            Channel actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlChannel.class);
+                actual = mapper.readValue(response[1], Channel.class);
             }
 
             if (expected != null) {
@@ -332,15 +332,15 @@ public class ITUtilChannels {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilChannels#assertCreateReplaceMultipleChannels(AuthorizationChoice, String, String, int, XmlChannel[])
+     * @see ITUtilChannels#assertCreateReplaceMultipleChannels(AuthorizationChoice, String, String, int, Channel[])
      */
-    public static XmlChannel[] assertCreateReplaceMultipleChannels(String path, XmlChannel[] value) {
+    public static Channel[] assertCreateReplaceMultipleChannels(String path, Channel[] value) {
         return assertCreateReplaceMultipleChannels(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNELS_NULL);
     }
     /**
-     * @see ITUtilChannels#assertCreateReplaceMultipleChannels(AuthorizationChoice, String, String, int, XmlChannel[])
+     * @see ITUtilChannels#assertCreateReplaceMultipleChannels(AuthorizationChoice, String, String, int, Channel[])
      */
-    public static XmlChannel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+    public static Channel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         return assertCreateReplaceMultipleChannels(authorizationChoice, path, json, responseCode, CHANNELS_NULL);
     }
     /**
@@ -352,19 +352,19 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channels
      */
-    public static XmlChannel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel[] expected) {
+    public static Channel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Channel[] expected) {
         try {
             String[] response = null;
-            XmlChannel[] actual = null;
+            Channel[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlChannel[].class);
+                actual = mapper.readValue(response[1], Channel[].class);
             }
 
             if (expected != null) {
-                assertEqualsXmlChannels(expected, actual);
+                assertEqualsChannels(expected, actual);
             }
 
             return actual;
@@ -379,21 +379,21 @@ public class ITUtilChannels {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, XmlChannel)
+     * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static XmlChannel assertUpdateChannel(String path, XmlChannel value) {
+    public static Channel assertUpdateChannel(String path, Channel value) {
         return assertUpdateChannel(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNEL_NULL);
     }
     /**
-     * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, XmlChannel)
+     * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static XmlChannel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, XmlChannel value, int responseCode) {
+    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, Channel value, int responseCode) {
         return assertUpdateChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
     }
     /**
-     * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, XmlChannel)
+     * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static XmlChannel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         return assertUpdateChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
     }
     /**
@@ -405,15 +405,15 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channel
      */
-    public static XmlChannel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlChannel expected) {
+    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Channel expected) {
         try {
             String[] response = null;
-            XmlChannel actual = null;
+            Channel actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, authorizationChoice, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlChannel.class);
+                actual = mapper.readValue(response[1], Channel.class);
             }
 
             if (expected != null) {
@@ -432,15 +432,15 @@ public class ITUtilChannels {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilChannels#assertUpdateChannels(String, String, int, XmlChannel[])
+     * @see ITUtilChannels#assertUpdateChannels(String, String, int, Channel[])
      */
-    public static XmlChannel[] assertUpdateChannels(String path, XmlChannel[] value) {
+    public static Channel[] assertUpdateChannels(String path, Channel[] value) {
         return assertUpdateChannels(path, object2Json(value), HttpURLConnection.HTTP_OK, CHANNELS_NULL);
     }
     /**
-     * @see ITUtilChannels#assertUpdateChannels(String, String, int, XmlChannel[])
+     * @see ITUtilChannels#assertUpdateChannels(String, String, int, Channel[])
      */
-    public static XmlChannel[] assertUpdateChannels(String path, String json, int responseCode) {
+    public static Channel[] assertUpdateChannels(String path, String json, int responseCode) {
         return assertUpdateChannels(path, json, responseCode, CHANNELS_NULL);
     }
     /**
@@ -451,19 +451,19 @@ public class ITUtilChannels {
      * @param responseCode expected response code
      * @param expected expected response channels
      */
-    public static XmlChannel[] assertUpdateChannels(String path, String json, int responseCode, XmlChannel[] expected) {
+    public static Channel[] assertUpdateChannels(String path, String json, int responseCode, Channel[] expected) {
         try {
             String[] response = null;
-            XmlChannel[] actual = null;
+            Channel[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, AuthorizationChoice.ADMIN, EndpointChoice.CHANNELS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlChannel[].class);
+                actual = mapper.readValue(response[1], Channel[].class);
             }
 
             if (expected != null) {
-                assertEqualsXmlChannels(expected, actual);
+                assertEqualsChannels(expected, actual);
             }
 
             return actual;
@@ -508,10 +508,10 @@ public class ITUtilChannels {
     /**
      * Assert that arrays are equal with same length and same content in each array position.
      *
-     * @param actual actual array of XmlChannel objects
-     * @param expected expected arbitray number of XmlChannel objects
+     * @param actual actual array of Channel objects
+     * @param expected expected arbitray number of Channel objects
      */
-    static void assertEqualsXmlChannels(XmlChannel[] actual, XmlChannel... expected) {
+    static void assertEqualsChannels(Channel[] actual, Channel... expected) {
         if (expected != null) {
             assertNotNull(actual);
             assertEquals(expected.length, actual.length);

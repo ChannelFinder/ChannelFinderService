@@ -30,7 +30,7 @@ import java.net.HttpURLConnection;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.phoebus.channelfinder.XmlTag;
+import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.docker.ITUtil.EndpointChoice;
 import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
@@ -43,8 +43,8 @@ import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
 public class ITUtilTags {
 
     static final ObjectMapper mapper    = new ObjectMapper();
-    static final XmlTag[]     TAGS_NULL = null;
-    static final XmlTag       TAG_NULL  = null;
+    static final Tag[]     TAGS_NULL = null;
+    static final Tag       TAG_NULL  = null;
 
     /**
      * This class is not to be instantiated.
@@ -62,11 +62,11 @@ public class ITUtilTags {
     //     --------------------                                                    --------------------
     //     Retrieve a Tag                    .../tags/<name>                       (GET)    read(String, boolean)
     //     List Tags                         .../tags                              (GET)    list()
-    //     Create/Replace a Tag              .../tags/<name>                       (PUT)    create(String, XmlTag)
-    //     Add Tag to a Single Channel       .../tags/<tag_name>/<channel_name>    (PUT)    addSingle(String, String, XmlTag)
-    //     Create/Replace Tags               .../tags/<name>                       (PUT)    create(Iterable<XmlTag>)
-    //     Add Tag to Multiple Channels      .../tags/<name>                       (POST)   update(String, XmlTag)
-    //     Add Multiple Tags                 .../tags                              (POST)   update(Iterable<XmlTag>)
+    //     Create/Replace a Tag              .../tags/<name>                       (PUT)    create(String, Tag)
+    //     Add Tag to a Single Channel       .../tags/<tag_name>/<channel_name>    (PUT)    addSingle(String, String, Tag)
+    //     Create/Replace Tags               .../tags/<name>                       (PUT)    create(Iterable<Tag>)
+    //     Add Tag to Multiple Channels      .../tags/<name>                       (POST)   update(String, Tag)
+    //     Add Multiple Tags                 .../tags                              (POST)   update(Iterable<Tag>)
     //     Remove Tag from Single Channel    .../tags/<tag_name>/<channel_name>    (DELETE) removeSingle(String, String)
     //     Remove Tag                        .../tags/<name>                       (DELETE) remove(String)
     //     ------------------------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ public class ITUtilTags {
      * @param value tag
      * @return string for tag
      */
-    static String object2Json(XmlTag value) {
+    static String object2Json(Tag value) {
         try {
             return mapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -91,7 +91,7 @@ public class ITUtilTags {
      * @param value tag array
      * @return string for tag array
      */
-    static String object2Json(XmlTag[] value) {
+    static String object2Json(Tag[] value) {
         try {
             return mapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
@@ -103,15 +103,15 @@ public class ITUtilTags {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilTags#assertRetrieveTag(String, int, XmlTag)
+     * @see ITUtilTags#assertRetrieveTag(String, int, Tag)
      */
-    public static XmlTag assertRetrieveTag(String path, int responseCode) {
+    public static Tag assertRetrieveTag(String path, int responseCode) {
         return assertRetrieveTag(path, responseCode, TAG_NULL);
     }
     /**
-     * @see ITUtilTags#assertRetrieveTag(String, int, XmlTag)
+     * @see ITUtilTags#assertRetrieveTag(String, int, Tag)
      */
-    public static XmlTag assertRetrieveTag(String path, XmlTag expected) {
+    public static Tag assertRetrieveTag(String path, Tag expected) {
         return assertRetrieveTag(path, HttpURLConnection.HTTP_OK, expected);
     }
     /**
@@ -121,15 +121,15 @@ public class ITUtilTags {
      * @param responseCode expected response code
      * @param expected expected response tag
      */
-    public static XmlTag assertRetrieveTag(String path, int responseCode, XmlTag expected) {
+    public static Tag assertRetrieveTag(String path, int responseCode, Tag expected) {
         try {
             String[] response = null;
-            XmlTag actual = null;
+            Tag actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS + path);
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlTag.class);
+                actual = mapper.readValue(response[1], Tag.class);
             }
 
             if (expected != null) {
@@ -154,7 +154,7 @@ public class ITUtilTags {
      * @param expected expected response tags
      * @return number of tags
      */
-    public static XmlTag[] assertListTags(int expectedEqual, XmlTag... expected) {
+    public static Tag[] assertListTags(int expectedEqual, Tag... expected) {
         return assertListTags(HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, expected);
     }
     /**
@@ -166,15 +166,15 @@ public class ITUtilTags {
      * @param expected expected response tags
      * @return number of tags
      */
-    public static XmlTag[] assertListTags(int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, XmlTag... expected) {
+    public static Tag[] assertListTags(int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Tag... expected) {
         try {
             String[] response = null;
-            XmlTag[] actual = null;
+            Tag[] actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS);
             ITUtil.assertResponseLength2CodeOK(response);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlTag[].class);
+                actual = mapper.readValue(response[1], Tag[].class);
             }
 
             // expected number of items in list
@@ -189,7 +189,7 @@ public class ITUtilTags {
 
             // expected content
             if (expected != null) {
-                assertEqualsXmlTags(actual, expected);
+                assertEqualsTags(actual, expected);
             }
 
             return actual;
@@ -204,27 +204,27 @@ public class ITUtilTags {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, XmlTag)
+     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, Tag)
      */
-    public static XmlTag assertCreateReplaceTag(String path, XmlTag value) {
+    public static Tag assertCreateReplaceTag(String path, Tag value) {
         return assertCreateReplaceTag(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, TAG_NULL);
     }
     /**
-     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, XmlTag)
+     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, Tag)
      */
-    public static XmlTag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, XmlTag value) {
+    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, Tag value) {
         return assertCreateReplaceTag(authorizationChoice, path, object2Json(value), HttpURLConnection.HTTP_OK, TAG_NULL);
     }
     /**
-     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, XmlTag)
+     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, Tag)
      */
-    public static XmlTag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, XmlTag value, int responseCode) {
+    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, Tag value, int responseCode) {
         return assertCreateReplaceTag(authorizationChoice, path, object2Json(value), responseCode, TAG_NULL);
     }
     /**
-     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, XmlTag)
+     * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, Tag)
      */
-    public static XmlTag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         return assertCreateReplaceTag(authorizationChoice, path, json, responseCode, TAG_NULL);
     }
     /**
@@ -236,15 +236,15 @@ public class ITUtilTags {
      * @param responseCode expected response code
      * @param expected expected response tag
      */
-    public static XmlTag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlTag expected) {
+    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Tag expected) {
         try {
             String[] response = null;
-            XmlTag actual = null;
+            Tag actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.TAGS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlTag.class);
+                actual = mapper.readValue(response[1], Tag.class);
             }
 
             if (expected != null) {
@@ -263,9 +263,9 @@ public class ITUtilTags {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilTags#assertAddTagSingleChannel(String, XmlTag, XmlTag)
+     * @see ITUtilTags#assertAddTagSingleChannel(String, Tag, Tag)
      */
-    public static XmlTag assertAddTagSingleChannel(String path, XmlTag value) {
+    public static Tag assertAddTagSingleChannel(String path, Tag value) {
         return assertAddTagSingleChannel(path, value, HttpURLConnection.HTTP_OK, TAG_NULL);
     }
     /**
@@ -276,15 +276,15 @@ public class ITUtilTags {
      * @param responseCode expected response code
      * @param expected expected response tag
      */
-    public static XmlTag assertAddTagSingleChannel(String path, XmlTag value, int responseCode, XmlTag expected) {
+    public static Tag assertAddTagSingleChannel(String path, Tag value, int responseCode, Tag expected) {
         try {
             String[] response = null;
-            XmlTag actual = null;
+            Tag actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, AuthorizationChoice.ADMIN, EndpointChoice.TAGS, path, mapper.writeValueAsString(value)));
             ITUtil.assertResponseLength2CodeOK(response);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlTag.class);
+                actual = mapper.readValue(response[1], Tag.class);
             }
 
             if (expected != null) {
@@ -303,15 +303,15 @@ public class ITUtilTags {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilTags#assertCreateReplaceTags(AuthorizationChoice, String, String, int, XmlTag[])
+     * @see ITUtilTags#assertCreateReplaceTags(AuthorizationChoice, String, String, int, Tag[])
      */
-    public static XmlTag[] assertCreateReplaceTags(String path, XmlTag[] value) {
+    public static Tag[] assertCreateReplaceTags(String path, Tag[] value) {
         return assertCreateReplaceTags(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, TAGS_NULL);
     }
     /**
-     * @see ITUtilTags#assertCreateReplaceTags(AuthorizationChoice, String, String, int, XmlTag[])
+     * @see ITUtilTags#assertCreateReplaceTags(AuthorizationChoice, String, String, int, Tag[])
      */
-    public static XmlTag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+    public static Tag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         return assertCreateReplaceTags(authorizationChoice, path, json, responseCode, TAGS_NULL);
     }
     /**
@@ -323,19 +323,19 @@ public class ITUtilTags {
      * @param responseCode expected response code
      * @param expected expected response tags
      */
-    public static XmlTag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlTag[] expected) {
+    public static Tag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Tag[] expected) {
         try {
             String[] response = null;
-            XmlTag[] actual = null;
+            Tag[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.TAGS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlTag[].class);
+                actual = mapper.readValue(response[1], Tag[].class);
             }
 
             if (expected != null) {
-                assertEqualsXmlTags(expected, actual);
+                assertEqualsTags(expected, actual);
             }
 
             return actual;
@@ -350,21 +350,21 @@ public class ITUtilTags {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, XmlTag)
+     * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, Tag)
      */
-    public static XmlTag assertAddTagMultipleChannels(String path, XmlTag value) {
+    public static Tag assertAddTagMultipleChannels(String path, Tag value) {
         return assertAddTagMultipleChannels(AuthorizationChoice.ADMIN, path, object2Json(value), HttpURLConnection.HTTP_OK, TAG_NULL);
     }
     /**
-     * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, XmlTag)
+     * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, Tag)
      */
-    public static XmlTag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, XmlTag value, int responseCode) {
+    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, Tag value, int responseCode) {
         return assertAddTagMultipleChannels(authorizationChoice, path, object2Json(value), responseCode, TAG_NULL);
     }
     /**
-     * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, XmlTag)
+     * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, Tag)
      */
-    public static XmlTag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
+    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
         return assertAddTagMultipleChannels(authorizationChoice, path, json, responseCode, TAG_NULL);
     }
     /**
@@ -376,15 +376,15 @@ public class ITUtilTags {
      * @param responseCode expected response code
      * @param expected expected response tag
      */
-    public static XmlTag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, XmlTag expected) {
+    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Tag expected) {
         try {
             String[] response = null;
-            XmlTag actual = null;
+            Tag actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, authorizationChoice, EndpointChoice.TAGS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlTag.class);
+                actual = mapper.readValue(response[1], Tag.class);
             }
 
             if (expected != null) {
@@ -403,38 +403,38 @@ public class ITUtilTags {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * @see ITUtilTags#assertAddMultipleTags(String, String, int, XmlTag[])
+     * @see ITUtilTags#assertAddMultipleTags(String, String, int, Tag[])
      */
-    public static XmlTag[] assertAddMultipleTags(String path, XmlTag[] value) {
+    public static Tag[] assertAddMultipleTags(String path, Tag[] value) {
         return assertAddMultipleTags(path, object2Json(value), HttpURLConnection.HTTP_OK, TAGS_NULL);
     }
     /**
-     * @see ITUtilTags#assertAddMultipleTags(String, String, int, XmlTag[])
+     * @see ITUtilTags#assertAddMultipleTags(String, String, int, Tag[])
      */
-    public static XmlTag[] assertAddMultipleTags(String path, String json, int responseCode) {
+    public static Tag[] assertAddMultipleTags(String path, String json, int responseCode) {
         return assertAddMultipleTags(path, json, responseCode, TAGS_NULL);
     }
     /**
      * Utility method to add the tags in the payload to the directory.
      *
      * @param path path
-     * @param value tags
+     * @param json tags
      * @param responseCode expected response code
      * @param expected expected response tags
      */
-    public static XmlTag[] assertAddMultipleTags(String path, String json, int responseCode, XmlTag[] expected) {
+    public static Tag[] assertAddMultipleTags(String path, String json, int responseCode, Tag[] expected) {
         try {
             String[] response = null;
-            XmlTag[] actual = null;
+            Tag[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, AuthorizationChoice.ADMIN, EndpointChoice.TAGS, path, json));
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
-                actual = mapper.readValue(response[1], XmlTag[].class);
+                actual = mapper.readValue(response[1], Tag[].class);
             }
 
             if (expected != null) {
-                assertEqualsXmlTags(expected, actual);
+                assertEqualsTags(expected, actual);
             }
 
             return actual;
@@ -499,10 +499,10 @@ public class ITUtilTags {
     /**
      * Assert that arrays are equal with same length and same content in each array position.
      *
-     * @param actual actual array of XmlTag objects
-     * @param expected expected arbitrary number of XmlTag objects
+     * @param actual actual array of Tag objects
+     * @param expected expected arbitrary number of Tag objects
      */
-    static void assertEqualsXmlTags(XmlTag[] actual, XmlTag... expected) {
+    static void assertEqualsTags(Tag[] actual, Tag... expected) {
         if (expected != null) {
             assertNotNull(actual);
             assertEquals(expected.length, actual.length);

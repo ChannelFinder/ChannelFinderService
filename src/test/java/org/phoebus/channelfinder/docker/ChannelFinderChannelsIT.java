@@ -35,7 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.phoebus.channelfinder.XmlChannel;
+import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 
 /**
@@ -77,10 +77,10 @@ public class ChannelFinderChannelsIT {
     //                                                                  (GET)       query(MultiValueMap<String, String>)
     //     Query Count                           .../channels/count?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...
     //                                                                  (GET)       query(MultiValueMap<String, String>)
-    //     Create / Replace Channel              .../channels/<name>    (PUT)       create(String, XmlChannel)
-    //     Create / Replace Multiple Channels    .../channels           (PUT)       create(Iterable<XmlChannel>)
-    //     Update Channel                        .../channels/<name>    (POST)      update(String, XmlChannel)
-    //     Update Channels                       .../channels           (POST)      update(Iterable<XmlChannel>)
+    //     Create / Replace Channel              .../channels/<name>    (PUT)       create(String, Channel)
+    //     Create / Replace Multiple Channels    .../channels           (PUT)       create(Iterable<Channel>)
+    //     Update Channel                        .../channels/<name>    (POST)      update(String, Channel)
+    //     Update Channels                       .../channels           (POST)      update(Iterable<Channel>)
     //     Delete a Channel                      .../channels/<name>    (DELETE)    remove(String)
     //     ------------------------------------------------------------------------------------------------
 
@@ -88,18 +88,18 @@ public class ChannelFinderChannelsIT {
     //     channels c1 - c10, owner o1
     //     channel  c1,       owner o2
 
-    static XmlChannel channel_c1_owner_o1;
-    static XmlChannel channel_c2_owner_o1;
-    static XmlChannel channel_c3_owner_o1;
-    static XmlChannel channel_c4_owner_o1;
-    static XmlChannel channel_c5_owner_o1;
-    static XmlChannel channel_c6_owner_o1;
-    static XmlChannel channel_c7_owner_o1;
-    static XmlChannel channel_c8_owner_o1;
-    static XmlChannel channel_c9_owner_o1;
-    static XmlChannel channel_c10_owner_o1;
+    static Channel channel_c1_owner_o1;
+    static Channel channel_c2_owner_o1;
+    static Channel channel_c3_owner_o1;
+    static Channel channel_c4_owner_o1;
+    static Channel channel_c5_owner_o1;
+    static Channel channel_c6_owner_o1;
+    static Channel channel_c7_owner_o1;
+    static Channel channel_c8_owner_o1;
+    static Channel channel_c9_owner_o1;
+    static Channel channel_c10_owner_o1;
 
-    static XmlChannel channel_c1_owner_o2;
+    static Channel channel_c1_owner_o2;
 
 	@Container
     public static final DockerComposeContainer<?> ENVIRONMENT =
@@ -108,18 +108,18 @@ public class ChannelFinderChannelsIT {
 
     @BeforeAll
     public static void setupObjects() {
-        channel_c1_owner_o1 = new XmlChannel("c1", "o1");
-        channel_c2_owner_o1 = new XmlChannel("c2", "o1");
-        channel_c3_owner_o1 = new XmlChannel("c3", "o1");
-        channel_c4_owner_o1 = new XmlChannel("c4", "o1");
-        channel_c5_owner_o1 = new XmlChannel("c5", "o1");
-        channel_c6_owner_o1 = new XmlChannel("c6", "o1");
-        channel_c7_owner_o1 = new XmlChannel("c7", "o1");
-        channel_c8_owner_o1 = new XmlChannel("c8", "o1");
-        channel_c9_owner_o1 = new XmlChannel("c9", "o1");
-        channel_c10_owner_o1 = new XmlChannel("c10", "o1");
+        channel_c1_owner_o1 = new Channel("c1", "o1");
+        channel_c2_owner_o1 = new Channel("c2", "o1");
+        channel_c3_owner_o1 = new Channel("c3", "o1");
+        channel_c4_owner_o1 = new Channel("c4", "o1");
+        channel_c5_owner_o1 = new Channel("c5", "o1");
+        channel_c6_owner_o1 = new Channel("c6", "o1");
+        channel_c7_owner_o1 = new Channel("c7", "o1");
+        channel_c8_owner_o1 = new Channel("c8", "o1");
+        channel_c9_owner_o1 = new Channel("c9", "o1");
+        channel_c10_owner_o1 = new Channel("c10", "o1");
 
-        channel_c1_owner_o2 = new XmlChannel("c1", "o2");
+        channel_c1_owner_o2 = new Channel("c1", "o2");
     }
 
     @AfterAll
@@ -302,7 +302,7 @@ public class ChannelFinderChannelsIT {
         //         Update Channels
         //         Delete a Channel
 
-        XmlChannel channel_check = new XmlChannel();
+        Channel channel_check = new Channel();
 
         try {
             ITUtilChannels.assertCountChannels(0);
@@ -633,7 +633,7 @@ public class ChannelFinderChannelsIT {
         //         Update Channels
         //     x   Delete a Channel
 
-        XmlChannel[] channels_10 = new XmlChannel[] {
+        Channel[] channels_10 = new Channel[] {
                 channel_c1_owner_o1,
                 channel_c10_owner_o1,
                 channel_c2_owner_o1,
@@ -712,7 +712,7 @@ public class ChannelFinderChannelsIT {
         //     x   Update Channels
         //     x   Delete a Channel
 
-        XmlChannel[] channels_10 = new XmlChannel[] {
+        Channel[] channels_10 = new Channel[] {
                 channel_c1_owner_o1,
                 channel_c10_owner_o1,
                 channel_c2_owner_o1,
