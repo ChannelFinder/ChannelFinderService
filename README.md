@@ -112,7 +112,7 @@ mvn spring-boot:run -Dspring.config.location=file:./application.properties
 ```
 or  
 ```
-java -jar ChannelFinder-4.7.0.jar -Dspring.config.location=file:./application.properties
+java -Dspring.config.location=file:./application.properties -jar ChannelFinder-4.7.0.jar
 ```
 
 You can also start up channelfinder with demo data using the command line argument `demo-data` followed by an integer number `n`. For example, `--demo-data=n`. With this argument, `n*1500` channels will be created to simulate some of the most common types of devices found in accelerators like magnets, power supplies, etc...  
