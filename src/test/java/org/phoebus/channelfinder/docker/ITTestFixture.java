@@ -169,6 +169,9 @@ public class ITTestFixture {
 
         setupAddPropertiesToChannels();
         setupAddTagsToChannels();
+
+        // list channels, of use for integration tests
+        channels_all_properties_tags = ITUtilChannels.assertListChannels(10);
     }
 
     /**
