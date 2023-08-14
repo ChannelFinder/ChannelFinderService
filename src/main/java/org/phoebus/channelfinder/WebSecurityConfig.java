@@ -38,8 +38,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     boolean ldap_enabled;
     @Value("${ldap.urls:ldaps://localhost:389/}")
     String ldap_url;
-    @Value("${ldap.base.dn}")
-    String ldap_base_dn;
     @Value("${ldap.user.dn.pattern}")
     String ldap_user_dn_pattern;
     @Value("${ldap.groups.search.base}")
@@ -54,8 +52,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     boolean embedded_ldap_enabled;
     @Value("${embedded_ldap.urls:ldaps://localhost:389/}")
     String embedded_ldap_url;
-    @Value("${embedded_ldap.base.dn}")
-    String embedded_ldap_base_dn;
     @Value("${embedded_ldap.user.dn.pattern}")
     String embedded_ldap_user_dn_pattern;
     @Value("${embedded_ldap.groups.search.base}")
