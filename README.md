@@ -80,7 +80,7 @@ Note that `cf.ldif` contains **default credentials** and should only be used dur
 To check that the server is running correctly.
 
 ```
-$ curl http://localhost:8080/ChannelFinder
+$ curl --fail-with-body http://localhost:8080/ChannelFinder
 {
   "name" : "ChannelFinder Service",
   "version" : "4.7.0",
@@ -91,15 +91,15 @@ $ curl http://localhost:8080/ChannelFinder
     "version" : "8.2.0"
   }
 }
-$ curl http://localhost:8080/ChannelFinder/resources/tags
+$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/tags
 []
-$ curl --basic -u admin:1234 -H 'Content-Type: application/json' \
+$ curl --basic -u admin:1234 --fail-with-body -H 'Content-Type: application/json' \
   -X PUT -d '{"name":"foo", "owner":"admin"}' \
   http://localhost:8080/ChannelFinder/resources/tags/foo
 ...
-$ curl http://localhost:8080/ChannelFinder/resources/tags
+$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/tags
 [{"name":"foo","owner":"admin","channels":[]}]
-$ curl --basic -u admin:1234 -X DELETE \
+$ curl --basic -u admin:1234 --fail-with-body -X DELETE \
   http://localhost:8080/ChannelFinder/resources/tags/foo
 ```
 
