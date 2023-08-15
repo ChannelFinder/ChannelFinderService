@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder;
 
-import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import org.junit.jupiter.api.*;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
@@ -8,7 +7,6 @@ import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
