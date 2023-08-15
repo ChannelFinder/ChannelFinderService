@@ -9,7 +9,6 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 
 import java.net.URL;
-import java.util.logging.Logger;
 
 /**
  * An class for creating the example database and testing the speed.
@@ -17,7 +16,7 @@ import java.util.logging.Logger;
 
 @WebMvcTest(AuthorizationService.class)
 @TestPropertySource(value = "classpath:performance_application.properties")
-public class PopulateServiceTest {
+public class PopulateServiceIT {
 
     @Autowired
     PopulateService populateService;

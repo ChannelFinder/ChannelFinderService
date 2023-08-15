@@ -1,10 +1,13 @@
 package org.phoebus.channelfinder;
 
 import com.google.common.collect.Iterables;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
@@ -12,21 +15,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
-
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.EMPTY_LIST;
 import static org.junit.jupiter.api.Assertions.fail;
 
 
-@WebMvcTest(PropertyManager.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@WebMvcTest(PropertyManager.class) // TODO Somehow creating one
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
 public class PropertyManagerIT {
@@ -40,6 +43,51 @@ public class PropertyManagerIT {
     @Autowired
     ChannelRepository channelRepository;
 
+    @Autowired
+    ElasticConfig esService;
+
+    @BeforeAll
+    void setupAll() {
+        ElasticConfigIT.setUp(esService);
+    }
+
+    // Helper operations to create and clean up the resources needed for successful
+    // testing of the PropertyManager operations
+
+    private final Channel testChannel0 = new Channel("testChannel0", "testOwner");
+    private final Channel testChannel1 = new Channel("testChannel1", "testOwner");
+    private final Channel testChannelX = new Channel("testChannelX", "testOwner");
+
+    private final List<Channel> testChannels = Arrays.asList(testChannel0,
+            testChannel1,
+            testChannelX);
+
+    @BeforeEach
+    public void setup() {
+        channelRepository.indexAll(testChannels);
+    }
+
+    @AfterEach
+    public void cleanup() {
+        // clean up
+        testChannels.forEach(channel -> {
+            try {
+                if (channelRepository.existsById(channel.getName()))
+                    channelRepository.deleteById(channel.getName());
+            } catch (Exception e) {
+                System.out.println("Failed to clean up channel: " + channel.getName());
+            }
+        });
+        propertyRepository.findAll().forEach(property -> {
+            if (propertyRepository.existsById(property.getName())) {
+                propertyRepository.deleteById(property.getName());
+            }
+        });
+    }
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
+    }
     /**
      * list all properties
      */
@@ -50,7 +98,6 @@ public class PropertyManagerIT {
         testProperty1.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty1.getName(),testProperty1.getOwner(),"value")),new ArrayList<Tag>())));
         List<Property> testProperties = Arrays.asList(testProperty0,testProperty1);
-        cleanupTestProperties = testProperties;
 
         Iterable<Property> createdProperties = propertyManager.create(testProperties);
         Iterable<Property> propertyList = propertyManager.list();
@@ -74,7 +121,6 @@ public class PropertyManagerIT {
                                 testChannel0.getOwner(),
                                 Arrays.asList(new Property(testProperty1.getName(),testProperty1.getOwner(),"value")),
                                 new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
 
         Property createdProperty0 = propertyManager.create(testProperty0.getName(),testProperty0);
         Property createdProperty1 = propertyManager.create(testProperty1.getName(),testProperty1);
@@ -121,7 +167,6 @@ public class PropertyManagerIT {
     @Test
     public void createXmlProperty() {
         Property testProperty0 = new Property("testProperty0","testOwner");
-        cleanupTestProperties = Arrays.asList(testProperty0);
 
         // Create a simple property
         Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
@@ -144,7 +189,6 @@ public class PropertyManagerIT {
     public void renameByCreateXmlProperty() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner");
-        cleanupTestProperties = Arrays.asList(testProperty0,testProperty1);
 
         Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
         createdProperty = propertyManager.create(testProperty0.getName(), testProperty1);
@@ -162,7 +206,6 @@ public class PropertyManagerIT {
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels);
 
         Property createdProperty = propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         try {
@@ -200,7 +243,6 @@ public class PropertyManagerIT {
         Property testProperty1WithChannels = new Property("testProperty1WithChannels","testOwner");
         testProperty1WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels,testProperty1WithChannels);
 
         // Create the testProperty0WithChannels
         Property createdProperty = propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
@@ -235,7 +277,6 @@ public class PropertyManagerIT {
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty2WithChannels.getName(),testProperty2WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
 
         List<Property> testProperties = Arrays.asList(testProperty0,testProperty1,testProperty2,testProperty0WithChannels,testProperty1WithChannels,testProperty2WithChannels);
-        cleanupTestProperties = testProperties;
 
         Iterable<Property> createdProperties = propertyManager.create(testProperties);
         List<Property> foundProperties = new ArrayList<Property>();
@@ -264,7 +305,6 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
         List<Property> testProperties = Arrays.asList(testProperty0,testProperty0WithChannels);
-        cleanupTestProperties = testProperties;
 
         //Create a set of original properties to be overriden
         propertyManager.create(testProperties);
@@ -302,7 +342,6 @@ public class PropertyManagerIT {
         Property testProperty0 = new Property("testProperty0", "testOwner");
         propertyRepository.index(testProperty0);
         testProperty0.setValue("value");
-        cleanupTestProperties = Arrays.asList(testProperty0);
 
         propertyManager.addSingle(testProperty0.getName(), "testChannel0", testProperty0);
         Assertions.assertTrue(channelRepository.findById("testChannel0").get().getProperties().stream().anyMatch(p -> {
@@ -322,7 +361,6 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
         List<Property> testProperties = Arrays.asList(testProperty0,testProperty0WithChannels);
-        cleanupTestProperties = testProperties;
 
         // Update on a non-existing property should result in the creation of that property
         // 1. Test a simple property 
@@ -366,7 +404,6 @@ public class PropertyManagerIT {
         testProperty1WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value1")),EMPTY_LIST),
                 new Channel(testChannelX.getName(),testChannelX.getOwner(),Arrays.asList(new Property(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"newValueX")),EMPTY_LIST)));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels,testProperty1WithChannels);
 
         propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         // change name and owner on existing channel, add to new channel
@@ -416,7 +453,6 @@ public class PropertyManagerIT {
         Property testProperty1WithChannels = new Property("testProperty1WithChannels","testOwner");
         testProperty1WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0,testProperty1,testProperty0WithChannels,testProperty1WithChannels);
 
         // Create the original properties
         Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
@@ -457,7 +493,6 @@ public class PropertyManagerIT {
     public void updatePropertyTest1() {
         // A test property with only name and owner
         Property testProperty0 = new Property("testProperty0", "testOwner");
-        cleanupTestProperties = Arrays.asList(testProperty0);
         propertyManager.create(testProperty0.getName(), testProperty0);
         // Updating a property with no channels, the new channels should be added to the property
         // Add testChannel0 to testProperty0 which has no channels 
@@ -479,7 +514,6 @@ public class PropertyManagerIT {
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels);
         propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         // Updating a property with existing channels, the new channels should be added without affecting existing channels
         // testProperty0WithChannels already has testChannel0, the update operation should append the testChannel1 while leaving the existing channel unaffected.         
@@ -504,7 +538,6 @@ public class PropertyManagerIT {
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels);
         propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         // testProperty0WithChannels already has testChannel0, the update request (which repeats the testChannel0) 
         // should append the testChannel1 while leaving the existing channel unaffected.    
@@ -528,7 +561,6 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>()),
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels);
         propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         // Updating a property with existing channels, the new channels should be added without affecting existing channels
         // testProperty0WithChannels already has testChannel0 & testChannel1, the update request should be a NOP. 
@@ -549,7 +581,6 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>()),
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels);
         propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         // Updating a property with existing channels, the new channels should be added without affecting existing channels
         // testProperty0WithChannels already has testChannel0 & testChannel1, the update request should be a NOP. 
@@ -606,7 +637,6 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>()),
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0,testProperty0WithChannels);
 
         propertyManager.update(Arrays.asList(testProperty0,testProperty0WithChannels));
         // Query ChannelFinder and verify updated channels and properties
@@ -633,7 +663,6 @@ public class PropertyManagerIT {
         testProperty1WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"value1")),new ArrayList<Tag>()),
                 new Channel(testChannelX.getName(),testChannelX.getOwner(),Arrays.asList(new Property(testProperty1WithChannels.getName(),testProperty1WithChannels.getOwner(),"valueX")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels,testProperty1WithChannels);
 
         propertyManager.create(Arrays.asList(testProperty0WithChannels,testProperty1WithChannels));
         // change owners and add channels and change values
@@ -695,7 +724,6 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),EMPTY_LIST)));
         List<Property> testProperties = Arrays.asList(testProperty0,testProperty0WithChannels);
-        cleanupTestProperties = testProperties;
 
         Iterable<Property> createdProperties = propertyManager.create(testProperties);
 
@@ -719,7 +747,6 @@ public class PropertyManagerIT {
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        cleanupTestProperties = Arrays.asList(testProperty0WithChannels);
 
         Property createdProperty = propertyManager.create(testProperty0WithChannels.getName(),testProperty0WithChannels);
 
@@ -736,40 +763,4 @@ public class PropertyManagerIT {
     }
 
 
-
-    // Helper operations to create and clean up the resources needed for successful
-    // testing of the PropertyManager operations
-
-    private Channel testChannel0 = new Channel("testChannel0", "testOwner");
-    private Channel testChannel1 = new Channel("testChannel1", "testOwner");
-    private Channel testChannelX = new Channel("testChannelX", "testOwner");
-
-    private final List<Channel> testChannels = Arrays.asList(testChannel0,
-            testChannel1,
-            testChannelX);
-
-    private List<Property> cleanupTestProperties = Collections.emptyList();
-
-    @BeforeEach
-    public void setup() {
-        channelRepository.indexAll(testChannels);
-    }
-
-    @AfterEach
-    public void cleanup() {
-        // clean up
-        testChannels.forEach(channel -> {
-            try {
-                if (channelRepository.existsById(channel.getName()))
-                    channelRepository.deleteById(channel.getName());
-            } catch (Exception e) {
-                System.out.println("Failed to clean up channel: " + channel.getName());
-            }
-        });
-        cleanupTestProperties.forEach(property -> {
-            if (propertyRepository.existsById(property.getName())) {
-                propertyRepository.deleteById(property.getName());
-            } 
-        });
-    }
 }

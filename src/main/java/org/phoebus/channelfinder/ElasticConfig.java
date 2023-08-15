@@ -26,6 +26,7 @@ import javax.servlet.ServletContextListener;
 
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -147,9 +148,8 @@ public class ElasticConfig implements ServletContextListener {
             indexClient.shutdown();
     }
 
-
     /**
-     * Create the olog indices and templates if they don't exist
+     * Create the indices and templates if they don't exist
      * @param client
      */
     void elasticIndexValidation(ElasticsearchClient client) {

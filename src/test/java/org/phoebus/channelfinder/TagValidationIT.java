@@ -1,21 +1,25 @@
 package org.phoebus.channelfinder;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
-
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(TagManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
@@ -24,6 +28,8 @@ public class TagValidationIT {
     @Autowired
     TagManager tagManager;
 
+    @Autowired
+    ElasticConfig esService;
     @Autowired
     ChannelRepository channelRepository;
 
@@ -117,10 +123,10 @@ public class TagValidationIT {
      */
     @Test
     public void validateXmlTagRequest2() {
-        channelRepository.indexAll(Arrays.asList(new Channel("testChannel0", "testOwner")));
+        channelRepository.indexAll(List.of(new Channel("testChannel0", "testOwner")));
 
         Tag testTag1 = new Tag("testTag1", "testOwner");
-        testTag1.setChannels(Arrays.asList(new Channel("testChannel0")));
+        testTag1.setChannels(List.of(new Channel("testChannel0")));
         try {
             tagManager.validateTagRequest(testTag1);
             Assertions.assertTrue(true);
@@ -129,5 +135,9 @@ public class TagValidationIT {
         }
 
         channelRepository.deleteById("testChannel0");
+    }
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
     }
 }

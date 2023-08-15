@@ -1,10 +1,13 @@
 package org.phoebus.channelfinder;
 
 import com.google.common.collect.Iterables;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
@@ -14,11 +17,13 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
@@ -421,7 +426,6 @@ public class ChannelManagerIT {
         tagRepository.indexAll(testTags);
         propertyRepository.indexAll(testProperties);
     }
-
     @AfterEach
     public void cleanup() {
         // clean up
@@ -444,5 +448,18 @@ public class ChannelManagerIT {
                 channelRepository.deleteById(channel.getName());
             }
         });
+    }
+
+
+    @Autowired
+    ElasticConfig esService;
+
+    @BeforeAll
+    void setupAll() {
+        ElasticConfigIT.setUp(esService);
+    }
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
     }
 }

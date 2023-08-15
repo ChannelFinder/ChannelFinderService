@@ -1,25 +1,28 @@
 package org.phoebus.channelfinder;
 
 import com.google.common.collect.Sets;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(TagRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class TagRepositoryIT {
@@ -33,6 +36,10 @@ public class TagRepositoryIT {
     @Autowired
     ChannelRepository channelRepository;
 
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
+    }
     /**
      * index a single tag
      */
