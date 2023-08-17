@@ -46,8 +46,11 @@ public class ITUtil {
     static final String HTTP          = "http://";
     static final String HEADER_JSON   = "'Content-Type: application/json'";
 
+    // port numbers
+    //     can be exposed differently externally to avoid interference with any running instance
+
     static final String IP_PORT_CHANNELFINDER = "127.0.0.1:8080/ChannelFinder";
-    static final String IP_PORT_ELASTICSEARCH = "127.0.0.1:9200";
+    static final String IP_PORT_ELASTICSEARCH = "127.0.0.1:9201";
 
     static final String RESOURCES_CHANNELS = "/resources/channels";
     static final String RESOURCES_PROPERTIES = "/resources/properties";

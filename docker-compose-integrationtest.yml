@@ -49,8 +49,8 @@ services:
     networks:
       - channelfinder-net
     ports:
-      - 9200:9200
-      - 9300:9300
+      - 9201:9200
+      - 9301:9300
     environment:
       cluster.name: channelfinder
       bootstrap.memory_lock: "true"
@@ -67,3 +67,12 @@ volumes:
 networks:
   channelfinder-net:
     driver: bridge
+
+
+# ------------------------------------------------------------------------------
+# Note
+# ------------------------------------------------------------------------------
+# elasticsearch port numbers
+#     can be exposed differently externally to avoid interference with any running instance
+#     to be reflected in docker integration tests
+# ------------------------------------------------------------------------------
