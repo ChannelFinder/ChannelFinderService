@@ -329,6 +329,17 @@ Method: GET    Returns: long    Required Role: None
 
 Returns a count of the number of channels which match a given query.
 
+Query Combined
+"""""""""""
+
+**.../channels/combined?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...**
+
+Method: GET    Returns: SearchResult    Required Role: None
+
+Returns a combined count and list of search results. Includes the option to
+add a query parameter "~track_total_hits" which means the count will be the total
+number of results to the query without pagination.
+
 Create/Replace Channel
 """"""""""""""""""""""
 
