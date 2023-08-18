@@ -159,6 +159,14 @@ In this way, http requests (GET) and curl commands (POST, PUT, DELETE) are run t
 
 There are tests for properties, tags and channels separately and in combination.
 
+Integration tests can be run in IDE and via Maven.
+
+```
+mvn failsafe:integration-test
+```
+
+See [How to run Integration test with Docker](INTEGRATIONTEST_DOCKER_RUN.md).
+
 #### ChannelFinder data managment
 
 The [cf-manager](https://github.com/ChannelFinder/cf-manager) project provides tools to perform operations on large queries ( potentially the entire directory ).
