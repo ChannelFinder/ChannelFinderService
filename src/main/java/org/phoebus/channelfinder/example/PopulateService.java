@@ -75,7 +75,7 @@ public class PopulateService {
     static String powner = "testp";
     static String towner = "testt";
 
-    static List<Integer> val_bucket = Arrays.asList(0, 1, 2, 5, 10, 20, 50, 100, 200, 500);
+    public static List<Integer> val_bucket = Arrays.asList(0, 1, 2, 5, 10, 20, 50, 100, 200, 500);
 
     // A static list of props, tags, channels handled by this class which must be cleaned up on closure.
     static Set<Property> prop_list = new HashSet<>();
@@ -245,7 +245,7 @@ public class PopulateService {
         // Tokens
         Map<Integer, List<Integer>> tokens = new HashMap<>();
         for (int i = 0; i < 6; i++) {
-            tokens.put(i, tokens_1000.stream().map(Integer::new).collect(Collectors.toList()));
+            tokens.put(i, new ArrayList<>(tokens_1000));
         }
 
         AtomicInteger channelCounter = new AtomicInteger(0);
@@ -307,7 +307,7 @@ public class PopulateService {
         // Tokens
         Map<Integer, List<Integer>> tokens = new HashMap<>();
         for (int i = 0; i < 6; i++) {
-            tokens.put(i, tokens_500.stream().map(Integer::new).collect(Collectors.toList()));
+            tokens.put(i, new ArrayList<>(tokens_500));
         }
 
         AtomicInteger channelCounter = new AtomicInteger(0);

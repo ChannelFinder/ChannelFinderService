@@ -36,6 +36,7 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.TrackHits;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import org.phoebus.channelfinder.entity.Channel;
@@ -413,14 +414,20 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                             .query(builtQuery.boolQuery.build()._toQuery())
                             .from(finalFrom)
                             .size(finalSize)
+                            .trackTotalHits(builder -> builder.enabled(builtQuery.trackTotalHits))
                             .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
             builtQuery.searchAfter.ifPresent(searchBuilder::searchAfter);
 
             SearchResponse<Channel> response = client.search(searchBuilder.build(),
                                                                 Channel.class
             );
-            long count = response.hits().total().value();
+
             List<Hit<Channel>> hits = response.hits().hits();
+            long count = hits.size();
+            if (builtQuery.trackTotalHits) {
+                assert response.hits().total() != null;
+                count = response.hits().total().value();
+            }
             return new SearchResult(hits.stream().map(Hit::source).collect(Collectors.toList()), count);
         } catch (Exception e) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
@@ -433,6 +440,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
         int size = defaultMaxSize;
         int from = 0;
+        boolean trackTotalHits = false;
         Optional<String> searchAfter = Optional.empty();
         String valueSplitPattern = "[\\|,;]";
         for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
@@ -482,6 +490,13 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 case "~search_after":
                     searchAfter = parameter.getValue().stream().findFirst();
                     break;
+
+                case "~track_total_hits":
+                    Optional<String> firstTrackTotalHits = parameter.getValue().stream().findFirst();
+                    if (firstTrackTotalHits.isPresent()) {
+                        trackTotalHits = Boolean.parseBoolean(firstTrackTotalHits.get());
+                    }
+                    break;
                 default:
                     DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
                     for (String value : parameter.getValue()) {
@@ -504,7 +519,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                     break;
             }
         }
-        return new BuiltQuery(boolQuery, size, from, searchAfter);
+        return new BuiltQuery(boolQuery, size, from, searchAfter, trackTotalHits);
     }
 
     private static class BuiltQuery {
@@ -512,12 +527,14 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         public final Integer size;
         public final Integer from;
         public final Optional<String> searchAfter;
+        public final boolean trackTotalHits;
 
-        public BuiltQuery(BoolQuery.Builder boolQuery, Integer size, Integer from, Optional<String> searchAfter) {
+        public BuiltQuery(BoolQuery.Builder boolQuery, Integer size, Integer from, Optional<String> searchAfter, boolean trackTotalHits) {
             this.boolQuery = boolQuery;
             this.size = size;
             this.from = from;
             this.searchAfter = searchAfter;
+            this.trackTotalHits = trackTotalHits;
         }
     }
 
