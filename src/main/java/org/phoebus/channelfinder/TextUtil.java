@@ -15,6 +15,7 @@ public class TextUtil {
 
     public static final String CLIENT_INITIALIZATION      = "Client initialization {0}";
     public static final String PATH_POST_VALIDATION_TIME  = "|{0} |POST|validation {1}";
+    public static final String PATH_POST_PREPERATION_TIME = "|{0} |POST|prepare {1}";
 
     public static final String COUNT_FAILED_CAUSE         = "Count failed for {0} Cause {1}";
     public static final String SEARCH_FAILED_CAUSE        = "Search failed for {0} Cause {1}";
