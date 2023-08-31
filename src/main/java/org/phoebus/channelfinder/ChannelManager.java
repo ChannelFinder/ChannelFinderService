@@ -169,8 +169,9 @@ public class ChannelManager {
     @PutMapping
     public Iterable<Channel> create(@RequestBody Iterable<Channel> channels) {
         // check if authorized role
-        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {           
+        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             // check if authorized owner
+            long start = System.currentTimeMillis();
             for(Channel channel: channels) {
 
                 Optional<Channel> existingChannel = channelRepository.findById(channel.getName());
@@ -190,17 +191,22 @@ public class ChannelManager {
                     }
                 }
             }
-
+            logger.log(Level.SEVERE, "Completed Authorization check : " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
             // Validate request parameters
             validateChannelRequest(channels);
+            logger.log(Level.SEVERE, "Completed validation check : " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
 
             // delete existing channels
             for(Channel channel: channels) {
                 if(channelRepository.existsById(channel.getName())) {
                     // delete existing channel
                     channelRepository.deleteById(channel.getName());
-                } 
+                }
             }
+            logger.log(Level.SEVERE, "Completed replacement of Channels : " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
 
             // reset owners of attached tags/props back to existing owners
             for(Channel channel: channels) {
@@ -208,11 +214,18 @@ public class ChannelManager {
                 channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
             }
 
+            logger.log(Level.SEVERE, "Completed reset tag and property ownership : " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
             channels.forEach(log ->
                 channelManagerAudit.log(Level.INFO, MessageFormat.format(TextUtil.CREATE_CHANNEL, log.toLog()))
             );
 
+            logger.log(Level.SEVERE, "Completed logging : " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
             List<Channel> createdChannels = channelRepository.indexAll(Lists.newArrayList(channels));
+
+            logger.log(Level.SEVERE, "Completed indexing : " + (System.currentTimeMillis() - start) + "ms");
+            start = System.currentTimeMillis();
             // process the results
             channelProcessorService.sendToProcessors(createdChannels);
             // created new channel
@@ -325,13 +338,15 @@ public class ChannelManager {
             validateChannelRequest(channels);   
 
             final long time = System.currentTimeMillis() - start;
-            channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_VALIDATION_TIME, servletContext.getContextPath(), time));
+            channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_PREPERATION_TIME, servletContext.getContextPath(), time));
 
+            start = System.currentTimeMillis();
             // reset owners of attached tags/props back to existing owners
             for(Channel channel: channels) {
-                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));            
+                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
                 channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
             }
+            channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_PREPERATION_TIME, servletContext.getContextPath(), time));
 
             // update channels
             List<Channel> updatedChannels =  FluentIterable.from(channelRepository.saveAll(channels)).toList();

@@ -254,10 +254,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
             if (response.found()) {
                 Channel channel = response.source();
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CHANNEL_FOUND, channel.getName()));
+                logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.CHANNEL_FOUND, channel.getName()));
                 return Optional.of(channel);
             } else {
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CHANNEL_NOT_FOUND, channelName));
+                logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.CHANNEL_NOT_FOUND, channelName));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {

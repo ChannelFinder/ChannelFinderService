@@ -223,7 +223,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
 
             if (response.found()) {
                 Tag tag = response.source();
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
+                logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add("~tag", tag.getName());
@@ -231,7 +231,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
                 }
                 return Optional.of(tag);
             } else {
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.TAG_NOT_FOUND, tagId));
+                logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.TAG_NOT_FOUND, tagId));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
