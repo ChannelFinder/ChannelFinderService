@@ -27,6 +27,7 @@ import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.CountResponse;
+import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -381,8 +382,21 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     }
 
     @Override
-    public void deleteAll(Iterable<? extends Channel> entities) {
-        throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
+    public void deleteAll(Iterable<? extends Channel> channels) {
+
+        BulkRequest.Builder br = new BulkRequest.Builder();
+        for (Channel channel : channels) {
+            br.operations(op -> op
+                    . delete(idx -> idx
+                            .index(ES_CHANNEL_INDEX)
+                            .id(channel.getName()))
+                    ).refresh(Refresh.True);
+        }
+        try {
+            BulkResponse result = client.bulk(br.build());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

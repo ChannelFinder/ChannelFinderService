@@ -3,15 +3,19 @@ package org.phoebus.channelfinder;
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
 
 import java.text.MessageFormat;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import javax.servlet.ServletContext;
 
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
@@ -172,17 +176,23 @@ public class ChannelManager {
         if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
             // check if authorized owner
             long start = System.currentTimeMillis();
+            Map<String, Channel> existingChannels = channelRepository.findAllById(StreamSupport
+                    .stream(channels.spliterator(), true)
+                    .map(Channel::getName)
+                    .collect(Collectors.toUnmodifiableList()))
+                    .stream().collect(Collectors.toMap(Channel::getName, channel -> {
+                        return channel;
+                    }));
             for(Channel channel: channels) {
-
-                Optional<Channel> existingChannel = channelRepository.findById(channel.getName());
-                boolean present = existingChannel.isPresent();
+                boolean present = existingChannels.containsKey(channel.getName());
                 if(present) {
-                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel.get())) {
-                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, existingChannel.get().toLog());
+                    Channel existingChannel = existingChannels.get(channel.getName());
+                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingChannel)) {
+                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, existingChannel.toLog());
                         logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
                         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
                     } 
-                    channel.setOwner(existingChannel.get().getOwner());
+                    channel.setOwner(existingChannel.getOwner());
                 } else {
                     if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), channel)) {
                         String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_CHANNEL, channel.toLog());
@@ -199,26 +209,34 @@ public class ChannelManager {
             start = System.currentTimeMillis();
 
             // delete existing channels
-            for(Channel channel: channels) {
-                if(channelRepository.existsById(channel.getName())) {
-                    // delete existing channel
-                    channelRepository.deleteById(channel.getName());
-                }
-            }
+            channelRepository.deleteAll(channels);
+//            for(Channel channel: channels) {
+//                if(channelRepository.existsById(channel.getName())) {
+//                    // delete existing channel
+//                    channelRepository.deleteById(channel.getName());
+//                }
+//            }
             logger.log(Level.SEVERE, "Completed replacement of Channels : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
 
             // reset owners of attached tags/props back to existing owners
+            Map<String, String> propOwners = StreamSupport
+                    .stream(propertyRepository.findAll().spliterator(), true)
+                    .collect(Collectors.toUnmodifiableMap(Property::getName, Property::getOwner));
+            Map<String, String> tagOwners = StreamSupport
+                    .stream(tagRepository.findAll().spliterator(), true)
+                    .collect(Collectors.toUnmodifiableMap(Tag::getName, Tag::getOwner));
+
             for(Channel channel: channels) {
-                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
-                channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
+                channel.getProperties().forEach(prop -> prop.setOwner(propOwners.get(prop.getName())));
+                channel.getTags().forEach(tag -> tag.setOwner(tagOwners.get(tag.getName())));
             }
 
             logger.log(Level.SEVERE, "Completed reset tag and property ownership : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
-            channels.forEach(log ->
-                channelManagerAudit.log(Level.INFO, MessageFormat.format(TextUtil.CREATE_CHANNEL, log.toLog()))
-            );
+//            channels.forEach(log ->
+//                channelManagerAudit.log(Level.FINE, MessageFormat.format(TextUtil.CREATE_CHANNEL, log.toLog()))
+//            );
 
             logger.log(Level.SEVERE, "Completed logging : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
@@ -464,8 +482,53 @@ public class ChannelManager {
      * @param channels list of channels to be validated
      */
     public void validateChannelRequest(Iterable<Channel> channels) {
+        List<String> existingProperties = StreamSupport
+                .stream(propertyRepository.findAll().spliterator(), true)
+                .map(Property::getName)
+                .collect(Collectors.toUnmodifiableList());
+        List<String> existingTags = StreamSupport
+                .stream(tagRepository.findAll().spliterator(), true)
+                .map(Tag::getName)
+                .collect(Collectors.toUnmodifiableList());
         for(Channel channel: channels) {
-            validateChannelRequest(channel);
+            // 1
+            if (channel.getName() == null || channel.getName().isEmpty()) {
+                String message = MessageFormat.format(TextUtil.CHANNEL_NAME_CANNOT_BE_NULL_OR_EMPTY, channel.toLog());
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
+            }
+            // 2
+            if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
+                String message = MessageFormat.format(TextUtil.CHANNEL_OWNER_CANNOT_BE_NULL_OR_EMPTY, channel.toLog());
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
+            }
+            // 3
+            List <String> tagNames = channel.getTags().stream().map(Tag::getName).collect(Collectors.toList());
+            for(String tagName:tagNames) {
+                if(!existingTags.contains(tagName)) {
+                    String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+                }
+            }
+            // 3
+            List <String> propertyNames = channel.getProperties().stream().map(Property::getName).collect(Collectors.toList());
+            List <String> propertyValues = channel.getProperties().stream().map(Property::getValue).collect(Collectors.toList());
+            for(String propertyName:propertyNames) {
+                if(!existingProperties.contains(propertyName)) {
+                    String message = MessageFormat.format(TextUtil.PROPERTY_NAME_DOES_NOT_EXIST, propertyName);
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+                }
+            }
+            for(String propertyValue:propertyValues) {
+                if(propertyValue == null || propertyValue.isEmpty()) {
+                    String message = MessageFormat.format(TextUtil.PROPERTY_VALUE_NULL_OR_EMPTY, propertyNames.get(propertyValues.indexOf(propertyValue)), propertyValue);
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+                }
+            }
         }
     }
 
