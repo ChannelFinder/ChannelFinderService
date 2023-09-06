@@ -201,22 +201,16 @@ public class ChannelManager {
                     }
                 }
             }
-            logger.log(Level.SEVERE, "Completed Authorization check : " + (System.currentTimeMillis() - start) + "ms");
+            logger.log(Level.INFO, "Completed Authorization check : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
             // Validate request parameters
             validateChannelRequest(channels);
-            logger.log(Level.SEVERE, "Completed validation check : " + (System.currentTimeMillis() - start) + "ms");
+            logger.log(Level.INFO, "Completed validation check : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
 
             // delete existing channels
             channelRepository.deleteAll(channels);
-//            for(Channel channel: channels) {
-//                if(channelRepository.existsById(channel.getName())) {
-//                    // delete existing channel
-//                    channelRepository.deleteById(channel.getName());
-//                }
-//            }
-            logger.log(Level.SEVERE, "Completed replacement of Channels : " + (System.currentTimeMillis() - start) + "ms");
+            logger.log(Level.INFO, "Completed replacement of Channels : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
 
             // reset owners of attached tags/props back to existing owners
@@ -232,18 +226,14 @@ public class ChannelManager {
                 channel.getTags().forEach(tag -> tag.setOwner(tagOwners.get(tag.getName())));
             }
 
-            logger.log(Level.SEVERE, "Completed reset tag and property ownership : " + (System.currentTimeMillis() - start) + "ms");
+            logger.log(Level.INFO, "Completed reset tag and property ownership : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
-//            channels.forEach(log ->
-//                channelManagerAudit.log(Level.FINE, MessageFormat.format(TextUtil.CREATE_CHANNEL, log.toLog()))
-//            );
 
-            logger.log(Level.SEVERE, "Completed logging : " + (System.currentTimeMillis() - start) + "ms");
+            logger.log(Level.INFO, "Completed logging : " + (System.currentTimeMillis() - start) + "ms");
             start = System.currentTimeMillis();
             List<Channel> createdChannels = channelRepository.indexAll(Lists.newArrayList(channels));
 
-            logger.log(Level.SEVERE, "Completed indexing : " + (System.currentTimeMillis() - start) + "ms");
-            start = System.currentTimeMillis();
+            logger.log(Level.INFO, "Completed indexing : " + (System.currentTimeMillis() - start) + "ms");
             // process the results
             channelProcessorService.sendToProcessors(createdChannels);
             // created new channel
