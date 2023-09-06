@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ChannelProcessorService {
-	
+
     private static final Logger logger = Logger.getLogger(ChannelProcessorService.class.getName());
 
     @Autowired
@@ -28,6 +28,7 @@ public class ChannelProcessorService {
     List<String> getProcessorsNames() {
         return channelProcessors.stream().map(ChannelProcessor::processorName).collect(Collectors.toList());
     }
+
     /**
      * {@link ChannelProcessor} providers are called for the specified list of channels. Since a provider
      * implementation may need some time to do it's job, calling them is done asynchronously. Any

@@ -222,7 +222,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
 
             if (response.found()) {
                 Property property = response.source();
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
+                logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add(property.getName(), "*");
@@ -230,7 +230,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                 }
                 return Optional.of(property);
             } else {
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.PROPERTY_NOT_FOUND, propertyName));
+                logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.PROPERTY_NOT_FOUND, propertyName));
                 return Optional.empty();
             }
         } catch (ElasticsearchException | IOException e) {
