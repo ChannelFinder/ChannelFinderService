@@ -49,7 +49,7 @@ class ChannelFinderIT {
     //         requires
     //             elastic indices for ChannelFinder, ensured at start-up
     //             environment
-    //                 default ports, 8080 for ChannelFinder, 9200 for Elasticsearch
+    //                 default ports, can be exposed differently externally to avoid interference with any running instance
     //                 demo_auth enabled
     //         docker containers shared for tests
     //             each test to leave ChannelFinder, Elasticsearch in clean state - not disturb other tests
