@@ -129,33 +129,12 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--cleanup=1"
 
 #### Integration tests with Docker containers
 
-Purpose is to have integration tests for ChannelFinder API.
+Purpose is to have integration tests for ChannelFinder API with Docker.
 
 See `src/test/java` and package
 * `org.phoebus.channelfinder.docker`
 
-Integration tests are implemented in test class annotated with `@Testcontainers`. Test class starts a docker container for the application (ChannelFinder service) and another docker container for elastic (Elasticsearch) through `docker-compose-integrationtest.yml` after which JUnit tests are run.
-
-```
-    @Container
-    public static final DockerComposeContainer<?> ENVIRONMENT =
-        new DockerComposeContainer<>(new File("docker-compose-integrationtest.yml"))
-            .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
-
-    @Test
-    void channelfinderUp() {
-        try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER;
-            int responseCode = ITUtil.doGet(address);
-
-            assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
-            fail();
-        }
-    }
-```
-
-In this way, http requests (GET) and curl commands (POST, PUT, DELETE) are run towards the application to test behavior (read, list, query, create, update, remove) and replies are received and checked if content is as expected.
+Integration tests start docker containers for ChannelFinder and Elasticsearch and run http requests (GET) and curl commands (POST, PUT, DELETE) towards the application to test behavior (read, list, query, create, update, remove) and replies are received and checked if content is as expected.
 
 There are tests for properties, tags and channels separately and in combination.
 
@@ -165,7 +144,9 @@ Integration tests can be run in IDE and via Maven.
 mvn failsafe:integration-test
 ```
 
-See [How to run Integration test with Docker](src/test/resources/INTEGRATIONTEST_DOCKER_RUN.md).
+See
+* [How to run Integration test with Docker](src/test/resources/INTEGRATIONTEST_DOCKER_RUN.md)
+* [Tutorial for Integration test with Docker](src/test/resources/INTEGRATIONTEST_DOCKER_TUTORIAL.md)
 
 #### ChannelFinder data managment
 
