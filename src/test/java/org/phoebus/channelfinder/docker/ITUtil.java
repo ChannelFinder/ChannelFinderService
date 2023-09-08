@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
 /**
- * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch.
+ * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch with focus on support common behavior for tests.
  *
  * @author Lars Johansson
  */

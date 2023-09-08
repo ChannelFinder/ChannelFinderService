@@ -30,9 +30,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.phoebus.channelfinder.entity.Scroll;
 
 /**
- * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch.
+ * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch with focus on support test of behavior for scroll endpoints.
  *
  * @author Lars Johansson
+ *
+ * @see org.phoebus.channelfinder.docker.ITUtil
  */
 public class ITUtilScroll {
 

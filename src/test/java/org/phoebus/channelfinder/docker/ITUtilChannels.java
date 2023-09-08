@@ -36,9 +36,11 @@ import org.phoebus.channelfinder.docker.ITUtil.EndpointChoice;
 import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
 
 /**
- * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch.
+ * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch with focus on support test of behavior for channel endpoints.
  *
  * @author Lars Johansson
+ *
+ * @see org.phoebus.channelfinder.docker.ITUtil
  */
 public class ITUtilChannels {
 
