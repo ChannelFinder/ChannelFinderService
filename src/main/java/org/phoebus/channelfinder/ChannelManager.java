@@ -350,9 +350,16 @@ public class ChannelManager {
 
             start = System.currentTimeMillis();
             // reset owners of attached tags/props back to existing owners
+            Map<String, String> propOwners = StreamSupport
+                    .stream(propertyRepository.findAll().spliterator(), true)
+                    .collect(Collectors.toUnmodifiableMap(Property::getName, Property::getOwner));
+            Map<String, String> tagOwners = StreamSupport
+                    .stream(tagRepository.findAll().spliterator(), true)
+                    .collect(Collectors.toUnmodifiableMap(Tag::getName, Tag::getOwner));
+
             for(Channel channel: channels) {
-                channel.getProperties().forEach(prop -> prop.setOwner(propertyRepository.findById(prop.getName()).get().getOwner()));
-                channel.getTags().forEach(tag -> tag.setOwner(tagRepository.findById(tag.getName()).get().getOwner()));
+                channel.getProperties().forEach(prop -> prop.setOwner(propOwners.get(prop.getName())));
+                channel.getTags().forEach(tag -> tag.setOwner(tagOwners.get(tag.getName())));
             }
             channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_PREPERATION_TIME, servletContext.getContextPath(), time));
 
