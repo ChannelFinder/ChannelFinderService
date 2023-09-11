@@ -32,13 +32,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Integration tests for ChannelFinder and Elasticsearch that make use of existing dockerization
- * with docker-compose-integrationtest.yml / Dockerfile.integrationtest.
- *
- * <p>
- * Focus of this class is to have ChannelFinder and Elasticsearch up and running.
+ * Integration tests for ChannelFinder and Elasticsearch with focus on endpoints being available.
+ * Existing dockerization is used with <tt>docker-compose-integrationtest.yml</tt> and <tt>Dockerfile.integrationtest</tt>.
  *
  * @author Lars Johansson
+ *
+ * @see ITUtil
  */
 @Testcontainers
 class ChannelFinderIT {
@@ -49,7 +48,7 @@ class ChannelFinderIT {
     //         requires
     //             elastic indices for ChannelFinder, ensured at start-up
     //             environment
-    //                 default ports, 8080 for ChannelFinder, 9200 for Elasticsearch
+    //                 default ports, can be exposed differently externally to avoid interference with any running instance
     //                 demo_auth enabled
     //         docker containers shared for tests
     //             each test to leave ChannelFinder, Elasticsearch in clean state - not disturb other tests

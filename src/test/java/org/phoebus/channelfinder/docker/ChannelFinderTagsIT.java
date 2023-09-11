@@ -40,16 +40,15 @@ import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 
 /**
- * Integration tests for ChannelFinder and Elasticsearch that make use of existing dockerization
- * with docker-compose.yml / Dockerfile.
- *
- * <p>
- * Focus of this class is to have ChannelFinder and Elasticsearch up and running together with usage of
+ * Integration tests for ChannelFinder and Elasticsearch with focus on usage of 
  * {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}.
+ * Existing dockerization is used with <tt>docker-compose-integrationtest.yml</tt> and <tt>Dockerfile.integrationtest</tt>.
  *
  * @author Lars Johansson
  *
  * @see org.phoebus.channelfinder.TagManager
+ * @see org.phoebus.channelfinder.docker.ITUtil
+ * @see org.phoebus.channelfinder.docker.ITUtilTags
  */
 @Testcontainers
 class ChannelFinderTagsIT {
@@ -60,7 +59,7 @@ class ChannelFinderTagsIT {
     //         requires
     //             elastic indices for ChannelFinder, ensured at start-up
     //             environment
-    //                 default ports, 8080 for ChannelFinder, 9200 for Elasticsearch
+    //                 default ports, can be exposed differently externally to avoid interference with any running instance
     //                 demo_auth enabled
     //         docker containers shared for tests
     //             each test to leave ChannelFinder, Elasticsearch in clean state - not disturb other tests
