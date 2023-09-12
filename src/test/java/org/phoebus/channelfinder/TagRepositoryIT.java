@@ -1,15 +1,15 @@
 package org.phoebus.channelfinder;
 
 import com.google.common.collect.Sets;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
-
-@RunWith(SpringRunner.class)
 @WebMvcTest(TagRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class TagRepositoryIT {
@@ -48,7 +43,7 @@ public class TagRepositoryIT {
         
         Tag createdTag = tagRepository.index(testTag);
         // verify the tag was created as expected
-        assertEquals("Failed to create the tag", testTag, createdTag);
+        Assertions.assertEquals(testTag, createdTag, "Failed to create the tag");
     }
 
     /**
@@ -63,7 +58,7 @@ public class TagRepositoryIT {
 
         Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
         // verify the tags were created as expected
-        assertEquals("Failed to create the list of tags", testTags, createdTags);
+        Assertions.assertEquals(testTags, createdTags, "Failed to create the list of tags");
     }
 
     /**
@@ -79,11 +74,11 @@ public class TagRepositoryIT {
         Tag createdTag = tagRepository.index(testTag);
         Tag updatedTestTag = tagRepository.save(updateTestTag);
         // verify the tag was updated as expected
-        assertEquals("Failed to update the tag with the same name", updateTestTag, updatedTestTag);
+        Assertions.assertEquals(updateTestTag, updatedTestTag, "Failed to update the tag with the same name");
 
         Tag updatedTestTag1 = tagRepository.save("testTag",updateTestTag1);
         // verify the tag was updated as expected
-        assertEquals("Failed to update the tag with a different name", updateTestTag1, updatedTestTag1);
+        Assertions.assertEquals(updateTestTag1, updatedTestTag1, "Failed to update the tag with a different name");
     }
 
     /**
@@ -102,7 +97,7 @@ public class TagRepositoryIT {
         Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
         Iterable<Tag> updatedTestTags = tagRepository.saveAll(updateTestTags);
         // verify the tags were updated as expected
-        assertEquals("Failed to update the tags", updateTestTags, updatedTestTags);
+        Assertions.assertEquals(updateTestTags, updatedTestTags, "Failed to update the tags");
     }
 
     /**
@@ -115,12 +110,12 @@ public class TagRepositoryIT {
         
         Optional<Tag> notFoundTag = tagRepository.findById(testTag.getName());
         // verify the tag was not found as expected
-        assertTrue("Found the test tag which has not yet been created", notFoundTag.isEmpty());
+        Assertions.assertTrue(notFoundTag.isEmpty(), "Found the test tag which has not yet been created");
         
         Tag createdTag = tagRepository.index(testTag);
         Optional<Tag> foundTag = tagRepository.findById(createdTag.getName());
         // verify the tag was found as expected
-        assertEquals("Failed to create/find the test tag", createdTag, foundTag.get());
+        Assertions.assertEquals(createdTag, foundTag.get(), "Failed to create/find the test tag");
 
         // Create a channel with the test tag and find a tag with its associated channels
         Channel channel = new Channel("testChannel","testOwner",null,Arrays.asList(createdTag));
@@ -132,7 +127,7 @@ public class TagRepositoryIT {
 
         Tag expectedTag = new Tag(createdTag.getName(), createdTag.getOwner());
         expectedTag.setChannels(Arrays.asList(createdChannel));
-        assertEquals("Failed to find the tag", expectedTag, foundTag.get());
+        Assertions.assertEquals(expectedTag, foundTag.get(), "Failed to find the tag");
 
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());
@@ -148,9 +143,9 @@ public class TagRepositoryIT {
 
         Tag createdTag = tagRepository.index(testTag);
         // verify the tag exists as expected
-        assertTrue("Failed to check the existance of " + testTag.getName(), tagRepository.existsById(testTag.getName()));
+        Assertions.assertTrue(tagRepository.existsById(testTag.getName()), "Failed to check the existance of " + testTag.getName());
         // verify the tag does not exist, as expected
-        assertTrue("Failed to check the non-existance of 'non-existant-tag'", !tagRepository.existsById("non-existant-tag"));
+        Assertions.assertFalse(tagRepository.existsById("non-existant-tag"), "Failed to check the non-existance of 'non-existant-tag'");
     }
 
     /**
@@ -167,7 +162,7 @@ public class TagRepositoryIT {
             Set<Tag> createdTags = Sets.newHashSet(tagRepository.indexAll(testTags));
             Set<Tag> listedTags = Sets.newHashSet(tagRepository.findAll());
             // verify the tag was created as expected
-            assertEquals("Failed to list all created tags", listedTags, createdTags);
+            Assertions.assertEquals(listedTags, createdTags, "Failed to list all created tags");
         } catch (Exception e) {
             e.printStackTrace();
         } 
@@ -191,7 +186,7 @@ public class TagRepositoryIT {
         } catch (ResponseStatusException e) {            
         } finally {
             // verify the tags were not found as expected
-            assertNotEquals("Found the tags",testTags,notFoundTags);
+            Assertions.assertNotEquals(testTags, notFoundTags, "Found the tags");
         }
 
         Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
@@ -201,7 +196,7 @@ public class TagRepositoryIT {
         } catch (ResponseStatusException e) {
         } finally {
             // verify the tags were found as expected
-            assertEquals("Failed to find the tags",createdTags,foundTags);
+            Assertions.assertEquals(createdTags, foundTags, "Failed to find the tags");
         }
     }
 
@@ -218,17 +213,17 @@ public class TagRepositoryIT {
         Channel createdChannel = channelRepository.index(channel);
         tagRepository.deleteById(createdTag.getName());
         // verify the tag was deleted as expected
-        assertNotEquals("Failed to delete tag",testTag,tagRepository.findById(testTag.getName()));
+        Assertions.assertNotEquals(testTag, tagRepository.findById(testTag.getName()), "Failed to delete tag");
 
         // verify the tag was deleted from channels as expected
         Channel foundChannel = channelRepository.findById("testChannel").get();
-        assertTrue("Failed to remove tag from channel",foundChannel.getTags().isEmpty());
+        Assertions.assertTrue(foundChannel.getTags().isEmpty(), "Failed to remove tag from channel");
 
         // verify the tag was deleted from all channels as expected
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag","testChannel");
         List<Channel> chans = channelRepository.search(params).getChannels();
-        assertTrue("Failed to remove tag from channel",chans.isEmpty());
+        Assertions.assertTrue(chans.isEmpty(), "Failed to remove tag from channel");
         
         // channel clean up
         channelRepository.deleteById(createdChannel.getName());
@@ -238,7 +233,7 @@ public class TagRepositoryIT {
     
     private List<Tag> cleanupTestTags = Collections.emptyList();
 
-    @After
+    @AfterEach
     public void cleanup() {
         // clean up
         cleanupTestTags.forEach(tag -> {

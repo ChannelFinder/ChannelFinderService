@@ -2,16 +2,16 @@ package org.phoebus.channelfinder;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,12 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(SpringRunner.class)
 @WebMvcTest(PropertyRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class PropertyRepositoryIT {
@@ -52,7 +47,7 @@ public class PropertyRepositoryIT {
 
         Property createdProperty = propertyRepository.index(testProperty);
         // verify the property was created as expected
-        assertEquals("Failed to create the property", testProperty, createdProperty);
+        Assertions.assertEquals(testProperty, createdProperty, "Failed to create the property");
     }
 
     /**
@@ -67,7 +62,7 @@ public class PropertyRepositoryIT {
 
         Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
         // verify the properties were created as expected
-        assertTrue("Failed to create the list of properties", Iterables.elementsEqual(testProperties, createdProperties));
+        Assertions.assertTrue(Iterables.elementsEqual(testProperties, createdProperties), "Failed to create the list of properties");
     }
 
     /**
@@ -83,11 +78,11 @@ public class PropertyRepositoryIT {
         Property createdProperty = propertyRepository.index(testProperty);
         Property updatedTestProperty = propertyRepository.save(updateTestProperty);
         // verify the property was updated as expected
-        assertEquals("Failed to update the property with the same name", updateTestProperty, updatedTestProperty);
+        Assertions.assertEquals(updateTestProperty, updatedTestProperty, "Failed to update the property with the same name");
 
         Property updatedTestProperty1 = propertyRepository.save("testProperty",updateTestProperty1);
         // verify the property was updated as expected
-        assertEquals("Failed to update the property with a different name", updateTestProperty1, updatedTestProperty1);
+        Assertions.assertEquals(updateTestProperty1, updatedTestProperty1, "Failed to update the property with a different name");
     }
 
     /**
@@ -106,7 +101,7 @@ public class PropertyRepositoryIT {
         Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
         Iterable<Property> updatedTestProperties = propertyRepository.saveAll(updateTestProperties);
         // verify the properties were updated as expected
-        assertTrue("Failed to update the properties", Iterables.elementsEqual(updateTestProperties, updatedTestProperties));
+        Assertions.assertTrue(Iterables.elementsEqual(updateTestProperties, updatedTestProperties), "Failed to update the properties");
     }
 
     /**
@@ -119,14 +114,13 @@ public class PropertyRepositoryIT {
         
         Optional<Property> notFoundProperty = propertyRepository.findById(testProperty.getName());
         // verify the property was not found as expected
-        assertTrue("Found the property " + testProperty.getName() + " which should not exist.",
-                notFoundProperty.isEmpty());
+        Assertions.assertTrue(notFoundProperty.isEmpty(), "Found the property " + testProperty.getName() + " which should not exist.");
 
         Property createdProperty = propertyRepository.index(testProperty);
 
         Optional<Property> foundProperty = propertyRepository.findById(createdProperty.getName());
         // verify the property was found as expected
-        assertEquals("Failed to find the property",createdProperty,foundProperty.get());
+        Assertions.assertEquals(createdProperty, foundProperty.get(), "Failed to find the property");
 
         testProperty.setValue("test");
         Channel channel = new Channel("testChannel","testOwner",Arrays.asList(testProperty),new ArrayList<Tag>());
@@ -138,7 +132,7 @@ public class PropertyRepositoryIT {
         // verify the property was found as expected
         Property expectedProperty = new Property(createdProperty.getName(), createdProperty.getOwner());
         expectedProperty.setChannels(Arrays.asList(createdChannel));
-        assertEquals("Failed to find the property", expectedProperty, foundProperty.get());
+        Assertions.assertEquals(expectedProperty, foundProperty.get(), "Failed to find the property");
 
     }
 
@@ -149,15 +143,15 @@ public class PropertyRepositoryIT {
     public void testPropertyExists() {
 
         // check that non existing property returns false
-        assertFalse("Failed to check the non existing property :" + "no-property", propertyRepository.existsById("no-property"));
+        Assertions.assertFalse(propertyRepository.existsById("no-property"), "Failed to check the non existing property :" + "no-property");
 
         Property testProperty = new Property("testProperty","testOwner");
-        assertFalse("Test property " + testProperty.getName() + " already exists", propertyRepository.existsById(testProperty.getName()));
+        Assertions.assertFalse(propertyRepository.existsById(testProperty.getName()), "Test property " + testProperty.getName() + " already exists");
         Property createdProperty = propertyRepository.index(testProperty);
         cleanupTestProperties = Arrays.asList(createdProperty);
 
         // verify the property exists as expected
-        assertTrue("Failed to check the existance of " + testProperty.getName(), propertyRepository.existsById(testProperty.getName()));
+        Assertions.assertTrue(propertyRepository.existsById(testProperty.getName()), "Failed to check the existance of " + testProperty.getName());
     }
 
     /**
@@ -174,7 +168,7 @@ public class PropertyRepositoryIT {
             Set<Property> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
             Set<Property> listedProperties = Sets.newHashSet(propertyRepository.findAll());
             // verify the properties were listed as expected
-            assertEquals("Failed to list all created properties", createdProperties, listedProperties);
+            Assertions.assertEquals(createdProperties, listedProperties, "Failed to list all created properties");
         } catch (Exception e) {
             e.printStackTrace();
         } 
@@ -198,7 +192,7 @@ public class PropertyRepositoryIT {
         } catch (ResponseStatusException e) {            
         } finally {
             // verify the properties were not found as expected
-            assertNotEquals("Found the properties",testProperties,notFoundProperties);
+            Assertions.assertNotEquals(testProperties, notFoundProperties, "Found the properties");
         }
 
         Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
@@ -208,7 +202,7 @@ public class PropertyRepositoryIT {
         } catch (ResponseStatusException e) {
         } finally {
             // verify the properties were found as expected
-            assertEquals("Failed to find the properties",createdProperties,foundProperties);
+            Assertions.assertEquals(createdProperties, foundProperties, "Failed to find the properties");
         }
     }
 
@@ -228,17 +222,17 @@ public class PropertyRepositoryIT {
         cleanupTestChannels = Arrays.asList(createdChannel);
         propertyRepository.deleteById(createdProperty.getName());
         // verify the property was deleted as expected
-        assertNotEquals("Failed to delete property",testProperty,propertyRepository.findById(testProperty.getName()));
+        Assertions.assertNotEquals(testProperty, propertyRepository.findById(testProperty.getName()), "Failed to delete property");
 
         Channel foundChannel = channelRepository.findById("testChannel").get();
         // verify the property was deleted from channels as expected
-        assertTrue("Failed to remove property from channel",foundChannel.getProperties().isEmpty());
+        Assertions.assertTrue(foundChannel.getProperties().isEmpty(), "Failed to remove property from channel");
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("testProperty","*");
         List<Channel> chans = channelRepository.search(params).getChannels();
         // verify the property was deleted from channels as expected
-        assertTrue("Failed to remove property from channel", chans.isEmpty());
+        Assertions.assertTrue(chans.isEmpty(), "Failed to remove property from channel");
     }
 
     // helper operations to clean up proprepoIT
@@ -246,7 +240,7 @@ public class PropertyRepositoryIT {
 
     private List<Channel> cleanupTestChannels = Collections.emptyList();
 
-    @After
+    @AfterEach
     public void cleanup() {
         // clean up
         cleanupTestProperties.forEach(property -> {

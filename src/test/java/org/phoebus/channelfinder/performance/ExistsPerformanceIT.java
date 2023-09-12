@@ -1,14 +1,12 @@
 package org.phoebus.channelfinder.performance;
 
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.ChannelRepository;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.junit4.SpringRunner;
+
 
 import com.google.common.collect.Lists;
 
@@ -19,7 +17,7 @@ import com.google.common.collect.Lists;
  *
  */
 
-@RunWith(SpringRunner.class)
+
 @WebMvcTest(ChannelRepository.class)
 public class ExistsPerformanceIT {
 
@@ -32,7 +30,7 @@ public class ExistsPerformanceIT {
     @Test
     public void channelExists() {
         service.createDB(1);
-        assertTrue(channelRepository.existsByIds(Lists.newArrayList(service.getChannelList())));
+        Assertions.assertTrue(channelRepository.existsByIds(Lists.newArrayList(service.getChannelList())));
         service.cleanupDB();
     }
 }

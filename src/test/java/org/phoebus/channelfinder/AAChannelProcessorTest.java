@@ -2,7 +2,8 @@ package org.phoebus.channelfinder;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -12,10 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertEquals;
 import static org.phoebus.channelfinder.processors.AAChannelProcessor.ArchivePV;
 
-public class AAChannelProcessorTest {
+class AAChannelProcessorTest {
 
     @Test
     public void archivePropertyParsePass() {
@@ -24,9 +24,9 @@ public class AAChannelProcessorTest {
         ar.setPv("sim://testing");
         ar.setSamplingParameters("monitor@1.0", testPolicyList);
 
-        assertEquals(ar.getPv(), "sim://testing");
-        assertEquals(ar.getSamplingMethod(), "MONITOR");
-        assertEquals(ar.getSamplingPeriod(), "1.0");
+        Assertions.assertEquals(ar.getPv(), "sim://testing");
+        Assertions.assertEquals(ar.getSamplingMethod(), "MONITOR");
+        Assertions.assertEquals(ar.getSamplingPeriod(), "1.0");
 
     }
 
@@ -36,8 +36,8 @@ public class AAChannelProcessorTest {
                              String expectedSamplingMethod, String expectedSamplingPeriod) {
         ArchivePV ar = new ArchivePV();
         ar.setSamplingParameters(parameters, policyList);
-        assertEquals(expectedSamplingMethod, ar.getSamplingMethod());
-        assertEquals(expectedSamplingPeriod, ar.getSamplingPeriod());
+        Assertions.assertEquals(expectedSamplingMethod, ar.getSamplingMethod());
+        Assertions.assertEquals(expectedSamplingPeriod, ar.getSamplingPeriod());
     }
 
     private static Stream<Arguments> provideArchivePropertyArguments() {
@@ -72,10 +72,10 @@ public class AAChannelProcessorTest {
         ar.setPv("sim://testing");
         ar.setSamplingParameters("default", testPolicyList);
 
-        assertEquals(ar.getPv(), "sim://testing");
-        assertEquals(ar.getSamplingMethod(), null);
-        assertEquals(ar.getSamplingPeriod(), null);
-        assertEquals(ar.getPolicy(), null);
+        Assertions.assertEquals(ar.getPv(), "sim://testing");
+        Assertions.assertNull(ar.getSamplingMethod());
+        Assertions.assertNull(ar.getSamplingPeriod());
+        Assertions.assertNull(ar.getPolicy());
     }
 
     @Test
@@ -84,20 +84,20 @@ public class AAChannelProcessorTest {
         ar.setPv("sim://testingPolicy");
         ar.setPolicy("Fast");
 
-        assertEquals(ar.getPv(), "sim://testingPolicy");
-        assertEquals(ar.getSamplingMethod(), null);
-        assertEquals(ar.getSamplingPeriod(), null);
-        assertEquals(ar.getPolicy(), "Fast");
+        Assertions.assertEquals(ar.getPv(), "sim://testingPolicy");
+        Assertions.assertNull(ar.getSamplingMethod());
+        Assertions.assertNull(ar.getSamplingPeriod());
+        Assertions.assertEquals(ar.getPolicy(), "Fast");
 
         ar.setPolicy("SlowControlled");
-        assertEquals(ar.getSamplingMethod(), null);
-        assertEquals(ar.getSamplingPeriod(), null);
-        assertEquals(ar.getPolicy(), "SlowControlled");
+        Assertions.assertNull(ar.getSamplingMethod());
+        Assertions.assertNull(ar.getSamplingPeriod());
+        Assertions.assertEquals(ar.getPolicy(), "SlowControlled");
 
         ar.setSamplingParameters("scan@60", new ArrayList<>());
-        assertEquals(ar.getSamplingMethod(), "SCAN");
-        assertEquals(ar.getSamplingPeriod(), "60");
-        assertEquals(ar.getPolicy(), "SlowControlled");
+        Assertions.assertEquals(ar.getSamplingMethod(), "SCAN");
+        Assertions.assertEquals(ar.getSamplingPeriod(), "60");
+        Assertions.assertEquals(ar.getPolicy(), "SlowControlled");
     }
 
     @Test
@@ -114,7 +114,7 @@ public class AAChannelProcessorTest {
         String str = objectMapper.writeValueAsString(List.of(ar1, ar2));
 
         String expectedString = "[{\"pv\":\"sim://testing1\",\"samplingMethod\":\"MONITOR\",\"samplingPeriod\":\"1.0\"},{\"pv\":\"sim://testing2\",\"samplingMethod\":\"SCAN\",\"samplingPeriod\":\"0.2\"}]";
-        assertEquals(str, expectedString);
+        Assertions.assertEquals(str, expectedString);
 
         // Only a pv name
         ArchivePV ar3 = new ArchivePV();
@@ -122,7 +122,7 @@ public class AAChannelProcessorTest {
         str = objectMapper.writeValueAsString(List.of(ar3));
 
         expectedString = "[{\"pv\":\"sim://testing3\"}]";
-        assertEquals(str, expectedString);
+        Assertions.assertEquals(str, expectedString);
 
         // Test policies
         List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
@@ -134,7 +134,7 @@ public class AAChannelProcessorTest {
         str = objectMapper.writeValueAsString(List.of(ar4));
 
         expectedString = "[{\"pv\":\"sim://testing4\",\"policy\":\"Fast\"}]";
-        assertEquals(str, expectedString);
+        Assertions.assertEquals(str, expectedString);
 
         // Invalid policy
         ArchivePV ar5 = new ArchivePV();
@@ -143,7 +143,7 @@ public class AAChannelProcessorTest {
         str = objectMapper.writeValueAsString(List.of(ar5));
 
         expectedString = "[{\"pv\":\"sim://testing5\"}]";
-        assertEquals(str, expectedString);
+        Assertions.assertEquals(str, expectedString);
     }
 
 }
