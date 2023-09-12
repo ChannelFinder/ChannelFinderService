@@ -57,8 +57,8 @@ public class InfoManager {
             elasticInfo.put("status", "Connected");
             elasticInfo.put("clusterName", response.clusterName());
             elasticInfo.put("clusterUuid", response.clusterUuid());
-            ElasticsearchVersionInfo version = response.version();
-            elasticInfo.put("version", version.toString());
+            ElasticsearchVersionInfo elasticVersion = response.version();
+            elasticInfo.put("version", elasticVersion.number());
         } catch (IOException e) {
             Application.logger.log(Level.WARNING, "Failed to create ChannelFinder service info resource.", e);
             elasticInfo.put("status", "Failed to connect to elastic " + e.getLocalizedMessage());
