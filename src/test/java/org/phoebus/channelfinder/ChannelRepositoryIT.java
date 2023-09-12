@@ -2,10 +2,10 @@ package org.phoebus.channelfinder;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;
@@ -13,7 +13,7 @@ import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,11 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(SpringRunner.class)
 @WebMvcTest(ChannelRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelRepositoryIT {
@@ -55,7 +51,7 @@ public class ChannelRepositoryIT {
         
         Channel createdChannel = channelRepository.index(testChannel);
         // verify the channel was created as expected
-        assertEquals("Failed to create the channel", testChannel, createdChannel);
+        Assertions.assertEquals(testChannel, createdChannel, "Failed to create the channel");
     }
 
     /**
@@ -70,7 +66,7 @@ public class ChannelRepositoryIT {
 
         Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
         // verify the channels were created as expected
-        assertTrue("Failed to create the channels", Iterables.elementsEqual(testChannels, createdChannels));
+        Assertions.assertTrue(Iterables.elementsEqual(testChannels, createdChannels), "Failed to create the channels");
     }
 
     /**
@@ -91,7 +87,7 @@ public class ChannelRepositoryIT {
         // Update Channel with new owner a new property and a new tag
         Channel updatedTestChannel = channelRepository.save(updateTestChannel);
         // verify that the channel was updated as expected
-        assertEquals("Failed to update the channel with the same name", updateTestChannel, updatedTestChannel);
+        Assertions.assertEquals(updateTestChannel, updatedTestChannel, "Failed to update the channel with the same name");
 
         // Update Channel with a second property and tag
         Channel updatedTestChannel1 = channelRepository.save(updateTestChannel1);
@@ -99,7 +95,7 @@ public class ChannelRepositoryIT {
         Channel expectedChannel = new Channel("testChannel","updateTestOwner");
         expectedChannel.addProperties(testProperties);
         expectedChannel.addTags(testTags);
-        assertEquals("Failed to update the channel with the same name", updateTestChannel, updatedTestChannel);
+        Assertions.assertEquals(updateTestChannel, updatedTestChannel, "Failed to update the channel with the same name");
     }
 
 
@@ -123,7 +119,7 @@ public class ChannelRepositoryIT {
                 new Channel("testChannel","updateTestOwner", testUpdatedProperties, testUpdatedTags),
                 new Channel("testChannel1","updateTestOwner1", testUpdatedProperties, testUpdatedTags)
         );
-        assertEquals("Failed to update the channels: ",expectedChannels, updatedTestChannels);
+        Assertions.assertEquals(expectedChannels, updatedTestChannels, "Failed to update the channels: ");
     }
 
     /**
@@ -136,17 +132,17 @@ public class ChannelRepositoryIT {
 
         Optional<Channel> notFoundChannel = channelRepository.findById(testChannel.getName());
         // verify the channel was not found as expected
-        assertNotEquals("Found the channel",testChannel,notFoundChannel);
+        Assertions.assertNotEquals(testChannel, notFoundChannel, "Found the channel");
 
         Channel createdChannel = channelRepository.index(testChannel);
 
         Optional<Channel> foundChannel = channelRepository.findById(createdChannel.getName());
         // verify the channel was found as expected
         if(foundChannel.isPresent()) {
-            assertEquals("Failed to find the channel", createdChannel, foundChannel.get());
+            Assertions.assertEquals(createdChannel, foundChannel.get(), "Failed to find the channel");
         }
         else
-            assertTrue("Failed to find the channel", false);
+            Assertions.fail("Failed to find the channel");
     }
 
     /**
@@ -161,9 +157,9 @@ public class ChannelRepositoryIT {
         cleanupTestChannels = Arrays.asList(testChannel);
 
         // verify the channel exists as expected
-        assertTrue("Failed to check the existance of " + testChannel.getName(), channelRepository.existsById(testChannel.getName()));
+        Assertions.assertTrue(channelRepository.existsById(testChannel.getName()), "Failed to check the existance of " + testChannel.getName());
         // verify the channel does not exist, as expected
-        assertTrue("Failed to check the non-existance of 'non-existant-channel'", !channelRepository.existsById("non-existant-channel"));
+        Assertions.assertFalse(channelRepository.existsById("non-existant-channel"), "Failed to check the non-existance of 'non-existant-channel'");
     }
 
     /**
@@ -178,9 +174,9 @@ public class ChannelRepositoryIT {
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         // verify the channels exist as expected
-        assertTrue("Failed to check the existance of channels", channelRepository.existsByIds(Arrays.asList("testChannel", "testChannel1")));
+        Assertions.assertTrue(channelRepository.existsByIds(Arrays.asList("testChannel", "testChannel1")), "Failed to check the existance of channels");
         // verify the channel does not exist, as expected
-        assertTrue("Failed to check the non-existance of 'non-existant-channel'", !channelRepository.existsByIds(Arrays.asList("test-channel1", "non-existant-channel")));    
+        Assertions.assertFalse(channelRepository.existsByIds(Arrays.asList("test-channel1", "non-existant-channel")), "Failed to check the non-existance of 'non-existant-channel'");
     }
 
     /**
@@ -200,7 +196,7 @@ public class ChannelRepositoryIT {
         } catch (ResponseStatusException e) { 
         } finally {
             // verify the channels were not found as expected
-            assertNotEquals("Found the channels",testChannels,notFoundChannels);           
+            Assertions.assertNotEquals(testChannels, notFoundChannels, "Found the channels");
         }
 
         Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
@@ -211,7 +207,7 @@ public class ChannelRepositoryIT {
         } catch (ResponseStatusException e) {
         } finally {
             // verify the channels were found as expected
-            assertEquals("Failed to find the tags",createdChannels,foundChannels);           
+            Assertions.assertEquals(createdChannels, foundChannels, "Failed to find the tags");
         }
     }
 
@@ -233,20 +229,20 @@ public class ChannelRepositoryIT {
             MultiValueMap searchParameters = new LinkedMultiValueMap();
             searchParameters.set(testProperties.get(0).getName().toLowerCase(), "*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on property name search (all lower case)", createdSearchResult, foundChannelsResponse);
+            Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on property name search (all lower case)");
 
             searchParameters.set(testProperties.get(0).getName().toUpperCase(), "*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on property name search (all upper case)", createdSearchResult, foundChannelsResponse);
+            Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on property name search (all upper case)");
 
             searchParameters.clear();
             searchParameters.set("~tag", testTags.get(0).getName().toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on tags name search (all lower case)", createdSearchResult, foundChannelsResponse);
+            Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on tags name search (all lower case)");
 
             searchParameters.set("~tag", testTags.get(0).getName().toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on tags name search (all upper case)", createdSearchResult, foundChannelsResponse);
+            Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on tags name search (all upper case)");
 
         } catch (ResponseStatusException e) {
         }
@@ -272,29 +268,29 @@ public class ChannelRepositoryIT {
             // Search for a single channel
             searchParameters.set("~name", "testChannel");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (exact)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
+            Assertions.assertEquals(new SearchResult(List.of(testChannel), 1), foundChannelsResponse, "Failed to find the based on channel name search (exact)");
 
             searchParameters.set("~name", "testChannel".toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all lower case)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
+            Assertions.assertEquals(new SearchResult(List.of(testChannel), 1), foundChannelsResponse, "Failed to find the based on channel name search (all lower case)");
 
             searchParameters.set("~name", "testChannel".toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all upper case)", new SearchResult(List.of(testChannel), 1), foundChannelsResponse);
+            Assertions.assertEquals(new SearchResult(List.of(testChannel), 1), foundChannelsResponse, "Failed to find the based on channel name search (all upper case)");
 
             // Search for multiple channels using case insensitive name searches
             searchParameters.clear();
             searchParameters.set("~name", "testChannel*");
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (exact)", createdSearchResult, foundChannelsResponse);
+            Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on channel name search (exact)");
 
             searchParameters.set("~name", "testChannel*".toLowerCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all lower case)", createdSearchResult, foundChannelsResponse);
+            Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on channel name search (all lower case)");
 
             searchParameters.set("~name", "testChannel*".toUpperCase());
             foundChannelsResponse = channelRepository.search(searchParameters);
-            assertEquals("Failed to find the based on channel name search (all upper case)", createdSearchResult, foundChannelsResponse);
+            Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on channel name search (all upper case)");
 
 
         } catch (ResponseStatusException e) {
@@ -311,7 +307,7 @@ public class ChannelRepositoryIT {
 
         channelRepository.deleteById(createdChannel.getName());
         // verify the channel was deleted as expected
-        assertNotEquals("Failed to delete the channel", testChannel, channelRepository.findById(testChannel.getName()));
+        Assertions.assertNotEquals(testChannel, channelRepository.findById(testChannel.getName()), "Failed to delete the channel");
     }
 
     /**
@@ -332,22 +328,22 @@ public class ChannelRepositoryIT {
             testChannel.addTag(testTags.get(0));
             Channel createdChannel = channelRepository.index(testChannel);
             // verify the tag was created as expected
-            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
+            Assertions.assertEquals(testChannel, createdChannel, "Failed to create the test channel with a list of tags & properties");
             // update the channel with new tags and properties
             testChannel.setTags(testTags);
             testChannel.setProperties(testProperties);
             Channel updatedChannel = channelRepository.save(testChannel);
-            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, updatedChannel);
-            assertTrue("Failed updated the channel with new tags", testChannel.getTags().containsAll(testTags));
-            assertTrue("Failed updated the channel with new properties", testChannel.getProperties().containsAll(testProperties));
+            Assertions.assertEquals(testChannel, updatedChannel, "Failed to create the test channel with a list of tags & properties");
+            Assertions.assertTrue(testChannel.getTags().containsAll(testTags), "Failed updated the channel with new tags");
+            Assertions.assertTrue(testChannel.getProperties().containsAll(testProperties), "Failed updated the channel with new properties");
             // update the channel with new property values
             testProperties.get(0).setValue("new-value0");
             testProperties.get(1).setValue("new-value1");
             testChannel.setProperties(testProperties);
             Channel updatedValueChannel = channelRepository.save(testChannel);
-            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, updatedValueChannel);
-            assertTrue("Failed updated the channel with new tags", testChannel.getTags().containsAll(testTags));
-            assertTrue("Failed updated the channel with new properties", testChannel.getProperties().containsAll(testProperties));
+            Assertions.assertEquals(testChannel, updatedValueChannel, "Failed to create the test channel with a list of tags & properties");
+            Assertions.assertTrue(testChannel.getTags().containsAll(testTags), "Failed updated the channel with new tags");
+            Assertions.assertTrue(testChannel.getProperties().containsAll(testProperties), "Failed updated the channel with new properties");
         } catch (Exception e) {}
         props.forEach(testProperty -> {
             propertyRepository.deleteById(testProperty.getName());
@@ -371,7 +367,7 @@ public class ChannelRepositoryIT {
             testChannel.addProperty(testProperties.get(4));
             Channel createdChannel = channelRepository.index(testChannel);
             // verify the tag was created as expected
-            assertEquals("Failed to create the test channel with a list of tags & properties", testChannel, createdChannel);
+            Assertions.assertEquals(testChannel, createdChannel, "Failed to create the test channel with a list of tags & properties");
             // update the channel with new tags and properties provided via partial object
 
             Channel updateTestChannel = new Channel();
@@ -390,7 +386,7 @@ public class ChannelRepositoryIT {
             expectedTestChannel.addTag(testTags.get(1));
             expectedTestChannel.addProperty(testProperties.get(0));
             expectedTestChannel.addProperty(testProperties.get(1));
-            assertEquals("Failed to create the test channel with a list of tags & properties", expectedTestChannel, updatedChannel);
+            Assertions.assertEquals(expectedTestChannel, updatedChannel, "Failed to create the test channel with a list of tags & properties");
         } catch (Exception e) {}
         props.forEach(testProperty -> {
             propertyRepository.deleteById(testProperty.getName());
@@ -463,13 +459,13 @@ public class ChannelRepositoryIT {
 
     private List<Channel> cleanupTestChannels = Collections.emptyList();
 
-    @Before
+    @BeforeEach
     public void setup() {
         tagRepository.indexAll(testTags);
         propertyRepository.indexAll(testProperties);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         // clean up
         testTags.forEach(tag -> {

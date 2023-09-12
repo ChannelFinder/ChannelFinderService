@@ -18,18 +18,16 @@
 
 package org.phoebus.channelfinder.docker;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.ComposeContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 
-import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on endpoints being available.
@@ -59,9 +57,7 @@ class ChannelFinderIT {
     //     ------------------------------------------------------------------------------------------------
 
 	@Container
-    public static final DockerComposeContainer<?> ENVIRONMENT =
-        new DockerComposeContainer<>(new File("docker-compose-integrationtest.yml"))
-            .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
+    public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
 
     @Test
     void channelfinderUp() {

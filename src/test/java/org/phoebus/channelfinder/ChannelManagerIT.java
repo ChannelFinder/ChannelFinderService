@@ -1,10 +1,10 @@
 package org.phoebus.channelfinder;
 
 import com.google.common.collect.Iterables;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -20,11 +19,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-@RunWith(SpringRunner.class)
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
@@ -55,16 +49,16 @@ public class ChannelManagerIT {
         
         Channel readChannel = channelManager.read(createdChannel.getName());
         // verify the channel was read as expected
-        assertEquals("Failed to read the channel", createdChannel, readChannel);
+        Assertions.assertEquals(createdChannel, readChannel, "Failed to read the channel");
     }
 
     /**
      * attempt to read a single non existent channel
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void readNonExistingXmlChannel() {
         // verify the channel failed to be read, as expected
-        channelManager.read("fakeChannel");
+        Assertions.assertThrows(ResponseStatusException.class, () -> channelManager.read("fakeChannel"));
     }
     
     /**
@@ -78,7 +72,7 @@ public class ChannelManagerIT {
         // Create a simple channel
         Channel createdChannel0 = channelManager.create(testChannel0.getName(), testChannel0);
         // verify the channel was created as expected
-        assertEquals("Failed to create the channel", testChannel0, createdChannel0);
+        Assertions.assertEquals(testChannel0, createdChannel0, "Failed to create the channel");
 
 //      Tag createdTag1 = tagManager.create("fakeTag", copy(testTag1));
 //      // verify the tag was created as expected
@@ -88,7 +82,7 @@ public class ChannelManagerIT {
         testChannel0.setOwner("updateTestOwner");
         Channel updatedChannel0 = channelManager.create(testChannel0.getName(), testChannel0);
         // verify the channel was created as expected
-        assertEquals("Failed to create the channel", testChannel0, updatedChannel0);        
+        Assertions.assertEquals(testChannel0, updatedChannel0, "Failed to create the channel");
     }
 
     /**
@@ -103,9 +97,9 @@ public class ChannelManagerIT {
         Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
         createdChannel = channelManager.create(testChannel0.getName(), testChannel1);
         // verify that the old channel "testChannel0" was replaced with the new "testChannel1"
-        assertEquals("Failed to create the channel", testChannel1, createdChannel);
+        Assertions.assertEquals(testChannel1, createdChannel, "Failed to create the channel");
         // verify that the old channel is no longer present
-        assertFalse("Failed to replace the old channel", channelRepository.existsById(testChannel0.getName()));
+        Assertions.assertFalse(channelRepository.existsById(testChannel0.getName()), "Failed to replace the old channel");
     }
     
     /**
@@ -120,10 +114,10 @@ public class ChannelManagerIT {
         Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
         try {
             Channel foundChannel = channelRepository.findById(testChannel0.getName()).get();
-            assertEquals("Failed to create the channel. Expected " + testChannel0.toLog() + " found " 
-                    + foundChannel.toLog(), testChannel0, foundChannel);
+            Assertions.assertEquals(testChannel0, foundChannel, "Failed to create the channel. Expected " + testChannel0.toLog() + " found "
+                    + foundChannel.toLog());
         } catch (Exception e) {
-            assertTrue("Failed to create/find the channel", false);
+            Assertions.fail("Failed to create/find the channel");
         }
         
 //      Tag createdTag1 = tagManager.create("fakeTag", copy(testTag1));
@@ -135,10 +129,10 @@ public class ChannelManagerIT {
         createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
         try {
             Channel foundChannel = channelRepository.findById(testChannel0.getName()).get();
-            assertEquals("Failed to create the channel. Expected " + testChannel0.toLog() + " found " 
-                    + foundChannel.toLog(), testChannel0, foundChannel);
+            Assertions.assertEquals(testChannel0, foundChannel, "Failed to create the channel. Expected " + testChannel0.toLog() + " found "
+                    + foundChannel.toLog());
         } catch (Exception e) {
-            assertTrue("Failed to create/find the channel", false);
+            Assertions.fail("Failed to create/find the channel");
         }       
     }
     
@@ -159,12 +153,12 @@ public class ChannelManagerIT {
         // verify that the old channel "testChannel0" was replaced with the new "testChannel1"
         try {
             Channel foundChannel = channelRepository.findById(testChannel1.getName()).get();
-            assertEquals("Failed to create the channel", testChannel1, foundChannel);
+            Assertions.assertEquals(testChannel1, foundChannel, "Failed to create the channel");
         } catch (Exception e) {
-            assertTrue("Failed to create/find the channel", false);
+            Assertions.fail("Failed to create/find the channel");
         }        
         // verify that the old channel is no longer present
-        assertFalse("Failed to replace the old channel", channelRepository.existsById(testChannel0.getName()));
+        Assertions.assertFalse(channelRepository.existsById(testChannel0.getName()), "Failed to replace the old channel");
     }
     
     /**
@@ -183,7 +177,7 @@ public class ChannelManagerIT {
         List<Channel> foundChannels = new ArrayList<Channel>();
         testChannels.forEach(chan -> foundChannels.add(channelRepository.findById(chan.getName()).get()));
         // verify the channels were created as expected
-        assertTrue("Failed to create the channels", Iterables.elementsEqual(testChannels, foundChannels));
+        Assertions.assertTrue(Iterables.elementsEqual(testChannels, foundChannels), "Failed to create the channels");
     }
 
     /**
@@ -209,7 +203,7 @@ public class ChannelManagerIT {
         List<Channel> foundChannels = new ArrayList<Channel>();
         testChannels.forEach(chan -> foundChannels.add(channelRepository.findById(chan.getName()).get()));
         // verify the channels were created as expected
-        assertTrue("Failed to create the channels", Iterables.elementsEqual(updatedTestChannels, foundChannels));
+        Assertions.assertTrue(Iterables.elementsEqual(updatedTestChannels, foundChannels), "Failed to create the channels");
     }
     
     /**
@@ -227,22 +221,22 @@ public class ChannelManagerIT {
         // Update on a non-existing channel should result in the creation of that channel
         // 1. Test a simple channel 
         Channel returnedChannel = channelManager.update(testChannel0.getName(), testChannel0);
-        assertEquals("Failed to update channel " + testChannel0, testChannel0, returnedChannel);
-        assertEquals("Failed to update channel " + testChannel0, testChannel0, channelRepository.findById(testChannel0.getName()).get());
+        Assertions.assertEquals(testChannel0, returnedChannel, "Failed to update channel " + testChannel0);
+        Assertions.assertEquals(testChannel0, channelRepository.findById(testChannel0.getName()).get(), "Failed to update channel " + testChannel0);
         // 2. Test a channel with tags and props
         returnedChannel = channelManager.update(testChannel1.getName(), testChannel1);
-        assertEquals("Failed to update channel " + testChannel1, testChannel1, returnedChannel);
-        assertEquals("Failed to update channel " + testChannel1, testChannel1, channelRepository.findById(testChannel1.getName()).get());
+        Assertions.assertEquals(testChannel1, returnedChannel, "Failed to update channel " + testChannel1);
+        Assertions.assertEquals(testChannel1, channelRepository.findById(testChannel1.getName()).get(), "Failed to update channel " + testChannel1);
 
         // Update the channel owner
         testChannel0.setOwner("newTestOwner");
         returnedChannel = channelManager.update(testChannel0.getName(), testChannel0);
-        assertEquals("Failed to update channel " + testChannel0, testChannel0, returnedChannel);
-        assertEquals("Failed to update channel " + testChannel0, testChannel0, channelRepository.findById(testChannel0.getName()).get());
+        Assertions.assertEquals(testChannel0, returnedChannel, "Failed to update channel " + testChannel0);
+        Assertions.assertEquals(testChannel0, channelRepository.findById(testChannel0.getName()).get(), "Failed to update channel " + testChannel0);
         testChannel1.setOwner("newTestOwner");
         returnedChannel = channelManager.update(testChannel1.getName(), testChannel1);
-        assertEquals("Failed to update channel " + testChannel1, testChannel1, returnedChannel);
-        assertEquals("Failed to update channel " + testChannel1, testChannel1, channelRepository.findById(testChannel1.getName()).get());
+        Assertions.assertEquals(testChannel1, returnedChannel, "Failed to update channel " + testChannel1);
+        Assertions.assertEquals(testChannel1, channelRepository.findById(testChannel1.getName()).get(), "Failed to update channel " + testChannel1);
     }
     
     /**
@@ -267,21 +261,21 @@ public class ChannelManagerIT {
         // verify that the old channels were replaced by the new ones
         try {
             Channel foundChannel = channelRepository.findById(testChannel1.getName()).get();
-            assertEquals("Failed to create the channel", testChannel1, foundChannel);
+            Assertions.assertEquals(testChannel1, foundChannel, "Failed to create the channel");
         } catch (Exception e) {
-            assertTrue("Failed to create/find the channel", false);
+            Assertions.fail("Failed to create/find the channel");
         }        
         // verify that the old channel is no longer present
-        assertFalse("Failed to replace the old channel", channelRepository.existsById(testChannel0.getName()));
+        Assertions.assertFalse(channelRepository.existsById(testChannel0.getName()), "Failed to replace the old channel");
         
         try {
             Channel foundChannel = channelRepository.findById(testChannel3.getName()).get();
-            assertEquals("Failed to create the channel", testChannel3, foundChannel);
+            Assertions.assertEquals(testChannel3, foundChannel, "Failed to create the channel");
         } catch (Exception e) {
-            assertTrue("Failed to create/find the channel", false);
+            Assertions.fail("Failed to create/find the channel");
         }        
         // verify that the old channel is no longer present
-        assertFalse("Failed to replace the old channel", channelRepository.existsById(testChannel2.getName()));
+        Assertions.assertFalse(channelRepository.existsById(testChannel2.getName()), "Failed to replace the old channel");
         
         // TODO add test for failure case
     }
@@ -315,10 +309,8 @@ public class ChannelManagerIT {
         foundChannel.getProperties().sort((Property o1, Property o2) -> {
             return o1.getName().compareTo(o2.getName());
         });
-        assertEquals(
-                "Did not update channel correctly, expected " + expectedChannel.toLog() + " but actual was "
-                        + foundChannel.toLog(),
-                expectedChannel, foundChannel);
+        Assertions.assertEquals(expectedChannel, foundChannel, "Did not update channel correctly, expected " + expectedChannel.toLog() + " but actual was "
+                + foundChannel.toLog());
     }
     
     /**
@@ -339,16 +331,16 @@ public class ChannelManagerIT {
         // Update on non-existing channels should result in the creation of those channels
         Iterable<Channel> returnedChannels = channelManager.update(testChannels);
         // 1. Test a simple channel 
-        assertEquals("Failed to update channel " + testChannel0, testChannel0, channelRepository.findById(testChannel0.getName()).get());
+        Assertions.assertEquals(testChannel0, channelRepository.findById(testChannel0.getName()).get(), "Failed to update channel " + testChannel0);
         // 2. Test a channel with tags and props
-        assertEquals("Failed to update channel " + testChannel1, testChannel1, channelRepository.findById(testChannel1.getName()).get());
+        Assertions.assertEquals(testChannel1, channelRepository.findById(testChannel1.getName()).get(), "Failed to update channel " + testChannel1);
 
         // Update the channel owner
         testChannel0.setOwner("newTestOwner");
         testChannel1.setOwner("newTestOwner");
         returnedChannels = channelManager.update(testChannels);
-        assertEquals("Failed to update channel " + testChannel0, testChannel0, channelRepository.findById(testChannel0.getName()).get());
-        assertEquals("Failed to update channel " + testChannel1, testChannel1, channelRepository.findById(testChannel1.getName()).get());
+        Assertions.assertEquals(testChannel0, channelRepository.findById(testChannel0.getName()).get(), "Failed to update channel " + testChannel0);
+        Assertions.assertEquals(testChannel1, channelRepository.findById(testChannel1.getName()).get(), "Failed to update channel " + testChannel1);
     }
     
     /**
@@ -391,8 +383,8 @@ public class ChannelManagerIT {
         foundChannels.forEach(chan -> chan.getProperties().sort((Property o1, Property o2) -> {
             return o1.getName().compareTo(o2.getName());}));
         
-        assertEquals("Did not update channel correctly, expected " + testChannel0.toLog() + " and " + testChannel1.toLog() + " but actual was "
-                + foundChannels.iterator().next().toLog() + " and " + foundChannels.iterator().next().toLog(), expectedChannels, foundChannels);
+        Assertions.assertEquals(expectedChannels, foundChannels, "Did not update channel correctly, expected " + testChannel0.toLog() + " and " + testChannel1.toLog() + " but actual was "
+                + foundChannels.iterator().next().toLog() + " and " + foundChannels.iterator().next().toLog());
         }
     
     /**
@@ -406,7 +398,7 @@ public class ChannelManagerIT {
     channelManager.create(testChannel0.getName(),testChannel0);    
     channelManager.remove(testChannel0.getName());
     // verify the channel was deleted as expected
-    assertTrue("Failed to delete the channel", !channelRepository.existsById(testChannel0.getName()));
+        Assertions.assertFalse(channelRepository.existsById(testChannel0.getName()), "Failed to delete the channel");
     }
     
     // Helper operations to create and clean up the resources needed for successful
@@ -424,13 +416,13 @@ public class ChannelManagerIT {
 
     private List<Channel> cleanupTestChannels = Collections.emptyList();
 
-    @Before
+    @BeforeEach
     public void setup() {
         tagRepository.indexAll(testTags);
         propertyRepository.indexAll(testProperties);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         // clean up
         testTags.forEach(tag -> {

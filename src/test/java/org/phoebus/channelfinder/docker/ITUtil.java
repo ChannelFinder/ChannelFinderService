@@ -18,10 +18,12 @@
 
 package org.phoebus.channelfinder.docker;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import org.testcontainers.containers.ComposeContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -29,7 +31,8 @@ import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch with focus on support common behavior for tests.
@@ -85,6 +88,14 @@ public class ITUtil {
      */
     private ITUtil() {
         throw new IllegalStateException("Utility class");
+    }
+
+    /**
+     * Provide a default compose setup for testing.
+     */
+    public static ComposeContainer defaultComposeContainers() {
+        return new ComposeContainer(new File("docker-compose-integrationtest.yml"))
+                .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
     }
 
     /**

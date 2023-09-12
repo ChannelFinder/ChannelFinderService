@@ -1,7 +1,7 @@
 package org.phoebus.channelfinder;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
@@ -9,15 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
-@RunWith(SpringRunner.class)
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
@@ -38,43 +38,43 @@ public class ChannelValidationIT {
     /**
      * Attempt to Channel request with null name
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestNullName() {
         Channel testChannel1 = new Channel(null, "testOwner");
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
 
     /**
      * Attempt to Channel request with empty name
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestEmptyName() {
         Channel testChannel1 = new Channel("", "testOwner");
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
 
     /**
      * Attempt to Channel request with null owner
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestNullOwner() {
         Channel testChannel1 = new Channel("testChannel1", null);
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
 
     /**
      * Attempt to Channel request with empty owner
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestEmptyOwner() {
         Channel testChannel1 = new Channel("testChannel1", "");
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
 
     /**
      * Attempt to Channel request with a non existent tag
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestFakeTag() {
         // set up
         Property prop = new Property("testProperty1","testOwner");
@@ -82,7 +82,7 @@ public class ChannelValidationIT {
         prop.setValue("value");
         
         Channel testChannel1 = new Channel("testChannel1", "testOwner",Arrays.asList(prop),Arrays.asList(new Tag("Non-existent-tag")));
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
         
         // clean up
         propertyRepository.deleteById(prop.getName());
@@ -91,14 +91,14 @@ public class ChannelValidationIT {
     /**
      * Attempt to Channel request with a non existent prop
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestFakeProp() {
         // set up
         Tag tag = new Tag("testTag1","testOwner");
         tagRepository.index(tag);
         
         Channel testChannel1 = new Channel("testChannel1", "testOwner",Arrays.asList(new Property("Non-existent-property","Non-existent-property")),Arrays.asList(tag));
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
         
         // clean up
         tagRepository.deleteById(tag.getName());
@@ -107,7 +107,7 @@ public class ChannelValidationIT {
     /**
      * Attempt to Channel request with a null value prop
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestNullProp() {
         // set up
         Tag tag = new Tag("testTag1","testOwner");
@@ -117,7 +117,7 @@ public class ChannelValidationIT {
         prop.setValue(null);
         
         Channel testChannel1 = new Channel("testChannel1", "testOwner",Arrays.asList(prop),Arrays.asList(tag));
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
         
         // clean up
         tagRepository.deleteById(tag.getName());
@@ -127,7 +127,7 @@ public class ChannelValidationIT {
     /**
      * Attempt to Channel request with an empty value prop
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void validateXmlChannelRequestEmptyProp() {
         // set up
         Tag tag = new Tag("testTag1","testOwner");
@@ -137,7 +137,7 @@ public class ChannelValidationIT {
         prop.setValue("");
         
         Channel testChannel1 = new Channel("testChannel1", "testOwner",Arrays.asList(prop),Arrays.asList(tag));
-        channelManager.validateChannelRequest(testChannel1);
+        assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
         
         // clean up
         tagRepository.deleteById(tag.getName());
@@ -152,9 +152,9 @@ public class ChannelValidationIT {
         Channel testChannel1 = new Channel("testChannel1", "testOwner");
         try {
             channelManager.validateChannelRequest(testChannel1);
-            assertTrue(true);
+            Assertions.assertTrue(true);
         } catch (Exception e) {
-            assertTrue("Failed to validate with valid parameters",false);
+            fail("Failed to validate with valid parameters");
         }
     }
     

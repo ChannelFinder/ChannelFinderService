@@ -1,10 +1,10 @@
 package org.phoebus.channelfinder;
 
 import com.google.common.collect.Iterables;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
@@ -12,7 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,11 +23,9 @@ import java.util.Collections;
 import java.util.List;
 
 import static java.util.Collections.EMPTY_LIST;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(SpringRunner.class)
+
 @WebMvcTest(PropertyManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
@@ -45,7 +43,7 @@ public class PropertyManagerIT {
     /**
      * list all properties
      */
-    @Test 
+    @Test
     public void listXmlProperties() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner1");
@@ -60,7 +58,7 @@ public class PropertyManagerIT {
             property.setChannels(new ArrayList<Channel>());
         }
         // verify the properties were listed as expected
-        assertEquals("Failed to list all properties",createdProperties,propertyList);                
+        Assertions.assertEquals(createdProperties, propertyList, "Failed to list all properties");
     }
 
     /**
@@ -84,37 +82,37 @@ public class PropertyManagerIT {
         // verify the created properties are read as expected
         // retrieve the testProperty0 without channels
         Property retrievedProperty = propertyManager.read(createdProperty0.getName(), false);
-        assertEquals("Failed to read the property",createdProperty0,retrievedProperty);        
+        Assertions.assertEquals(createdProperty0, retrievedProperty, "Failed to read the property");
         // retrieve the testProperty0 with channels
         retrievedProperty = propertyManager.read(createdProperty0.getName(), true);
-        assertEquals("Failed to read the property w/ channels",createdProperty0,retrievedProperty);
+        Assertions.assertEquals(createdProperty0, retrievedProperty, "Failed to read the property w/ channels");
 
         retrievedProperty = propertyManager.read(createdProperty1.getName(), false);
         // verify the property was read as expected
         testProperty1.setChannels(new ArrayList<Channel>());
-        assertEquals("Failed to read the property",testProperty1,retrievedProperty);
+        Assertions.assertEquals(testProperty1, retrievedProperty, "Failed to read the property");
 
         retrievedProperty = propertyManager.read(createdProperty1.getName(), true);
         // verify the property was read as expected
-        assertEquals("Failed to read the property w/ channels",createdProperty1,retrievedProperty);
+        Assertions.assertEquals(createdProperty1, retrievedProperty, "Failed to read the property w/ channels");
     }
 
     /**
      * attempt to read a single non existent property
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void readNonExistingXmlProperty() {
         // verify the property failed to be read, as expected
-        propertyManager.read("fakeProperty", false);
+        Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.read("fakeProperty", false));
     }
 
     /**
      * attempt to read a single non existent property with channels
      */
-    @Test(expected = ResponseStatusException.class)
+    @Test
     public void readNonExistingXmlProperty2() {
         // verify the property failed to be read, as expected
-        propertyManager.read("fakeProperty", true);
+        Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.read("fakeProperty", true));
     }
 
     /**
@@ -127,7 +125,7 @@ public class PropertyManagerIT {
 
         // Create a simple property
         Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
-        assertEquals("Failed to create the property", testProperty0, createdProperty);
+        Assertions.assertEquals(testProperty0, createdProperty, "Failed to create the property");
 
         //        Tag createdTag1 = tagManager.create("fakeTag", copy(testTag1));
         //        // verify the property was created as expected
@@ -136,7 +134,7 @@ public class PropertyManagerIT {
         // Update the test property with a new owner
         Property updatedTestProperty0 = new Property("testProperty0", "updateTestOwner");
         createdProperty = propertyManager.create(testProperty0.getName(), updatedTestProperty0);
-        assertEquals("Failed to create the property", updatedTestProperty0, createdProperty);
+        Assertions.assertEquals(updatedTestProperty0, createdProperty, "Failed to create the property");
     }
 
     /**
@@ -151,9 +149,9 @@ public class PropertyManagerIT {
         Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
         createdProperty = propertyManager.create(testProperty0.getName(), testProperty1);
         // verify that the old property "testProperty0" was replaced with the new "testProperty1"
-        assertEquals("Failed to create the property", testProperty1, createdProperty);
+        Assertions.assertEquals(testProperty1, createdProperty, "Failed to create the property");
         // verify that the old property is no longer present
-        assertFalse("Failed to replace the old property", propertyRepository.existsById(testProperty0.getName()));
+        Assertions.assertFalse(propertyRepository.existsById(testProperty0.getName()), "Failed to replace the old property");
     }
 
     /**
@@ -169,10 +167,10 @@ public class PropertyManagerIT {
         Property createdProperty = propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
         try {
             Property foundProperty = propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
-            assertEquals("Failed to create the property w/ channels. Expected " + testProperty0WithChannels.toLog() + " found " 
-                    + foundProperty.toLog(), testProperty0WithChannels, foundProperty);
+            Assertions.assertEquals(testProperty0WithChannels, foundProperty, "Failed to create the property w/ channels. Expected " + testProperty0WithChannels.toLog() + " found "
+                    + foundProperty.toLog());
         } catch (Exception e) {
-            assertTrue("Failed to create/find the property w/ channels", false);
+            fail("Failed to create/find the property w/ channels");
         }
 
         //        Tag createdTag1 = tagManager.create("fakeTag", copy(testTag1));
@@ -184,10 +182,10 @@ public class PropertyManagerIT {
         createdProperty = propertyManager.create(testProperty0WithChannels.getName(), updatedTestProperty0WithChannels);
         try {
             Property foundProperty = propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
-            assertEquals("Failed to create the property w/ channels. Expected " + updatedTestProperty0WithChannels.toLog() + " found " 
-                    + foundProperty.toLog(), updatedTestProperty0WithChannels, foundProperty);
+            Assertions.assertEquals(updatedTestProperty0WithChannels, foundProperty, "Failed to create the property w/ channels. Expected " + updatedTestProperty0WithChannels.toLog() + " found "
+                    + foundProperty.toLog());
         } catch (Exception e) {
-            assertTrue("Failed to create/find the property w/ channels", false);
+            fail("Failed to create/find the property w/ channels");
         }
     }
 
@@ -210,11 +208,11 @@ public class PropertyManagerIT {
         createdProperty = propertyManager.create(testProperty0WithChannels.getName(), testProperty1WithChannels);
         try {
             Property foundProperty = propertyRepository.findById(testProperty1WithChannels.getName(), true).get();
-            assertEquals("Failed to create the property w/ channels", testProperty1WithChannels, foundProperty);
+            Assertions.assertEquals(testProperty1WithChannels, foundProperty, "Failed to create the property w/ channels");
         } catch (Exception e) {
-            assertTrue("Failed to create/find the property w/ channels", false);
+            fail("Failed to create/find the property w/ channels");
         }
-        assertFalse("Failed to replace the old property", propertyRepository.existsById(testProperty0WithChannels.getName()));
+        Assertions.assertFalse(propertyRepository.existsById(testProperty0WithChannels.getName()), "Failed to replace the old property");
     }    
 
     /**
@@ -242,7 +240,7 @@ public class PropertyManagerIT {
         Iterable<Property> createdProperties = propertyManager.create(testProperties);
         List<Property> foundProperties = new ArrayList<Property>();
         testProperties.forEach(prop -> foundProperties.add(propertyRepository.findById(prop.getName(),true).get()));
-        assertTrue("Failed to create the properties", foundProperties.containsAll(Arrays.asList(testProperty0, testProperty1, testProperty2)));
+        Assertions.assertTrue(foundProperties.containsAll(Arrays.asList(testProperty0, testProperty1, testProperty2)), "Failed to create the properties");
         Channel testChannel0With3Props = new Channel(
                 testChannel0.getName(),
                 testChannel0.getOwner(),
@@ -253,7 +251,7 @@ public class PropertyManagerIT {
                 EMPTY_LIST);
         Property expectedTestProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         expectedTestProperty0WithChannels.setChannels(Arrays.asList(testChannel0With3Props));
-        assertTrue(foundProperties.contains(expectedTestProperty0WithChannels));
+        Assertions.assertTrue(foundProperties.contains(expectedTestProperty0WithChannels));
     }
 
     /**
@@ -286,14 +284,13 @@ public class PropertyManagerIT {
         List<Property> foundProperties = new ArrayList<Property>();
         testProperties.forEach(prop -> foundProperties.add(propertyRepository.findById(prop.getName(),true).get()));
         // verify the properties were created as expected
-        assertTrue("Failed to create the properties", Iterables.elementsEqual(updatedTestProperties, foundProperties));
+        Assertions.assertTrue(Iterables.elementsEqual(updatedTestProperties, foundProperties), "Failed to create the properties");
 
         testChannels.get(1).setProperties(Arrays.asList(new Property("testProperty0WithChannels","testOwner","value")));
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("testProperty0WithChannels", "*");
         // verify the property was removed from the old channels
-        assertEquals("Failed to delete the property from channels",
-                Arrays.asList(testChannels.get(1)), channelRepository.search(params).getChannels());
+        Assertions.assertEquals(Arrays.asList(testChannels.get(1)), channelRepository.search(params).getChannels(), "Failed to delete the property from channels");
     }
 
     /**
@@ -308,10 +305,9 @@ public class PropertyManagerIT {
         cleanupTestProperties = Arrays.asList(testProperty0);
 
         propertyManager.addSingle(testProperty0.getName(), "testChannel0", testProperty0);
-        assertTrue("Failed to add property",
-                channelRepository.findById("testChannel0").get().getProperties().stream().anyMatch(p -> {
-                    return p.getName().equals(testProperty0.getName());
-                }));
+        Assertions.assertTrue(channelRepository.findById("testChannel0").get().getProperties().stream().anyMatch(p -> {
+            return p.getName().equals(testProperty0.getName());
+        }), "Failed to add property");
     }
 
     /**
@@ -331,24 +327,24 @@ public class PropertyManagerIT {
         // Update on a non-existing property should result in the creation of that property
         // 1. Test a simple property 
         Property returnedProperty = propertyManager.update(testProperty0.getName(), testProperty0);
-        assertEquals("Failed to update property " + testProperty0, testProperty0, returnedProperty);
-        assertEquals("Failed to update property " + testProperty0, testProperty0, propertyRepository.findById(testProperty0.getName()).get());
+        Assertions.assertEquals(testProperty0, returnedProperty, "Failed to update property " + testProperty0);
+        Assertions.assertEquals(testProperty0, propertyRepository.findById(testProperty0.getName()).get(), "Failed to update property " + testProperty0);
         // 2. Test a property with channels
         returnedProperty = propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, returnedProperty);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get());
+        Assertions.assertEquals(testProperty0WithChannels, returnedProperty, "Failed to update property " + testProperty0WithChannels);
+        Assertions.assertEquals(testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get(), "Failed to update property " + testProperty0WithChannels);
 
         // Update the property owner
         testProperty0.setOwner("newTestOwner");
         returnedProperty = propertyManager.update(testProperty0.getName(), testProperty0);
-        assertEquals("Failed to update property " + testProperty0, testProperty0, returnedProperty);
-        assertEquals("Failed to update property " + testProperty0, testProperty0, propertyRepository.findById(testProperty0.getName()).get());
+        Assertions.assertEquals(testProperty0, returnedProperty, "Failed to update property " + testProperty0);
+        Assertions.assertEquals(testProperty0, propertyRepository.findById(testProperty0.getName()).get(), "Failed to update property " + testProperty0);
         testProperty0WithChannels.setOwner("newTestOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
         returnedProperty = propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, returnedProperty);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get());
+        Assertions.assertEquals(testProperty0WithChannels, returnedProperty, "Failed to update property " + testProperty0WithChannels);
+        Assertions.assertEquals(testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get(), "Failed to update property " + testProperty0WithChannels);
     }
 
     /**
@@ -389,22 +385,19 @@ public class PropertyManagerIT {
 //                expectedProperty.equals(foundProperty));
 
         // verify that the old property is no longer present
-        assertFalse("Failed to replace the old property", propertyRepository.existsById(testProperty0WithChannels.getName()));
+        Assertions.assertFalse(propertyRepository.existsById(testProperty0WithChannels.getName()), "Failed to replace the old property");
 
         expectedProperty = new Property("testProperty1WithChannels", "updateTestOwner", "value0");
         // test property of old channel not in update
-        assertTrue("The property attached to the channel " + testChannels.get(0).toString() + " doesn't match the new property",
-                channelRepository.findById(testChannel0.getName()).get().getProperties().contains(expectedProperty));
+        Assertions.assertTrue(channelRepository.findById(testChannel0.getName()).get().getProperties().contains(expectedProperty), "The property attached to the channel " + testChannels.get(0).toString() + " doesn't match the new property");
 
         expectedProperty = new Property("testProperty1WithChannels", "updateTestOwner", "value1");
         // test property of old channel and in update
-        assertTrue("The property attached to the channel " + testChannels.get(1).toString() + " doesn't match the new property",
-                channelRepository.findById(testChannel1.getName()).get().getProperties().contains(expectedProperty));
+        Assertions.assertTrue(channelRepository.findById(testChannel1.getName()).get().getProperties().contains(expectedProperty), "The property attached to the channel " + testChannels.get(1).toString() + " doesn't match the new property");
 
         expectedProperty = new Property("testProperty1WithChannels", "updateTestOwner", "newValueX");
         // test property of new channel
-        assertTrue("The property attached to the channel " + testChannelX.toString() + " doesn't match the new property",
-                channelRepository.findById(testChannelX.getName()).get().getProperties().contains(expectedProperty));
+        Assertions.assertTrue(channelRepository.findById(testChannelX.getName()).get().getProperties().contains(expectedProperty), "The property attached to the channel " + testChannelX.toString() + " doesn't match the new property");
 
         // clean extra channel
         channelRepository.deleteById(testChannelX.getName());
@@ -435,22 +428,22 @@ public class PropertyManagerIT {
         // verify that the old property "testProperty0" was replaced with the new "testProperty1"
         try {
             Property foundProperty = propertyRepository.findById(testProperty1.getName()).get();
-            assertEquals("Failed to update the property", testProperty1, foundProperty);
+            Assertions.assertEquals(testProperty1, foundProperty, "Failed to update the property");
         } catch (Exception e) {
-            assertTrue("Failed to update/find the property", false);
+            fail("Failed to update/find the property");
         }        
         // verify that the old property is no longer present
-        assertFalse("Failed to replace the old property", propertyRepository.existsById(testProperty0.getName()));
+        Assertions.assertFalse(propertyRepository.existsById(testProperty0.getName()), "Failed to replace the old property");
 
         // verify that the old property "testProperty0" was replaced with the new "testProperty1"
         try {
             Property foundProperty = propertyRepository.findById(testProperty1WithChannels.getName(), true).get();
-            assertEquals("Failed to update the property w/ channels", testProperty1WithChannels, foundProperty);
+            Assertions.assertEquals(testProperty1WithChannels, foundProperty, "Failed to update the property w/ channels");
         } catch (Exception e) {
-            assertTrue("Failed to update/find the property w/ channels", false);
+            fail("Failed to update/find the property w/ channels");
         }
         // verify that the old property is no longer present
-        assertFalse("Failed to replace the old property", propertyRepository.existsById(testProperty0WithChannels.getName()));
+        Assertions.assertFalse(propertyRepository.existsById(testProperty0WithChannels.getName()), "Failed to replace the old property");
 
         // TODO add test for failure case
     }
@@ -471,8 +464,8 @@ public class PropertyManagerIT {
         testProperty0.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0.getName(),testProperty0.getOwner(),"value")),new ArrayList<Tag>())));
         Property returnedTag = propertyManager.update(testProperty0.getName(), testProperty0);
-        assertEquals("Failed to update property " + testProperty0, testProperty0, returnedTag);
-        assertEquals("Failed to update property " + testProperty0, testProperty0, propertyRepository.findById(testProperty0.getName(), true).get());
+        Assertions.assertEquals(testProperty0, returnedTag, "Failed to update property " + testProperty0);
+        Assertions.assertEquals(testProperty0, propertyRepository.findById(testProperty0.getName(), true).get(), "Failed to update property " + testProperty0);
     }
 
     /**
@@ -493,11 +486,11 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
         Property returnedTag = propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, returnedTag);
+        Assertions.assertEquals(testProperty0WithChannels, returnedTag, "Failed to update property " + testProperty0WithChannels);
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>()),
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get());
+        Assertions.assertEquals(testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get(), "Failed to update property " + testProperty0WithChannels);
     }
 
     /**
@@ -519,8 +512,8 @@ public class PropertyManagerIT {
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>()),
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
         Property returnedTag = propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, returnedTag);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get());
+        Assertions.assertEquals(testProperty0WithChannels, returnedTag, "Failed to update property " + testProperty0WithChannels);
+        Assertions.assertEquals(testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get(), "Failed to update property " + testProperty0WithChannels);
     }
 
     /**
@@ -540,8 +533,8 @@ public class PropertyManagerIT {
         // Updating a property with existing channels, the new channels should be added without affecting existing channels
         // testProperty0WithChannels already has testChannel0 & testChannel1, the update request should be a NOP. 
         Property returnedTag = propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, returnedTag);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get());
+        Assertions.assertEquals(testProperty0WithChannels, returnedTag, "Failed to update property " + testProperty0WithChannels);
+        Assertions.assertEquals(testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get(), "Failed to update property " + testProperty0WithChannels);
     }
 
     /**
@@ -563,11 +556,11 @@ public class PropertyManagerIT {
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
         Property returnedTag = propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, returnedTag);
+        Assertions.assertEquals(testProperty0WithChannels, returnedTag, "Failed to update property " + testProperty0WithChannels);
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>()),
                 new Channel(testChannel1.getName(),testChannel1.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get());
+        Assertions.assertEquals(testProperty0WithChannels, propertyRepository.findById(testProperty0WithChannels.getName(), true).get(), "Failed to update property " + testProperty0WithChannels);
     }
 
     /**
@@ -588,9 +581,9 @@ public class PropertyManagerIT {
         propertyManager.update(Arrays.asList(testProperty0,testProperty0WithChannels));
         // Query ChannelFinder and verify updated channels and properties
         Property foundProperty = propertyRepository.findById(testProperty0.getName(), true).get();
-        assertEquals("Failed to update property " + testProperty0, testProperty0, foundProperty);
+        Assertions.assertEquals(testProperty0, foundProperty, "Failed to update property " + testProperty0);
         foundProperty = propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
-        assertEquals("Failed to update property " + testProperty0WithChannels, testProperty0WithChannels, foundProperty);
+        Assertions.assertEquals(testProperty0WithChannels, foundProperty, "Failed to update property " + testProperty0WithChannels);
     }
 
     /**
@@ -644,22 +637,19 @@ public class PropertyManagerIT {
         Property expectedProperty1 = new Property("testProperty1WithChannels", "testOwner", "newValue0");
         List<Property> expectedProperties = Arrays.asList(expectedProperty0,expectedProperty1);
         // test property of channel0
-        assertEquals("The property attached to the channel " + testChannels.get(0).toString() + " doesn't match the new property",
-                expectedProperties, channelRepository.findById(testChannel0.getName()).get().getProperties());
+        Assertions.assertEquals(expectedProperties, channelRepository.findById(testChannel0.getName()).get().getProperties(), "The property attached to the channel " + testChannels.get(0).toString() + " doesn't match the new property");
 
         expectedProperty0 = new Property("testProperty0WithChannels", "testOwner", "newValue1");
         expectedProperty1 = new Property("testProperty1WithChannels", "testOwner", "value1");
         expectedProperties = Arrays.asList(expectedProperty0,expectedProperty1);
         // test property of channel1
-        assertTrue("The property attached to the channel " + testChannels.get(1).toString() + " doesn't match the new property",
-                channelRepository.findById(testChannel1.getName()).get().getProperties().containsAll(expectedProperties));
+        Assertions.assertTrue(channelRepository.findById(testChannel1.getName()).get().getProperties().containsAll(expectedProperties), "The property attached to the channel " + testChannels.get(1).toString() + " doesn't match the new property");
 
         expectedProperty0 = new Property("testProperty0WithChannels", "testOwner", "newValueX");
         expectedProperty1 = new Property("testProperty1WithChannels", "testOwner", "newValueX");
         expectedProperties = Arrays.asList(expectedProperty0,expectedProperty1);
         // test property of channelX
-        assertTrue("The property attached to the channel " + testChannelX.toString() + " doesn't match the new property",
-                channelRepository.findById(testChannelX.getName()).get().getProperties().containsAll(expectedProperties));
+        Assertions.assertTrue(channelRepository.findById(testChannelX.getName()).get().getProperties().containsAll(expectedProperties), "The property attached to the channel " + testChannelX.toString() + " doesn't match the new property");
 
         // clean extra channel
         channelRepository.deleteById(testChannelX.getName());
@@ -681,15 +671,14 @@ public class PropertyManagerIT {
 
         propertyManager.remove(testProperty0.getName());
         // verify the property was deleted as expected
-        assertTrue("Failed to delete the property", !propertyRepository.existsById(testProperty0.getName()));
+        Assertions.assertFalse( propertyRepository.existsById(testProperty0.getName()), "Failed to delete the property");
 
         propertyManager.remove(testProperty0WithChannels.getName());
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("testProperty0WithChannels", "*");
         // verify the property was deleted and removed from all associated channels
-        assertTrue("Failed to delete the property", !propertyRepository.existsById(testProperty0WithChannels.getName()));
-        assertEquals("Failed to delete the property from channels",
-                new ArrayList<Channel>(), channelRepository.search(params).getChannels());
+        Assertions.assertFalse(propertyRepository.existsById(testProperty0WithChannels.getName()), "Failed to delete the property");
+        Assertions.assertEquals(new ArrayList<Channel>(), channelRepository.search(params).getChannels(), "Failed to delete the property from channels");
     }
 
     /**
@@ -706,14 +695,14 @@ public class PropertyManagerIT {
 
         propertyManager.removeSingle(testProperty0WithChannels.getName(),testChannel0.getName());
         // verify the property was only removed from the single test channel
-        assertTrue("Failed to not delete the property", propertyRepository.existsById(testProperty0WithChannels.getName()));
+        Assertions.assertTrue(propertyRepository.existsById(testProperty0WithChannels.getName()), "Failed to not delete the property");
 
         // Verify the property is removed from the testChannel0
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("testProperty0WithChannels", "*");
-        assertFalse("Failed to delete the property from channel", channelRepository.search(searchParameters).getChannels().stream().anyMatch(ch -> {
+        Assertions.assertFalse(channelRepository.search(searchParameters).getChannels().stream().anyMatch(ch -> {
             return ch.getName().equals(testChannel0.getName());
-        }));
+        }), "Failed to delete the property from channel");
     }
 
 
@@ -731,12 +720,12 @@ public class PropertyManagerIT {
 
     private List<Property> cleanupTestProperties = Collections.emptyList();
 
-    @Before
+    @BeforeEach
     public void setup() {
         channelRepository.indexAll(testChannels);
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         // clean up
         testChannels.forEach(channel -> {

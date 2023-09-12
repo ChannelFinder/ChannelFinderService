@@ -18,26 +18,22 @@
 
 package org.phoebus.channelfinder.docker;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-
-import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.entity.Tag;
-import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Tag;
+import org.testcontainers.containers.ComposeContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on usage of 
@@ -99,9 +95,7 @@ class ChannelFinderTagsIT {
     static Tag tag_t1_owner_o2;
 
 	@Container
-    public static final DockerComposeContainer<?> ENVIRONMENT =
-        new DockerComposeContainer<>(new File("docker-compose-integrationtest.yml"))
-            .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
+    public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
 
     @BeforeAll
     public static void setupObjects() {

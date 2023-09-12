@@ -1,15 +1,14 @@
 package org.phoebus.channelfinder;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
+
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -18,7 +17,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@RunWith(SpringRunner.class)
+
 @WebMvcTest(ChannelScroll.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelScrollSearchIT {
@@ -38,13 +37,13 @@ public class ChannelScrollSearchIT {
     @Autowired
     PopulateService populateService;
 
-    @Before
+    @BeforeEach
     public void setup() throws InterruptedException {
         populateService.createDB(1);
         Thread.sleep(10000);
     }
 
-    @After
+    @AfterEach
     public void cleanup() throws InterruptedException {
         populateService.cleanupDB();
         Thread.sleep(10000);

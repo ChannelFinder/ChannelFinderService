@@ -2,15 +2,11 @@ package org.phoebus.channelfinder.performance;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Refresh;
-import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
-import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.AuthorizationService;
 import org.phoebus.channelfinder.ChannelManager;
 import org.phoebus.channelfinder.entity.Channel;
@@ -22,7 +18,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,7 +64,6 @@ import java.util.stream.Collectors;
  * @author Kunal Shroff
  */
 
-@RunWith(SpringRunner.class)
 @WebMvcTest(AuthorizationService.class)
 @TestPropertySource(value = "classpath:performance_application.properties")
 public class PopulateHTTPService {
