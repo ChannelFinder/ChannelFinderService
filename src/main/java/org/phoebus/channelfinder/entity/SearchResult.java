@@ -12,7 +12,15 @@ public class SearchResult {
             this.count = count;
         }
 
-        @Override
+    @Override
+    public String toString() {
+        return "SearchResult{" +
+                "count=" + count +
+                ", channels=" + channels +
+                '}';
+    }
+
+    @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;

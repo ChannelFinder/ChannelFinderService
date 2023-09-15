@@ -27,6 +27,17 @@ import java.util.List;
 public class Property {
     private String name;
     private String owner;
+
+    @Override
+    public String toString() {
+        return "Property{" +
+                "name='" + name + '\'' +
+                ", owner='" + owner + '\'' +
+                ", value='" + value + '\'' +
+                ", channels=" + channels +
+                '}';
+    }
+
     private String value;
     private List<Channel> channels = new ArrayList<>();
 
@@ -182,11 +193,8 @@ public class Property {
         } else if (!owner.equals(other.owner))
             return false;
         if (value == null) {
-            if (other.value != null)
-                return false;
-        } else if (!value.equals(other.value))
-            return false;
-        return true;
+            return other.value == null;
+        } else return value.equals(other.value);
     }
 
     /**
@@ -196,7 +204,7 @@ public class Property {
      * @author Kunal Shroff
      *
      */
-    public abstract class OnlyProperty {
+    public abstract static class OnlyProperty {
         @JsonIgnore
         private List<Channel> channels;
     }
@@ -208,7 +216,7 @@ public class Property {
      * @author Kunal Shroff
      *
      */
-    public abstract class OnlyNameOwnerProperty {
+    public abstract static class OnlyNameOwnerProperty {
         @JsonIgnore
         private String value;
         @JsonIgnore

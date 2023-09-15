@@ -207,6 +207,16 @@ public class Channel {
     }
 
     @Override
+    public String toString() {
+        return "Channel{" +
+                "name='" + name + '\'' +
+                ", owner='" + owner + '\'' +
+                ", properties=" + properties +
+                ", tags=" + tags +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
