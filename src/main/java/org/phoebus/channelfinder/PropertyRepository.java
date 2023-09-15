@@ -53,14 +53,12 @@ public class PropertyRepository implements CrudRepository<Property, String> {
 
     private static final Logger logger = Logger.getLogger(PropertyRepository.class.getName());
 
-    @Value("${elasticsearch.property.index:cf_properties}")
-    private String ES_PROPERTY_INDEX;
-    @Value("${elasticsearch.channel.index:channelfinder}")
-    private String ES_CHANNEL_INDEX;
-
     @Autowired
     @Qualifier("indexClient")
     ElasticsearchClient client;
+
+    @Autowired
+    ElasticConfig esService;
 
     @Autowired
     ChannelRepository channelRepository;
@@ -88,7 +86,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
         for (Property property : properties) {
             br.operations(op -> op
                     .index(idx -> idx
-                                    .index(ES_PROPERTY_INDEX)
+                                    .index(esService.getES_PROPERTY_INDEX())
                                     .id(property.getName())
                                     .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))
                     )
@@ -127,7 +125,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     @SuppressWarnings("unchecked")
     public <S extends Property> S save(String propertyName, S property) {
         try {
-            IndexRequest request = IndexRequest.of(i -> i.index(ES_PROPERTY_INDEX)
+            IndexRequest request = IndexRequest.of(i -> i.index(esService.getES_PROPERTY_INDEX())
                     .id(propertyName)
                     .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))
                     .refresh(Refresh.True));
@@ -170,7 +168,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
         BulkRequest.Builder br = new BulkRequest.Builder();
 
         for (Property property : properties) {
-            br.operations(op -> op.index(i -> i.index(ES_PROPERTY_INDEX)
+            br.operations(op -> op.index(i -> i.index(esService.getES_PROPERTY_INDEX())
                     .id(property.getName())
                     .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))));
         }
@@ -218,7 +216,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     public Optional<Property> findById(String propertyName, boolean withChannels) {
         GetResponse<Property> response;
         try {
-            response = client.get(g -> g.index(ES_PROPERTY_INDEX).id(propertyName), Property.class);
+            response = client.get(g -> g.index(esService.getES_PROPERTY_INDEX()).id(propertyName), Property.class);
 
             if (response.found()) {
                 Property property = response.source();
@@ -244,7 +242,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     public boolean existsById(String id) {
         try {
             ExistsRequest.Builder builder = new ExistsRequest.Builder();
-            builder.index(ES_PROPERTY_INDEX).id(id);
+            builder.index(esService.getES_PROPERTY_INDEX()).id(id);
             return client.exists(builder.build()).value();
         } catch (ElasticsearchException | IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_PROPERTY_EXISTS, id);
@@ -262,7 +260,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     public Iterable<Property> findAll() {
         try {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
-                    .index(ES_PROPERTY_INDEX)
+                    .index(esService.getES_PROPERTY_INDEX())
                     .query(new MatchAllQuery.Builder().build()._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
@@ -286,7 +284,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
             List<String> ids = StreamSupport.stream(propertyIds.spliterator(), false).collect(Collectors.toList());
 
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
-                    .index(ES_PROPERTY_INDEX)
+                    .index(esService.getES_PROPERTY_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
@@ -313,7 +311,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     public void deleteById(String propertyName) {
         try {
             DeleteResponse response = client
-                    .delete(i -> i.index(ES_PROPERTY_INDEX).id(propertyName).refresh(Refresh.True));
+                    .delete(i -> i.index(esService.getES_PROPERTY_INDEX()).id(propertyName).refresh(Refresh.True));
             // verify the deletion of the property
             if (response.result().equals(Result.Deleted)) {
                 logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_PROPERTY, propertyName));
@@ -329,7 +327,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                     channel.removeProperty(
                             channel.getProperties().stream().filter(prop -> propertyName.equalsIgnoreCase(prop.getName())).findAny().get());
                     br.operations(op -> op.update(
-                            u -> u.index(ES_CHANNEL_INDEX)
+                            u -> u.index(esService.getES_CHANNEL_INDEX())
                                     .id(channel.getName())
                                     .action(a -> a.doc(channel))));
                 }

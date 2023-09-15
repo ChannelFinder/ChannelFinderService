@@ -8,6 +8,7 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -162,15 +163,15 @@ public class TagManagerIT {
     public void createXmlTag2() {
         Tag testTag0WithChannels = new Tag("testTag0WithChannels", "testOwner");
         testTag0WithChannels.setChannels(testChannels);
-        cleanupTestTags = Arrays.asList(testTag0WithChannels);
+        cleanupTestTags = List.of(testTag0WithChannels);
 
         Tag createdTag = tagManager.create(testTag0WithChannels.getName(), testTag0WithChannels);
         try {
             Tag foundTag = tagRepository.findById(testTag0WithChannels.getName(), true).get();
             Tag expectedTag = new Tag("testTag0WithChannels", "testOwner");
             expectedTag.setChannels(Arrays.asList(
-                    new Channel("testChannel0", "testOwner", EMPTY_LIST, Arrays.asList(new Tag("testTag0WithChannels", "testOwner"))),
-                    new Channel("testChannel1", "testOwner", EMPTY_LIST, Arrays.asList(new Tag("testTag0WithChannels", "testOwner")))));
+                    new Channel("testChannel0", "testOwner", EMPTY_LIST, List.of(new Tag("testTag0WithChannels", "testOwner"))),
+                    new Channel("testChannel1", "testOwner", EMPTY_LIST, List.of(new Tag("testTag0WithChannels", "testOwner")))));
             Assertions.assertEquals(expectedTag, foundTag, "Failed to create the tag w/ channels. Expected " + expectedTag.toLog() + " found "
                     + foundTag.toLog());
 

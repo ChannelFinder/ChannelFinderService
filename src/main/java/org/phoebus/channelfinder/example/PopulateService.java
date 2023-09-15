@@ -1,6 +1,8 @@
 package org.phoebus.channelfinder.example;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,15 +22,17 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.IndexRequest;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.bulk.IndexOperation;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,6 +80,7 @@ public class PopulateService {
     static String towner = "testt";
 
     public static List<Integer> val_bucket = Arrays.asList(0, 1, 2, 5, 10, 20, 50, 100, 200, 500);
+    public static List<Integer> val_bucket_size = Arrays.asList(1000 - val_bucket.stream().mapToInt(Integer::intValue).sum(), 1, 2, 5, 10, 20, 50, 100, 200, 500);
 
     // A static list of props, tags, channels handled by this class which must be cleaned up on closure.
     static Set<Property> prop_list = new HashSet<>();
@@ -89,21 +94,8 @@ public class PopulateService {
     @Qualifier("indexClient")
     ElasticsearchClient client;
 
-    @Value("${elasticsearch.channel.index:channelfinder}")
-    private String ES_CHANNEL_INDEX;
-    @Value("${elasticsearch.channel.type:cf_channel}")
-    private String ES_CHANNEL_TYPE;
-    @Value("${elasticsearch.tag.index:cf_tags}")
-    private String ES_TAG_INDEX;
-    @Value("${elasticsearch.tag.type:cf_tag}")
-    private String ES_TAG_TYPE;
-    @Value("${elasticsearch.property.index:cf_properties}")
-    private String ES_PROPERTY_INDEX;
-    @Value("${elasticsearch.property.type:cf_property}")
-    private String ES_PROPERTY_TYPE;
 
-
-    static ObjectMapper mapper = new ObjectMapper();
+    public static ObjectMapper mapper = new ObjectMapper();
 
 
     static int index = 0;
@@ -118,7 +110,7 @@ public class PopulateService {
         }
 
         index = 0;
-        Arrays.asList(112, 1, 2, 5, 10, 20, 50, 100, 200, 500).stream().forEachOrdered(count -> {
+        val_bucket_size.stream().forEachOrdered(count -> {
             for (int i = 0; i < count; i++) {
                 tokens_1000.add(val_bucket.get(index));
             }
@@ -126,7 +118,7 @@ public class PopulateService {
         });
 
         index = 0;
-        Arrays.asList(112, 1, 2, 5, 10, 20, 50, 100, 200).stream().forEachOrdered(count -> {
+        val_bucket_size.stream().forEachOrdered(count -> {
             for (int i = 0; i < count; i++) {
                 tokens_500.add(val_bucket.get(index));
             }
@@ -139,7 +131,7 @@ public class PopulateService {
         for (String channelName : channel_list) {
             br.operations(op -> op
                     .delete(idx -> idx
-                            .index(ES_CHANNEL_INDEX)
+                            .index(esService.getES_CHANNEL_INDEX())
                             .id(channelName)
                     )
             );
@@ -147,7 +139,7 @@ public class PopulateService {
         for (Tag tag : tag_list) {
             br.operations(op -> op
                     .delete(idx -> idx
-                            .index(ES_TAG_INDEX)
+                            .index(esService.getES_TAG_INDEX())
                             .id(tag.getName())
                     )
             );
@@ -155,7 +147,7 @@ public class PopulateService {
         for (Property property : prop_list) {
             br.operations(op -> op
                     .delete(idx -> idx
-                            .index(ES_PROPERTY_INDEX)
+                            .index(esService.getES_PROPERTY_INDEX())
                             .id(property.getName())
                     )
             );
@@ -185,9 +177,8 @@ public class PopulateService {
     }
 
     public synchronized void createDB() {
-        long start = System.currentTimeMillis();
         Collection<Boolean> finalResult = new ArrayList<>();
-        start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         for (int i = 1; i <= numberOfCells; i++) {
             String cell = String.format("%03d", i);
             try {
@@ -215,10 +206,10 @@ public class PopulateService {
 
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (Property property : prop_list) {
-            br.operations(op -> op.index(index -> index.index(ES_PROPERTY_INDEX).id(property.getName()).document(property)));
+            br.operations(op -> op.index(index -> index.index(esService.getES_PROPERTY_INDEX()).id(property.getName()).document(property)));
         }
         for (Tag tag : tag_list) {
-            br.operations(op -> op.index(index -> index.index(ES_TAG_INDEX).id(tag.getName()).document(tag)));
+            br.operations(op -> op.index(index -> index.index(esService.getES_TAG_INDEX()).id(tag.getName()).document(tag)));
         }
         br.refresh(Refresh.True);
 
@@ -239,6 +230,58 @@ public class PopulateService {
     }
 
 
+    public void createTagsAndProperties(URL tagResource, URL propertyResource) {
+        long start = System.currentTimeMillis();
+        // Setup the default tags
+        String tagsURL;
+        tagsURL = tagResource.toExternalForm();
+        try (InputStream input = new URL(tagsURL).openStream() ) {
+            List<Tag> jsonTag = mapper.readValue(input, new TypeReference<List<Tag>>(){});
+
+            jsonTag.stream().forEach(tag -> {
+                try {
+                    if(!client.exists(e -> e.index(esService.getES_TAG_INDEX()).id(tag.getName())).value()){
+                        IndexRequest<Tag> indexRequest =
+                                IndexRequest.of(i ->
+                                        i.index(esService.getES_TAG_INDEX())
+                                                .id(tag.getName())
+                                                .document(tag)
+                                                .refresh(Refresh.True));
+                        IndexResponse response = client.index(indexRequest);
+                    }
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Failed to initialize tag : " +tag.getName(), e);
+                }
+            });
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "Failed to initialize tag ", ex);
+        }
+
+        // Setup the default properties
+        String propertiesURL;
+        propertiesURL = propertyResource.toExternalForm();
+        try (InputStream input = new URL(propertiesURL).openStream() ) {
+            List<Property> jsonTag = mapper.readValue(input, new TypeReference<List<Property>>(){});
+
+            jsonTag.stream().forEach(property -> {
+                try {
+                    if(!client.exists(e -> e.index(esService.getES_PROPERTY_INDEX()).id(property.getName())).value()){
+                        IndexRequest<Property> indexRequest =
+                                IndexRequest.of(i ->
+                                        i.index(esService.getES_PROPERTY_INDEX())
+                                                .id(property.getName())
+                                                .document(property)
+                                                .refresh(Refresh.True));
+                        IndexResponse response = client.index(indexRequest);
+                    }
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Failed to initialize property : " +property.getName(), e);
+                }
+            });
+        } catch (IOException ex) {
+            logger.log(Level.WARNING, "Failed to initialize property ", ex);
+        }
+    }
     private boolean insertSRCell(String cell) throws Exception {
         String loc = "storage ring";
         String pre = "SR:C";
@@ -278,7 +321,7 @@ public class PopulateService {
         long start = System.currentTimeMillis();
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (Channel channel : result) {
-            br.operations(op -> op.index(IndexOperation.of(i -> i.index(ES_CHANNEL_INDEX).id(channel.getName()).document(channel))));
+            br.operations(op -> op.index(IndexOperation.of(i -> i.index(esService.getES_CHANNEL_INDEX()).id(channel.getName()).document(channel))));
         }
         String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
         start = System.currentTimeMillis();
@@ -336,7 +379,7 @@ public class PopulateService {
         long start = System.currentTimeMillis();
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (Channel channel : result) {
-            br.operations(op -> op.index(IndexOperation.of(i -> i.index(ES_CHANNEL_INDEX).id(channel.getName()).document(channel))));
+            br.operations(op -> op.index(IndexOperation.of(i -> i.index(esService.getES_CHANNEL_INDEX()).id(channel.getName()).document(channel))));
         }
         String prepare = "|Prepare: " + (System.currentTimeMillis() - start) + "|";
         start = System.currentTimeMillis();
@@ -490,36 +533,37 @@ public class PopulateService {
 
             for (Entry<Integer, List<Integer>> entry : tokens.entrySet()) {
                 // pop val from the tokens
-                Integer val = entry.getValue().remove(ThreadLocalRandom.current().nextInt(entry.getValue().size()));
-                channel.getProperties().add(new Property("group" + String.valueOf(entry.getKey()), powner, String.valueOf(val)));
-                channel.getTags().add(new Tag("group" + String.valueOf(entry.getKey()) + "_" + val, towner));
+                int randIndex = ThreadLocalRandom.current().nextInt(entry.getValue().size());
+                Integer val = entry.getValue().remove(randIndex);
+                channel.getProperties().add(new Property("group" + entry.getKey(), powner, String.valueOf(val)));
+                channel.getTags().add(new Tag("group" + entry.getKey() + "_" + val, towner));
             }
 
             if (channelInCell % 2 == 1) {
                 channel.getProperties().add(new Property("group6", powner, "500"));
                 channel.getTags().add(new Tag("group6_500", towner));
-            } else if (channelInCell <= 2 * 200) {
+            } else if (channelInCell < 2 * 200) {
                 channel.getProperties().add(new Property("group6", powner, "200"));
                 channel.getTags().add(new Tag("group6_200", towner));
-            } else if (channelInCell <= 2 * (200 + 100)) {
+            } else if (channelInCell < 2 * (200 + 100)) {
                 channel.getProperties().add(new Property("group6", powner, "100"));
                 channel.getTags().add(new Tag("group6_100", towner));
-            } else if (channelInCell <= 2 * (200 + 100 + 50)) {
+            } else if (channelInCell < 2 * (200 + 100 + 50)) {
                 channel.getProperties().add(new Property("group6", powner, "50"));
                 channel.getTags().add(new Tag("group6_50", towner));
-            } else if (channelInCell <= 2 * (200 + 100 + 50 + 20)) {
+            } else if (channelInCell < 2 * (200 + 100 + 50 + 20)) {
                 channel.getProperties().add(new Property("group6", powner, "20"));
                 channel.getTags().add(new Tag("group6_20", towner));
-            } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10)) {
+            } else if (channelInCell < 2 * (200 + 100 + 50 + 20 + 10)) {
                 channel.getProperties().add(new Property("group6", powner, "10"));
                 channel.getTags().add(new Tag("group6_10", towner));
-            } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5)) {
+            } else if (channelInCell < 2 * (200 + 100 + 50 + 20 + 10 + 5)) {
                 channel.getProperties().add(new Property("group6", powner, "5"));
                 channel.getTags().add(new Tag("group6_5", towner));
-            } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2)) {
+            } else if (channelInCell < 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2)) {
                 channel.getProperties().add(new Property("group6", powner, "2"));
                 channel.getTags().add(new Tag("group6_2", towner));
-            } else if (channelInCell <= 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2 + 1)) {
+            } else if (channelInCell < 2 * (200 + 100 + 50 + 20 + 10 + 5 + 2 + 1)) {
                 channel.getProperties().add(new Property("group6", powner, "1"));
                 channel.getTags().add(new Tag("group6_1", towner));
             } else {
@@ -558,31 +602,32 @@ public class PopulateService {
                 channel.getProperties().add(new Property("group7", powner, "0"));
                 channel.getTags().add(new Tag("group7_0", towner));
             }
-            if (channelInCell <= 500) {
+
+            if (channelInCell < 500) {
                 channel.getProperties().add(new Property("group8", powner, "500"));
                 channel.getTags().add(new Tag("group8_500", towner));
-            } else if (channelInCell <= 500 + 200) {
+            } else if (channelInCell < 500 + 200) {
                 channel.getProperties().add(new Property("group8", powner, "200"));
                 channel.getTags().add(new Tag("group8_200", towner));
-            } else if (channelInCell <= 500 + (200 + 100)) {
+            } else if (channelInCell < 500 + (200 + 100)) {
                 channel.getProperties().add(new Property("group8", powner, "100"));
                 channel.getTags().add(new Tag("group8_100", towner));
-            } else if (channelInCell <= 500 + (200 + 100 + 50)) {
+            } else if (channelInCell < 500 + (200 + 100 + 50)) {
                 channel.getProperties().add(new Property("group8", powner, "50"));
                 channel.getTags().add(new Tag("group8_50", towner));
-            } else if (channelInCell <= 500 + (200 + 100 + 50 + 20)) {
+            } else if (channelInCell < 500 + (200 + 100 + 50 + 20)) {
                 channel.getProperties().add(new Property("group8", powner, "20"));
                 channel.getTags().add(new Tag("group8_20", towner));
-            } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10)) {
+            } else if (channelInCell < 500 + (200 + 100 + 50 + 20 + 10)) {
                 channel.getProperties().add(new Property("group8", powner, "10"));
                 channel.getTags().add(new Tag("group8_10", towner));
-            } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10 + 5)) {
+            } else if (channelInCell < 500 + (200 + 100 + 50 + 20 + 10 + 5)) {
                 channel.getProperties().add(new Property("group8", powner, "5"));
                 channel.getTags().add(new Tag("group8_5", towner));
-            } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10 + 5 + 2)) {
+            } else if (channelInCell < 500 + (200 + 100 + 50 + 20 + 10 + 5 + 2)) {
                 channel.getProperties().add(new Property("group8", powner, "2"));
                 channel.getTags().add(new Tag("group8_2", towner));
-            } else if (channelInCell <= 500 + (200 + 100 + 50 + 20 + 10 + 5 + 2 + 1)) {
+            } else if (channelInCell < 500 + (200 + 100 + 50 + 20 + 10 + 5 + 2 + 1)) {
                 channel.getProperties().add(new Property("group8", powner, "1"));
                 channel.getTags().add(new Tag("group8_1", towner));
             } else {
@@ -590,31 +635,31 @@ public class PopulateService {
                 channel.getTags().add(new Tag("group8_0", towner));
             }
 
-            if (channelInCell > 500) {
+            if (channelInCell >= 500) {
                 channel.getProperties().add(new Property("group9", powner, "500"));
                 channel.getTags().add(new Tag("group9_500", towner));
-            } else if (channelInCell > 500 - 200) {
+            } else if (channelInCell >= 500 - 200) {
                 channel.getProperties().add(new Property("group9", powner, "200"));
                 channel.getTags().add(new Tag("group9_200", towner));
-            } else if (channelInCell > 500 - 200 - 100) {
+            } else if (channelInCell >= 500 - 200 - 100) {
                 channel.getProperties().add(new Property("group9", powner, "100"));
                 channel.getTags().add(new Tag("group9_100", towner));
-            } else if (channelInCell > 500 - 200 - 100 - 50) {
+            } else if (channelInCell >= 500 - 200 - 100 - 50) {
                 channel.getProperties().add(new Property("group9", powner, "50"));
                 channel.getTags().add(new Tag("group9_50", towner));
-            } else if (channelInCell > 500 - 200 - 100 - 50 - 20) {
+            } else if (channelInCell >= 500 - 200 - 100 - 50 - 20) {
                 channel.getProperties().add(new Property("group9", powner, "20"));
                 channel.getTags().add(new Tag("group9_20", towner));
-            } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10) {
+            } else if (channelInCell >= 500 - 200 - 100 - 50 - 20 - 10) {
                 channel.getProperties().add(new Property("group9", powner, "10"));
                 channel.getTags().add(new Tag("group9_10", towner));
-            } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10 - 5) {
+            } else if (channelInCell >= 500 - 200 - 100 - 50 - 20 - 10 - 5) {
                 channel.getProperties().add(new Property("group9", powner, "5"));
                 channel.getTags().add(new Tag("group9_5", towner));
-            } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10 - 5 - 2) {
+            } else if (channelInCell >= 500 - 200 - 100 - 50 - 20 - 10 - 5 - 2) {
                 channel.getProperties().add(new Property("group9", powner, "2"));
                 channel.getTags().add(new Tag("group9_2", towner));
-            } else if (channelInCell > 500 - 200 - 100 - 50 - 20 - 10 - 5 - 2 - 1) {
+            } else if (channelInCell >= 500 - 200 - 100 - 50 - 20 - 10 - 5 - 2 - 1) {
                 channel.getProperties().add(new Property("group9", powner, "1"));
                 channel.getTags().add(new Tag("group9_1", towner));
             } else {
@@ -629,7 +674,7 @@ public class PopulateService {
             for (int k = 11; k < max_tag; k++) {
                 channel.getTags().add(new Tag("tag" + String.format("%02d", k), towner));
             }
-            Integer cellCount = Integer.valueOf(cell);
+            int cellCount = Integer.parseInt(cell);
             if (cellCount % 9 == 0) {
                 channel.getTags().add(new Tag("tagnine", towner));
             } else if (cellCount % 8 == 0) {

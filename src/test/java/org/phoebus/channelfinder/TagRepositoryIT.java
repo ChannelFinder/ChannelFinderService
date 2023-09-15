@@ -39,7 +39,7 @@ public class TagRepositoryIT {
     @Test
     public void indexXmlTag() {      
         Tag testTag = new Tag("testTag","testOwner");
-        cleanupTestTags = Arrays.asList(testTag);
+        cleanupTestTags = List.of(testTag);
         
         Tag createdTag = tagRepository.index(testTag);
         // verify the tag was created as expected

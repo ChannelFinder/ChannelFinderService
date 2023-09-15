@@ -43,11 +43,8 @@ public class ChannelScroll {
 
     private static final Logger logger = Logger.getLogger(ChannelScroll.class.getName());
 
-    @Value("${elasticsearch.channel.index:channelfinder}")
-    private String ES_CHANNEL_INDEX;
-
-    @Value("${elasticsearch.query.size:10000}")
-    private int defaultMaxSize;
+    @Autowired
+    ElasticConfig esService;
 
     @Autowired
     @Qualifier("indexClient")
@@ -93,7 +90,7 @@ public class ChannelScroll {
      */
     public Scroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-        Integer size = defaultMaxSize;
+        Integer size = esService.getES_QUERY_SIZE();
         Integer from = 0;
 
         for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
@@ -168,7 +165,7 @@ public class ChannelScroll {
             Integer finalSize = size;
             Integer finalFrom = from;
             SearchRequest.Builder builder = new SearchRequest.Builder();
-            builder.index(ES_CHANNEL_INDEX)
+            builder.index(esService.getES_CHANNEL_INDEX())
                     .query(boolQuery.build()._toQuery())
                     .from(finalFrom)
                     .size(finalSize)

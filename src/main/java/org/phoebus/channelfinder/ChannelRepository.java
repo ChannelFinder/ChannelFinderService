@@ -64,11 +64,8 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
     private static final Logger logger = Logger.getLogger(ChannelRepository.class.getName());
 
-    @Value("${elasticsearch.channel.index:channelfinder}")
-    private String ES_CHANNEL_INDEX;
-
-    @Value("${elasticsearch.query.size:10000}")
-    private int defaultMaxSize;
+    @Autowired
+    ElasticConfig esService;
 
     @Autowired
     @Qualifier("indexClient")
@@ -87,7 +84,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     @SuppressWarnings("unchecked")
     public Channel index(Channel channel) {
         try {
-            IndexRequest request = IndexRequest.of(i -> i.index(ES_CHANNEL_INDEX)
+            IndexRequest request = IndexRequest.of(i -> i.index(esService.getES_CHANNEL_INDEX())
                     .id(channel.getName())
                     .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
                     .refresh(Refresh.True));
@@ -117,7 +114,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         for (Channel channel : channels) {
             br.operations(op -> op
                     .index(idx -> idx
-                            .index(ES_CHANNEL_INDEX)
+                            .index(esService.getES_CHANNEL_INDEX())
                             .id(channel.getName())
                             .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
                     )
@@ -157,7 +154,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
      */
     public Channel save(String channelName, Channel channel) {
         try {
-            IndexResponse response = client.index(i -> i.index(ES_CHANNEL_INDEX)
+            IndexResponse response = client.index(i -> i.index(esService.getES_CHANNEL_INDEX())
                     .id(channel.getName())
                     .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
                     .refresh(Refresh.True));
@@ -208,11 +205,11 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                         updatedChannel.setOwner(channel.getOwner());
                     updatedChannel.addProperties(channel.getProperties());
                     updatedChannel.addTags(channel.getTags());
-                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX)
+                    br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
                             .id(updatedChannel.getName())
                             .document(JsonData.of(updatedChannel, new JacksonJsonpMapper(objectMapper)))));
                 } else {
-                    br.operations(op -> op.index(i -> i.index(ES_CHANNEL_INDEX)
+                    br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
                             .id(channel.getName())
                             .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))));
                 }
@@ -251,7 +248,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     public Optional<Channel> findById(String channelName) {
         GetResponse<Channel> response;
         try {
-            response = client.get(g -> g.index(ES_CHANNEL_INDEX).id(channelName), Channel.class);
+            response = client.get(g -> g.index(esService.getES_CHANNEL_INDEX()).id(channelName), Channel.class);
 
             if (response.found()) {
                 Channel channel = response.source();
@@ -278,7 +275,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
 
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
-                    .index(ES_CHANNEL_INDEX)
+                    .index(esService.getES_CHANNEL_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
@@ -301,7 +298,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     public boolean existsById(String channelName) {
         try {
             ExistsRequest.Builder builder = new ExistsRequest.Builder();
-            builder.index(ES_CHANNEL_INDEX).id(channelName);
+            builder.index(esService.getES_CHANNEL_INDEX()).id(channelName);
             return client.exists(builder.build()).value();
         } catch (ElasticsearchException | IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_CHANNEL_EXISTS, channelName);
@@ -332,7 +329,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             List<String> ids = StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
 
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
-                    .index(ES_CHANNEL_INDEX)
+                    .index(esService.getES_CHANNEL_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
@@ -359,7 +356,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     public void deleteById(String channelName) {
         try {
             DeleteResponse response = client
-                    .delete(i -> i.index(ES_CHANNEL_INDEX).id(channelName).refresh(Refresh.True));
+                    .delete(i -> i.index(esService.getES_CHANNEL_INDEX()).id(channelName).refresh(Refresh.True));
             // verify the deletion of the channel
             if (response.result().equals(Result.Deleted)) {
                 logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
@@ -388,7 +385,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         for (Channel channel : channels) {
             br.operations(op -> op
                     . delete(idx -> idx
-                            .index(ES_CHANNEL_INDEX)
+                            .index(esService.getES_CHANNEL_INDEX())
                             .id(channel.getName()))
                     ).refresh(Refresh.True);
         }
@@ -424,7 +421,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             Integer finalFrom = builtQuery.from;
 
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
-            searchBuilder.index(ES_CHANNEL_INDEX)
+            searchBuilder.index(esService.getES_CHANNEL_INDEX())
                             .query(builtQuery.boolQuery.build()._toQuery())
                             .from(finalFrom)
                             .size(finalSize)
@@ -452,7 +449,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
     private BuiltQuery getBuiltQuery(MultiValueMap<String, String> searchParameters) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-        int size = defaultMaxSize;
+        int size = esService.getES_QUERY_SIZE();
         int from = 0;
         boolean trackTotalHits = false;
         Optional<String> searchAfter = Optional.empty();
@@ -563,7 +560,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         try {
 
             CountRequest.Builder countBuilder = new CountRequest.Builder();
-            countBuilder.index(ES_CHANNEL_INDEX).query(builtQuery.boolQuery.build()._toQuery());
+            countBuilder.index(esService.getES_CHANNEL_INDEX()).query(builtQuery.boolQuery.build()._toQuery());
             CountResponse response = client.count(countBuilder.build());
 
             return response.count();
