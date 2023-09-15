@@ -28,6 +28,16 @@ import java.util.stream.Collectors;
 public class Tag {
     private String name;
     private String owner;
+
+    @Override
+    public String toString() {
+        return "Tag{" +
+                "name='" + name + '\'' +
+                ", owner='" + owner + '\'' +
+                ", channels=" + channels +
+                '}';
+    }
+
     private List<Channel> channels = new ArrayList<>();
 
     /**
@@ -169,7 +179,7 @@ public class Tag {
      * @author Kunal Shroff
      *
      */
-    public abstract class OnlyTag {
+    public abstract static class OnlyTag {
         @JsonIgnore
         private List<Channel> channels;
     }

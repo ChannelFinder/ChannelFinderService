@@ -11,7 +11,15 @@ import javax.xml.bind.annotation.XmlType;
 public class Scroll {
     private String id;
     private List<Channel> channels = new ArrayList<>();
-    
+
+    @Override
+    public String toString() {
+        return "Scroll{" +
+                "id='" + id + '\'' +
+                ", channels=" + channels +
+                '}';
+    }
+
     /**
      * Creates a new instance of Scroll.
      *
