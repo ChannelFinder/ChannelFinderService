@@ -34,6 +34,7 @@ import org.elasticsearch.client.RestClient;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -50,6 +51,7 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
  */
 
 @Configuration
+@ConfigurationProperties(prefix = "elasticsearch")
 @ComponentScan(basePackages = { "org.phoebus.channelfinder" })
 @PropertySource(value = "classpath:application.properties")
 public class ElasticConfig implements ServletContextListener {
@@ -76,7 +78,20 @@ public class ElasticConfig implements ServletContextListener {
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
     @Value("${elasticsearch.query.size}")
-    private String ES_QUERY_SIZE;
+    private int ES_QUERY_SIZE;
+
+    public String getES_TAG_INDEX() {
+        return this.ES_TAG_INDEX;
+    }
+    public String getES_PROPERTY_INDEX() {
+        return this.ES_PROPERTY_INDEX;
+    }
+    public String getES_CHANNEL_INDEX() {
+        return this.ES_CHANNEL_INDEX;
+    }
+    public int getES_QUERY_SIZE() {
+        return this.ES_QUERY_SIZE;
+    }
 
     ObjectMapper objectMapper = new ObjectMapper()
             .addMixIn(Tag.class, Tag.OnlyTag.class)

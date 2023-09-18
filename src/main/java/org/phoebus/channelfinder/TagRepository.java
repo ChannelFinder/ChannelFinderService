@@ -53,10 +53,8 @@ public class TagRepository implements CrudRepository<Tag, String> {
 
     private static final Logger logger = Logger.getLogger(TagRepository.class.getName());
 
-    @Value("${elasticsearch.tag.index:cf_tags}")
-    private String ES_TAG_INDEX;
-    @Value("${elasticsearch.channel.index:channelfinder}")
-    private String ES_CHANNEL_INDEX;
+    @Autowired
+    ElasticConfig esService;
 
     @Autowired
     @Qualifier("indexClient")
@@ -89,7 +87,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
         for (Tag tag : tags) {
             br.operations(op -> op
                     .index(idx -> idx
-                            .index(ES_TAG_INDEX)
+                            .index(esService.getES_TAG_INDEX())
                             .id(tag.getName())
                             .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))));
         }
@@ -127,7 +125,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     public <S extends Tag> S save(String tagName, S tag) {
         try{
             IndexResponse response = client
-                    .index(i -> i.index(ES_TAG_INDEX)
+                    .index(i -> i.index(esService.getES_TAG_INDEX())
                             .id(tagName)
                             .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))
                             .refresh(Refresh.True));
@@ -164,7 +162,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
         for (Tag tag : tags) {
             br.operations(op -> op
                     .index(idx -> idx
-                            .index(ES_TAG_INDEX)
+                            .index(esService.getES_TAG_INDEX())
                             .id(tag.getName())
                             .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))
                     )
@@ -219,7 +217,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     public Optional<Tag> findById(String tagId, boolean withChannels) {
         GetResponse<Tag> response;
         try {
-            response = client.get(g -> g.index(ES_TAG_INDEX).id(tagId), Tag.class);
+            response = client.get(g -> g.index(esService.getES_TAG_INDEX()).id(tagId), Tag.class);
 
             if (response.found()) {
                 Tag tag = response.source();
@@ -245,7 +243,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     public boolean existsById(String id) {
         try {
             ExistsRequest.Builder builder = new ExistsRequest.Builder();
-            builder.index(ES_TAG_INDEX).id(id);
+            builder.index(esService.getES_TAG_INDEX()).id(id);
             return client.exists(builder.build()).value();
         } catch (ElasticsearchException | IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_TAG_EXISTS, id);
@@ -263,7 +261,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     public Iterable<Tag> findAll() {
         try {
             SearchRequest.Builder searchBuilder = new Builder()
-                    .index(ES_TAG_INDEX)
+                    .index(esService.getES_TAG_INDEX())
                     .query(new MatchAllQuery.Builder().build()._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
@@ -286,7 +284,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
         try {
             List<String> ids = StreamSupport.stream(tagIds.spliterator(), false).collect(Collectors.toList());
             SearchRequest.Builder searchBuilder = new Builder()
-                    .index(ES_TAG_INDEX)
+                    .index(esService.getES_TAG_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
@@ -313,7 +311,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     public void deleteById(String tagName) {
         try {
             DeleteResponse response = client
-                    .delete(i -> i.index(ES_TAG_INDEX).id(tagName).refresh(Refresh.True));
+                    .delete(i -> i.index(esService.getES_TAG_INDEX()).id(tagName).refresh(Refresh.True));
             // verify the deletion of the tag
             if (response.result().equals(Result.Deleted)) {
                 logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_TAG, tagName));
@@ -326,7 +324,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
 
                 for (Channel channel : channels) {
 //                    br.operations(op -> op.update(
-//                            u -> u.index(ES_CHANNEL_INDEX)
+//                            u -> u.index(esService.getES_CHANNEL_INDEX())
 //                                    .id(channel.getName())
 //                                    .action(a -> a.script(
 //                                                    Script.of(script -> script.inline(
@@ -336,7 +334,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
                     // Or
                     channel.removeTag(channel.getTags().stream().filter(tag -> tagName.equalsIgnoreCase(tag.getName())).findAny().get());
                     br.operations(op -> op.update(
-                            u -> u.index(ES_CHANNEL_INDEX)
+                            u -> u.index(esService.getES_CHANNEL_INDEX())
                                     .id(channel.getName())
                                     .action(a -> a.doc(channel))));
                 }
