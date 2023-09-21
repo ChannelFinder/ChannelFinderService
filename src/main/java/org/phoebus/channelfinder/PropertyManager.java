@@ -5,6 +5,7 @@ import static org.phoebus.channelfinder.CFResourceDescriptors.PROPERTY_RESOURCE_
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -296,91 +297,93 @@ public class PropertyManager {
     @PostMapping("/{propertyName}")
     public Property update(@PathVariable("propertyName") String propertyName, @RequestBody Property property) {
         // check if authorized role
-        if(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
-            long start = System.currentTimeMillis();
-            propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
-            // Validate request parameters
-            validatePropertyRequest(property);
-
-            // check if authorized owner
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-                String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
-                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-            }
-            List<Channel> chans = new ArrayList<>();
-            Optional<Property> existingProperty = propertyRepository.findById(propertyName,true);
-            Property newProperty;
-            if(existingProperty.isPresent()) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-                } 
-                chans = existingProperty.get().getChannels();
-                newProperty = existingProperty.get();
-                newProperty.setOwner(property.getOwner());
-                // Is an existing channel being renamed
-                if (!property.getName().equalsIgnoreCase(existingProperty.get().getName())) {
-                    // Since this is a rename operation we will need to remove the old channel.
-                    propertyRepository.deleteById(existingProperty.get().getName());
-                    newProperty.setName(property.getName());
-                }
-            } else {
-                newProperty = property;
-            }
-
-            // update property
-            Property updatedProperty = propertyRepository.save(newProperty);
-
-            // update channels of existing property
-            if(!chans.isEmpty()) {
-                List<Channel> chanList = new ArrayList<>();
-                boolean updated;
-                for(Channel chan: chans) {
-                    updated = false;
-                    for(Channel updatedChan: updatedProperty.getChannels()) {
-                        if(chan.getName().equals(updatedChan.getName()))
-                        {
-                            updated = true;
-                            break;
-                        }
-                    }
-                    if(!updated) {
-                        Property prop = new Property(property.getName(),property.getOwner(),chan.getProperties().get(0).getValue());
-                        chan.setProperties(Arrays.asList(prop));
-                        chanList.add(chan);
-                    }
-                }
-                if(!chanList.isEmpty())
-                    channelRepository.saveAll(chanList);
-            }
-
-            if(!property.getChannels().isEmpty()) {
-                // update the listed channels in the property's payloads with the new property
-                Iterable<Channel> channels = channelRepository.saveAll(property.getChannels());
-                List<Channel> chanList = new ArrayList<>();
-                Property p = null;
-                for(Channel chan: channels) {
-                    chan.setTags(new ArrayList<>());
-                    for(Property prop: chan.getProperties())
-                    {
-                        if(prop.getName().equals(propertyName))
-                            p = prop;
-                    }
-                    chan.setProperties(Arrays.asList(p));
-                    chanList.add(chan);
-                }
-                if(!chanList.isEmpty())
-                    updatedProperty.setChannels(chanList);
-            }
-
-            return updatedProperty;
-        } else {
+        if(!authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, propertyName);
             logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
+
+        long start = System.currentTimeMillis();
+        propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+        // Validate request parameters
+        validatePropertyRequest(property);
+
+        // check if authorized owner
+        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
+
+        List<Channel> chans = new ArrayList<>();
+        Optional<Property> existingProperty = propertyRepository.findById(propertyName,true);
+        Property newProperty;
+        if(existingProperty.isPresent()) {
+            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+                String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
+                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+            }
+            chans = existingProperty.get().getChannels();
+            newProperty = existingProperty.get();
+            newProperty.setOwner(property.getOwner());
+            // Is an existing channel being renamed
+            if (!property.getName().equalsIgnoreCase(existingProperty.get().getName())) {
+                // Since this is a rename operation we will need to remove the old channel.
+                propertyRepository.deleteById(existingProperty.get().getName());
+                newProperty.setName(property.getName());
+            }
+        } else {
+            newProperty = property;
+        }
+
+        // update property
+        Property updatedProperty = propertyRepository.save(newProperty);
+
+        // update channels of existing property
+        if(!chans.isEmpty()) {
+            List<Channel> chanList = new ArrayList<>();
+            for(Channel chan: chans) {
+                boolean alreadyUpdated = updatedProperty.getChannels().stream()
+                        .anyMatch(c -> c.getName().equals(chan.getName()));
+
+                if(!alreadyUpdated) {
+                    Optional<String> value = chan.getProperties().stream()
+                            .filter(p -> p.getName().equals(propertyName))
+                            .findFirst()
+                            .map(Property::getValue);
+                    if (value.isPresent()) {
+                        Property prop = new Property(property.getName(),property.getOwner(),value.get());
+                        chan.setProperties(List.of(prop));
+                        chanList.add(chan);
+                    }
+                }
+            }
+            if(!chanList.isEmpty())
+                channelRepository.saveAll(chanList);
+        }
+
+        if(!property.getChannels().isEmpty()) {
+            // update the listed channels in the property's payloads with the new property
+            Iterable<Channel> channels = channelRepository.saveAll(property.getChannels());
+            List<Channel> chanList = new ArrayList<>();
+            Property p = null;
+            for(Channel chan: channels) {
+                chan.setTags(new ArrayList<>());
+                for(Property prop: chan.getProperties())
+                {
+                    if(prop.getName().equals(propertyName))
+                        p = prop;
+                }
+                chan.setProperties(Collections.singletonList(p));
+                chanList.add(chan);
+            }
+            if(!chanList.isEmpty())
+                updatedProperty.setChannels(chanList);
+        }
+
+        return updatedProperty;
+
     }
 
     /**
