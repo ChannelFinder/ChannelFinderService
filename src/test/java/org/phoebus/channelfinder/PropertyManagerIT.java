@@ -564,6 +564,36 @@ public class PropertyManagerIT {
     }
 
     /**
+     * Update the value of a property when channels have multiple properties
+     */
+    @Test
+    public void updatePropertyWithChannelsTest() {
+        // A test property with testChannel0,testChannel1
+        Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
+        testProperty0WithChannels.setChannels(Arrays.asList(
+                new Channel(testChannel0.getName(), testChannel0.getOwner(), List.of(new Property(testProperty0WithChannels.getName(), testProperty0WithChannels.getOwner(), "property0channel0")), new ArrayList<Tag>()),
+                new Channel(testChannel1.getName(), testChannel1.getOwner(), List.of(new Property(testProperty0WithChannels.getName(), testProperty0WithChannels.getOwner(), "property0channel1")), new ArrayList<Tag>())));
+
+        Property testProperty1WithChannels = new Property("testProperty1WithChannels", "testOwner");
+        testProperty1WithChannels.setChannels(Arrays.asList(
+                new Channel(testChannel0.getName(), testChannel0.getOwner(), List.of(new Property(testProperty1WithChannels.getName(), testProperty1WithChannels.getOwner(), "property1channel0")), new ArrayList<Tag>()),
+                new Channel(testChannel1.getName(), testChannel1.getOwner(), List.of(new Property(testProperty1WithChannels.getName(), testProperty1WithChannels.getOwner(), "property1channel1")), new ArrayList<Tag>())));
+
+        propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        propertyManager.create(testProperty1WithChannels.getName(), testProperty1WithChannels);
+
+        Property newValueProperty = new Property(testProperty1WithChannels.getName(), testProperty1WithChannels.getOwner(), "newValueProperty");
+        newValueProperty.setChannels(List.of(
+                new Channel(testChannel1.getName(), testChannel1.getOwner(), List.of(new Property(newValueProperty.getName(), newValueProperty.getOwner(), "newValueProperty")), new ArrayList<Tag>())));
+        propertyManager.update(newValueProperty.getName(), newValueProperty);
+
+        List<Property> expected0Properties = List.of(new Property(testProperty0WithChannels.getName(), testProperty0WithChannels.getOwner(), "property0channel0"), new Property(testProperty1WithChannels.getName(), testProperty1WithChannels.getOwner(), "property1channel0"));
+        Assertions.assertEquals(expected0Properties, channelRepository.findById(testChannel0.getName()).get().getProperties());
+        List<Property> expected1Properties = List.of(new Property(testProperty0WithChannels.getName(), testProperty0WithChannels.getOwner(), "property0channel1"), new Property(newValueProperty.getName(), newValueProperty.getOwner(), "newValueProperty"));
+        Assertions.assertEquals(expected1Properties, channelRepository.findById(testChannel1.getName()).get().getProperties());
+    }
+
+    /**
      * Update multiple properties
      * Update on non-existing properties should result in the creation of the properties
      */
