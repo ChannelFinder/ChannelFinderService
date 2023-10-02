@@ -22,7 +22,7 @@ public class ChannelProcessorService {
     private TaskExecutor taskExecutor;
 
     long getProcessorCount() {
-        return channelProcessors.stream().count();
+        return channelProcessors.size();
     }
 
     List<String> getProcessorsNames() {
