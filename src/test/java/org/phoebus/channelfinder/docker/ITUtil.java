@@ -91,6 +91,11 @@ public class ITUtil {
 
     /**
      * Provide a default compose setup for testing.
+     * For Docker Compose V2.
+     *
+     * Intended usage is as field annotated with @Container from class annotated with @Testcontainers.
+     *
+     * @return compose container
      */
     public static ComposeContainer defaultComposeContainers() {
         return new ComposeContainer(new File("docker-compose-integrationtest.yml"))

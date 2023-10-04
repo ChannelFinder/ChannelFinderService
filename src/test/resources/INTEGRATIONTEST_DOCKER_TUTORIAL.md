@@ -23,7 +23,7 @@ It is possible to test ChannelFinder API by running ChannelFinder and Elasticsea
 
 ##### Tools
 
-* Docker - engine 18.06.0+ or later, compose 1.29.2 or later, compose file version 3.7 to be supported
+* Docker - engine 18.06.0+ or later, compose 2.21.0 or later, compose file version 3.7 to be supported
 
 ##### Dependencies
 
