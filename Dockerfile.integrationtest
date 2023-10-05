@@ -21,4 +21,7 @@ FROM openjdk:11
 # deployment unit
 COPY target/ChannelFinder-*.jar /channelfinder/ChannelFinder-*.jar
 
+# code coverage
+COPY target/jacoco/jacocoagent.jar /channelfinder/jacocoagent.jar
+
 CMD ["java", "-jar", "/channelfinder/ChannelFinder-*.jar", "--spring.config.name=application"]
