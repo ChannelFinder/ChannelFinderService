@@ -39,6 +39,7 @@
         <elasticsearch.version>8.2.0</elasticsearch.version>
         <junit-jupiter.version>5.10.0</junit-jupiter.version>
         <skipITs>true</skipITs>
+        <jacoco.skip>true</jacoco.skip>
     </properties>
     <dependencyManagement>
         <dependencies>
