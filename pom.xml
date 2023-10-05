@@ -38,6 +38,7 @@
         <spring.boot-version>2.7.3</spring.boot-version>
         <elasticsearch.version>8.2.0</elasticsearch.version>
         <junit-jupiter.version>5.10.0</junit-jupiter.version>
+        <skipITs>true</skipITs>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -235,14 +236,15 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
             </plugin>
+            <!-- use self-contained integration tests - org.phoebus.channelfinder.docker -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.1.2</version>
                 <configuration>
-                    <skipTests>false</skipTests>
+                    <skipITs>${skipITs}</skipITs>
                     <includes>
-                        <include>**/*IT.java</include>
+                        <include>**/docker/*IT.java</include>
                     </includes>
                 </configuration>
             </plugin>
