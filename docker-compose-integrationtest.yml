@@ -58,7 +58,13 @@ services:
       ldap.enabled: "false"
       embedded_ldap.enabled: "false"
       demo_auth.enabled: "true"
-    command: "java -jar /channelfinder/ChannelFinder-*.jar --spring.config.name=application"
+      skipITCoverage: "true"
+    command: >
+      /bin/bash -c "
+        if [ ${skipITCoverage} == false ]; then
+          export JAVA_TOOL_OPTIONS=-javaagent:/channelfinder/jacocoagent.jar=destfile=/channelfinder/jacoco.exec,output=file,append=false
+        fi
+        java -jar /channelfinder/ChannelFinder-*.jar --spring.config.name=application"
     restart: on-failure
     healthcheck:
       test: curl -s -f http://channelfinder:8080/ChannelFinder
