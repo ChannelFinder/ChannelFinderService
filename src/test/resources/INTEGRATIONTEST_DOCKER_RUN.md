@@ -22,6 +22,7 @@ All integration tests can be run via Maven.
 
 ```
 mvn failsafe:integration-test -DskipITs=false
+mvn failsafe:integration-test -DskipITs=false -DskipITCoverage=false
 ```
 
 Individual integration tests (classes) can also be run via Maven.
@@ -32,6 +33,31 @@ mvn test -Dtest=org.phoebus.channelfinder.docker.ChannelFinderIT
 mvn test -Dtest=org.phoebus.channelfinder.docker.ChannelFinderPropertiesIT
 mvn test -Dtest=org.phoebus.channelfinder.docker.ChannelFinderScrollIT
 mvn test -Dtest=org.phoebus.channelfinder.docker.ChannelFinderTagsIT
+```
+
+##### Code coverage
+
+Run integration tests with property `-DskipITCoverage=false` in order to have code coverage analysis. By default, code coverage for integration tests is disabled.
+
+After integration tests have been run, run below command to process coverage data. This applies for all and individual integration tests (including methods).
+
+```
+mvn verify -Djacoco.skip=false
+```
+
+Result is available in `target/site/jacoco` folder and includes code coverage execution data and reports.
+
+```
+index.html
+jacoco.exec
+jacoco.csv
+jacoco.xml
+```
+
+To run unit tests and integration tests (Docker) with code coverage
+
+```
+mvn clean install test-compile failsafe:integration-test failsafe:verify verify --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false -DskipITCoverage=false -P integrationtest-docker
 ```
 
 ### Note
@@ -52,3 +78,4 @@ mvn test -Dtest=org.phoebus.channelfinder.docker.ChannelFinderTagsIT
 ##### Performance
 
 * It may take a minute to run a test. This includes time to set up the test environment, perform the test and tear down the test environment. Setting up the test environment takes most of that time.
+* It may take additional time to run an integration test with code coverage.
