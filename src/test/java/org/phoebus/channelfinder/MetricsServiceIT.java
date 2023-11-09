@@ -88,7 +88,7 @@ class MetricsServiceIT {
     public void cleanup() {
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.set("~name", "*");
-        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        channelRepository.search(map).channels().forEach(c -> channelRepository.deleteById(c.getName()));
         tagRepository.findAll().forEach(t -> tagRepository.deleteById(t.getName()));
         propertyRepository.findAll().forEach(p -> propertyRepository.deleteById(p.getName()));
     }

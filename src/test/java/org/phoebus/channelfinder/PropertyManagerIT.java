@@ -72,7 +72,7 @@ class PropertyManagerIT {
         
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.set("~name", "*");
-        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        channelRepository.search(map).channels().forEach(c -> channelRepository.deleteById(c.getName()));
         propertyRepository.findAll().forEach(p -> propertyRepository.deleteById(p.getName()));
     }
     @AfterAll
@@ -321,7 +321,7 @@ class PropertyManagerIT {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("testProperty0WithChannels", "*");
         // verify the property was removed from the old channels
-        Assertions.assertEquals(Arrays.asList(testChannels.get(1)), channelRepository.search(params).getChannels(), "Failed to delete the property from channels");
+        Assertions.assertEquals(Arrays.asList(testChannels.get(1)), channelRepository.search(params).channels(), "Failed to delete the property from channels");
     }
 
     /**
@@ -727,7 +727,7 @@ class PropertyManagerIT {
         params.add("testProperty0WithChannels", "*");
         // verify the property was deleted and removed from all associated channels
         Assertions.assertFalse(propertyRepository.existsById(testProperty0WithChannels.getName()), "Failed to delete the property");
-        Assertions.assertEquals(new ArrayList<Channel>(), channelRepository.search(params).getChannels(), "Failed to delete the property from channels");
+        Assertions.assertEquals(new ArrayList<Channel>(), channelRepository.search(params).channels(), "Failed to delete the property from channels");
     }
 
     /**
@@ -748,7 +748,7 @@ class PropertyManagerIT {
         // Verify the property is removed from the testChannel0
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("testProperty0WithChannels", "*");
-        Assertions.assertFalse(channelRepository.search(searchParameters).getChannels().stream().anyMatch(ch -> {
+        Assertions.assertFalse(channelRepository.search(searchParameters).channels().stream().anyMatch(ch -> {
             return ch.getName().equals(testChannel0.getName());
         }), "Failed to delete the property from channel");
     }

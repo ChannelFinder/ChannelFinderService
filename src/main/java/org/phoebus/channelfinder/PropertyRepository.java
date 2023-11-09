@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
@@ -104,7 +103,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                     }
                 }
             } else {
-                return findAllById(properties.stream().map(Property::getName).collect(Collectors.toList()));
+                return findAllById(properties.stream().map(Property::getName).toList());
             }
         } catch (IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_PROPERTIES, properties);
@@ -164,7 +163,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     @Override
     public <S extends Property> Iterable<S> saveAll(Iterable<S> properties) {
         List<String> ids = StreamSupport.stream(properties.spliterator(), false)
-                .map(Property::getName).collect(Collectors.toList());
+                .map(Property::getName).toList();
 
         BulkRequest.Builder br = new BulkRequest.Builder();
 
@@ -225,7 +224,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add(property.getName(), "*");
-                    property.setChannels(channelRepository.search(params).getChannels());
+                    property.setChannels(channelRepository.search(params).channels());
                 }
                 return Optional.of(property);
             } else {
@@ -266,7 +265,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
-            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+            return response.hits().hits().stream().map(Hit::source).toList();
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, null);
@@ -282,7 +281,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
     @Override
     public List<Property> findAllById(Iterable<String> propertyIds) {
         try {
-            List<String> ids = StreamSupport.stream(propertyIds.spliterator(), false).collect(Collectors.toList());
+            List<String> ids = StreamSupport.stream(propertyIds.spliterator(), false).toList();
 
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(esService.getES_PROPERTY_INDEX())
@@ -290,7 +289,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
-            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+            return response.hits().hits().stream().map(Hit::source).toList();
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, null);
@@ -330,7 +329,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add(propertyName, "*");
-            List<Channel> channels = channelRepository.search(params).getChannels();
+            List<Channel> channels = channelRepository.search(params).channels();
             while (channels.size() > 0) {
                 for (Channel channel : channels) {
                     channel.removeProperty(
@@ -360,7 +359,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
 
                 }
                 params.set("~search_after", channels.get(channels.size() - 1).getName());
-                channels = channelRepository.search(params).getChannels();
+                channels = channelRepository.search(params).channels();
             }
         } catch (ElasticsearchException | IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_PROPERTY, propertyName);

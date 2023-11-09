@@ -81,10 +81,10 @@ class ChannelRepositorySearchIT {
         searchParameters.add("~name", channelNames.get(0));
         SearchResult result = channelRepository.search(searchParameters);
         long countResult = channelRepository.count(searchParameters);
-        Assertions.assertEquals(1, result.getCount());
-        Assertions.assertEquals(1, result.getChannels().size());
+        Assertions.assertEquals(1, result.count());
+        Assertions.assertEquals(1, result.channels().size());
         Assertions.assertEquals(1, countResult);
-        Assertions.assertEquals(result.getChannels().get(0).getName(), channelNames.get(0));
+        Assertions.assertEquals(result.channels().get(0).getName(), channelNames.get(0));
 
         logger.log(Level.INFO, "Search for all channels via wildcards");
         searchName(2,2, "BR:C001-BI:2{BLA}Pos:?-RB");
@@ -140,8 +140,8 @@ class ChannelRepositorySearchIT {
         SearchResult result = channelRepository.search(searchParameters);
 
         // Assert
-        Assertions.assertEquals(expectedResultCount, result.getCount());
-        Assertions.assertEquals(expectedChannelsCount, result.getChannels().size());
+        Assertions.assertEquals(expectedResultCount, result.count());
+        Assertions.assertEquals(expectedChannelsCount, result.channels().size());
         Assertions.assertEquals(expectedQueryCount, channelRepository.count(searchParameters));
     }
 
@@ -154,7 +154,7 @@ class ChannelRepositorySearchIT {
         SearchResult result = channelRepository.search(searchParameters);
         Integer expectedCount = CELLS * bucket;
         logger.log(Level.INFO, "Search for " + maptoString(searchParameters) + " expected " + expectedCount + " results");
-        Assertions.assertEquals(min(expectedCount, ELASTIC_LIMIT), Integer.valueOf(result.getChannels().size()), "Search: " + maptoString(searchParameters));
+        Assertions.assertEquals(min(expectedCount, ELASTIC_LIMIT), Integer.valueOf(result.channels().size()), "Search: " + maptoString(searchParameters));
         Assertions.assertEquals(expectedCount, Integer.valueOf((int) channelRepository.count(searchParameters)));
     }
 
