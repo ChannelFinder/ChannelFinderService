@@ -150,11 +150,7 @@ public class ITUtilTags {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * Utility method to return the list of all tags in the directory.
-     *
-     * @param expectedEqual (if non-negative number) equal to this number of items
-     * @param expected expected response tags
-     * @return number of tags
+     * @see ITUtilTags#assertListTags(int, int, int, Tag...)
      */
     public static Tag[] assertListTags(int expectedEqual, Tag... expected) {
         return assertListTags(HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, expected);

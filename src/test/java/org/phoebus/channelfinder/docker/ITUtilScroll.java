@@ -51,22 +51,13 @@ public class ITUtilScroll {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
-     *
-     * @param queryString query string
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertQueryChannels(String, int, String, int)
      */
     public static Scroll assertQueryChannels(String queryString, int expectedLength) {
         return assertQueryChannels(queryString, HttpURLConnection.HTTP_OK, null, expectedLength);
     }
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
-     *
-     * @param queryString query string
-     * @param expectedResponseCode expected response code
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertQueryChannels(String, int, String, int)
      */
     public static Scroll assertQueryChannels(String queryString, int expectedResponseCode, int expectedLength) {
         return assertQueryChannels(queryString, expectedResponseCode, null, expectedLength);
@@ -112,23 +103,13 @@ public class ITUtilScroll {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
-     *
-     * @param path path
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertContinueChannelsQuery(String, int, String, int)
      */
     public static Scroll assertContinueChannelsQuery(String path, int expectedLength) {
         return assertContinueChannelsQuery(path, HttpURLConnection.HTTP_OK, null, expectedLength);
     }
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
-     *
-     * @param path path
-     * @param expectedResponseCode expected response code
-     * @param expectedId (if non-null) expected id
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertContinueChannelsQuery(String, int, String, int)
      */
     public static Scroll assertContinueChannelsQuery(String path, int expectedResponseCode, int expectedLength) {
         return assertContinueChannelsQuery(path, expectedResponseCode, null, expectedLength);
