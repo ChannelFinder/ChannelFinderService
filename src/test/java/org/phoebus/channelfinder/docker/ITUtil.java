@@ -229,14 +229,14 @@ public class ITUtil {
      * of which first element contains given response code.
      *
      * @param response string array with response of http request, response code and content
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      *
      * @see HttpURLConnection for available response codes
      */
-    static void assertResponseLength2Code(String[] response, int responseCode) {
+    static void assertResponseLength2Code(String[] response, int expectedResponseCode) {
         assertNotNull(response);
         assertEquals(2, response.length);
-        assertEquals(responseCode, Integer.parseInt(response[0]));
+        assertEquals(expectedResponseCode, Integer.parseInt(response[0]));
     }
 
     /**
@@ -244,12 +244,12 @@ public class ITUtil {
      * of which first element contains response code OK (200) and second element contains given response content.
      *
      * @param response string array with response of http request, response code and content
-     * @param responseContent expected response content
+     * @param expectedResponseContent expected response content
      *
      * @see HttpURLConnection#HTTP_OK
      */
-    static void assertResponseLength2CodeOKContent(String[] response, String responseContent) {
-        assertResponseLength2CodeContent(response, HttpURLConnection.HTTP_OK, responseContent);
+    static void assertResponseLength2CodeOKContent(String[] response, String expectedResponseContent) {
+        assertResponseLength2CodeContent(response, HttpURLConnection.HTTP_OK, expectedResponseContent);
     }
 
     /**
@@ -257,14 +257,14 @@ public class ITUtil {
      * of which first element contains given response code and second element contains given response content.
      *
      * @param response string array with response of http request, response code and content
-     * @param responseCode expected response code
-     * @param responseContent expected response content
+     * @param expectedResponseCode expected response code
+     * @param expectedResponseContent expected response content
      *
      * @see HttpURLConnection for available response codes
      */
-    static void assertResponseLength2CodeContent(String[] response, int responseCode, String responseContent) {
-        assertResponseLength2Code(response, responseCode);
-        assertEquals(responseContent, response[1]);
+    static void assertResponseLength2CodeContent(String[] response, int expectedResponseCode, String expectedResponseContent) {
+        assertResponseLength2Code(response, expectedResponseCode);
+        assertEquals(expectedResponseContent, response[1]);
     }
 
     // ----------------------------------------------------------------------------------------------------
