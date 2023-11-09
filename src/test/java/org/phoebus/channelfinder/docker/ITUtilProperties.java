@@ -150,11 +150,7 @@ public class ITUtilProperties {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * Utility method to return the list of all properties in the directory.
-     *
-     * @param expectedEqual (if non-negative number) equal to this number of items
-     * @param expected expected response properties
-     * @return number of properties
+     * @see ITUtilProperties#assertListProperties(int, int, int, Property...)
      */
     public static Property[] assertListProperties(int expectedEqual, Property... expected) {
         return assertListProperties(HttpURLConnection.HTTP_OK, expectedEqual, expectedEqual, expected);
