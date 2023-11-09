@@ -18,14 +18,14 @@ All or individual integration tests (including methods) can be run in IDE as JUn
 
 ##### Maven
 
-All integration tests can be run via Maven.
+To run all integration tests via Maven.
 
 ```
 mvn failsafe:integration-test -DskipITs=false
 mvn failsafe:integration-test -DskipITs=false -DskipITCoverage=false
 ```
 
-Individual integration tests (classes) can also be run via Maven.
+To run individual integration tests (classes) via Maven.
 
 ```
 mvn test -Dtest=org.phoebus.channelfinder.docker.ChannelFinderChannelsIT
@@ -54,10 +54,18 @@ jacoco.csv
 jacoco.xml
 ```
 
-To run unit tests and integration tests (Docker) with code coverage
+##### Summary
+
+To build and run all unit tests and integration tests (Docker).
 
 ```
-mvn clean install test-compile failsafe:integration-test failsafe:verify verify --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false -DskipITCoverage=false -P integrationtest-docker
+mvn clean install test-compile failsafe:integration-test failsafe:verify verify --batch-mode --fail-at-end -DskipITs=false -Pintegrationtest-docker
+```
+
+To build and run all unit tests and integration tests (Docker) with code coverage.
+
+```
+mvn clean install test-compile failsafe:integration-test failsafe:verify verify --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false -DskipITCoverage=false -Pintegrationtest-docker
 ```
 
 ### Note
@@ -66,6 +74,7 @@ mvn clean install test-compile failsafe:integration-test failsafe:verify verify 
 
 * (Re) Build after change in `src/main/java` in order for change to be tested
 * `Dockerfile.integrationtest` relies on built code and not on Maven central
+* Requires a deployable jar
 
 ##### Configuration
 
