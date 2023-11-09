@@ -107,8 +107,8 @@ public class ITUtilTags {
     /**
      * @see ITUtilTags#assertRetrieveTag(String, int, Tag)
      */
-    public static Tag assertRetrieveTag(String path, int responseCode) {
-        return assertRetrieveTag(path, responseCode, TAG_NULL);
+    public static Tag assertRetrieveTag(String path, int expectedResponseCode) {
+        return assertRetrieveTag(path, expectedResponseCode, TAG_NULL);
     }
     /**
      * @see ITUtilTags#assertRetrieveTag(String, int, Tag)
@@ -120,17 +120,17 @@ public class ITUtilTags {
      * Utility method to return the tag with the given name, listing all tagged channels in an embedded <channels> structure.
      *
      * @param path path
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response tag
      */
-    public static Tag assertRetrieveTag(String path, int responseCode, Tag expected) {
+    public static Tag assertRetrieveTag(String path, int expectedResponseCode, Tag expected) {
         try {
             String[] response = null;
             Tag actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS + path);
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Tag.class);
             }
 
@@ -162,20 +162,20 @@ public class ITUtilTags {
     /**
      * Utility method to return the list of all tags in the directory.
      *
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expectedGreaterThanOrEqual (if non-negative number) greater than or equal to this number of items
      * @param expectedLessThanOrEqual (if non-negative number) less than or equal to this number of items
      * @param expected expected response tags
      * @return number of tags
      */
-    public static Tag[] assertListTags(int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Tag... expected) {
+    public static Tag[] assertListTags(int expectedResponseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Tag... expected) {
         try {
             String[] response = null;
             Tag[] actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS);
-            ITUtil.assertResponseLength2CodeOK(response);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Tag[].class);
             }
 
@@ -190,7 +190,7 @@ public class ITUtilTags {
             }
 
             // expected content
-            if (expected != null) {
+            if (expected != null && expected.length > 0) {
                 assertEqualsTags(actual, expected);
             }
 
@@ -220,14 +220,14 @@ public class ITUtilTags {
     /**
      * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, Tag)
      */
-    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, Tag value, int responseCode) {
-        return assertCreateReplaceTag(authorizationChoice, path, object2Json(value), responseCode, TAG_NULL);
+    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, Tag value, int expectedResponseCode) {
+        return assertCreateReplaceTag(authorizationChoice, path, object2Json(value), expectedResponseCode, TAG_NULL);
     }
     /**
      * @see ITUtilTags#assertCreateReplaceTag(AuthorizationChoice, String, String, int, Tag)
      */
-    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertCreateReplaceTag(authorizationChoice, path, json, responseCode, TAG_NULL);
+    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertCreateReplaceTag(authorizationChoice, path, json, expectedResponseCode, TAG_NULL);
     }
     /**
      * Utility method to create or completely replace the existing tag name with the payload data.
@@ -235,17 +235,17 @@ public class ITUtilTags {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response tag
      */
-    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Tag expected) {
+    public static Tag assertCreateReplaceTag(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Tag expected) {
         try {
             String[] response = null;
             Tag actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.TAGS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Tag.class);
             }
 
@@ -275,17 +275,17 @@ public class ITUtilTags {
      *
      * @param path path
      * @param value tag
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response tag
      */
-    public static Tag assertAddTagSingleChannel(String path, Tag value, int responseCode, Tag expected) {
+    public static Tag assertAddTagSingleChannel(String path, Tag value, int expectedResponseCode, Tag expected) {
         try {
             String[] response = null;
             Tag actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, AuthorizationChoice.ADMIN, EndpointChoice.TAGS, path, mapper.writeValueAsString(value)));
-            ITUtil.assertResponseLength2CodeOK(response);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Tag.class);
             }
 
@@ -313,8 +313,8 @@ public class ITUtilTags {
     /**
      * @see ITUtilTags#assertCreateReplaceTags(AuthorizationChoice, String, String, int, Tag[])
      */
-    public static Tag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertCreateReplaceTags(authorizationChoice, path, json, responseCode, TAGS_NULL);
+    public static Tag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertCreateReplaceTags(authorizationChoice, path, json, expectedResponseCode, TAGS_NULL);
     }
     /**
      * Utility method to add the tags in the payload to the directory.
@@ -322,17 +322,17 @@ public class ITUtilTags {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response tags
      */
-    public static Tag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Tag[] expected) {
+    public static Tag[] assertCreateReplaceTags(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Tag[] expected) {
         try {
             String[] response = null;
             Tag[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.TAGS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Tag[].class);
             }
 
@@ -360,14 +360,14 @@ public class ITUtilTags {
     /**
      * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, Tag)
      */
-    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, Tag value, int responseCode) {
-        return assertAddTagMultipleChannels(authorizationChoice, path, object2Json(value), responseCode, TAG_NULL);
+    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, Tag value, int expectedResponseCode) {
+        return assertAddTagMultipleChannels(authorizationChoice, path, object2Json(value), expectedResponseCode, TAG_NULL);
     }
     /**
      * @see ITUtilTags#assertAddTagMultipleChannels(AuthorizationChoice, String, String, int, Tag)
      */
-    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertAddTagMultipleChannels(authorizationChoice, path, json, responseCode, TAG_NULL);
+    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertAddTagMultipleChannels(authorizationChoice, path, json, expectedResponseCode, TAG_NULL);
     }
     /**
      * Utility method to add tag with the given name to all channels in the payload data.
@@ -375,17 +375,17 @@ public class ITUtilTags {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response tag
      */
-    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Tag expected) {
+    public static Tag assertAddTagMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Tag expected) {
         try {
             String[] response = null;
             Tag actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, authorizationChoice, EndpointChoice.TAGS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Tag.class);
             }
 
@@ -413,25 +413,25 @@ public class ITUtilTags {
     /**
      * @see ITUtilTags#assertAddMultipleTags(String, String, int, Tag[])
      */
-    public static Tag[] assertAddMultipleTags(String path, String json, int responseCode) {
-        return assertAddMultipleTags(path, json, responseCode, TAGS_NULL);
+    public static Tag[] assertAddMultipleTags(String path, String json, int expectedResponseCode) {
+        return assertAddMultipleTags(path, json, expectedResponseCode, TAGS_NULL);
     }
     /**
      * Utility method to add the tags in the payload to the directory.
      *
      * @param path path
      * @param json tags
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response tags
      */
-    public static Tag[] assertAddMultipleTags(String path, String json, int responseCode, Tag[] expected) {
+    public static Tag[] assertAddMultipleTags(String path, String json, int expectedResponseCode, Tag[] expected) {
         try {
             String[] response = null;
             Tag[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, AuthorizationChoice.ADMIN, EndpointChoice.TAGS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Tag[].class);
             }
 
@@ -481,14 +481,14 @@ public class ITUtilTags {
      *
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      */
-    public static void assertRemoveTag(AuthorizationChoice authorizationChoice, String path, int responseCode) {
+    public static void assertRemoveTag(AuthorizationChoice authorizationChoice, String path, int expectedResponseCode) {
         try {
             String[] response = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.DELETE, authorizationChoice, EndpointChoice.TAGS, path, null));
-            ITUtil.assertResponseLength2Code(response, responseCode);
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
