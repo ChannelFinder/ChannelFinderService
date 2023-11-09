@@ -107,8 +107,8 @@ public class ITUtilProperties {
     /**
      * @see ITUtilProperties#assertRetrieveProperty(String, int, Property)
      */
-    public static Property assertRetrieveProperty(String path, int responseCode) {
-        return assertRetrieveProperty(path, responseCode, PROPERTY_NULL);
+    public static Property assertRetrieveProperty(String path, int expectedResponseCode) {
+        return assertRetrieveProperty(path, expectedResponseCode, PROPERTY_NULL);
     }
     /**
      * @see ITUtilProperties#assertRetrieveProperty(String, int, Property)
@@ -120,17 +120,17 @@ public class ITUtilProperties {
      * Utility method to return the property with the given name, listing all channels with that property in an embedded <channels> structure.
      *
      * @param path path
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response property
      */
-    public static Property assertRetrieveProperty(String path, int responseCode, Property expected) {
+    public static Property assertRetrieveProperty(String path, int expectedResponseCode, Property expected) {
         try {
             String[] response = null;
             Property actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES + path);
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Property.class);
             }
 
@@ -162,20 +162,20 @@ public class ITUtilProperties {
     /**
      * Utility method to return the list of all properties in the directory.
      *
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expectedGreaterThanOrEqual (if non-negative number) greater than or equal to this number of items
      * @param expectedLessThanOrEqual (if non-negative number) less than or equal to this number of items
      * @param expected expected response properties
      * @return number of properties
      */
-    public static Property[] assertListProperties(int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Property... expected) {
+    public static Property[] assertListProperties(int expectedResponseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Property... expected) {
         try {
             String[] response = null;
             Property[] actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES);
-            ITUtil.assertResponseLength2CodeOK(response);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Property[].class);
             }
 
@@ -190,7 +190,7 @@ public class ITUtilProperties {
             }
 
             // expected content
-            if (expected != null) {
+            if (expected != null && expected.length > 0) {
                 assertEqualsXmlProperties(actual, expected);
             }
 
@@ -220,14 +220,14 @@ public class ITUtilProperties {
     /**
      * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, Property)
      */
-    public static Property assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, Property value, int responseCode) {
-        return assertCreateReplaceProperty(authorizationChoice, path, object2Json(value), responseCode, PROPERTY_NULL);
+    public static Property assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, Property value, int expectedResponseCode) {
+        return assertCreateReplaceProperty(authorizationChoice, path, object2Json(value), expectedResponseCode, PROPERTY_NULL);
     }
     /**
      * @see ITUtilProperties#assertCreateReplaceProperty(AuthorizationChoice, String, String, int, Property)
      */
-    public static Property assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertCreateReplaceProperty(authorizationChoice, path, json, responseCode, PROPERTY_NULL);
+    public static Property assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertCreateReplaceProperty(authorizationChoice, path, json, expectedResponseCode, PROPERTY_NULL);
     }
     /**
      * Utility method to create or completely replace the existing property name with the payload data.
@@ -235,17 +235,17 @@ public class ITUtilProperties {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response property
      */
-    public static Property assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Property expected) {
+    public static Property assertCreateReplaceProperty(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Property expected) {
         try {
             String[] response = null;
             Property actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.PROPERTIES, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Property.class);
             }
 
@@ -275,17 +275,17 @@ public class ITUtilProperties {
      *
      * @param path path
      * @param value property
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response property
      */
-    public static Property assertAddPropertySingleChannel(String path, Property value, int responseCode, Property expected) {
+    public static Property assertAddPropertySingleChannel(String path, Property value, int expectedResponseCode, Property expected) {
         try {
             String[] response = null;
             Property actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, AuthorizationChoice.ADMIN, EndpointChoice.PROPERTIES, path, mapper.writeValueAsString(value)));
-            ITUtil.assertResponseLength2CodeOK(response);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Property.class);
             }
 
@@ -313,8 +313,8 @@ public class ITUtilProperties {
     /**
      * @see ITUtilProperties#assertCreateReplaceProperties(AuthorizationChoice, String, String, int, Property[])
      */
-    public static Property[] assertCreateReplaceProperties(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertCreateReplaceProperties(authorizationChoice, path, json, responseCode, PROPERTIES_NULL);
+    public static Property[] assertCreateReplaceProperties(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertCreateReplaceProperties(authorizationChoice, path, json, expectedResponseCode, PROPERTIES_NULL);
     }
     /**
      * Utility method to add the properties in the payload to the directory.
@@ -322,17 +322,17 @@ public class ITUtilProperties {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response properties
      */
-    public static Property[] assertCreateReplaceProperties(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Property[] expected) {
+    public static Property[] assertCreateReplaceProperties(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Property[] expected) {
         try {
             String[] response = null;
             Property[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.PROPERTIES, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Property[].class);
             }
 
@@ -360,14 +360,14 @@ public class ITUtilProperties {
     /**
      * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, Property)
      */
-    public static Property assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, Property value, int responseCode) {
-        return assertAddPropertyMultipleChannels(authorizationChoice, path, object2Json(value), responseCode, PROPERTY_NULL);
+    public static Property assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, Property value, int expectedResponseCode) {
+        return assertAddPropertyMultipleChannels(authorizationChoice, path, object2Json(value), expectedResponseCode, PROPERTY_NULL);
     }
     /**
      * @see ITUtilProperties#assertAddPropertyMultipleChannels(AuthorizationChoice, String, String, int, Property)
      */
-    public static Property assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertAddPropertyMultipleChannels(authorizationChoice, path, json, responseCode, PROPERTY_NULL);
+    public static Property assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertAddPropertyMultipleChannels(authorizationChoice, path, json, expectedResponseCode, PROPERTY_NULL);
     }
     /**
      * Utility method to add property with the given name to all channels in the payload data.
@@ -375,17 +375,17 @@ public class ITUtilProperties {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response property
      */
-    public static Property assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Property expected) {
+    public static Property assertAddPropertyMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Property expected) {
         try {
             String[] response = null;
             Property actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, authorizationChoice, EndpointChoice.PROPERTIES, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Property.class);
             }
 
@@ -413,25 +413,25 @@ public class ITUtilProperties {
     /**
      * @see ITUtilProperties#assertAddMultipleProperties(String, String, int, Property[])
      */
-    public static Property[] assertAddMultipleProperties(String path, String json, int responseCode) {
-        return assertAddMultipleProperties(path, json, responseCode, PROPERTIES_NULL);
+    public static Property[] assertAddMultipleProperties(String path, String json, int expectedResponseCode) {
+        return assertAddMultipleProperties(path, json, expectedResponseCode, PROPERTIES_NULL);
     }
     /**
      * Utility method to add properties in the payload to all channels in the payload data.
      *
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response properties
      */
-    public static Property[] assertAddMultipleProperties(String path, String json, int responseCode, Property[] expected) {
+    public static Property[] assertAddMultipleProperties(String path, String json, int expectedResponseCode, Property[] expected) {
         try {
             String[] response = null;
             Property[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, AuthorizationChoice.ADMIN, EndpointChoice.PROPERTIES, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Property[].class);
             }
 
@@ -481,14 +481,14 @@ public class ITUtilProperties {
      *
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      */
-    public static void assertRemoveProperty(AuthorizationChoice authorizationChoice, String path, int responseCode) {
+    public static void assertRemoveProperty(AuthorizationChoice authorizationChoice, String path, int expectedResponseCode) {
         try {
             String[] response = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.DELETE, authorizationChoice, EndpointChoice.PROPERTIES, path, null));
-            ITUtil.assertResponseLength2Code(response, responseCode);
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
         } catch (IOException e) {
             fail();
         } catch (Exception e) {
