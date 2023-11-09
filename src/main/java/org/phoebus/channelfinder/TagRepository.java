@@ -2,7 +2,6 @@ package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -16,10 +15,10 @@ import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
-import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
+import co.elastic.clients.elasticsearch.core.CountRequest;
+import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -301,8 +300,16 @@ public class TagRepository implements CrudRepository<Tag, String> {
 
     @Override
     public long count() {
-        // NOT USED
-        return 0;
+        try {
+            CountRequest countRequest = new CountRequest.Builder().index(esService.getES_TAG_INDEX()).build();
+            CountResponse countResponse = client.count(countRequest);
+            return countResponse.count();
+        } catch (ElasticsearchException | IOException e) {
+
+            String message = MessageFormat.format(TextUtil.COUNT_FAILED_CAUSE, "", e.getMessage());
+            logger.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+        }
     }
 
     /**

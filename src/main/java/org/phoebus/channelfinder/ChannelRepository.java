@@ -1,18 +1,6 @@
 package org.phoebus.channelfinder;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldSort;
 import co.elastic.clients.elasticsearch._types.Refresh;
@@ -27,7 +15,6 @@ import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
 import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.CountResponse;
-import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -37,26 +24,35 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import co.elastic.clients.elasticsearch.core.search.TrackHits;
 import co.elastic.clients.json.JsonData;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Repository
 @Configuration
@@ -343,8 +339,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
     @Override
     public long count() {
-        // NOT USED
-        return 0;
+        return this.count(new LinkedMultiValueMap<>());
     }
 
     /**
@@ -392,7 +387,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         try {
             BulkResponse result = client.bulk(br.build());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -569,6 +564,30 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             logger.log(Level.SEVERE, message, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
         }
+    }
+
+
+    /**
+     * Match count
+     * @param propertyName channel search property name
+     * @param propertyValue channel search property value
+     * @return count of the number of matches to the provided query
+     */
+    public long countByProperty(String propertyName, String propertyValue) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add(propertyName, propertyValue == null? "*" : propertyValue);
+        return this.count(params);
+    }
+
+    /**
+     * Match count
+     * @param tagName channel search tag
+     * @return count of the number of matches to the provided query
+     */
+    public long countByTag(String tagName) {
+        MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+        params.add("~tag", tagName);
+        return this.count(params);
     }
 
 

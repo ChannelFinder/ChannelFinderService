@@ -39,7 +39,6 @@ import org.springframework.web.server.ResponseStatusException;
 @EnableAutoConfiguration
 public class PropertyManager {
 
-    // private SecurityContext securityContext;
     private static final Logger propertyManagerAudit = Logger.getLogger(PropertyManager.class.getName() + ".audit");
     private static final Logger logger = Logger.getLogger(PropertyManager.class.getName());
 
@@ -67,7 +66,7 @@ public class PropertyManager {
 
     /**
      * GET method for retrieving the property with the path parameter <code>propertyName</code> 
-     * 
+     * <p>
      * To get all its channels use the parameter "withChannels"
      *
      * @param propertyName - property name to search for
@@ -124,11 +123,7 @@ public class PropertyManager {
             Optional<Property> existingProperty = propertyRepository.findById(propertyName);
             boolean present = existingProperty.isPresent();
             if(present) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-                } 
+                checkPropertyAuthorization(existingProperty);
                 // delete existing property
                 propertyRepository.deleteById(propertyName);
             } 
@@ -168,25 +163,7 @@ public class PropertyManager {
             propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
-            for(Property property: properties) {
-                Optional<Property> existingProperty = propertyRepository.findById(property.getName());
-                boolean present = existingProperty.isPresent();
-                if(present) {
-                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-                    } 
-                    property.setOwner(existingProperty.get().getOwner());
-                    property.getChannels().forEach(chan -> chan.getProperties().get(0).setOwner(existingProperty.get().getOwner()));
-                } else {
-                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
-                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-                    }
-                }
-            }
+            checkPropertiesAuthorization(properties);
 
             // Validate request parameters
             validatePropertyRequest(properties);
@@ -257,11 +234,7 @@ public class PropertyManager {
             Optional<Property> existingProperty = propertyRepository.findById(propertyName);
             boolean present = existingProperty.isPresent();
             if(present) {
-                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-                } 
+                checkPropertyAuthorization(existingProperty);
                 // add property to channel
                 Channel channel = channelRepository.findById(channelName).get();
                 Property prop = existingProperty.get();
@@ -319,11 +292,7 @@ public class PropertyManager {
         Optional<Property> existingProperty = propertyRepository.findById(propertyName,true);
         Property newProperty;
         if(existingProperty.isPresent()) {
-            if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-            }
+            checkPropertyAuthorization(existingProperty);
             chans = existingProperty.get().getChannels();
             newProperty = existingProperty.get();
             newProperty.setOwner(property.getOwner());
@@ -403,25 +372,7 @@ public class PropertyManager {
             propertyManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
 
             // check if authorized owner
-            for(Property property: properties) {
-                Optional<Property> existingProperty = propertyRepository.findById(property.getName());
-                boolean present = existingProperty.isPresent();
-                if(present) {
-                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
-                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
-                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-                    }
-                    property.setOwner(existingProperty.get().getOwner());
-                    property.getChannels().forEach(chan -> chan.getProperties().get(0).setOwner(existingProperty.get().getOwner()));
-                } else {
-                    if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
-                        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
-                        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-                        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
-                    }
-                }
-            }
+            checkPropertiesAuthorization(properties);
 
             // Validate request parameters
             validatePropertyRequest(properties);
@@ -463,6 +414,32 @@ public class PropertyManager {
             return properties;
         } else {
             String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTIES, properties);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
+    }
+
+    private void checkPropertiesAuthorization(Iterable<Property> properties) {
+        for(Property property: properties) {
+            Optional<Property> existingProperty = propertyRepository.findById(property.getName());
+            boolean present = existingProperty.isPresent();
+            if(present) {
+                checkPropertyAuthorization(existingProperty);
+                property.setOwner(existingProperty.get().getOwner());
+                property.getChannels().forEach(chan -> chan.getProperties().get(0).setOwner(existingProperty.get().getOwner()));
+            } else {
+                if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), property)) {
+                    String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, property.toLog());
+                    logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                    throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+                }
+            }
+        }
+    }
+
+    private void checkPropertyAuthorization(Optional<Property> existingProperty) {
+        if(!authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), existingProperty.get())) {
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_PROPERTY, existingProperty.get().toLog());
             logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
@@ -542,17 +519,6 @@ public class PropertyManager {
             logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
         }
-    }
-
-    /**
-     * Check that the existing property and the property in the request body match
-     * 
-     * @param existing
-     * @param request
-     * @return
-     */
-    boolean validatePropertyRequest(Property existing, Property request) {
-        return existing.getName().equals(request.getName());
     }
 
     /**

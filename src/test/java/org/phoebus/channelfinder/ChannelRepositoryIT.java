@@ -253,6 +253,7 @@ public class ChannelRepositoryIT {
             Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on tags name search (all upper case)");
 
         } catch (ResponseStatusException e) {
+            Assertions.fail(e);
         }
     }
 

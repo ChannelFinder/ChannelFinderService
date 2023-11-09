@@ -98,39 +98,36 @@ public class ElasticConfig implements ServletContextListener {
             .addMixIn(Tag.class, Tag.OnlyTag.class)
             .addMixIn(Property.class, Property.OnlyProperty.class);
 
-
-    @Bean({ "searchClient" })
-    public ElasticsearchClient getSearchClient() {
-        if (searchClient == null) {
+    private static ElasticsearchClient createClient(ElasticsearchClient currentClient, ObjectMapper objectMapper,
+                                                    String host, int port, String createIndices, ElasticConfig config) {
+        ElasticsearchClient client;
+        if (currentClient == null) {
             // Create the low-level client
             RestClient httpClient = RestClient.builder(new HttpHost(host, port)).build();
 
             // Create the Java API Client with the same low level client
             ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper(objectMapper));
 
-            searchClient = new ElasticsearchClient(transport);
+            client = new ElasticsearchClient(transport);
+        } else {
+            client = currentClient;
         }
         esInitialized.set(!Boolean.parseBoolean(createIndices));
         if (esInitialized.compareAndSet(false, true)) {
-            elasticIndexValidation(searchClient);
+            config.elasticIndexValidation(client);
         }
+        return client;
+
+    }
+    @Bean({ "searchClient" })
+    public ElasticsearchClient getSearchClient() {
+        searchClient = createClient(searchClient, objectMapper, host, port, createIndices, this);
         return searchClient;
     }
 
     @Bean({ "indexClient" })
     public ElasticsearchClient getIndexClient() {
-        if (indexClient == null) {
-            // Create the low-level client
-            RestClient httpClient = RestClient.builder(new HttpHost(host, port)).build();
-
-            // Create the Java API Client with the same low level client
-            ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper(objectMapper));
-            indexClient = new ElasticsearchClient(transport);
-        }
-        esInitialized.set(!Boolean.parseBoolean(createIndices));
-        if (esInitialized.compareAndSet(false, true)) {
-            elasticIndexValidation(indexClient);
-        }
+        indexClient = createClient(indexClient, objectMapper, host, port, createIndices, this);
         return indexClient;
     }
 
@@ -149,50 +146,30 @@ public class ElasticConfig implements ServletContextListener {
     }
 
     /**
-     * Create the indices and templates if they don't exist
-     * @param client
+     * Create the olog indices and templates if they don't exist
+     * @param client client connected to elasticsearch
      */
     void elasticIndexValidation(ElasticsearchClient client) {
+        validateIndex(client, ES_CHANNEL_INDEX, "/channel_mapping.json");
+        validateIndex(client, ES_TAG_INDEX, "/tag_mapping.json");
+        validateIndex(client, ES_PROPERTY_INDEX, "/properties_mapping.json");
+    }
+
+    private void validateIndex(ElasticsearchClient client, String esIndex, String mapping) {
+
         // ChannelFinder Index
-        try (InputStream is = ElasticConfig.class.getResourceAsStream("/channel_mapping.json")) {
-            BooleanResponse exits = client.indices().exists(ExistsRequest.of(e -> e.index(ES_CHANNEL_INDEX)));
+        try (InputStream is = ElasticConfig.class.getResourceAsStream(mapping)) {
+            BooleanResponse exits = client.indices().exists(ExistsRequest.of(e -> e.index(esIndex)));
             if(!exits.value()) {
 
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
-                                c -> c.index(ES_CHANNEL_INDEX).withJson(is)));
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_CHANNEL_INDEX, result.acknowledged()));
+                                c -> c.index(esIndex).withJson(is)));
+                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, esIndex, result.acknowledged()));
             }
+
         } catch (IOException e) {
-            logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_CHANNEL_INDEX), e);
-        }
-
-        // ChannelFinder tag Index
-        try (InputStream is = ElasticConfig.class.getResourceAsStream("/tag_mapping.json")) {
-            BooleanResponse exits = client.indices().exists(ExistsRequest.of(e -> e.index(ES_TAG_INDEX)));
-            if(!exits.value()) {
-
-                CreateIndexResponse result = client.indices().create(
-                        CreateIndexRequest.of(
-                                c -> c.index(ES_TAG_INDEX).withJson(is)));
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_TAG_INDEX, result.acknowledged()));
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_TAG_INDEX), e);
-        }
-
-        // ChannelFinder property Index
-        try (InputStream is = ElasticConfig.class.getResourceAsStream("/properties_mapping.json")) {
-            BooleanResponse exits = client.indices().exists(ExistsRequest.of(e -> e.index(ES_PROPERTY_INDEX)));
-            if(!exits.value()) {
-
-                CreateIndexResponse result = client.indices().create(
-                        CreateIndexRequest.of(
-                                c -> c.index(ES_PROPERTY_INDEX).withJson(is)));
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_PROPERTY_INDEX, result.acknowledged()));
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, ES_PROPERTY_INDEX), e);
+            logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, esIndex), e);
         }
     }
 }
