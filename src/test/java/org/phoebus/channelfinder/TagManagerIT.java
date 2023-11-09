@@ -292,7 +292,7 @@ class TagManagerIT {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag", testTag0WithChannels.getName());
         // verify the tag was removed from the old channels
-        Assertions.assertEquals(Arrays.asList(testChannel1), channelRepository.search(params).getChannels(), "Failed to change the channels the tag is attached to correctly");
+        Assertions.assertEquals(Arrays.asList(testChannel1), channelRepository.search(params).channels(), "Failed to change the channels the tag is attached to correctly");
     }
     
     /**
@@ -628,7 +628,7 @@ class TagManagerIT {
         params.add("~tag", testTag1.getName());
         // verify the tag was deleted and removed from all associated channels
         Assertions.assertFalse(tagRepository.existsById(testTag1.getName()), "Failed to delete the tag");
-        Assertions.assertEquals(new ArrayList<Channel>(), channelRepository.search(params).getChannels(), "Failed to delete the tag from channels");
+        Assertions.assertEquals(new ArrayList<Channel>(), channelRepository.search(params).channels(), "Failed to delete the tag from channels");
     }
 
     /**
@@ -648,7 +648,7 @@ class TagManagerIT {
         // Verify the tag is removed from the testChannel0
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("~tag", testTag1.getName());
-        Assertions.assertFalse(channelRepository.search(searchParameters).getChannels().stream().anyMatch(ch -> {
+        Assertions.assertFalse(channelRepository.search(searchParameters).channels().stream().anyMatch(ch -> {
             return ch.getName().equals(testChannels().get(0).getName());
         }), "Failed to delete the tag from channel");
     }
@@ -672,7 +672,7 @@ class TagManagerIT {
         
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.set("~name", "*");
-        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        channelRepository.search(map).channels().forEach(c -> channelRepository.deleteById(c.getName()));
         tagRepository.findAll().forEach(t -> tagRepository.deleteById(t.getName()));
     }
 

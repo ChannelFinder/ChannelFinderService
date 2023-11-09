@@ -12,8 +12,6 @@ package org.phoebus.channelfinder.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,8 +21,6 @@ import java.util.stream.Collectors;
  *
  * @author Ralph Lange {@literal <ralph.lange@gmx.de>}
  */
-@XmlRootElement(name="tag")
-@XmlType (propOrder={"name","owner","channels"})
 public class Tag {
     private String name;
     private String owner;
