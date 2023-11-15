@@ -98,7 +98,7 @@ public class PopulateService {
     public static ObjectMapper mapper = new ObjectMapper();
 
 
-    static int index = 0;
+    static int index;
 
     static List<Integer> tokens_1000 = new ArrayList<>();
     static List<Integer> tokens_500 = new ArrayList<>();
@@ -155,7 +155,7 @@ public class PopulateService {
         try {
             BulkResponse result = client.bulk(br.refresh(Refresh.True).build());
             if (result.errors()) {
-                logger.log(Level.SEVERE, "Bulk had errors");
+                logger.log(Level.SEVERE, "CleanupDb Bulk had errors");
                 for (BulkResponseItem item : result.items()) {
                     if (item.error() != null) {
                         logger.log(Level.SEVERE, () -> item.error().reason());
@@ -184,7 +184,7 @@ public class PopulateService {
             try {
                 finalResult.add(insertSRCell(cell));
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
         for (int i = 1; i <= numberOfCells; i++) {
@@ -192,7 +192,7 @@ public class PopulateService {
             try {
                 finalResult.add(insertBOCell(cell));
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
         final long time = System.currentTimeMillis() - start;
@@ -206,17 +206,17 @@ public class PopulateService {
 
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (Property property : prop_list) {
-            br.operations(op -> op.index(index -> index.index(esService.getES_PROPERTY_INDEX()).id(property.getName()).document(property)));
+            br.operations(op -> op.index(bIndex -> bIndex.index(esService.getES_PROPERTY_INDEX()).id(property.getName()).document(property)));
         }
         for (Tag tag : tag_list) {
-            br.operations(op -> op.index(index -> index.index(esService.getES_TAG_INDEX()).id(tag.getName()).document(tag)));
+            br.operations(op -> op.index(bIndex -> bIndex.index(esService.getES_TAG_INDEX()).id(tag.getName()).document(tag)));
         }
         br.refresh(Refresh.True);
 
         try {
             BulkResponse results = client.bulk(br.build());
             if (results.errors()) {
-                logger.log(Level.SEVERE, "Bulk had errors");
+                logger.log(Level.SEVERE, "CreateDB Bulk had errors");
                 for (BulkResponseItem item : results.items()) {
                     if (item.error() != null) {
                         logger.log(Level.SEVERE, () -> item.error().reason());
@@ -224,7 +224,7 @@ public class PopulateService {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "CreateDB Bulk operation failed.", e);
         }
        logger.log(Level.INFO, "completed populating");
     }
@@ -389,7 +389,7 @@ public class PopulateService {
         String execute = "|Execute: " + (System.currentTimeMillis() - start) + "|";
         logger.log(Level.INFO, "Insterted BO cell " + cell + " " + prepare + " " + execute);
         if (boosterResult.errors()) {
-            logger.log(Level.SEVERE, "Bulk had errors");
+            logger.log(Level.SEVERE, "insertBOCell Bulk had errors");
             for (BulkResponseItem item : boosterResult.items()) {
                 if (item.error() != null) {
                     logger.log(Level.SEVERE, () -> item.error().reason());

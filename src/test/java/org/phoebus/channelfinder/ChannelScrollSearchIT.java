@@ -1,23 +1,25 @@
 package org.phoebus.channelfinder;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.util.Arrays;
-import java.util.List;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelScroll.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelScrollSearchIT {
@@ -49,14 +51,20 @@ public class ChannelScrollSearchIT {
         Thread.sleep(10000);
     }
 
-    final List<Integer> val_bucket = Arrays.asList(1, 2, 5, 10, 20, 50, 100, 200, 500);
+    @BeforeAll
+    void setupAll() {
+        ElasticConfigIT.setUp(esService);
+    }
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
+    }
 
     /**
      * Test searching for channels based on name
-     * @throws InterruptedException 
      */
     @Test
-    public void searchNameTest() throws InterruptedException {
+    public void searchNameTest() {
 
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("~name", "*");

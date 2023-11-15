@@ -61,7 +61,6 @@ public class ITUtil {
     static final String RESOURCES_TAGS = "/resources/tags";
 
     static final String HTTP_IP_PORT_CHANNELFINDER = HTTP + IP_PORT_CHANNELFINDER;
-    static final String HTTP_IP_PORT_ELASTICSEARCH = HTTP + IP_PORT_ELASTICSEARCH;
 
     static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS              = ITUtil.HTTP +                           ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
     static final String HTTP_AUTH_USER_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS    = ITUtil.HTTP + ITUtil.AUTH_USER  + "@" + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
@@ -95,17 +94,8 @@ public class ITUtil {
      */
     public static ComposeContainer defaultComposeContainers() {
         return new ComposeContainer(new File("docker-compose-integrationtest.yml"))
+                .withLocalCompose(true)
                 .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
-    }
-
-    /**
-     * Refresh Elastic indices and return response code and string.
-     *
-     * @return response code and string
-     * @throws IOException
-     */
-    static String[] refreshElasticIndices() throws IOException {
-        return doGetJson(HTTP_IP_PORT_ELASTICSEARCH + "/_refresh");
     }
 
     /**

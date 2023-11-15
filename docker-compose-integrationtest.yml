@@ -18,6 +18,25 @@
 
 version: "3.7"
 services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
+    hostname: elasticsearch-cf
+    networks:
+      - channelfinder-net
+    environment:
+      cluster.name: channelfinder
+      bootstrap.memory_lock: "true"
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+    volumes:
+      - channelfinder-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: curl -f http://elasticsearch-cf:9200/_cluster/health
+      interval: 30s
+      timeout: 60s
+      retries: 5
+
   channelfinder:
     build: 
       context: .
@@ -29,36 +48,24 @@ services:
       - 8080:8080
       - 8443:8443
     depends_on:
+      elasticsearch:
+        condition: service_healthy
+    links:
       - elasticsearch
     environment:
       elasticsearch.network.host: elasticsearch-cf
+      elasticsearch.http.port: 9200
       ldap.enabled: "false"
       embedded_ldap.enabled: "false"
       demo_auth.enabled: "true"
-    command: >
-      /bin/bash -c "
-        until curl -s -f http://elasticsearch-cf:9200/_cluster/health; do
-          echo Waiting for Elasticsearch;
-          sleep 1;
-        done;
-        java -jar /channelfinder/ChannelFinder-*.jar --spring.config.name=application"
+    command: "java -jar /channelfinder/ChannelFinder-*.jar --spring.config.name=application"
+    restart: on-failure
+    healthcheck:
+      test: curl -s -f http://channelfinder:8080/ChannelFinder
+      interval: 30s
+      timeout: 60s
+      retries: 5
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
-    hostname: elasticsearch-cf
-    networks:
-      - channelfinder-net
-    ports:
-      - 9201:9200
-      - 9301:9300
-    environment:
-      cluster.name: channelfinder
-      bootstrap.memory_lock: "true"
-      discovery.type: single-node
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      xpack.security.enabled: "false"
-    volumes:
-      - channelfinder-es-data:/usr/share/elasticsearch/data
 
 volumes:
   channelfinder-es-data:

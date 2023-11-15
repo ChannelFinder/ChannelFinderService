@@ -1,9 +1,7 @@
 package org.phoebus.channelfinder;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import co.elastic.clients.elasticsearch.indices.DeleteIndexRequest;
+import org.junit.jupiter.api.*;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.example.PopulateService;
@@ -14,10 +12,12 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelScroll.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelScrollIT {
@@ -42,7 +42,6 @@ public class ChannelScrollIT {
 
     @BeforeEach
     public void setup() throws InterruptedException {
-        populateService.cleanupDB();
         populateService.createDB(1);
         Thread.sleep(10000);
     }
@@ -51,6 +50,15 @@ public class ChannelScrollIT {
     public void cleanup() throws InterruptedException {
         populateService.cleanupDB();
         Thread.sleep(10000);
+    }
+
+    @BeforeAll
+    void setupAll() {
+        ElasticConfigIT.setUp(esService);
+    }
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
     }
 
     final List<Integer> val_bucket = Arrays.asList(1, 2, 5, 10, 20, 50, 100, 200, 500);
@@ -167,9 +175,7 @@ public class ChannelScrollIT {
 
     private String maptoString(MultiValueMap<String, String> searchParameters) {
         StringBuffer sb = new StringBuffer();
-        searchParameters.entrySet().forEach(e -> {
-            sb.append(e.getKey() + " " + e.getValue());
-        });
+        searchParameters.forEach((key, value) -> sb.append(key).append(" ").append(value));
         return sb.toString();
     }
 }

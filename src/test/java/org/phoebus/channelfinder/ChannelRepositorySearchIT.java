@@ -1,9 +1,12 @@
 package org.phoebus.channelfinder;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +16,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -22,7 +26,7 @@ import static java.lang.Math.min;
 import static org.phoebus.channelfinder.example.PopulateService.val_bucket;
 import static org.phoebus.channelfinder.example.PopulateService.val_bucket_size;
 
-
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelRepository.class)
 @TestPropertySource(locations = "classpath:application_test.properties")
 class ChannelRepositorySearchIT {
@@ -43,6 +47,11 @@ class ChannelRepositorySearchIT {
     PopulateService populateService;
     @Value("${elasticsearch.query.size:10000}")
     int ELASTIC_LIMIT;
+
+    @BeforeAll
+    void setupAll() {
+        ElasticConfigIT.setUp(esService);
+    }
 
     @BeforeEach
     public void setup() throws InterruptedException {
@@ -155,5 +164,9 @@ class ChannelRepositorySearchIT {
         StringBuffer sb = new StringBuffer();
         searchParameters.forEach((key, value) -> sb.append(key).append(" ").append(value));
         return sb.toString();
+    }
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
     }
 }

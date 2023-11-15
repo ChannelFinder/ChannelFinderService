@@ -2,10 +2,13 @@ package org.phoebus.channelfinder;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;
@@ -18,13 +21,14 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 public class ChannelRepositoryIT {
@@ -41,6 +45,10 @@ public class ChannelRepositoryIT {
     @Autowired
     PropertyRepository propertyRepository;
 
+    @BeforeAll
+    void setupAll() {
+        ElasticConfigIT.setUp(esService);
+    }
      /**
      * index a single channel
      */
@@ -132,7 +140,7 @@ public class ChannelRepositoryIT {
 
         Optional<Channel> notFoundChannel = channelRepository.findById(testChannel.getName());
         // verify the channel was not found as expected
-        Assertions.assertNotEquals(testChannel, notFoundChannel, "Found the channel");
+        Assertions.assertNotEquals(Optional.of(testChannel), notFoundChannel, "Found the channel");
 
         Channel createdChannel = channelRepository.index(testChannel);
 
@@ -226,7 +234,7 @@ public class ChannelRepositoryIT {
         cleanupTestChannels = Arrays.asList(testChannel,testChannel1);
 
         try {
-            MultiValueMap searchParameters = new LinkedMultiValueMap();
+            MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
             searchParameters.set(testProperties.get(0).getName().toLowerCase(), "*");
             foundChannelsResponse = channelRepository.search(searchParameters);
             Assertions.assertEquals(createdSearchResult, foundChannelsResponse, "Failed to find the based on property name search (all lower case)");
@@ -307,7 +315,7 @@ public class ChannelRepositoryIT {
 
         channelRepository.deleteById(createdChannel.getName());
         // verify the channel was deleted as expected
-        Assertions.assertNotEquals(testChannel, channelRepository.findById(testChannel.getName()), "Failed to delete the channel");
+        Assertions.assertNotEquals(Optional.of(testChannel), channelRepository.findById(testChannel.getName()), "Failed to delete the channel");
     }
 
     /**
@@ -322,7 +330,7 @@ public class ChannelRepositoryIT {
         testChannel.setOwner("test-owner");
         cleanupTestChannels = Arrays.asList(testChannel);
 
-        List<Property> props = createTestProperties(2);
+        List<Property> props = createTestProperties();
         try {
             testChannel.addProperty(testProperties.get(0));
             testChannel.addTag(testTags.get(0));
@@ -361,7 +369,7 @@ public class ChannelRepositoryIT {
         testChannel.setOwner("testOwner");
         cleanupTestChannels = Arrays.asList(testChannel);
         
-        List<Property> props = createTestProperties(2);
+        List<Property> props = createTestProperties();
         try {
             testChannel.addTag(testTags.get(0));
             testChannel.addProperty(testProperties.get(4));
@@ -399,9 +407,9 @@ public class ChannelRepositoryIT {
      * A utility class which will create the requested number of test properties named 'test-property#' 
      * @return list of created properties
      */
-    private List<Property> createTestProperties(int count){
+    private List<Property> createTestProperties(){
         List<Property> testProperties = new ArrayList<Property>();
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < 2; i++) {
             Property testProperty = new Property();
             testProperty.setName("test-property"+i);
             testProperty.setOwner("test-owner");
@@ -501,5 +509,10 @@ public class ChannelRepositoryIT {
                 channelRepository.deleteById(channel.getName());
             }
         });
+    }
+
+    @AfterAll
+    void tearDown() throws IOException {
+        ElasticConfigIT.teardown(esService);
     }
 }

@@ -2,6 +2,7 @@ package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -15,8 +16,10 @@ import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -310,6 +313,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     @Override
     public void deleteById(String tagName) {
         try {
+
             DeleteResponse response = client
                     .delete(i -> i.index(esService.getES_TAG_INDEX()).id(tagName).refresh(Refresh.True));
             // verify the deletion of the tag
@@ -348,7 +352,6 @@ public class TagRepository implements CrudRepository<Tag, String> {
                                 logger.log(Level.SEVERE, () -> item.error().reason());
                             }
                         }
-                    } else {
                     }
                 } catch (IOException e) {
                     String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_TAG, tagName);
