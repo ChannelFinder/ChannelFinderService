@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.processors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +18,7 @@ import static org.phoebus.channelfinder.processors.AAChannelProcessor.ArchivePV;
 class AAChannelProcessorTest {
 
     @Test
-    public void archivePropertyParsePass() {
+    void archivePropertyParsePass() {
         ArchivePV ar = new ArchivePV();
         List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
         ar.setPv("sim://testing");
@@ -61,12 +61,13 @@ class AAChannelProcessorTest {
             Arguments.of("ScAn@10.01000", testPolicyList, "SCAN", "10.01000"),
             Arguments.of("MONITOR@0.01", testPolicyList, "MONITOR", "0.01"),
             Arguments.of("MONITOR@1", testPolicyList, "MONITOR", "1"),
-            Arguments.of("scan@.01", testPolicyList, "SCAN", ".01")
+            Arguments.of("scan@.01", testPolicyList, "SCAN", ".01"),
+            Arguments.of("scan@1.01", testPolicyList, "SCAN", "1.01")
         );
     }
 
     @Test
-    public void defaultArchiveTag() {
+    void defaultArchiveTag() {
         ArchivePV ar = new ArchivePV();
         List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
         ar.setPv("sim://testing");
@@ -79,7 +80,7 @@ class AAChannelProcessorTest {
     }
 
     @Test
-    public void archivePolicyParsing() {
+    void archivePolicyParsing() {
         ArchivePV ar = new ArchivePV();
         ar.setPv("sim://testingPolicy");
         ar.setPolicy("Fast");
@@ -101,7 +102,7 @@ class AAChannelProcessorTest {
     }
 
     @Test
-    public void json() throws JsonProcessingException {
+    void archivePVJson() throws JsonProcessingException {
         ArchivePV ar1 = new ArchivePV();
         ar1.setPv("sim://testing1");
         ar1.setSamplingParameters("monitor@1.0", new ArrayList<>());
