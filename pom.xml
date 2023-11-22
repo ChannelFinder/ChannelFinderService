@@ -198,6 +198,18 @@
             <groupId>io.netty</groupId> <!-- Need for running tests on mac -->
             <artifactId>netty-all</artifactId>
         </dependency>
+
+        <!-- Metrics -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>${spring.boot-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
     <build>
         <!-- read properties from the pom file and add them to the application.properties -->

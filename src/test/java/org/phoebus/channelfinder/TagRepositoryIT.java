@@ -171,8 +171,7 @@ public class TagRepositoryIT {
             // verify the tag was created as expected
             Assertions.assertEquals(listedTags, createdTags, "Failed to list all created tags");
         } catch (Exception e) {
-            e.printStackTrace();
-        } 
+            Assertions.fail(e);        }
     }
 
     /**

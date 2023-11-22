@@ -12,6 +12,7 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.actuate.metrics.AutoConfigureMetrics;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
@@ -178,8 +179,28 @@ public class PropertyRepositoryIT {
             // verify the properties were listed as expected
             Assertions.assertEquals(createdProperties, listedProperties, "Failed to list all created properties");
         } catch (Exception e) {
-            e.printStackTrace();
-        } 
+            Assertions.fail(e);
+        }
+    }
+
+    /**
+     * find all properties
+     */
+    @Test
+    public void countXmlProperties() {
+        Property testProperty = new Property("testProperty","testOwner");
+        Property testProperty1 = new Property("testProperty1","testOwner1");
+        List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
+        cleanupTestProperties = testProperties;
+
+        try {
+            Set<Property> createdProperties = Sets.newHashSet(propertyRepository.indexAll(testProperties));
+            long listedPropertiesCount = propertyRepository.count();
+            // verify the properties were listed as expected
+            Assertions.assertEquals(createdProperties.size(), listedPropertiesCount, "Failed to count all created properties");
+        } catch (Exception e) {
+            Assertions.fail(e);
+        }
     }
 
     /**

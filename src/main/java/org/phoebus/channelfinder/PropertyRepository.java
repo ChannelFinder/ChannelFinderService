@@ -18,6 +18,8 @@ import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchAllQuery;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
+import co.elastic.clients.elasticsearch.core.CountRequest;
+import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -298,8 +300,16 @@ public class PropertyRepository implements CrudRepository<Property, String> {
 
     @Override
     public long count() {
-        // NOT USED
-        return 0;
+        try {
+            CountRequest countRequest = new CountRequest.Builder().index(esService.getES_PROPERTY_INDEX()).build();
+            CountResponse countResponse = client.count(countRequest);
+            return countResponse.count();
+        } catch (ElasticsearchException | IOException e) {
+
+            String message = MessageFormat.format(TextUtil.COUNT_FAILED_CAUSE, "", e.getMessage());
+            logger.log(Level.SEVERE, message, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+        }
     }
 
     /**
