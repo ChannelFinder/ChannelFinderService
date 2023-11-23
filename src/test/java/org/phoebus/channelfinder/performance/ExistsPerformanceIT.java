@@ -16,10 +16,8 @@ import com.google.common.collect.Lists;
  * @author Kunal Shroff
  *
  */
-
-
 @WebMvcTest(ChannelRepository.class)
-public class ExistsPerformanceIT {
+class ExistsPerformanceIT {
 
     @Autowired
     PopulateService service;
@@ -28,7 +26,7 @@ public class ExistsPerformanceIT {
     ChannelRepository channelRepository;
 
     @Test
-    public void channelExists() {
+    void channelExists() {
         service.createDB(1);
         Assertions.assertTrue(channelRepository.existsByIds(Lists.newArrayList(service.getChannelList())));
         service.cleanupDB();

@@ -31,7 +31,7 @@ import java.util.Set;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(PropertyRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
-public class PropertyRepositoryIT {
+class PropertyRepositoryIT {
 
     @Autowired
     ElasticConfig esService;
@@ -50,7 +50,7 @@ public class PropertyRepositoryIT {
      * index a single property
      */
     @Test
-    public void indexXmlProperty() {
+    void indexXmlProperty() {
         Property testProperty = new Property("testProperty","testOwner");
         cleanupTestProperties = Arrays.asList(testProperty);
 
@@ -63,7 +63,7 @@ public class PropertyRepositoryIT {
      * index multiple properties
      */
     @Test
-    public void indexXmlProperties() {
+    void indexXmlProperties() {
         Property testProperty = new Property("testProperty","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner1");
         List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
@@ -78,7 +78,7 @@ public class PropertyRepositoryIT {
      * save a single property
      */
     @Test
-    public void saveXmlProperty() {
+    void saveXmlProperty() {
         Property testProperty = new Property("testProperty","testOwner");
         Property updateTestProperty = new Property("testProperty","updateTestOwner");
         Property updateTestProperty1 = new Property("testProperty1","updateTestOwner1");
@@ -98,7 +98,7 @@ public class PropertyRepositoryIT {
      * save multiple properties
      */
     @Test
-    public void saveXmlProperties() {
+    void saveXmlProperties() {
         Property testProperty = new Property("testProperty", "testOwner");
         Property updateTestProperty = new Property("testProperty", "updateTestOwner");
         Property testProperty1 = new Property("testProperty1", "testOwner1");
@@ -117,7 +117,7 @@ public class PropertyRepositoryIT {
      * find a single property
      */
     @Test
-    public void findXmlProperty() {
+    void findXmlProperty() {
         Property testProperty = new Property("testProperty","testOwner");
         cleanupTestProperties = Arrays.asList(testProperty);
         
@@ -149,7 +149,7 @@ public class PropertyRepositoryIT {
      * check if a property exists
      */
     @Test
-    public void testPropertyExists() {
+    void testPropertyExists() {
 
         // check that non existing property returns false
         Assertions.assertFalse(propertyRepository.existsById("no-property"), "Failed to check the non existing property :" + "no-property");
@@ -167,7 +167,7 @@ public class PropertyRepositoryIT {
      * find all properties
      */
     @Test
-    public void findAllXmlProperties() {
+    void findAllXmlProperties() {
         Property testProperty = new Property("testProperty","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner1");
         List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
@@ -187,7 +187,7 @@ public class PropertyRepositoryIT {
      * find all properties
      */
     @Test
-    public void countXmlProperties() {
+    void countXmlProperties() {
         Property testProperty = new Property("testProperty","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner1");
         List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
@@ -207,7 +207,7 @@ public class PropertyRepositoryIT {
      * find multiple properties
      */
     @Test
-    public void findXmlProperties() {
+    void findXmlProperties() {
         Property testProperty = new Property("testProperty","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner1");
         List<Property> testProperties = Arrays.asList(testProperty,testProperty1);
@@ -239,7 +239,7 @@ public class PropertyRepositoryIT {
      * delete a single property
      */
     @Test
-    public void deleteXmlProperty() {
+    void deleteXmlProperty() {
         Property testProperty = new Property("testProperty","testOwner");
         Optional<Property> notFoundProperty = propertyRepository.findById(testProperty.getName());
         Property createdProperty = propertyRepository.index(testProperty);

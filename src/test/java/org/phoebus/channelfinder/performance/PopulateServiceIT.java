@@ -13,16 +13,15 @@ import java.net.URL;
 /**
  * An class for creating the example database and testing the speed.
  */
-
 @WebMvcTest(AuthorizationService.class)
 @TestPropertySource(value = "classpath:performance_application.properties")
-public class PopulateServiceIT {
+class PopulateServiceIT {
 
     @Autowired
     PopulateService populateService;
     @Test
     @WithMockUser(username = "admin", roles = "CF-ADMINS")
-    public void testCreateTagsAndProperties() {
+    void testCreateTagsAndProperties() {
         final URL tagResource = getClass().getResource("/perf_tags.json");
         final URL propertyResource = getClass().getResource("/perf_properties.json");
 
@@ -30,12 +29,12 @@ public class PopulateServiceIT {
     }
 
     @Test
-    public void testCreateDB() {
+    void testCreateDB() {
         populateService.createDB();
     }
 
     @Test
-    public void testCleanUpDB() {
+    void testCleanUpDB() {
         populateService.cleanupDB();
     }
 
