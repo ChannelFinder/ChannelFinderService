@@ -3,7 +3,6 @@ package org.phoebus.channelfinder;
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
 
 import java.text.MessageFormat;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,7 +14,6 @@ import java.util.stream.StreamSupport;
 import javax.servlet.ServletContext;
 
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
