@@ -163,7 +163,7 @@
         <dependency>
             <groupId>org.jacoco</groupId>
             <artifactId>org.jacoco.agent</artifactId>
-            <version>0.8.10</version>
+            <version>0.8.11</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -185,7 +185,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.19.0</version>
+            <version>1.19.3</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
