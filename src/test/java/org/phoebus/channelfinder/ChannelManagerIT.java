@@ -27,7 +27,7 @@ import java.util.List;
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
-public class ChannelManagerIT {
+class ChannelManagerIT {
 
     @Autowired
     ChannelManager channelManager;
@@ -45,7 +45,7 @@ public class ChannelManagerIT {
      * read a single channel
      */
     @Test
-    public void readXmlChannel() {
+    void readXmlChannel() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner",testProperties,testTags);
         cleanupTestChannels = Arrays.asList(testChannel0);
@@ -61,7 +61,7 @@ public class ChannelManagerIT {
      * attempt to read a single non existent channel
      */
     @Test
-    public void readNonExistingXmlChannel() {
+    void readNonExistingXmlChannel() {
         // verify the channel failed to be read, as expected
         Assertions.assertThrows(ResponseStatusException.class, () -> channelManager.read("fakeChannel"));
     }
@@ -70,7 +70,7 @@ public class ChannelManagerIT {
      * create a simple channel
      */
     @Test
-    public void createXmlChannel() {
+    void createXmlChannel() {
         Channel testChannel0 = new Channel("testChannel0", "testOwner");
         cleanupTestChannels = Arrays.asList(testChannel0);
         
@@ -94,7 +94,7 @@ public class ChannelManagerIT {
      * Rename a simple channel using create
      */
     @Test
-    public void renameByCreateXmlChannel() {
+    void renameByCreateXmlChannel() {
         Channel testChannel0 = new Channel("testChannel0", "testOwner");
         Channel testChannel1 = new Channel("testChannel1", "testOwner");
         cleanupTestChannels = Arrays.asList(testChannel0,testChannel1);
@@ -111,7 +111,7 @@ public class ChannelManagerIT {
      * create a single channel with tags and properties
      */
     @Test
-    public void createXmlChannel2() {
+    void createXmlChannel2() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner",testProperties,testTags);
         cleanupTestChannels = Arrays.asList(testChannel0);
@@ -145,7 +145,7 @@ public class ChannelManagerIT {
      * Rename a single channel with tags and properties using create
      */
     @Test
-    public void renameByCreateXmlChannel2() {
+    void renameByCreateXmlChannel2() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1", "testOwner",testProperties,testTags);
@@ -170,7 +170,7 @@ public class ChannelManagerIT {
      * create multiple channels
      */
     @Test
-    public void createXmlChannels() {
+    void createXmlChannels() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1", "testOwner",testProperties,testTags);
@@ -189,7 +189,7 @@ public class ChannelManagerIT {
      * create by overriding multiple channels
      */
     @Test
-    public void createXmlChannelsWithOverride() {
+    void createXmlChannelsWithOverride() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner");
         Channel testChannel1 = new Channel("testChannel1", "testOwner",testProperties,testTags);
@@ -215,7 +215,7 @@ public class ChannelManagerIT {
      * update a channel
      */
     @Test
-    public void updateXmlChannel() {
+    void updateXmlChannel() {
         testProperties.forEach(prop -> prop.setValue("value"));
         // A test channel with only name and owner
         Channel testChannel0 = new Channel("testChannel0", "testOwner");
@@ -248,7 +248,7 @@ public class ChannelManagerIT {
      * Rename a channel using update
      */
     @Test
-    public void renameByUpdateXmlChannel() {
+    void renameByUpdateXmlChannel() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner");
         Channel testChannel1 = new Channel("testChannel1", "testOwner");
@@ -289,7 +289,7 @@ public class ChannelManagerIT {
      * update a channel by adding tags and adding properties and changing properties
      */
     @Test
-    public void updateXmlChannelItems() {
+    void updateXmlChannelItems() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner",
                 Arrays.asList(testProperties.get(0),testProperties.get(1)),Arrays.asList(testTags.get(0),testTags.get(1)));
@@ -324,7 +324,7 @@ public class ChannelManagerIT {
      * second update the newly created channels which should change them
      */
     @Test
-    public void updateMultipleXmlChannels() {
+    void updateMultipleXmlChannels() {
         testProperties.forEach(prop -> prop.setValue("value"));
         // A test channel with only name and owner
         Channel testChannel0 = new Channel("testChannel0", "testOwner");
@@ -352,7 +352,7 @@ public class ChannelManagerIT {
      * update multiple channels by adding tags and adding properties and changing properties
      */
     @Test
-    public void updateMultipleXmlChannelsWithItems() {
+    void updateMultipleXmlChannelsWithItems() {
         testProperties.forEach(prop -> prop.setValue("value"));
         Channel testChannel0 = new Channel("testChannel0", "testOwner",
                 Arrays.asList(testProperties.get(0),testProperties.get(1)),Arrays.asList(testTags.get(0),testTags.get(1)));
@@ -396,13 +396,13 @@ public class ChannelManagerIT {
      * delete a channel
      */
     @Test
-    public void deleteXmlChannel() {
-    Channel testChannel0 = new Channel("testChannel0", "testOwner");
-    cleanupTestChannels = Arrays.asList(testChannel0);
+    void deleteXmlChannel() {
+        Channel testChannel0 = new Channel("testChannel0", "testOwner");
+        cleanupTestChannels = Arrays.asList(testChannel0);
 
-    channelManager.create(testChannel0.getName(),testChannel0);    
-    channelManager.remove(testChannel0.getName());
-    // verify the channel was deleted as expected
+        channelManager.create(testChannel0.getName(),testChannel0);
+        channelManager.remove(testChannel0.getName());
+        // verify the channel was deleted as expected
         Assertions.assertFalse(channelRepository.existsById(testChannel0.getName()), "Failed to delete the channel");
     }
     

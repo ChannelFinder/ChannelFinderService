@@ -18,7 +18,7 @@ import java.util.Random;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelScroll.class)
 @TestPropertySource(value = "classpath:application_test.properties")
-public class ChannelScrollIT {
+class ChannelScrollIT {
     
     @Autowired
     ChannelScroll channelScroll;
@@ -66,7 +66,7 @@ public class ChannelScrollIT {
      * @throws InterruptedException 
      */
     @Test
-    public void searchNameTest() throws InterruptedException {
+    void searchNameTest() throws InterruptedException {
         List<String> channelNames = Arrays
                 .asList(populateService.getChannelList().toArray(new String[populateService.getChannelList().size()]));
 

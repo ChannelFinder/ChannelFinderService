@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @WebMvcTest(ChannelManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
-public class ChannelValidationIT {
+class ChannelValidationIT {
 
     @Autowired
     ChannelManager channelManager;
@@ -55,7 +55,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with null name
      */
     @Test
-    public void validateXmlChannelRequestNullName() {
+    void validateXmlChannelRequestNullName() {
         Channel testChannel1 = new Channel(null, "testOwner");
         assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
@@ -64,7 +64,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with empty name
      */
     @Test
-    public void validateXmlChannelRequestEmptyName() {
+    void validateXmlChannelRequestEmptyName() {
         Channel testChannel1 = new Channel("", "testOwner");
         assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
@@ -73,7 +73,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with null owner
      */
     @Test
-    public void validateXmlChannelRequestNullOwner() {
+    void validateXmlChannelRequestNullOwner() {
         Channel testChannel1 = new Channel("testChannel1", null);
         assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
@@ -82,7 +82,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with empty owner
      */
     @Test
-    public void validateXmlChannelRequestEmptyOwner() {
+    void validateXmlChannelRequestEmptyOwner() {
         Channel testChannel1 = new Channel("testChannel1", "");
         assertThrows(ResponseStatusException.class, () -> channelManager.validateChannelRequest(testChannel1));
     }
@@ -91,7 +91,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with a non existent tag
      */
     @Test
-    public void validateXmlChannelRequestFakeTag() {
+    void validateXmlChannelRequestFakeTag() {
         // set up
         Property prop = new Property("testProperty1","testOwner");
         propertyRepository.index(prop);
@@ -108,7 +108,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with a non existent prop
      */
     @Test
-    public void validateXmlChannelRequestFakeProp() {
+    void validateXmlChannelRequestFakeProp() {
         // set up
         Tag tag = new Tag("testTag1","testOwner");
         tagRepository.index(tag);
@@ -124,7 +124,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with a null value prop
      */
     @Test
-    public void validateXmlChannelRequestNullProp() {
+    void validateXmlChannelRequestNullProp() {
         // set up
         Tag tag = new Tag("testTag1","testOwner");
         tagRepository.index(tag);
@@ -144,7 +144,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with an empty value prop
      */
     @Test
-    public void validateXmlChannelRequestEmptyProp() {
+    void validateXmlChannelRequestEmptyProp() {
         // set up
         Tag tag = new Tag("testTag1","testOwner");
         tagRepository.index(tag);
@@ -164,7 +164,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with valid parameters
      */
     @Test
-    public void validateXmlChannelRequest() {
+    void validateXmlChannelRequest() {
         Channel testChannel1 = new Channel("testChannel1", "testOwner");
         try {
             channelManager.validateChannelRequest(testChannel1);
@@ -178,7 +178,7 @@ public class ChannelValidationIT {
      * Attempt to Channel request with valid parameters
      */
     @Test
-    public void validateXmlChannelRequest2() {
+    void validateXmlChannelRequest2() {
      // set up
         Tag tag = new Tag("testTag1","testOwner");
         tagRepository.index(tag);

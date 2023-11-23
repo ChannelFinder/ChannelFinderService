@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @WebMvcTest(PropertyManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
-public class PropertyValidationIT {
+class PropertyValidationIT {
 
     @Autowired
     PropertyManager propertyManager;
@@ -42,7 +42,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with null name
      */
     @Test
-    public void validateXmlPropertyRequestNullName() {
+    void validateXmlPropertyRequestNullName() {
         Property testProperty1 = new Property(null, "testOwner");
         Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.validatePropertyRequest(testProperty1));
     }
@@ -51,7 +51,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with empty name
      */
     @Test
-    public void validateXmlPropertyRequestEmptyName() {
+    void validateXmlPropertyRequestEmptyName() {
         Property testProperty1 = new Property("", "testOwner");
         Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.validatePropertyRequest(testProperty1));
     }
@@ -60,7 +60,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with null owner
      */
     @Test
-    public void validateXmlPropertyRequestNullOwner() {
+    void validateXmlPropertyRequestNullOwner() {
         Property testProperty1 = new Property("testProperty1", null);
         Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.validatePropertyRequest(testProperty1));
     }
@@ -69,7 +69,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with empty owner
      */
     @Test
-    public void validateXmlPropertyRequestEmptyOwner() {
+    void validateXmlPropertyRequestEmptyOwner() {
         Property testProperty1 = new Property("testProperty1", "");
         Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.validatePropertyRequest(testProperty1));
     }
@@ -78,7 +78,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with a non existent channel
      */
     @Test
-    public void validateXmlPropertyRequestFakeChannel() {
+    void validateXmlPropertyRequestFakeChannel() {
         Property testProperty1 = new Property("testProperty1", "testOwner");
         testProperty1.setChannels(Arrays.asList(new Channel("Non-existent-channel")));
         Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.validatePropertyRequest(testProperty1));
@@ -88,7 +88,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with multiple non existent channels
      */
     @Test
-    public void validateXmlPropertyRequestFakeChannels() {
+    void validateXmlPropertyRequestFakeChannels() {
         Property testProperty1 = new Property("testProperty1", "testOwner");
         testProperty1.setChannels(
                 Arrays.asList(new Channel("Non-existent-channel"),
@@ -100,7 +100,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with some existent(and valid) and some non existent channels
      */
     @Test
-    public void validateXmlPropertyRequestSomeFakeChannels() {
+    void validateXmlPropertyRequestSomeFakeChannels() {
         Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
         Property testProperty1 = new Property("testProperty1","testOwner1");
@@ -115,7 +115,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with a channel that has no prop
      */
     @Test
-    public void validateXmlPropertyRequestNoProp() {
+    void validateXmlPropertyRequestNoProp() {
         Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
         Property testProperty1 = new Property("testProperty1","testOwner1");
@@ -129,7 +129,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with a null value
      */
     @Test
-    public void validateXmlPropertyRequestNullValue() {
+    void validateXmlPropertyRequestNullValue() {
         Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
         Property testProperty1 = new Property("testProperty1","testOwner1");
@@ -143,7 +143,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with an empty value
      */
     @Test
-    public void validateXmlPropertyRequestEmptyValue() {
+    void validateXmlPropertyRequestEmptyValue() {
         Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
         Property testProperty1 = new Property("testProperty1","testOwner1");
@@ -157,7 +157,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with valid parameters
      */
     @Test
-    public void validateXmlPropertyRequest() {
+    void validateXmlPropertyRequest() {
         Channel chan = new Channel("testChannel0", "testOwner");
         channelRepository.index(chan);
         Property testProperty1 = new Property("testProperty1","testOwner1");
@@ -176,7 +176,7 @@ public class PropertyValidationIT {
      * Attempt to Property request with other valid parameters
      */
     @Test
-    public void validateXmlPropertyRequest2() {
+    void validateXmlPropertyRequest2() {
         Property testProperty1 = new Property("testProperty1","testOwner1");
         try {
             propertyManager.validatePropertyRequest(testProperty1);
