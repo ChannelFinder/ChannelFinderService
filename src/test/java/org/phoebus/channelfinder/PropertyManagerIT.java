@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @WebMvcTest(PropertyManager.class) // TODO Somehow creating one
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
-public class PropertyManagerIT {
+class PropertyManagerIT {
 
     @Autowired
     PropertyManager propertyManager;
@@ -92,7 +92,7 @@ public class PropertyManagerIT {
      * list all properties
      */
     @Test
-    public void listXmlProperties() {
+    void listXmlProperties() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner1");
         testProperty1.setChannels(Arrays.asList(
@@ -113,7 +113,7 @@ public class PropertyManagerIT {
      * test the "withChannels" flag
      */
     @Test
-    public void readXmlProperty() {
+    void readXmlProperty() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner");
         testProperty1.setChannels(Arrays.asList(
@@ -147,7 +147,7 @@ public class PropertyManagerIT {
      * attempt to read a single non existent property
      */
     @Test
-    public void readNonExistingXmlProperty() {
+    void readNonExistingXmlProperty() {
         // verify the property failed to be read, as expected
         Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.read("fakeProperty", false));
     }
@@ -156,7 +156,7 @@ public class PropertyManagerIT {
      * attempt to read a single non existent property with channels
      */
     @Test
-    public void readNonExistingXmlProperty2() {
+    void readNonExistingXmlProperty2() {
         // verify the property failed to be read, as expected
         Assertions.assertThrows(ResponseStatusException.class, () -> propertyManager.read("fakeProperty", true));
     }
@@ -165,7 +165,7 @@ public class PropertyManagerIT {
      * create a simple property
      */
     @Test
-    public void createXmlProperty() {
+    void createXmlProperty() {
         Property testProperty0 = new Property("testProperty0","testOwner");
 
         // Create a simple property
@@ -186,7 +186,7 @@ public class PropertyManagerIT {
      * Rename a simple property using create
      */
     @Test
-    public void renameByCreateXmlProperty() {
+    void renameByCreateXmlProperty() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner");
 
@@ -202,7 +202,7 @@ public class PropertyManagerIT {
      * create a single property with channels
      */
     @Test
-    public void createXmlProperty2() {
+    void createXmlProperty2() {
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
@@ -236,7 +236,7 @@ public class PropertyManagerIT {
      * Rename a single property with channels using create
      */
     @Test
-    public void renameByCreateXmlProperty2() {
+    void renameByCreateXmlProperty2() {
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));
@@ -261,7 +261,7 @@ public class PropertyManagerIT {
      * create multiple properties
      */
     @Test
-    public void createXmlProperties() {
+    void createXmlProperties() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner");
         Property testProperty2 = new Property("testProperty2","testOwner");
@@ -299,7 +299,7 @@ public class PropertyManagerIT {
      * create by overriding multiple properties
      */
     @Test
-    public void createXmlPropertiesWithOverride() {
+    void createXmlPropertiesWithOverride() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
@@ -338,7 +338,7 @@ public class PropertyManagerIT {
      * @Todo fix this test after addsingle method is fixed
      */
     @Test
-    public void addSingleXmlProperty() {
+    void addSingleXmlProperty() {
         Property testProperty0 = new Property("testProperty0", "testOwner");
         propertyRepository.index(testProperty0);
         testProperty0.setValue("value");
@@ -353,7 +353,7 @@ public class PropertyManagerIT {
      * update a property
      */
     @Test
-    public void updateXmlProperty() {
+    void updateXmlProperty() {
         // A test property with only name and owner
         Property testProperty0 = new Property("testProperty0", "testOwner");
         // A test property with name, owner, and a single test channel with a copy of the property with a value and no channels
@@ -389,7 +389,7 @@ public class PropertyManagerIT {
      * update a property's name and owner and value on its channels
      */
     @Test
-    public void updateXmlPropertyOnChan() {
+    void updateXmlPropertyOnChan() {
         // extra channel for this test
         Channel testChannelX = new Channel("testChannelX","testOwner");
         channelRepository.index(testChannelX);
@@ -444,7 +444,7 @@ public class PropertyManagerIT {
      * Rename a property using update
      */
     @Test
-    public void renameByUpdateXmlProperty() {
+    void renameByUpdateXmlProperty() {
         Property testProperty0 = new Property("testProperty0","testOwner");
         Property testProperty1 = new Property("testProperty1","testOwner");
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
@@ -490,7 +490,7 @@ public class PropertyManagerIT {
      * Resultant property channels: testChannel0     
      */
     @Test
-    public void updatePropertyTest1() {
+    void updatePropertyTest1() {
         // A test property with only name and owner
         Property testProperty0 = new Property("testProperty0", "testOwner");
         propertyManager.create(testProperty0.getName(), testProperty0);
@@ -509,7 +509,7 @@ public class PropertyManagerIT {
      * Resultant property channels: testChannel0,testChannel1     
      */
     @Test
-    public void updatePropertyTest2() {
+    void updatePropertyTest2() {
         // A test property with testChannel0
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
@@ -533,7 +533,7 @@ public class PropertyManagerIT {
      * Resultant property channels: testChannel0,testChannel1     
      */
     @Test
-    public void updatePropertyTest3() {
+    void updatePropertyTest3() {
         // A test property with testChannel0
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
@@ -555,7 +555,7 @@ public class PropertyManagerIT {
      * Resultant property channels: testChannel0,testChannel1     
      */
     @Test
-    public void updatePropertyTest4() {
+    void updatePropertyTest4() {
         // A test property with testChannel0,testChannel1
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
@@ -575,7 +575,7 @@ public class PropertyManagerIT {
      * Resultant property channels: testChannel0,testChannel1     
      */
     @Test
-    public void updatePropertyTest5() {
+    void updatePropertyTest5() {
         // A test property with testChannel0,testChannel1
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
@@ -598,7 +598,7 @@ public class PropertyManagerIT {
      * Update the value of a property when channels have multiple properties
      */
     @Test
-    public void updatePropertyWithChannelsTest() {
+    void updatePropertyWithChannelsTest() {
         // A test property with testChannel0,testChannel1
         Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
@@ -629,7 +629,7 @@ public class PropertyManagerIT {
      * Update on non-existing properties should result in the creation of the properties
      */
     @Test
-    public void updateMultipleProperties() {
+    void updateMultipleProperties() {
         // A test property with only name and owner
         Property testProperty0 = new Property("testProperty0", "testOwner");
         // A test property with name, owner, and test channels
@@ -650,7 +650,7 @@ public class PropertyManagerIT {
      * update properties' names and values and attempt to change owners on their channels
      */
     @Test
-    public void updateMultipleXmlPropertiesOnChan() {
+    void updateMultipleXmlPropertiesOnChan() {
         // extra channel for this test
         Channel testChannelX = new Channel("testChannelX","testOwner");
         channelRepository.index(testChannelX);
@@ -718,7 +718,7 @@ public class PropertyManagerIT {
      * delete a single property 
      */
     @Test
-    public void deleteXmlProperty() {
+    void deleteXmlProperty() {
         Property testProperty0 = new Property("testProperty0", "testOwner");
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
@@ -743,7 +743,7 @@ public class PropertyManagerIT {
      * delete a single property from a single channel 
      */
     @Test
-    public void deleteXmlPropertyFromChannel() {
+    void deleteXmlPropertyFromChannel() {
         Property testProperty0WithChannels = new Property("testProperty0WithChannels","testOwner");
         testProperty0WithChannels.setChannels(Arrays.asList(
                 new Channel(testChannel0.getName(),testChannel0.getOwner(),Arrays.asList(new Property(testProperty0WithChannels.getName(),testProperty0WithChannels.getOwner(),"value")),new ArrayList<Tag>())));

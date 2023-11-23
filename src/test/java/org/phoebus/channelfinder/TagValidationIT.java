@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @WebMvcTest(TagManager.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
-public class TagValidationIT {
+class TagValidationIT {
 
     @Autowired
     TagManager tagManager;
@@ -37,7 +37,7 @@ public class TagValidationIT {
      * Attempt to Tag request with null name
      */
     @Test
-    public void validateXmlTagRequestNullName() {
+    void validateXmlTagRequestNullName() {
         Tag testTag1 = new Tag(null, "testOwner");
         Assertions.assertThrows(ResponseStatusException.class, () -> tagManager.validateTagRequest(testTag1));
     }
@@ -46,7 +46,7 @@ public class TagValidationIT {
      * Attempt to Tag request with empty name
      */
     @Test
-    public void validateXmlTagRequestEmptyName() {
+    void validateXmlTagRequestEmptyName() {
         Tag testTag1 = new Tag("", "testOwner");
         Assertions.assertThrows(ResponseStatusException.class, () -> tagManager.validateTagRequest(testTag1));
     }
@@ -55,7 +55,7 @@ public class TagValidationIT {
      * Attempt to Tag request with null owner
      */
     @Test
-    public void validateXmlTagRequestNullOwner() {
+    void validateXmlTagRequestNullOwner() {
         Tag testTag1 = new Tag("testTag1", null);
         Assertions.assertThrows(ResponseStatusException.class, () -> tagManager.validateTagRequest(testTag1));
     }
@@ -64,7 +64,7 @@ public class TagValidationIT {
      * Attempt to Tag request with empty owner
      */
     @Test
-    public void validateXmlTagRequestEmptyOwner() {
+    void validateXmlTagRequestEmptyOwner() {
         Tag testTag1 = new Tag("testTag1", "");
         Assertions.assertThrows(ResponseStatusException.class, () -> tagManager.validateTagRequest(testTag1));
     }
@@ -73,7 +73,7 @@ public class TagValidationIT {
      * Attempt to Tag request with a non existent channel
      */
     @Test
-    public void validateXmlTagRequestFakeChannel() {
+    void validateXmlTagRequestFakeChannel() {
         Tag testTag1 = new Tag("testTag1", "testOwner");
         testTag1.setChannels(Arrays.asList(new Channel("Non-existent-channel")));
         Assertions.assertThrows(ResponseStatusException.class, () -> tagManager.validateTagRequest(testTag1));
@@ -83,7 +83,7 @@ public class TagValidationIT {
      * Attempt to Tag request with multiple non existent channels
      */
     @Test
-    public void validateXmlTagRequestFakeChannels() {
+    void validateXmlTagRequestFakeChannels() {
         Tag testTag1 = new Tag("testTag1", "testOwner");
         testTag1.setChannels(
                 Arrays.asList(new Channel("Non-existent-channel"),
@@ -95,7 +95,7 @@ public class TagValidationIT {
      * Attempt to Tag request with some existent and some non existent channels
      */
     @Test
-    public void validateXmlTagRequestSomeFakeChannels() {
+    void validateXmlTagRequestSomeFakeChannels() {
         channelRepository.indexAll(Arrays.asList(new Channel("testChannel0", "testOwner")));
         Tag testTag1 = new Tag("testTag1", "testOwner");
         testTag1.setChannels(
@@ -108,7 +108,7 @@ public class TagValidationIT {
      * Attempt to Tag request with valid parameters
      */
     @Test
-    public void validateXmlTagRequest() {
+    void validateXmlTagRequest() {
         Tag testTag1 = new Tag("testTag1", "testOwner");
         try {
             tagManager.validateTagRequest(testTag1);
@@ -122,7 +122,7 @@ public class TagValidationIT {
      * Attempt to Tag request with other valid parameters
      */
     @Test
-    public void validateXmlTagRequest2() {
+    void validateXmlTagRequest2() {
         channelRepository.indexAll(List.of(new Channel("testChannel0", "testOwner")));
 
         Tag testTag1 = new Tag("testTag1", "testOwner");
