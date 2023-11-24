@@ -14,7 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @WebMvcTest(AuthorizationService.class)
 @TestPropertySource(value = "classpath:application_test.properties")
-public class AuthorizationIT { 
+class AuthorizationIT {
     @Autowired AuthorizationService authorizationService;
     
     Tag testTag = new Tag("testTag","valid");
@@ -26,7 +26,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "invalid", roles = "CF-ADMINS")
-    public void adminIsAuthorizedOwner() {
+    void adminIsAuthorizedOwner() {
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "failed to authorize user that is admin (tag)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "failed to authorize user that is admin (property)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "failed to authorize user that is admin (channel)");
@@ -37,7 +37,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "valid", roles = "CF-ADMINS")
-    public void adminAndDirectOwnerIsAuthorizedOwner() {
+    void adminAndDirectOwnerIsAuthorizedOwner() {
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "failed to authorize user that is admin and direct owner (tag)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "failed to authorize user that is admin and direct owner (property)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "failed to authorize user that is admin and direct owner (channel)");
@@ -48,7 +48,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "invalid", roles = {"CF-ADMINS","VALID"})
-    public void adminAndGroupOwnerIsAuthorizedOwner() {
+    void adminAndGroupOwnerIsAuthorizedOwner() {
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "failed to authorize user that is admin and group owner (tag)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "failed to authorize user that is admin and group owner (property)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "failed to authorize user that is admin and group owner (channel)");
@@ -59,7 +59,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "valid", roles = {"CF-ADMINS","VALID"})
-    public void adminAndDirectOwnerAndGroupOwnerIsAuthorizedOwner() {
+    void adminAndDirectOwnerAndGroupOwnerIsAuthorizedOwner() {
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "failed to authorize user that is admin and direct owner and group owner (tag)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "failed to authorize user that is admin and direct owner and group owner (property)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "failed to authorize user that is admin and direct owner and group owner (channel)");
@@ -70,7 +70,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "valid", roles = "")
-    public void directOwnerIsAuthorizedOwner() {
+    void directOwnerIsAuthorizedOwner() {
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "failed to authorize user that is direct owner (tag)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "failed to authorize user that is direct owner (property)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "failed to authorize user that is direct owner (channel)");
@@ -81,7 +81,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "invalid", roles = "VALID")
-    public void groupOwnerIsAuthorizedOwner() {
+    void groupOwnerIsAuthorizedOwner() {
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "failed to authorize user that is group owner (tag)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "failed to authorize user that is group owner (property)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "failed to authorize user that is group owner (channel)");
@@ -92,7 +92,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "valid", roles = "VALID")
-    public void directOwnerAndGroupOwnerIsAuthorizedOwner() {
+    void directOwnerAndGroupOwnerIsAuthorizedOwner() {
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "failed to authorize user that is direct owner and group owner (tag)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "failed to authorize user that is direct owner and group owner (property)");
         Assertions.assertTrue(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "failed to authorize user that is direct owner and group owner (channel)");
@@ -103,7 +103,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(username = "invalid", roles = "")
-    public void isNotAuthorizedOwner() {
+    void isNotAuthorizedOwner() {
         Assertions.assertFalse(authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testTag), "authorized user that shouldn't be authorized (tag)");
         Assertions.assertFalse( authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testProperty), "authorized user that shouldn't be authorized (property)");
         Assertions.assertFalse( authorizationService.isAuthorizedOwner(SecurityContextHolder.getContext().getAuthentication(), testChannel), "authorized user that shouldn't be authorized (channel)");
@@ -114,7 +114,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = "CF-ADMINS")
-    public void adminIsAuthorizedRole() {
+    void adminIsAuthorizedRole() {
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "failed to authorize user that is admin (admin)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "failed to authorize user that is admin (channel)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "failed to authorize user that is admin (property)");
@@ -126,7 +126,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = {"CF-ADMINS","CF-TAGS"})
-    public void adminAndTagIsAuthorizedRole() {
+    void adminAndTagIsAuthorizedRole() {
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "failed to authorize user that is admin and tag (admin)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "failed to authorize user that is admin and tag (channel)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "failed to authorize user that is admin and tag (property)");
@@ -138,7 +138,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = "CF-CHANNELS")
-    public void channelIsAuthorizedRole() {
+    void channelIsAuthorizedRole() {
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "authorized user that is channel (admin)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "failed to authorize user that is channel (channel)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "failed to authorize user that is channel (property)");
@@ -150,7 +150,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = {"CF-CHANNELS","CF-TAGS"})
-    public void channelAndTagIsAuthorizedRole() {
+    void channelAndTagIsAuthorizedRole() {
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "authorized user that is channel and tag (admin)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "failed to authorize user that is channel and tag (channel)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "failed to authorize user that is channel and tag (property)");
@@ -162,7 +162,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = "CF-PROPERTIES")
-    public void propertyIsAuthorizedRole() {
+    void propertyIsAuthorizedRole() {
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "authorized user that is property (admin)");
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "authorized user that is property (channel)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "failed to authorize user that is property (property)");
@@ -174,7 +174,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = {"CF-PROPERTIES","CF-TAGS"})
-    public void propertyAndTagIsAuthorizedRole() {
+    void propertyAndTagIsAuthorizedRole() {
         Assertions.assertFalse( authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "authorized user that is property and tag (admin)");
         Assertions.assertFalse( authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "authorized user that is property and tag (channel)");
         Assertions.assertTrue(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "failed to authorize user that is property and tag (property)");
@@ -186,7 +186,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = "CF-TAGS")
-    public void TagIsAuthorizedRole() {
+    void TagIsAuthorizedRole() {
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "authorized user that is tag (admin)");
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "authorized user that is tag (channel)");
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "authorized user that is tag (property)");
@@ -198,7 +198,7 @@ public class AuthorizationIT {
      */
     @Test
     @WithMockUser(roles = "")
-    public void noneIsNotAuthorizedRole() {
+    void noneIsNotAuthorizedRole() {
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_ADMIN), "authorized user that is admin (admin)");
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL), "authorized user that is admin (channel)");
         Assertions.assertFalse(authorizationService.isAuthorizedRole(SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY), "authorized user that is admin (property)");

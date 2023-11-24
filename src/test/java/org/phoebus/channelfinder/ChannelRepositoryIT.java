@@ -31,7 +31,7 @@ import java.util.Optional;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
-public class ChannelRepositoryIT {
+class ChannelRepositoryIT {
 
     @Autowired
     ElasticConfig esService;
@@ -53,7 +53,7 @@ public class ChannelRepositoryIT {
      * index a single channel
      */
     @Test
-    public void indexXmlChannel() {
+    void indexXmlChannel() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         cleanupTestChannels = Arrays.asList(testChannel);
         
@@ -66,7 +66,7 @@ public class ChannelRepositoryIT {
      * index multiple channels
      */
     @Test
-    public void indexXmlChannels() {
+    void indexXmlChannels() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
         List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -81,7 +81,7 @@ public class ChannelRepositoryIT {
      * save a single channel
      */
     @Test
-    public void saveXmlChannel() {
+    void saveXmlChannel() {
         Channel testChannel = new Channel("testChannel","testOwner");
         Channel updateTestChannel =
                 new Channel("testChannel","updateTestOwner", testProperties.subList(0,1), testTags.subList(0,1));
@@ -111,7 +111,7 @@ public class ChannelRepositoryIT {
      * save multiple channels 
      */
     @Test
-    public void saveXmlChannels() {
+    void saveXmlChannels() {
         Channel testChannel = new Channel("testChannel","testOwner", testProperties, testTags);
         Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
         Channel updateTestChannel = new Channel("testChannel", "updateTestOwner", testUpdatedProperties, testUpdatedTags);
@@ -134,7 +134,7 @@ public class ChannelRepositoryIT {
      * find a single channel
      */
     @Test
-    public void findXmlChannel() {
+    void findXmlChannel() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         cleanupTestChannels = Arrays.asList(testChannel);
 
@@ -157,7 +157,7 @@ public class ChannelRepositoryIT {
      * check if a channel exists
      */
     @Test
-    public void testChannelExists() {
+    void testChannelExists() {
         Iterable<Tag> createdTags = tagRepository.indexAll(testTags);
         Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
         Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
@@ -174,7 +174,7 @@ public class ChannelRepositoryIT {
      * check if channels exist
      */
     @Test
-    public void testChannelsExist() {
+    void testChannelsExist() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
         List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -191,7 +191,7 @@ public class ChannelRepositoryIT {
      * find multiple channels
      */
     @Test
-    public void findXmlChannels() {
+    void findXmlChannels() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
         List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -223,7 +223,7 @@ public class ChannelRepositoryIT {
      * find channels using case insensitive tag and property names searches
      */
     @Test
-    public void findChannels() {
+    void findChannels() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
         List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -261,7 +261,7 @@ public class ChannelRepositoryIT {
      * find channels using case insensitive names searches
      */
     @Test
-    public void findChannelByCaseInsensitiveSearch() {
+    void findChannelByCaseInsensitiveSearch() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
         List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -309,7 +309,7 @@ public class ChannelRepositoryIT {
      * delete a single tag
      */
     @Test
-    public void deleteXmlTag() {
+    void deleteXmlTag() {
         Channel testChannel = new Channel("testChannel","testOwner",testProperties,testTags);
         Channel createdChannel = channelRepository.index(testChannel);
         cleanupTestChannels = Arrays.asList(testChannel);
@@ -325,7 +325,7 @@ public class ChannelRepositoryIT {
      * 2. update the values of existing properties
      */
     @Test
-    public void updateChannelWithTagsAndProperties() {
+    void updateChannelWithTagsAndProperties() {
         Channel testChannel = new Channel();
         testChannel.setName("test-channel1");
         testChannel.setOwner("test-owner");
@@ -356,7 +356,7 @@ public class ChannelRepositoryIT {
         } catch (Exception e) {}
         props.forEach(testProperty -> {
             propertyRepository.deleteById(testProperty.getName());
-});
+        });
     }
 
     /**
@@ -364,7 +364,7 @@ public class ChannelRepositoryIT {
      * single tag or property
      */
     @Test
-    public void updateChannelWithPartialObjects() {
+    void updateChannelWithPartialObjects() {
         Channel testChannel = new Channel();
         testChannel.setName("testChannel");
         testChannel.setOwner("testOwner");
@@ -399,7 +399,7 @@ public class ChannelRepositoryIT {
         } catch (Exception e) {}
         props.forEach(testProperty -> {
             propertyRepository.deleteById(testProperty.getName());
-});
+        });
     }
 
 

@@ -18,25 +18,6 @@
 
 version: "3.7"
 services:
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
-    hostname: elasticsearch-cf
-    networks:
-      - channelfinder-net
-    environment:
-      cluster.name: channelfinder
-      bootstrap.memory_lock: "true"
-      discovery.type: single-node
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-      xpack.security.enabled: "false"
-    volumes:
-      - channelfinder-es-data:/usr/share/elasticsearch/data
-    healthcheck:
-      test: curl -f http://elasticsearch-cf:9200/_cluster/health
-      interval: 30s
-      timeout: 60s
-      retries: 5
-
   channelfinder:
     build: 
       context: .
@@ -58,10 +39,35 @@ services:
       ldap.enabled: "false"
       embedded_ldap.enabled: "false"
       demo_auth.enabled: "true"
-    command: "java -jar /channelfinder/ChannelFinder-*.jar --spring.config.name=application"
+      skipITCoverage: "true"
+    command: >
+      /bin/bash -c "
+        if [ ${skipITCoverage} == false ]; then
+          export JAVA_TOOL_OPTIONS=-javaagent:/channelfinder/jacocoagent.jar=destfile=/channelfinder/jacoco.exec,output=file,append=false
+        fi
+        java -jar /channelfinder/ChannelFinder-*.jar --spring.config.name=application"
     restart: on-failure
     healthcheck:
       test: curl -s -f http://channelfinder:8080/ChannelFinder
+      interval: 30s
+      timeout: 60s
+      retries: 5
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
+    hostname: elasticsearch-cf
+    networks:
+      - channelfinder-net
+    environment:
+      cluster.name: channelfinder
+      bootstrap.memory_lock: "true"
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+    volumes:
+      - channelfinder-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: curl -f http://elasticsearch-cf:9200/_cluster/health
       interval: 30s
       timeout: 60s
       retries: 5
@@ -74,12 +80,3 @@ volumes:
 networks:
   channelfinder-net:
     driver: bridge
-
-
-# ------------------------------------------------------------------------------
-# Note
-# ------------------------------------------------------------------------------
-# elasticsearch port numbers
-#     can be exposed differently externally to avoid interference with any running instance
-#     to be reflected in docker integration tests
-# ------------------------------------------------------------------------------

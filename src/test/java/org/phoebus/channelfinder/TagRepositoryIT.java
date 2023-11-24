@@ -25,7 +25,7 @@ import java.util.Set;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(TagRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
-public class TagRepositoryIT {
+class TagRepositoryIT {
 
     @Autowired
     ElasticConfig esService;
@@ -44,7 +44,7 @@ public class TagRepositoryIT {
      * index a single tag
      */
     @Test
-    public void indexXmlTag() {      
+    void indexXmlTag() {      
         Tag testTag = new Tag("testTag","testOwner");
         cleanupTestTags = List.of(testTag);
         
@@ -57,7 +57,7 @@ public class TagRepositoryIT {
      * index multiple tags
      */
     @Test
-    public void indexXmlTags() {
+    void indexXmlTags() {
         Tag testTag = new Tag("testTag","testOwner");
         Tag testTag1 = new Tag("testTag1","testOwner1");
         List<Tag> testTags = Arrays.asList(testTag, testTag1);
@@ -72,7 +72,7 @@ public class TagRepositoryIT {
      * save a single tag
      */
     @Test
-    public void saveXmlTag() {
+    void saveXmlTag() {
         Tag testTag = new Tag("testTag","testOwner");
         Tag updateTestTag = new Tag("testTag","updateTestOwner");
         Tag updateTestTag1 = new Tag("testTag1","updateTestOwner1");
@@ -92,7 +92,7 @@ public class TagRepositoryIT {
      * save multiple tags
      */
     @Test
-    public void saveXmlTags() {
+    void saveXmlTags() {
         Tag testTag = new Tag("testTag","testOwner");
         Tag testTag1 = new Tag("testTag1","testOwner1");
         Tag updateTestTag = new Tag("testTag","updateTestOwner");
@@ -111,7 +111,7 @@ public class TagRepositoryIT {
      * find a single tag
      */
     @Test
-    public void findXmlTag() {
+    void findXmlTag() {
         Tag testTag = new Tag("testTag","testOwner");
         cleanupTestTags = Arrays.asList(testTag);
         
@@ -144,7 +144,7 @@ public class TagRepositoryIT {
      * check if a tag exists
      */
     @Test
-    public void testTagExists() {
+    void testTagExists() {
         Tag testTag = new Tag("testTag","testOwner");
         cleanupTestTags = Arrays.asList(testTag);
 
@@ -159,7 +159,7 @@ public class TagRepositoryIT {
      * find all tags
      */
     @Test
-    public void findAllXmlTags() {
+    void findAllXmlTags() {
         Tag testTag = new Tag("testTag","testOwner");
         Tag testTag1 = new Tag("testTag1","testOwner1");
         List<Tag> testTags = Arrays.asList(testTag, testTag1);
@@ -178,7 +178,7 @@ public class TagRepositoryIT {
      * find multiple tags
      */
     @Test
-    public void findXmlTags() {
+    void findXmlTags() {
         Tag testTag = new Tag("testTag","testOwner");
         Tag testTag1 = new Tag("testTag1","testOwner1");
         List<Tag> testTags = Arrays.asList(testTag,testTag1);
@@ -210,7 +210,7 @@ public class TagRepositoryIT {
      * delete a single tag
      */
     @Test
-    public void deleteXmlTag() {
+    void deleteXmlTag() {
         Tag testTag = new Tag("testTag","testOwner");
         Tag createdTag = tagRepository.index(testTag);
         Channel channel = new Channel("testChannel","testOwner",null,Arrays.asList(createdTag));

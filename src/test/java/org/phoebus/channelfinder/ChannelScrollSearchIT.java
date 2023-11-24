@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelScroll.class)
 @TestPropertySource(value = "classpath:application_test.properties")
-public class ChannelScrollSearchIT {
+class ChannelScrollSearchIT {
 
     private static final Logger logger = Logger.getLogger(ChannelScrollSearchIT.class.getName());
     
@@ -64,7 +64,7 @@ public class ChannelScrollSearchIT {
      * Test searching for channels based on name
      */
     @Test
-    public void searchNameTest() {
+    void searchNameTest() {
 
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
         searchParameters.add("~name", "*");

@@ -58,7 +58,7 @@ class TagManagerIT {
      * list all tags
      */
     @Test
-    public void listXmlTags() {
+    void listXmlTags() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
         Tag testTag1 = new Tag("testTag1", "testOwner");
         testTag1.setChannels(testChannels());
@@ -79,7 +79,7 @@ class TagManagerIT {
      * test the "withChannels" flag
      */
     @Test
-    public void readXmlTag() {
+    void readXmlTag() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
         Tag testTag1 = new Tag("testTag1", "testOwner");
         testTag1.setChannels(testChannels());
@@ -108,7 +108,7 @@ class TagManagerIT {
      * attempt to read a single non existent tag
      */
     @Test
-    public void readNonExistingXmlTag() {
+    void readNonExistingXmlTag() {
         // verify the tag failed to be read, as expected
         Assertions.assertThrows(ResponseStatusException.class, () -> tagManager.read("fakeTag", false));
     }
@@ -117,7 +117,7 @@ class TagManagerIT {
      * attempt to read a single non existent tag with channels
      */
     @Test
-    public void readNonExistingXmlTag2() {
+    void readNonExistingXmlTag2() {
         // verify the tag failed to be read, as expected
         Assertions.assertThrows(ResponseStatusException.class, () -> tagManager.read("fakeTag", true));
     }
@@ -126,7 +126,7 @@ class TagManagerIT {
      * create a simple tag
      */
     @Test
-    public void createXmlTag() {
+    void createXmlTag() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
 
         // Create a simple tag
@@ -143,7 +143,7 @@ class TagManagerIT {
      * Rename a simple tag using create
      */
     @Test
-    public void renameByCreateXmlTag() {
+    void renameByCreateXmlTag() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
         Tag testTag1 = new Tag("testTag1", "testOwner");
 
@@ -159,7 +159,7 @@ class TagManagerIT {
      * Create a single tag with channels
      */
     @Test
-    public void createXmlTag2() {
+    void createXmlTag2() {
         Tag testTag0WithChannels = new Tag("testTag0WithChannels", "testOwner");
         testTag0WithChannels.setChannels(testChannels());
 
@@ -193,7 +193,7 @@ class TagManagerIT {
      * Rename a single tag with channels using create
      */
     @Test
-    public void renameByCreateXmlTag2() {
+    void renameByCreateXmlTag2() {
         Tag testTag0WithChannels = new Tag("testTag0WithChannels", "testOwner");
         testTag0WithChannels.setChannels(testChannels());
         Tag testTag1WithChannels = new Tag("testTag1WithChannels", "testOwner");
@@ -218,7 +218,7 @@ class TagManagerIT {
      * create multiple tags
      */
     @Test
-    public void createXmlTags() {
+    void createXmlTags() {
 
         Tag testTag0 = new Tag("testTag0", "testOwner");
         Tag testTag1 = new Tag("testTag1", "testOwner");
@@ -256,7 +256,7 @@ class TagManagerIT {
      * changing channels will have an effect
      */
     @Test
-    public void createXmlTagsWithOverride() {
+    void createXmlTagsWithOverride() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
 
         Channel testChannel1 = testChannels().get(1);
@@ -299,7 +299,7 @@ class TagManagerIT {
      * add a single tag to a single channel
      */
     @Test
-    public void addSingleXmlTag() {
+    void addSingleXmlTag() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
         tagRepository.index(testTag0);
 
@@ -311,7 +311,7 @@ class TagManagerIT {
      * update a tag 
      */
     @Test
-    public void updateXmlTag() {
+    void updateXmlTag() {
         // A test tag with only name and owner
         Tag testTag0 = new Tag("testTag0", "testOwner");
         // A test tag with name, owner, and a single test channel
@@ -347,7 +347,7 @@ class TagManagerIT {
      * update a tag's name and owner on its channels
      */
     @Test
-    public void updateXmlTagOnChan() {
+    void updateXmlTagOnChan() {
         // extra channel for this test
         Channel testChannelX = new Channel("testChannelX","testOwner");
         channelRepository.index(testChannelX);
@@ -393,7 +393,7 @@ class TagManagerIT {
      * Rename a tag using update
      */
     @Test
-    public void renameByUpdateXmlTag() {
+    void renameByUpdateXmlTag() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
         Tag testTag1 = new Tag("testTag1", "testOwner");
         Tag testTag0WithChannels = new Tag("testTag0WithChannels", "testOwner");
@@ -429,7 +429,7 @@ class TagManagerIT {
      * Resultant tag channels: testChannel0
      */
     @Test
-    public void updateTagTest1() {
+    void updateTagTest1() {
         // A test tag with only name and owner
         Tag testTag0 = new Tag("testTag0", "testOwner");
         tagManager.create(testTag0.getName(), testTag0);
@@ -446,7 +446,7 @@ class TagManagerIT {
      * Resultant tag channels: testChannel0,testChannel1
      */
     @Test
-    public void updateTagTest2() {
+    void updateTagTest2() {
         // A test tag with testChannel0
         Tag testTag0 = new Tag("testTag0", "testOwner");
         testTag0.setChannels(Arrays.asList(testChannels().get(0)));
@@ -468,7 +468,7 @@ class TagManagerIT {
      * Resultant tag channels: testChannel0,testChannel1
      */
     @Test
-    public void updateTagTest3() {
+    void updateTagTest3() {
         // A test tag with testChannel0
         Tag testTag0 = new Tag("testTag0", "testOwner");
         testTag0.setChannels(Arrays.asList(testChannels().get(0)));
@@ -494,7 +494,7 @@ class TagManagerIT {
      * Resultant tag channels: testChannel0,testChannel1
      */
     @Test
-    public void updateTagTest4() {
+    void updateTagTest4() {
         // A test tag with testChannel0,testChannel1
         Tag testTag0 = new Tag("testTag0", "testOwner");
         testTag0.setChannels(testChannels());
@@ -520,7 +520,7 @@ class TagManagerIT {
      * Resultant tag channels: testChannel0,testChannel1
      */
     @Test
-    public void updateTagTest5() {
+    void updateTagTest5() {
         // A test tag with testChannel0,testChannel1
         Tag testTag0 = new Tag("testTag0", "testOwner");
         testTag0.setChannels(testChannels());
@@ -546,7 +546,7 @@ class TagManagerIT {
      * Update on non-existing tags should result in the creation of the tags
      */
     @Test
-    public void updateMultipleTags() {
+    void updateMultipleTags() {
         // A test tag with only name and owner
         Tag testTag0 = new Tag("testTag0", "testOwner");
         // A test tag with name, owner, and test channels
@@ -565,7 +565,7 @@ class TagManagerIT {
      * update tags' names and attempt to change owners on their channels
      */
     @Test
-    public void updateMultipleXmlTagsOnChan() {
+    void updateMultipleXmlTagsOnChan() {
         // extra channel for this test
         Channel testChannelX = new Channel("testChannelX","testOwner");
         channelRepository.index(testChannelX);
@@ -611,7 +611,7 @@ class TagManagerIT {
      * delete a single tag 
      */
     @Test
-    public void deleteXmlTag() {
+    void deleteXmlTag() {
         Tag testTag0 = new Tag("testTag0", "testOwner");
         Tag testTag1 = new Tag("testTag1", "testOwner");
         testTag1.setChannels(testChannels());
@@ -635,7 +635,7 @@ class TagManagerIT {
      * delete a single tag from a single channel 
      */
     @Test
-    public void deleteXmlTagFromChannel() {
+    void deleteXmlTagFromChannel() {
         Tag testTag1 = new Tag("testTag1", "testOwner");
         testTag1.setChannels(testChannels());
 

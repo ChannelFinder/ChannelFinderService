@@ -106,8 +106,8 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertRetrieveChannel(String, int, Channel)
      */
-    public static Channel assertRetrieveChannel(String path, int responseCode) {
-        return assertRetrieveChannel(path, responseCode, CHANNEL_NULL);
+    public static Channel assertRetrieveChannel(String path, int expectedResponseCode) {
+        return assertRetrieveChannel(path, expectedResponseCode, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertRetrieveChannel(String, int, Channel)
@@ -119,17 +119,17 @@ public class ITUtilChannels {
      * Utility method to return the full listing of a single channel with the given name.
      *
      * @param path path
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response channel
      */
-    public static Channel assertRetrieveChannel(String path, int responseCode, Channel expected) {
+    public static Channel assertRetrieveChannel(String path, int expectedResponseCode, Channel expected) {
         try {
             String[] response = null;
             Channel actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + path);
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel.class);
             }
 
@@ -175,27 +175,27 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertListChannels(String, int, int, int, Channel...)
      */
-    public static Channel[] assertListChannels(String queryString, int responseCode, int expectedEqual) {
-        return assertListChannels(queryString, responseCode, expectedEqual, expectedEqual, CHANNELS_NULL);
+    public static Channel[] assertListChannels(String queryString, int expectedResponseCode, int expectedEqual) {
+        return assertListChannels(queryString, expectedResponseCode, expectedEqual, expectedEqual, CHANNELS_NULL);
     }
     /**
      * Utility method to return the list of channels which match all given expressions, i.e. the expressions are combined in a logical AND.
      *
      * @param queryString query string
-     * @param responseCode response code
+     * @param expectedResponseCode response code
      * @param expectedGreaterThanOrEqual (if non-negative number) greater than or equal to this number of items
      * @param expectedLessThanOrEqual (if non-negative number) less than or equal to this number of items
      * @param expected expected response channels
      * @return number of channels
      */
-    public static Channel[] assertListChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Channel... expected) {
+    public static Channel[] assertListChannels(String queryString, int expectedResponseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Channel... expected) {
         try {
             String[] response = null;
             Channel[] actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + queryString);
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel[].class);
             }
 
@@ -210,7 +210,7 @@ public class ITUtilChannels {
             }
 
             // expected content
-            if (expected != null) {
+            if (expected != null && expected.length > 0) {
                 assertEqualsChannels(actual, expected);
             }
 
@@ -241,20 +241,20 @@ public class ITUtilChannels {
      * Utility method to return the count of channels which match all given expressions, i.e. the expressions are combined in a logical AND.
      *
      * @param queryString query string
-     * @param responseCode response code
+     * @param expectedResponseCode response code
      * @param expectedGreaterThanOrEqual (if non-negative number) greater than or equal to this number of items
      * @param expectedLessThanOrEqual (if non-negative number) less than or equal to this number of items
      * @param expected expected response channels
      * @return number of channels
      */
-    public static Integer assertCountChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual) {
+    public static Integer assertCountChannels(String queryString, int expectedResponseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual) {
         try {
             String[] response = null;
             Integer actual = -1;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + "/count" + queryString);
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = Integer.parseInt(response[1]);
             }
 
@@ -289,14 +289,14 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, Channel value, int responseCode) {
-        return assertCreateReplaceChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
+    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, Channel value, int expectedResponseCode) {
+        return assertCreateReplaceChannel(authorizationChoice, path, object2Json(value), expectedResponseCode, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertCreateReplaceChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertCreateReplaceChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
+    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertCreateReplaceChannel(authorizationChoice, path, json, expectedResponseCode, CHANNEL_NULL);
     }
     /**
      * Utility method to create or completely replace the existing channel name with the payload data.
@@ -304,17 +304,17 @@ public class ITUtilChannels {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response channel
      */
-    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Channel expected) {
+    public static Channel assertCreateReplaceChannel(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Channel expected) {
         try {
             String[] response = null;
             Channel actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.CHANNELS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel.class);
             }
 
@@ -342,8 +342,8 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertCreateReplaceMultipleChannels(AuthorizationChoice, String, String, int, Channel[])
      */
-    public static Channel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertCreateReplaceMultipleChannels(authorizationChoice, path, json, responseCode, CHANNELS_NULL);
+    public static Channel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertCreateReplaceMultipleChannels(authorizationChoice, path, json, expectedResponseCode, CHANNELS_NULL);
     }
     /**
      * Utility method to add the channels in the payload to the directory.
@@ -351,17 +351,17 @@ public class ITUtilChannels {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response channels
      */
-    public static Channel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Channel[] expected) {
+    public static Channel[] assertCreateReplaceMultipleChannels(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Channel[] expected) {
         try {
             String[] response = null;
             Channel[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.PUT, authorizationChoice, EndpointChoice.CHANNELS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel[].class);
             }
 
@@ -389,14 +389,14 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, Channel value, int responseCode) {
-        return assertUpdateChannel(authorizationChoice, path, object2Json(value), responseCode, CHANNEL_NULL);
+    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, Channel value, int expectedResponseCode) {
+        return assertUpdateChannel(authorizationChoice, path, object2Json(value), expectedResponseCode, CHANNEL_NULL);
     }
     /**
      * @see ITUtilChannels#assertUpdateChannel(AuthorizationChoice, String, String, int, Channel)
      */
-    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode) {
-        return assertUpdateChannel(authorizationChoice, path, json, responseCode, CHANNEL_NULL);
+    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode) {
+        return assertUpdateChannel(authorizationChoice, path, json, expectedResponseCode, CHANNEL_NULL);
     }
     /**
      * Utility method to merge properties and tags of the channel identified by the payload into an existing channel.
@@ -404,17 +404,17 @@ public class ITUtilChannels {
      * @param authorizationChoice authorization choice (none, user, admin)
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response channel
      */
-    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int responseCode, Channel expected) {
+    public static Channel assertUpdateChannel(AuthorizationChoice authorizationChoice, String path, String json, int expectedResponseCode, Channel expected) {
         try {
             String[] response = null;
             Channel actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, authorizationChoice, EndpointChoice.CHANNELS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel.class);
             }
 
@@ -442,25 +442,25 @@ public class ITUtilChannels {
     /**
      * @see ITUtilChannels#assertUpdateChannels(String, String, int, Channel[])
      */
-    public static Channel[] assertUpdateChannels(String path, String json, int responseCode) {
-        return assertUpdateChannels(path, json, responseCode, CHANNELS_NULL);
+    public static Channel[] assertUpdateChannels(String path, String json, int expectedResponseCode) {
+        return assertUpdateChannels(path, json, expectedResponseCode, CHANNELS_NULL);
     }
     /**
      * Utility method to merge properties and tags of the channels identified by the payload into existing channels.
      *
      * @param path path
      * @param json json
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expected expected response channels
      */
-    public static Channel[] assertUpdateChannels(String path, String json, int responseCode, Channel[] expected) {
+    public static Channel[] assertUpdateChannels(String path, String json, int expectedResponseCode, Channel[] expected) {
         try {
             String[] response = null;
             Channel[] actual = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.POST, AuthorizationChoice.ADMIN, EndpointChoice.CHANNELS, path, json));
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (HttpURLConnection.HTTP_OK == responseCode) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel[].class);
             }
 
@@ -492,12 +492,12 @@ public class ITUtilChannels {
      * @param path path
      * @param expected expected response channel
      */
-    public static void assertDeleteChannel(AuthorizationChoice authorizationChoice, String path, int responseCode) {
+    public static void assertDeleteChannel(AuthorizationChoice authorizationChoice, String path, int expectedResponseCode) {
         try {
             String[] response = null;
 
             response = ITUtil.runShellCommand(ITUtil.curlMethodAuthEndpointPathJson(MethodChoice.DELETE, authorizationChoice, EndpointChoice.CHANNELS, path, null));
-            ITUtil.assertResponseLength2Code(response, responseCode);
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
         } catch (IOException e) {
             fail();
         } catch (Exception e) {

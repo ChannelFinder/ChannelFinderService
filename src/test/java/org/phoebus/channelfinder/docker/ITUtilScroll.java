@@ -51,43 +51,34 @@ public class ITUtilScroll {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
-     *
-     * @param queryString query string
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertQueryChannels(String, int, String, int)
      */
     public static Scroll assertQueryChannels(String queryString, int expectedLength) {
         return assertQueryChannels(queryString, HttpURLConnection.HTTP_OK, null, expectedLength);
     }
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
-     *
-     * @param queryString query string
-     * @param responseCode expected response code
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertQueryChannels(String, int, String, int)
      */
-    public static Scroll assertQueryChannels(String queryString, int responseCode, int expectedLength) {
-        return assertQueryChannels(queryString, responseCode, null, expectedLength);
+    public static Scroll assertQueryChannels(String queryString, int expectedResponseCode, int expectedLength) {
+        return assertQueryChannels(queryString, expectedResponseCode, null, expectedLength);
     }
     /**
      * Utility method to return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
      *
      * @param queryString query string
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expectedId (if non-null) expected id
      * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static Scroll assertQueryChannels(String queryString, int responseCode, String expectedId, int expectedLength) {
+    public static Scroll assertQueryChannels(String queryString, int expectedResponseCode, String expectedId, int expectedLength) {
         try {
             String[] response = null;
             Scroll actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + queryString);
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (responseCode == HttpURLConnection.HTTP_OK) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
             	actual = mapper.readValue(response[1], Scroll.class);
             }
 
@@ -112,44 +103,34 @@ public class ITUtilScroll {
     // ----------------------------------------------------------------------------------------------------
 
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
-     *
-     * @param path path
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertContinueChannelsQuery(String, int, String, int)
      */
     public static Scroll assertContinueChannelsQuery(String path, int expectedLength) {
         return assertContinueChannelsQuery(path, HttpURLConnection.HTTP_OK, null, expectedLength);
     }
     /**
-     * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
-     *
-     * @param path path
-     * @param responseCode expected response code
-     * @param expectedId (if non-null) expected id
-     * @param expectedLength (if non-negative number) expected length of channels
-     * @return scroll object
+     * @see ITUtilScroll#assertContinueChannelsQuery(String, int, String, int)
      */
-    public static Scroll assertContinueChannelsQuery(String path, int responseCode, int expectedLength) {
-        return assertContinueChannelsQuery(path, responseCode, null, expectedLength);
+    public static Scroll assertContinueChannelsQuery(String path, int expectedResponseCode, int expectedLength) {
+        return assertContinueChannelsQuery(path, expectedResponseCode, null, expectedLength);
     }
     /**
      * Utility method to return scroll object, including scroll id for the next query and a list of the next 100(current default size) channels.
      *
      * @param path path
-     * @param responseCode expected response code
+     * @param expectedResponseCode expected response code
      * @param expectedId (if non-null) expected id
      * @param expectedLength (if non-negative number) expected length of channels
      * @return scroll object
      */
-    public static Scroll assertContinueChannelsQuery(String path, int responseCode, String expectedId, int expectedLength) {
+    public static Scroll assertContinueChannelsQuery(String path, int expectedResponseCode, String expectedId, int expectedLength) {
         try {
             String[] response = null;
             Scroll actual = null;
 
             response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + path);
-            ITUtil.assertResponseLength2Code(response, responseCode);
-            if (responseCode == HttpURLConnection.HTTP_OK) {
+            ITUtil.assertResponseLength2Code(response, expectedResponseCode);
+            if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
             	actual = mapper.readValue(response[1], Scroll.class);
             }
 

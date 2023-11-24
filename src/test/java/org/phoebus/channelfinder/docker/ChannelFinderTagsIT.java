@@ -19,6 +19,7 @@
 package org.phoebus.channelfinder.docker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -94,7 +95,7 @@ class ChannelFinderTagsIT {
 
     static Tag tag_t1_owner_o2;
 
-	@Container
+    @Container
     public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
 
     @BeforeAll
@@ -127,6 +128,13 @@ class ChannelFinderTagsIT {
         tag_t10_owner_o1 = null;
 
         tag_t1_owner_o2 = null;
+    }
+
+    @AfterAll
+    public static void extractJacocoReport() {
+        // extract jacoco report from container file system
+        ITUtil.extractJacocoReport(ENVIRONMENT,
+                ITUtil.JACOCO_TARGET_PREFIX + ChannelFinderTagsIT.class.getSimpleName() + ITUtil.JACOCO_TARGET_SUFFIX);
     }
 
     @Test

@@ -18,6 +18,7 @@
 
 package org.phoebus.channelfinder.docker;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -56,8 +57,15 @@ class ChannelFinderIT {
     //         https://channelfinder.readthedocs.io/en/latest/api.html
     //     ------------------------------------------------------------------------------------------------
 
-	@Container
+    @Container
     public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
+
+    @AfterAll
+    public static void extractJacocoReport() {
+        // extract jacoco report from container file system
+        ITUtil.extractJacocoReport(ENVIRONMENT,
+                ITUtil.JACOCO_TARGET_PREFIX + ChannelFinderIT.class.getSimpleName() + ITUtil.JACOCO_TARGET_SUFFIX);
+    }
 
     @Test
     void channelfinderUp() {

@@ -23,7 +23,7 @@ It is possible to test ChannelFinder API by running ChannelFinder and Elasticsea
 
 ##### Tools
 
-* Docker - engine 18.06.0+ or later, compose 1.29.2 or later, compose file version 3.7 to be supported
+* Docker - engine 18.06.0+ or later, compose 2.21.0 or later, compose file version 3.7 to be supported
 
 ##### Dependencies
 
@@ -94,9 +94,7 @@ Integration tests are implemented in test class annotated with `@Testcontainers`
 class ChannelFinderIT {
 
     @Container
-    public static final DockerComposeContainer<?> ENVIRONMENT =
-        new DockerComposeContainer<>(new File("docker-compose-integrationtest.yml"))
-            .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
+    public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
 
     @Test
     void channelfinderUp() {
@@ -130,9 +128,7 @@ class ChannelFinderPropertiesIT {
     static Property property_p1_owner_o1;
 
     @Container
-    public static final DockerComposeContainer<?> ENVIRONMENT =
-        new DockerComposeContainer<>(new File("docker-compose-integrationtest.yml"))
-            .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(".*Started Application.*", 1));
+    public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
 
     @BeforeAll
     public static void setupObjects() {
@@ -356,5 +352,3 @@ See [How to run Integration test with Docker](INTEGRATIONTEST_DOCKER_RUN.md).
 ##### Testcontainers
 
 * [Testcontainers](https://testcontainers.com/)
-* Dependency up to 1.18.0. Later versions experience difficulties for tests (Ryuk container) to find/attach to other containers
-(ChannelFinder and Elasticsearch).
