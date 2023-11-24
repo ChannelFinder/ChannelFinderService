@@ -19,7 +19,6 @@
 package org.phoebus.channelfinder.docker;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.dockerjava.api.DockerClient;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,13 +26,11 @@ import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.entity.Channel;
 import org.testcontainers.containers.ComposeContainer;
-import org.testcontainers.containers.ContainerState;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -100,7 +97,7 @@ public class ChannelFinderChannelsIT {
 
     static Channel channel_c1_owner_o2;
 
-	@Container
+    @Container
     public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
 
     @BeforeAll
@@ -138,23 +135,8 @@ public class ChannelFinderChannelsIT {
     @AfterAll
     public static void extractJacocoReport() {
         // extract jacoco report from container file system
-        //     stop jvm to make data available
-
-        if (!Boolean.FALSE.toString().equals(System.getProperty(ITUtil.JACOCO_SKIPITCOVERAGE))) {
-            return;
-        }
-
-        Optional<ContainerState> container = ENVIRONMENT.getContainerByServiceName(ITUtil.CHANNELFINDER);
-        if (container.isPresent()) {
-            ContainerState cs = container.get();
-            DockerClient dc = cs.getDockerClient();
-            dc.stopContainerCmd(cs.getContainerId()).exec();
-            try {
-                cs.copyFileFromContainer(ITUtil.JACOCO_EXEC_PATH, ITUtil.JACOCO_TARGET_PREFIX + ChannelFinderChannelsIT.class.getSimpleName() + ITUtil.JACOCO_TARGET_SUFFIX);
-            } catch (Exception e) {
-                // proceed if file cannot be copied
-            }
-        }
+        ITUtil.extractJacocoReport(ENVIRONMENT,
+                ITUtil.JACOCO_TARGET_PREFIX + ChannelFinderChannelsIT.class.getSimpleName() + ITUtil.JACOCO_TARGET_SUFFIX);
     }
 
     @Test

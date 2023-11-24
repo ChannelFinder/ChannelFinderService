@@ -19,8 +19,11 @@
 package org.phoebus.channelfinder.docker;
 
 import org.testcontainers.containers.ComposeContainer;
+import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
+
+import com.github.dockerjava.api.DockerClient;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -114,6 +118,34 @@ public class ITUtil {
                 .withEnv(ITUtil.JACOCO_SKIPITCOVERAGE, System.getProperty(ITUtil.JACOCO_SKIPITCOVERAGE))
                 .withLocalCompose(true)
                 .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(ITUtil.INTEGRATIONTEST_LOG_MESSAGE, 1));
+    }
+
+    /**
+     * Extract coverage report from compose container to file system.
+     *
+     * @param environment compose container
+     * @param destinationPath destination path, i.e. where in file system to put coverage report
+     * that has been extracted from container
+     */
+    public static void extractJacocoReport(ComposeContainer environment, String destinationPath) {
+        // extract jacoco report from container file system
+        //     stop jvm to make data available
+
+        if (!Boolean.FALSE.toString().equals(System.getProperty(ITUtil.JACOCO_SKIPITCOVERAGE))) {
+            return;
+        }
+
+        Optional<ContainerState> container = environment.getContainerByServiceName(ITUtil.CHANNELFINDER);
+        if (container.isPresent()) {
+            ContainerState cs = container.get();
+            DockerClient dc = cs.getDockerClient();
+            dc.stopContainerCmd(cs.getContainerId()).exec();
+            try {
+                cs.copyFileFromContainer(ITUtil.JACOCO_EXEC_PATH, destinationPath);
+            } catch (Exception e) {
+                // proceed if file cannot be copied
+            }
+        }
     }
 
     /**
