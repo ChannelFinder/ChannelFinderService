@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import co.elastic.clients.elasticsearch._types.FieldSort;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
@@ -83,14 +84,15 @@ public class ChannelScroll {
      * The query result is sorted based on the channel name ~size - The number of
      * channels to be returned ~from - The starting index of the channel list
      *
+     * TODO combine with ChannelRepository code.
      * @param scrollId         scroll ID
      * @param searchParameters - search parameters for scrolling searches
      * @return search scroll
      */
     public Scroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
         BoolQuery.Builder boolQuery = new BoolQuery.Builder();
-        Integer size = esService.getES_QUERY_SIZE();
-        Integer from = 0;
+        int size = esService.getES_QUERY_SIZE();
+        int from = 0;
 
         for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
             String key = parameter.getKey().trim();
@@ -127,13 +129,13 @@ public class ChannelScroll {
                 case "~size":
                     Optional<String> maxSize = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
                     if (maxSize.isPresent()) {
-                        size = Integer.valueOf(maxSize.get());
+                        size = Integer.parseInt(maxSize.get());
                     }
                     break;
                 case "~from":
                     Optional<String> maxFrom = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
                     if (maxFrom.isPresent()) {
-                        from = Integer.valueOf(maxFrom.get());
+                        from = Integer.parseInt(maxFrom.get());
                     }
                     break;
 
@@ -161,22 +163,20 @@ public class ChannelScroll {
         }
 
         try {
-            Integer finalSize = size;
-            Integer finalFrom = from;
             SearchRequest.Builder builder = new SearchRequest.Builder();
             builder.index(esService.getES_CHANNEL_INDEX())
                     .query(boolQuery.build()._toQuery())
-                    .from(finalFrom)
-                    .size(finalSize)
+                    .from(from)
+                    .size(size)
                     .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
             if(scrollId != null && !scrollId.isEmpty()) {
-                builder.searchAfter(scrollId);
+                builder.searchAfter(FieldValue.of(scrollId));
             }
             SearchResponse<Channel> response = client.search(builder.build(),
                     Channel.class
             );
             List<Hit<Channel>> hits = response.hits().hits();
-            return new Scroll(hits.size() > 0 ? hits.get(hits.size()-1).id() : null, hits.stream().map(Hit::source).collect(Collectors.toList()));
+            return new Scroll(!hits.isEmpty() ? hits.get(hits.size()-1).id() : null, hits.stream().map(Hit::source).collect(Collectors.toList()));
         } catch (Exception e) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
             logger.log(Level.SEVERE, message, e);
