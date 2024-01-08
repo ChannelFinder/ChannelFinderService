@@ -1,88 +1,73 @@
 package org.phoebus.channelfinder.epics;
 
+import org.epics.pva.data.PVABoolArray;
+import org.epics.pva.data.PVAData;
+import org.epics.pva.data.PVAStringArray;
+import org.epics.pva.data.PVAStructure;
+import org.epics.pva.data.nt.PVATable;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.entity.Tag;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.epics.nt.NTTable;
-import org.epics.pvdata.pv.BooleanArrayData;
-import org.epics.pvdata.pv.PVBooleanArray;
-import org.epics.pvdata.pv.PVStringArray;
-import org.epics.pvdata.pv.PVStructure;
-import org.epics.pvdata.pv.ScalarType;
-import org.epics.pvdata.pv.StringArrayData;
-import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.entity.Tag;
+import static org.phoebus.channelfinder.epics.ChannelFinderEpicsService.COLUMN_CHANNEL_NAME;
+import static org.phoebus.channelfinder.epics.ChannelFinderEpicsService.COLUMN_OWNER;
 
 public class NTXmlUtil {
-
     /**
-     * A helper method to convert the the result of the channelfinder v4 service
-     * to the a list of {@link Channel}
-     * 
+     * A helper method to convert the result of the channelfinder v4 service
+     * to a list of {@link Channel}
+     *
      * @param result - NTTable returned by the channelfinder service
      * @return list of channels
-     * @throws Exception failed to convert to NTTable
      */
-    public static synchronized List<Channel> parse(PVStructure result) throws Exception {
-        if (NTTable.isCompatible(result)) {
-            NTTable table = NTTable.wrap(result);
-            List<String> names = Arrays.asList(table.getColumnNames());
-            List<Channel> channels = new ArrayList<>();
-            
-            if(names.contains("channelName")){
-                PVStringArray array = (PVStringArray) table.getColumn("channelName");
-                StringArrayData data = new StringArrayData();
-                int len = array.get(0, array.getLength(), data);
-                Arrays.asList(data.data).forEach(name -> channels.add(new Channel(name)));
-            }
-            
-            if(names.contains("owner")){
-                PVStringArray array = (PVStringArray) table.getColumn("owner");
-                StringArrayData data = new StringArrayData();
-                int len = array.get(0, array.getLength(), data);
-                List<Optional<String>> owners = Arrays.asList(data.data).stream().map(Optional::ofNullable)
-                        .collect(Collectors.toList());
-                for (int i = 0; i < channels.size(); i++) {
-                    if (owners.get(i).isPresent())
-                        channels.get(i).setOwner(owners.get(i).get());
-                }
-            }
-            
-            for (String name : names) {
-                if(!name.equals("channelName") && !name.equals("owner")){
-                    ScalarType type = table.getColumn(name).getScalarArray().getElementType();
-                    if (type.equals(ScalarType.pvBoolean)){
-                        PVBooleanArray array = (PVBooleanArray) table.getColumn(name);
-                        BooleanArrayData data = new BooleanArrayData();
-                        array.get(0, array.getLength(), data);
-                        List<Boolean> tag = new ArrayList<>(array.getLength());
-                        for (int i = 0; i < array.getLength(); i++) {
-                            tag.add(data.data[i]);
-                            if(data.data[i]){
-                                channels.get(i).getTags().add(new Tag(name));
-                            }
-                        }
-                    }
-                    else if (type.equals(ScalarType.pvString)) {
-                        PVStringArray array = (PVStringArray) table.getColumn(name);
-                        StringArrayData data = new StringArrayData();
-                        int len = array.get(0, array.getLength(), data);
-                        List<Optional<String>> list = Arrays.asList(data.data).stream().map(Optional::ofNullable)
-                                .collect(Collectors.toList());
-                        for (int i = 0; i < channels.size(); i++) {
-                            if (list.get(i).isPresent())
-                                channels.get(i).getProperties().add(new Property(name, null, list.get(i).get()));
-                        }
-                    }
-                }
-            }
-            return channels;
-        } else {
-            throw new Exception(result.toString() +" is not compatible with NTTable");
+    public static synchronized List<Channel> parse(PVAStructure result) {
+        PVATable table = PVATable.fromStructure(result);
+
+        List<String> names = Arrays.asList(table.getLabels().get());
+        List<Channel> channels = new ArrayList<>();
+
+        if (names.contains(COLUMN_CHANNEL_NAME)) {
+            PVAStringArray array = table.getColumn(COLUMN_CHANNEL_NAME);
+            Arrays.stream(array.get()).forEach(c -> channels.add(new Channel(c)));
         }
+
+        if (names.contains(COLUMN_OWNER)) {
+            PVAStringArray array = table.getColumn(COLUMN_OWNER);
+            List<Optional<String>> owners =
+                    Arrays.stream(array.get()).map(Optional::ofNullable).collect(Collectors.toList());
+            for (int i = 0; i < channels.size(); i++) {
+                if (owners.get(i).isPresent())
+                    channels.get(i).setOwner(owners.get(i).get());
+            }
+        }
+
+        for (String name : names) {
+            if (!name.equals(COLUMN_CHANNEL_NAME) && !name.equals(COLUMN_OWNER)) {
+                PVAData pvaData = table.getColumn(name);
+
+                if (pvaData.getClass().equals(PVABoolArray.class)) {
+                    boolean[] array = ((PVABoolArray) pvaData).get();
+                    for (int i = 0; i < array.length; i++) {
+                        if (array[i]) {
+                            channels.get(i).getTags().add(new Tag(name));
+                        }
+                    }
+                } else if (pvaData.getClass().equals(PVAStringArray.class)) {
+                    String[] array = ((PVAStringArray) pvaData).get();
+                    for (int i = 0; i < array.length; i++) {
+                        if (array[i] != null) {
+                            channels.get(i).getProperties().add(new Property(name, null, array[i]));
+                        }
+                    }
+                }
+            }
+        }
+        return channels;
     }
 }

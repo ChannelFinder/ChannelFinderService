@@ -153,11 +153,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.epics</groupId>
-            <artifactId>epics-core</artifactId>
-            <type>pom</type>
-            <version>7.0.8</version>
-            <scope>compile</scope>
+            <groupId>org.phoebus</groupId>
+            <artifactId>core-pva</artifactId>
+            <version>4.7.2</version>
         </dependency>
 
         <dependency>
