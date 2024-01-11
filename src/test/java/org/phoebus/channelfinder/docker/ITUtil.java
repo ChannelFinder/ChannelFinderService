@@ -117,7 +117,7 @@ public class ITUtil {
         return new ComposeContainer(new File(ITUtil.INTEGRATIONTEST_DOCKER_COMPOSE))
                 .withEnv(ITUtil.JACOCO_SKIPITCOVERAGE, System.getProperty(ITUtil.JACOCO_SKIPITCOVERAGE))
                 .withLocalCompose(true)
-                .waitingFor(ITUtil.CHANNELFINDER, Wait.forLogMessage(ITUtil.INTEGRATIONTEST_LOG_MESSAGE, 1));
+                .waitingFor(ITUtil.CHANNELFINDER, Wait.forHealthcheck());
     }
 
     /**

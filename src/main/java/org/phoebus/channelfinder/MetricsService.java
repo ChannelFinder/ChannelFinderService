@@ -42,23 +42,17 @@ public class MetricsService {
 
     private final ChannelRepository channelRepository;
     private final PropertyRepository propertyRepository;
-    private final TagRepository tagRepository;
-    private final MeterRegistry meterRegistry;
-
     @Autowired
-    public MetricsService(final ChannelRepository channelRepository, final PropertyRepository propertyRepository, final TagRepository tagRepository,
-                          final MeterRegistry meterRegistry) {
+    public MetricsService(final ChannelRepository channelRepository, final PropertyRepository propertyRepository, final TagRepository tagRepository, final MeterRegistry meterRegistry) {
         this.channelRepository = channelRepository;
         this.propertyRepository = propertyRepository;
-        this.tagRepository = tagRepository;
-        this.meterRegistry = meterRegistry;
-        registerGaugeMetrics();
+        registerGaugeMetrics(meterRegistry, tagRepository);
     }
 
     MultiGauge propertyCounts;
     MultiGauge tagCounts;
 
-    private void registerGaugeMetrics(){
+    private void registerGaugeMetrics(MeterRegistry meterRegistry, TagRepository tagRepository){
         Gauge.builder(METRIC_NAME_CHANNEL_COUNT, () -> channelRepository.count(new LinkedMultiValueMap<>()))
                 .description(METRIC_DESCRIPTION_CHANNEL_COUNT)
                 .register(meterRegistry);
