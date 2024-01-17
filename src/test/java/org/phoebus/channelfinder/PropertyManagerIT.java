@@ -69,20 +69,11 @@ class PropertyManagerIT {
 
     @AfterEach
     public void cleanup() {
-        // clean up
-        testChannels.forEach(channel -> {
-            try {
-                if (channelRepository.existsById(channel.getName()))
-                    channelRepository.deleteById(channel.getName());
-            } catch (Exception e) {
-                System.out.println("Failed to clean up channel: " + channel.getName());
-            }
-        });
-        propertyRepository.findAll().forEach(property -> {
-            if (propertyRepository.existsById(property.getName())) {
-                propertyRepository.deleteById(property.getName());
-            }
-        });
+        
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.set("~name", "*");
+        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        propertyRepository.findAll().forEach(p -> propertyRepository.deleteById(p.getName()));
     }
     @AfterAll
     void tearDown() throws IOException {

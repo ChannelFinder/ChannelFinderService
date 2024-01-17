@@ -47,7 +47,6 @@ class ChannelScrollIT {
     @AfterEach
     public void cleanup() throws InterruptedException {
         populateService.cleanupDB();
-        Thread.sleep(10000);
     }
 
     @BeforeAll

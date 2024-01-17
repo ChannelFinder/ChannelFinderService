@@ -476,40 +476,12 @@ class ChannelRepositoryIT {
 
     @AfterEach
     public void cleanup() {
-        // clean up
-        testTags.forEach(tag -> {
-            try {
-                tagRepository.deleteById(tag.getName());
-            } catch (Exception e) {
-                System.out.println("Failed to clean up tag: " + tag.getName());
-            }
-        });
-        testUpdatedTags.forEach(tag -> {
-            try {
-                tagRepository.deleteById(tag.getName());
-            } catch (Exception e) {
-                System.out.println("Failed to clean up tag: " + tag.getName());
-            }
-        });
-        testProperties.forEach(property -> {
-            try {
-                propertyRepository.deleteById(property.getName());
-            } catch (Exception e) {
-                System.out.println("Failed to clean up property: " + property.getName());
-            }
-        });
-        testUpdatedProperties.forEach(property -> {
-            try {
-                propertyRepository.deleteById(property.getName());
-            } catch (Exception e) {
-                System.out.println("Failed to clean up property: " + property.getName());
-            }
-        });
-        cleanupTestChannels.forEach(channel -> {
-            if (channelRepository.existsById(channel.getName())) {
-                channelRepository.deleteById(channel.getName());
-            }
-        });
+        
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.set("~name", "*");
+        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        tagRepository.findAll().forEach(t -> tagRepository.deleteById(t.getName()));
+        propertyRepository.findAll().forEach(p -> propertyRepository.deleteById(p.getName()));
     }
 
     @AfterAll

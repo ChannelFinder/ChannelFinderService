@@ -63,7 +63,6 @@ class ChannelRepositorySearchIT {
     @AfterEach
     public void cleanup() throws InterruptedException {
         populateService.cleanupDB();
-        Thread.sleep(5000);
     }
 
     /**

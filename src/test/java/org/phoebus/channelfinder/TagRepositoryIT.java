@@ -241,11 +241,10 @@ class TagRepositoryIT {
 
     @AfterEach
     public void cleanup() {
-        // clean up
-        cleanupTestTags.forEach(tag -> {
-            if (tagRepository.existsById(tag.getName())) {
-                tagRepository.deleteById(tag.getName());
-            }
-        });
+        
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.set("~name", "*");
+        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        tagRepository.findAll().forEach(t -> tagRepository.deleteById(t.getName()));
     }
 }
