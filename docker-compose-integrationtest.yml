@@ -40,6 +40,7 @@ services:
       embedded_ldap.enabled: "false"
       demo_auth.enabled: "true"
       skipITCoverage: "true"
+      EPICS_PVA_ENABLE_IP6: "false"
     command: >
       /bin/bash -c "
         if [ ${skipITCoverage} == false ]; then

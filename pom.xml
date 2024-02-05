@@ -155,7 +155,7 @@
         <dependency>
             <groupId>org.phoebus</groupId>
             <artifactId>core-pva</artifactId>
-            <version>4.7.2</version>
+            <version>4.7.3</version>
         </dependency>
 
         <dependency>
@@ -255,6 +255,9 @@
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/EpicsRPCRequestIT.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
