@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys, os
-from recommonmark.parser import CommonMarkParser
 
 project = u'ChannelFinder Service'
 copyright = u'Copyright (c) 2010-2020 Brookhaven National Laboratory \n Copyright (c) 2010-2020 Helmholtz-Zentrum Berlin für Materialien und Energie GmbH \n All rights reserved. Use is subject to license terms and conditions.'
@@ -19,9 +18,6 @@ templates_path = ['_templates']
 exclude_trees = ['.build']
 source_suffix = ['.rst', '.md']
 source_encoding = 'utf-8-sig'
-source_parsers = {
-  '.md': CommonMarkParser
-}
 
 # HTML options
 html_theme = 'sphinx_rtd_theme'
