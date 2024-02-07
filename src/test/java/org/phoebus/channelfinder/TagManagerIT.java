@@ -669,24 +669,11 @@ class TagManagerIT {
 
     @AfterEach
     public void cleanup() {
-        // clean up
-        testChannels().forEach(channel -> {
-            try {
-                if(channelRepository.existsById(channel.getName()))
-                    channelRepository.deleteById(channel.getName());
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Failed to clean up channel: " + channel.getName());
-            }
-        });
-        // additional cleanup for "testChannelX"
-        if(channelRepository.existsById("testChannelX"))
-            channelRepository.deleteById("testChannelX");
-        tagRepository.findAll().forEach(tag -> {
-            if (tagRepository.existsById(tag.getName())) {
-                tagRepository.deleteById(tag.getName());
-                logger.log(Level.INFO, "deleted tag " + tag.getName());
-            }
-        });
+        
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.set("~name", "*");
+        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        tagRepository.findAll().forEach(t -> tagRepository.deleteById(t.getName()));
     }
 
     /**
