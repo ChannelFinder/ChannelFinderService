@@ -32,7 +32,7 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
 
 * Prerequisites
 
-  * JDK 11
+  * JDK 17
   * Elastic version 8.2.x
   * <For authN/authZ using LDAP:> LDAP server, e.g. OpenLDAP
 
@@ -45,7 +45,7 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
 * Build 
 ```
 # Debian 10
-sudo apt-get install openjdk-11-jdk maven git curl wget
+sudo apt-get install openjdk-17-jdk maven git curl wget
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.2.0-amd64.deb
 sudo dpkg -i elasticsearch-8.2.0-amd64.deb
 sudo systemctl start elasticsearch

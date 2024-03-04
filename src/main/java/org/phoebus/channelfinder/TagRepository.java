@@ -2,11 +2,11 @@ package org.phoebus.channelfinder;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
@@ -104,14 +104,14 @@ public class TagRepository implements CrudRepository<Tag, String> {
                 }
                 // TODO cleanup? or throw exception?
             } else {
-                return findAllById(tags.stream().map(Tag::getName).collect(Collectors.toList()));
+                return findAllById(tags.stream().map(Tag::getName).toList());
             }
         } catch (IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
             logger.log(Level.SEVERE, message, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
-        return null;
+        return Collections.emptyList();
     }
 
     /**
@@ -186,7 +186,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
                 return (Iterable<S>) findAllById(
                         StreamSupport.stream(tags.spliterator(), false)
                                 .map(Tag::getName)
-                                .collect(Collectors.toList()));
+                                .toList());
             }
         } catch (IOException e) {
             String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
@@ -226,7 +226,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
                 if(withChannels) {
                     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
                     params.add("~tag", tag.getName());
-                    tag.setChannels(channelRepository.search(params).getChannels());
+                    tag.setChannels(channelRepository.search(params).channels());
                 }
                 return Optional.of(tag);
             } else {
@@ -267,7 +267,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
-            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+            return response.hits().hits().stream().map(Hit::source).toList();
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
@@ -283,14 +283,14 @@ public class TagRepository implements CrudRepository<Tag, String> {
     @Override
     public List<Tag> findAllById(Iterable<String> tagIds) {
         try {
-            List<String> ids = StreamSupport.stream(tagIds.spliterator(), false).collect(Collectors.toList());
+            List<String> ids = StreamSupport.stream(tagIds.spliterator(), false).toList();
             SearchRequest.Builder searchBuilder = new Builder()
                     .index(esService.getES_TAG_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
                     .size(10000)
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
-            return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+            return response.hits().hits().stream().map(Hit::source).toList();
         } catch (ElasticsearchException | IOException e) {
             logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
@@ -329,18 +329,10 @@ public class TagRepository implements CrudRepository<Tag, String> {
             BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
             params.add("~tag", tagName);
-            List<Channel> channels = channelRepository.search(params).getChannels();
-            while (channels.size() > 0) {
+            List<Channel> channels = channelRepository.search(params).channels();
+            while (!channels.isEmpty()) {
 
                 for (Channel channel : channels) {
-//                    br.operations(op -> op.update(
-//                            u -> u.index(esService.getES_CHANNEL_INDEX())
-//                                    .id(channel.getName())
-//                                    .action(a -> a.script(
-//                                                    Script.of(script -> script.inline(
-//                                                            InlineScript.of(
-//                                                                    i -> i.source("ctx._source.tags.removeIf(list_item -> list_item.name == params.remove_tag);")
-//                                                                          .params("remove_tag", JsonData.of(tagName)))))))));
                     // Or
                     channel.removeTag(channel.getTags().stream().filter(tag -> tagName.equalsIgnoreCase(tag.getName())).findAny().get());
                     br.operations(op -> op.update(
@@ -366,7 +358,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
 
                 }
                 params.set("~search_after", channels.get(channels.size() - 1).getName());
-                channels = channelRepository.search(params).getChannels();
+                channels = channelRepository.search(params).channels();
             }
             
         } catch (ElasticsearchException | IOException e) {

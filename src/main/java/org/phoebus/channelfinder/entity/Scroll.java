@@ -3,11 +3,6 @@ package org.phoebus.channelfinder.entity;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
-
-@XmlRootElement(name="scroll")
-@XmlType (propOrder={"id","channels"})
 public class Scroll {
     private String id;
     private List<Channel> channels = new ArrayList<>();

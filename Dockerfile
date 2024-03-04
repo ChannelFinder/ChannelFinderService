@@ -1,4 +1,4 @@
-FROM openjdk:11-jre
+FROM openjdk:17-jre
 WORKDIR /channelfinder
 ADD https://repo1.maven.org/maven2/org/phoebus/ChannelFinder/4.7.2/ChannelFinder-4.7.2.jar .
 

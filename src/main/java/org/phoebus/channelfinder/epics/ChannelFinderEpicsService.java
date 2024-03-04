@@ -145,7 +145,7 @@ public class ChannelFinderEpicsService {
                     }
                 }
 
-                List<Channel> result = channelRepository.search(searchParameters).getChannels();
+                List<Channel> result = channelRepository.search(searchParameters).channels();
 
                 final Map<String, List<String>> channelTable = new HashMap<>();
                 final Map<String, List<String>> channelPropertyTable = new HashMap<>();
