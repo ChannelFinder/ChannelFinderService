@@ -62,8 +62,6 @@ public class ElasticConfig implements ServletContextListener {
     private ElasticsearchClient indexClient;
     private static final AtomicBoolean esInitialized = new AtomicBoolean();
 
-    @Value("${elasticsearch.cluster.name:elasticsearch}")
-    private String clusterName;
     @Value("${elasticsearch.network.host:localhost}")
     private String host;
     @Value("${elasticsearch.http.port:9200}")
