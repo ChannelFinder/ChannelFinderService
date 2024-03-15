@@ -31,8 +31,16 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,6 +78,12 @@ public class ElasticConfig implements ServletContextListener {
     private String hostUrls;
     @Value("${elasticsearch.http.port:9200}")
     private int port;
+    @Value("${elasticsearch.authorization.header:}")
+    private String authorizationHeader;
+    @Value("${elasticsearch.authorization.username:}")
+    private String username;
+    @Value("${elasticsearch.authorization.password:}")
+    private String password;
     @Value("${elasticsearch.create.indices:true}")
     private String createIndices;
 
@@ -108,7 +122,24 @@ public class ElasticConfig implements ServletContextListener {
             for (int i = 0; i < httpHosts.length; ++i) {
                 httpHosts[i] = HttpHost.create(hostUrls.get(i));
             }
-            RestClient httpClient = RestClient.builder(httpHosts).build();
+            RestClientBuilder clientBuilder = RestClient.builder(httpHosts);
+            // Configure authentication
+            if (!config.authorizationHeader.isEmpty()) {
+                clientBuilder.setDefaultHeaders(new Header[] {new BasicHeader("Authorization", config.authorizationHeader)});
+                if (!config.username.isEmpty() || !config.password.isEmpty()) {
+                    logger.warning("elasticsearch.authorization_header is set, ignoring elasticsearch.usernamd and elasticsearch.password.");
+                }
+            } else if (!config.username.isEmpty() || !config.password.isEmpty()) {
+                final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(config.username, config.password));
+                clientBuilder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
+                    @Override
+                    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+                    }
+                });
+            }
+            RestClient httpClient = clientBuilder.build();
 
             // Create the Java API Client with the same low level client
             ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper(objectMapper));
