@@ -156,14 +156,14 @@ public class ElasticConfig implements ServletContextListener {
     }
 
     private List<String> getHostUrls() {
-        String hostUrls = this.hostUrls;
+        String localHostUrls = this.hostUrls;
         boolean hostIsDefault = (host.equals("localhost"));
-        boolean hostUrlsIsDefault = (hostUrls.equals("http://localhost:9200"));
+        boolean hostUrlsIsDefault = (localHostUrls.equals("http://localhost:9200"));
         boolean portIsDefault = (port == 9200);
         if (hostUrlsIsDefault) {
             if (!hostIsDefault || !portIsDefault) {
                 logger.warning("Specifying elasticsearch.network.host and elasticsearch.http.port is deprecated, please consider using elasticsearch.host_urls instead.");
-                hostUrls = "http://" + host + ":" + port;
+                localHostUrls = "http://" + host + ":" + port;
             }
         } else {
             if (!hostIsDefault) {
@@ -173,7 +173,7 @@ public class ElasticConfig implements ServletContextListener {
                 logger.warning("Only one of elasticsearch.host_urls and elasticsearch.http.port can be set, ignoring elasticsearch.http.port.");
             }
         }
-        return Arrays.asList(hostUrls.split(","));
+        return Arrays.asList(localHostUrls.split(","));
     }
 
     @Bean({ "searchClient" })
