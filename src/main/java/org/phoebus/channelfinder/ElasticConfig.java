@@ -157,8 +157,8 @@ public class ElasticConfig implements ServletContextListener {
 
     private List<String> getHostUrls() {
         String hostUrls = this.hostUrls;
-        boolean hostIsDefault = (host == "localhost");
-        boolean hostUrlsIsDefault = (hostUrls == "http://localhost:9200");
+        boolean hostIsDefault = (host.equals("localhost"));
+        boolean hostUrlsIsDefault = (hostUrls.equals("http://localhost:9200"));
         boolean portIsDefault = (port == 9200);
         if (hostUrlsIsDefault) {
             if (!hostIsDefault || !portIsDefault) {
