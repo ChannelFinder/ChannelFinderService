@@ -17,8 +17,6 @@ package org.phoebus.channelfinder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,7 +73,7 @@ public class ElasticConfig implements ServletContextListener {
     @Value("${elasticsearch.network.host:localhost}")
     private String host;
     @Value("${elasticsearch.host_urls:http://localhost:9200}")
-    private String hostUrls;
+    private HttpHost[] httpHosts;
     @Value("${elasticsearch.http.port:9200}")
     private int port;
     @Value("${elasticsearch.authorization.header:}")
@@ -114,14 +112,10 @@ public class ElasticConfig implements ServletContextListener {
             .addMixIn(Property.class, Property.OnlyProperty.class);
 
     private static ElasticsearchClient createClient(ElasticsearchClient currentClient, ObjectMapper objectMapper,
-                                                    List<String> hostUrls, String createIndices, ElasticConfig config) {
+                                                    HttpHost[] httpHosts, String createIndices, ElasticConfig config) {
         ElasticsearchClient client;
         if (currentClient == null) {
             // Create the low-level client
-            HttpHost[] httpHosts = new HttpHost[hostUrls.size()];
-            for (int i = 0; i < httpHosts.length; ++i) {
-                httpHosts[i] = HttpHost.create(hostUrls.get(i));
-            }
             RestClientBuilder clientBuilder = RestClient.builder(httpHosts);
             // Configure authentication
             if (!config.authorizationHeader.isEmpty()) {
@@ -155,15 +149,15 @@ public class ElasticConfig implements ServletContextListener {
 
     }
 
-    private List<String> getHostUrls() {
-        String localHostUrls = this.hostUrls;
+    private HttpHost[] getHttpHosts() {
+        HttpHost[] localHttpHosts = this.httpHosts;
         boolean hostIsDefault = host.equals("localhost");
-        boolean hostUrlsIsDefault = localHostUrls.equals("http://localhost:9200");
+        boolean hostUrlsIsDefault = localHttpHosts.length == 1 && localHttpHosts[0].equals(new HttpHost("http://localhost:9200"));
         boolean portIsDefault = (port == 9200);
         if (hostUrlsIsDefault) {
             if (!hostIsDefault || !portIsDefault) {
                 logger.warning("Specifying elasticsearch.network.host and elasticsearch.http.port is deprecated, please consider using elasticsearch.host_urls instead.");
-                localHostUrls = "http://" + host + ":" + port;
+                localHttpHosts = new HttpHost[] {new HttpHost("http://" + host + ":" + port)};
             }
         } else {
             if (!hostIsDefault) {
@@ -173,18 +167,18 @@ public class ElasticConfig implements ServletContextListener {
                 logger.warning("Only one of elasticsearch.host_urls and elasticsearch.http.port can be set, ignoring elasticsearch.http.port.");
             }
         }
-        return Arrays.asList(localHostUrls.split(","));
+        return localHttpHosts;
     }
 
     @Bean({ "searchClient" })
     public ElasticsearchClient getSearchClient() {
-        searchClient = createClient(searchClient, objectMapper, getHostUrls(), createIndices, this);
+        searchClient = createClient(searchClient, objectMapper, getHttpHosts(), createIndices, this);
         return searchClient;
     }
 
     @Bean({ "indexClient" })
     public ElasticsearchClient getIndexClient() {
-        indexClient = createClient(indexClient, objectMapper, getHostUrls(), createIndices, this);
+        indexClient = createClient(indexClient, objectMapper, getHttpHosts(), createIndices, this);
         return indexClient;
     }
 
