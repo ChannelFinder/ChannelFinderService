@@ -121,7 +121,7 @@ public class ElasticConfig implements ServletContextListener {
             if (!config.authorizationHeader.isEmpty()) {
                 clientBuilder.setDefaultHeaders(new Header[] {new BasicHeader("Authorization", config.authorizationHeader)});
                 if (!config.username.isEmpty() || !config.password.isEmpty()) {
-                    logger.warning("elasticsearch.authorization_header is set, ignoring elasticsearch.usernamd and elasticsearch.password.");
+                    logger.warning("elasticsearch.authorization_header is set, ignoring elasticsearch.username and elasticsearch.password.");
                 }
             } else if (!config.username.isEmpty() || !config.password.isEmpty()) {
                 final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
