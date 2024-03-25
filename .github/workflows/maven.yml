@@ -57,6 +57,17 @@ jobs:
       checks: write
       contents: read
     runs-on: ubuntu-latest
+    services:
+      elasticsearchtest:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.4
+        options: >-
+          --health-cmd "curl http://localhost:9200/_cluster/health"
+          --health-interval 20s
+          --health-timeout 5s
+          --health-retries 20
+        ports:
+          # <port on host>:<port on container>
+          - 9200:9200
     steps:
     - uses: actions/checkout@v3
     - name: Set up JDK 11
@@ -65,11 +76,6 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: maven
-    - uses: ankane/setup-elasticsearch@v1
-      with:
-        elasticsearch-version: 8
-        config: |
-          http.port: 9200
     - name: Clear existing docker image cache
       shell: bash
       run: docker image prune -af
