@@ -17,6 +17,7 @@ package org.phoebus.channelfinder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,7 +74,7 @@ public class ElasticConfig implements ServletContextListener {
     @Value("${elasticsearch.network.host:localhost}")
     private String host;
     @Value("${elasticsearch.host_urls:http://localhost:9200}")
-    private HttpHost[] httpHosts;
+    private String[] httpHostUrls;
     @Value("${elasticsearch.http.port:9200}")
     private int port;
     @Value("${elasticsearch.authorization.header:}")
@@ -145,15 +146,12 @@ public class ElasticConfig implements ServletContextListener {
     }
 
     private HttpHost[] getHttpHosts() {
-        HttpHost[] localHttpHosts = this.httpHosts;
         boolean hostIsDefault = host.equals("localhost");
-        boolean hostUrlsIsDefault = localHttpHosts.length == 1 && localHttpHosts[0].equals(new HttpHost("http://localhost:9200"));
+        boolean hostUrlsIsDefault = httpHostUrls.length == 1 && httpHostUrls[0].equals("http://localhost:9200");
         boolean portIsDefault = (port == 9200);
-        if (hostUrlsIsDefault) {
-            if (!hostIsDefault || !portIsDefault) {
-                logger.warning("Specifying elasticsearch.network.host and elasticsearch.http.port is deprecated, please consider using elasticsearch.host_urls instead.");
-                localHttpHosts = new HttpHost[] {new HttpHost("http://" + host + ":" + port)};
-            }
+        if (hostUrlsIsDefault && (!hostIsDefault || !portIsDefault)) {
+            logger.warning("Specifying elasticsearch.network.host and elasticsearch.http.port is deprecated, please consider using elasticsearch.host_urls instead.");
+            return new HttpHost[] {new HttpHost(host, port)};
         } else {
             if (!hostIsDefault) {
                 logger.warning("Only one of elasticsearch.host_urls and elasticsearch.network.host can be set, ignoring elasticsearch.network.host.");
@@ -161,8 +159,8 @@ public class ElasticConfig implements ServletContextListener {
             if (!portIsDefault) {
                 logger.warning("Only one of elasticsearch.host_urls and elasticsearch.http.port can be set, ignoring elasticsearch.http.port.");
             }
+            return Arrays.stream(httpHostUrls).map(HttpHost::create).toArray(HttpHost[]::new);
         }
-        return localHttpHosts;
     }
 
     @Bean({ "searchClient" })
