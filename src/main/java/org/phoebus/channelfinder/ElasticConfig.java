@@ -138,7 +138,8 @@ public class ElasticConfig implements ServletContextListener {
         } else {
             client = currentClient;
         }
-        if (Boolean.parseBoolean(createIndices) && esInitialized.compareAndSet(false, true)) {
+        esInitialized.set(!Boolean.parseBoolean(createIndices));
+        if (esInitialized.compareAndSet(false, true)) {
             config.elasticIndexValidation(client);
         }
         return client;
