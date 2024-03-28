@@ -69,7 +69,6 @@ public class ElasticConfig implements ServletContextListener {
 
     private ElasticsearchClient searchClient;
     private ElasticsearchClient indexClient;
-    private static final AtomicBoolean esInitialized = new AtomicBoolean();
 
     @Value("${elasticsearch.network.host:localhost}")
     private String host;
@@ -138,8 +137,7 @@ public class ElasticConfig implements ServletContextListener {
         } else {
             client = currentClient;
         }
-        esInitialized.set(!Boolean.parseBoolean(createIndices));
-        if (esInitialized.compareAndSet(false, true)) {
+        if (Boolean.parseBoolean(createIndices)) {
             config.elasticIndexValidation(client);
         }
         return client;
