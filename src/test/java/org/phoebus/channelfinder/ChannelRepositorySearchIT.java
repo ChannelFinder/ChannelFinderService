@@ -23,8 +23,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.lang.Math.min;
-import static org.phoebus.channelfinder.example.PopulateService.val_bucket;
-import static org.phoebus.channelfinder.example.PopulateService.val_bucket_size;
+import static org.phoebus.channelfinder.example.PopulateService.valBucket;
+import static org.phoebus.channelfinder.example.PopulateService.valBucketSize;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelRepository.class)
@@ -34,7 +34,7 @@ class ChannelRepositorySearchIT {
 
     // Need at least 10 000 channels to test Elastic search beyond the 10 000 default result limit
     // So needs to be a minimum of 7
-    private final int CELLS = 7;
+    private final int CELLS = 100;
     @Autowired
     ChannelRepository channelRepository;
     @Autowired
@@ -87,12 +87,12 @@ class ChannelRepositorySearchIT {
         Assertions.assertEquals(result.getChannels().get(0).getName(), channelNames.get(0));
 
         logger.log(Level.INFO, "Search for all channels via wildcards");
-        searchName(2, "BR:C001-BI:2{BLA}Pos:?-RB");
+        searchName(2,2, "BR:C001-BI:2{BLA}Pos:?-RB");
 
-        searchName(4, "BR:C001-BI:?{BLA}Pos:*");
+        searchName(4, 4, "BR:C001-BI:?{BLA}Pos:*");
 
         logger.log(Level.INFO, "Search for all 1000 channels");
-        searchName(1000 * CELLS, "SR*");
+        searchName(min(1000 * CELLS, ELASTIC_LIMIT), 1000 * CELLS, "SR*");
 
         logger.log(Level.INFO, "Search for all 1000 SR channels and all 500 booster channels");
         long allCount = 1500 * CELLS;
@@ -117,33 +117,32 @@ class ChannelRepositorySearchIT {
         assertSearchCount(allCount, (int) elasticDefaultCount, allCount, searchParameters);
 
         logger.log(Level.INFO, "Search for channels based on a tag");
-        for (long id = 1; id < val_bucket.size(); id++) {
+        for (long id = 1; id < valBucket.size(); id++) {
 
-            for (int bucket_index = 0; bucket_index < val_bucket.size(); bucket_index++) {
-                checkGroup(val_bucket_size.get(bucket_index), "~tag", "group" + id + "_" + val_bucket.get(bucket_index));
-                checkGroup(val_bucket_size.get(bucket_index), "group" + id, String.valueOf(val_bucket.get(bucket_index)));
+            for (int bucket_index = 0; bucket_index < valBucket.size(); bucket_index++) {
+                checkGroup(valBucketSize.get(bucket_index), "~tag", "group" + id + "_" + valBucket.get(bucket_index));
+                checkGroup(valBucketSize.get(bucket_index), "group" + id, String.valueOf(valBucket.get(bucket_index)));
             }
 
         }
 
     }
 
-    private void searchName(int expected, String name) {
+    private void searchName(int expectedChannels, int expectedQueryCount, String name) {
         MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
         searchParameters.add("~name", name);
-        assertSearchCount(expected, expected, expected, searchParameters);
+        assertSearchCount(expectedChannels, expectedChannels, expectedQueryCount, searchParameters);
     }
 
     private void assertSearchCount(long expectedResultCount, int expectedChannelsCount, long expectedQueryCount, MultiValueMap<String, String> searchParameters) {
-
+        logger.log(Level.INFO, "Search for " + searchParameters + " expected " + expectedResultCount + " results " + expectedChannelsCount + " channels " + expectedQueryCount + " queries");
         // Act
         SearchResult result = channelRepository.search(searchParameters);
-        long countResult = channelRepository.count(searchParameters);
 
         // Assert
         Assertions.assertEquals(expectedResultCount, result.getCount());
         Assertions.assertEquals(expectedChannelsCount, result.getChannels().size());
-        Assertions.assertEquals(expectedQueryCount, countResult);
+        Assertions.assertEquals(expectedQueryCount, channelRepository.count(searchParameters));
     }
 
     private void checkGroup(int bucket, String key, String value) {
@@ -153,10 +152,10 @@ class ChannelRepositorySearchIT {
         searchParameters.add(key, value);
 
         SearchResult result = channelRepository.search(searchParameters);
-        long countResult = channelRepository.count(searchParameters);
         Integer expectedCount = CELLS * bucket;
-        Assertions.assertEquals(expectedCount, Integer.valueOf(result.getChannels().size()), "Search: " + maptoString(searchParameters));
-        Assertions.assertEquals(expectedCount, Integer.valueOf((int) countResult));
+        logger.log(Level.INFO, "Search for " + maptoString(searchParameters) + " expected " + expectedCount + " results");
+        Assertions.assertEquals(min(expectedCount, ELASTIC_LIMIT), Integer.valueOf(result.getChannels().size()), "Search: " + maptoString(searchParameters));
+        Assertions.assertEquals(expectedCount, Integer.valueOf((int) channelRepository.count(searchParameters)));
     }
 
     private String maptoString(MultiValueMap<String, String> searchParameters) {
