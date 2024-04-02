@@ -9,7 +9,7 @@ public interface ChannelProcessor {
 
     boolean enabled();
 
-    String processorName();
+    String processorInfo();
 
     void process(List<Channel> channels) throws JsonProcessingException;
 
