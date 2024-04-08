@@ -25,8 +25,8 @@ public class ChannelProcessorService {
         return channelProcessors.size();
     }
 
-    List<String> getProcessorsNames() {
-        return channelProcessors.stream().map(ChannelProcessor::processorName).collect(Collectors.toList());
+    List<String> getProcessorsInfo() {
+        return channelProcessors.stream().map(ChannelProcessor::processorInfo).collect(Collectors.toList());
     }
 
     /**

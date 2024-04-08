@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,10 +71,24 @@ public class AAChannelProcessor implements ChannelProcessor {
     }
 
     @Override
-    public String processorName() {
-        return "Process " + archivePropertyName + " properties on channels";
+    public String processorInfo() {
+        Map<String, String> processorProperties = Map.of("archiveProperty", archivePropertyName,
+                "archiverProperty", archiverPropertyName,
+                "Archivers", aaURLs.keySet().toString(),
+                "AutoPauseOn", autoPauseOptions.toString()
+        );
+        return "AAChannelProcessor: ProcessProperties " + processorProperties;
     }
 
+    /**
+     * Processes a list of channels through the archiver workflow.
+     * First the status of each pv is checked against the archiver.
+     * If the pv is not being archived and is not paused then the pv will be submitted to be archived.
+     * If the pvStatus auto pause is set, then the pv will be auto pause resumed as well.
+     *
+     * @param channels List of channels
+     * @throws JsonProcessingException If processing archiver responses fail.
+     */
     @Override
     public void process(List<Channel> channels) throws JsonProcessingException {
         if (channels.isEmpty()) {
@@ -140,6 +155,10 @@ public class AAChannelProcessor implements ChannelProcessor {
 
     private Map<ArchiveAction, List<ArchivePV>> getArchiveActions(
             Map<String, ArchivePV> archivePVS, String archiverURL) {
+        if (StringUtils.isEmpty(archiverURL)) {
+            return Map.of();
+        }
+
         logger.log(Level.INFO, () -> String.format("Get archiver status in archiver %s", archiverURL));
 
         Map<ArchiveAction, List<ArchivePV>> result = new EnumMap<>(ArchiveAction.class);
@@ -180,7 +199,7 @@ public class AAChannelProcessor implements ChannelProcessor {
 
         } catch (JsonProcessingException e) {
             // problem collecting policies from AA, so warn and return empty list
-            logger.log(Level.WARNING, "Could not get AA pv Status list: " + e.getMessage());
+            logger.log(Level.WARNING, () -> "Could not get AA pv Status list: " + e.getMessage());
             return result;
         }
     }
@@ -257,13 +276,16 @@ public class AAChannelProcessor implements ChannelProcessor {
 
     private Map<String, List<String>> getAAsPolicies(Map<String, String> aaURLs) {
         Map<String, List<String>> result = new HashMap<>();
-        for (String aaAlias : aaURLs.keySet()) {
-            result.put(aaAlias, getAAPolicies(aaURLs.get(aaAlias)));
+        for (Map.Entry<String, String> aa : aaURLs.entrySet()) {
+            result.put(aa.getKey(), getAAPolicies(aa.getValue()));
         }
         return result;
     }
 
     private List<String> getAAPolicies(String aaURL) {
+        if (StringUtils.isEmpty(aaURL)) {
+            return List.of();
+        }
         try {
             String response = client.get()
                     .uri(URI.create(aaURL + POLICY_RESOURCE))

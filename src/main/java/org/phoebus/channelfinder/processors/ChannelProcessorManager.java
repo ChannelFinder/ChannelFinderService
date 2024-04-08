@@ -55,7 +55,7 @@ public class ChannelProcessorManager {
 
     @GetMapping("/info")
     public List<String> processorInfo() {
-        return channelProcessorService.getProcessorsNames();
+        return channelProcessorService.getProcessorsInfo();
     }
 
     @PutMapping("/process/all")
