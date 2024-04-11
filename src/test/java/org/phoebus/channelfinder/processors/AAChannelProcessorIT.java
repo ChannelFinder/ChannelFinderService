@@ -114,7 +114,8 @@ class AAChannelProcessorIT {
                     .addHeader("Content-Type", "application/json"));
         }
 
-        aaChannelProcessor.process(List.of(channel));
+        long count = aaChannelProcessor.process(List.of(channel));
+        assertEquals(count, archiverEndpoint.isEmpty() ? 0 : 1);
 
         int expectedRequests = 1;
         RecordedRequest requestPolicy = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);

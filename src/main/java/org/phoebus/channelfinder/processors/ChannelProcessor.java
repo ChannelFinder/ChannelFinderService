@@ -11,6 +11,6 @@ public interface ChannelProcessor {
 
     String processorInfo();
 
-    void process(List<Channel> channels) throws JsonProcessingException;
+    long process(List<Channel> channels) throws JsonProcessingException;
 
 }
