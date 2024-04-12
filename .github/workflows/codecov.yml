@@ -28,11 +28,11 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
         cache: maven
-    - uses: ankane/setup-elasticsearch@v1
+    - name: Runs Elasticsearch
+      uses: elastic/elastic-github-actions/elasticsearch@master
       with:
-        elasticsearch-version: 8
-        config: |
-          http.port: 9200
+        stack-version: 8.11.2
+        security-enabled: false
     - name: Clear existing docker image cache
       shell: bash
       run: docker image prune -af
