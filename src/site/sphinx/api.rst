@@ -34,6 +34,8 @@ All operations are idempotent, i.e. when repeatedly applying the identical opera
 
 Directory data can be uploaded and retrieved in XML or JSON notation, the client specifies the type using standard HTTP headers (“Content-Type”, “Accepts”).
 
+Note an automatically generated documentation of the api can be accessed via 'http://channelfinder.host/v3/api-docs' or 'http://channelfinder.host/swagger-ui' for an interactive version.
+
 Permissions
 -----------
 
