@@ -40,7 +40,7 @@ services:
       embedded_ldap.enabled: "false"
       demo_auth.enabled: "true"
       skipITCoverage: "true"
-      EPICS_PVA_ENABLE_IP6: "false"
+      EPICS_PVAS_INTF_ADDR_LIST: "0.0.0.0"
     command: >
       /bin/bash -c "
         if [ ${skipITCoverage} == false ]; then
@@ -81,7 +81,3 @@ volumes:
 networks:
   channelfinder-net:
     driver: bridge
-    enable_ipv6: true
-    ipam:
-      config:
-        - subnet: 2001:0DB8::/112
