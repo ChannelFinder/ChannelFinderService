@@ -91,7 +91,7 @@ EPICS PV Access Server
 
 ChannelFinder provides an EPICS PV Access Server to access the api through pvAccess.
 There are a number of options that can be set such EPICS_PVA_ADDR_LIST. To see the
-full list go to https://github.com/ControlSystemStudio/phoebus/blob/v4.7.3/core/pva/src/main/java/org/epics/pva/PVASettings.java
+full list go to `PVASettings javadoc <https://javadoc.io/doc/org.phoebus/core-pva/latest/org/epics/pva/PVASettings.html>`_.
 
 Since it is common to run ChannelFinder inside a docker container which by default does not support IPv6 you may have
 error messages in the logs about launching the EPICS PV Access service. If you only wish to have the EPICS Service available on
