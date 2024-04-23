@@ -1,4 +1,4 @@
-FROM openjdk:11-jre
+FROM openjdk:17-jre
 
 # deployment unit
 COPY target/ChannelFinder-*.jar /channelfinder/ChannelFinder-*.jar

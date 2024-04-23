@@ -244,7 +244,7 @@ class PropertyRepositoryIT {
 
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add(TEST_PROPERTY_NAME,"*");
-        List<Channel> chans = channelRepository.search(params).getChannels();
+        List<Channel> chans = channelRepository.search(params).channels();
         // verify the property was deleted from channels as expected
         Assertions.assertTrue(chans.isEmpty(), "Failed to remove property from channel");
     }
@@ -254,7 +254,7 @@ class PropertyRepositoryIT {
         
         MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
         map.set("~name", "*");
-        channelRepository.search(map).getChannels().forEach(c -> channelRepository.deleteById(c.getName()));
+        channelRepository.search(map).channels().forEach(c -> channelRepository.deleteById(c.getName()));
         List.of(TEST_PROPERTY_NAME, TEST_PROPERTY_NAME + 1).forEach(pName ->propertyRepository.deleteById(pName));
     }
 }

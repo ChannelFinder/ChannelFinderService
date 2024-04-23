@@ -9,9 +9,6 @@ package org.phoebus.channelfinder.entity;
  * All rights reserved. Use is subject to license terms.
  * #L%
  */
-
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,8 +19,6 @@ import java.util.stream.Collectors;
  * @author Ralph Lange {@literal <ralph.lange@gmx.de>}
  */
 
-@XmlRootElement(name="channel")
-@XmlType (propOrder={"name","owner","properties","tags"})
 public class Channel {
     private String name;
     private String owner;
