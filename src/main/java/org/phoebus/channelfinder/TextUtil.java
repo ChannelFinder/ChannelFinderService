@@ -23,6 +23,7 @@ public class TextUtil {
 
     public static final String BULK_HAD_ERRORS            = "Bulk had errors";
     public static final String CREATED_INDEX_ACKNOWLEDGED = "Created index {0} acknowledged {1}";
+    public static final String UPDATE_INDEX_ACKNOWLEDGED  = "Updated index {0} acknowledged {1}";
     public static final String DELETE_ALL_NOT_SUPPORTED   = "Delete all is not supported.";
     public static final String FAILED_TO_CREATE_INDEX     = "Failed to create index {0}";
 

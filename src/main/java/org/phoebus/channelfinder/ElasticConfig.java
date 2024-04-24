@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +29,9 @@ import javax.servlet.ServletContextListener;
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
 import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
+import co.elastic.clients.elasticsearch.indices.IndexSettings;
+import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsRequest;
+import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsResponse;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.Header;
@@ -91,8 +95,10 @@ public class ElasticConfig implements ServletContextListener {
     private String ES_PROPERTY_INDEX;
     @Value("${elasticsearch.channel.index:channelfinder}")
     private String ES_CHANNEL_INDEX;
-    @Value("${elasticsearch.query.size}")
+    @Value("${elasticsearch.query.size:10000}")
     private int ES_QUERY_SIZE;
+    @Value("${elasticsearch.maxResultWindow.size:10000}")
+    private int ES_MAX_RESULT_WINDOW_SIZE;
 
     public String getES_TAG_INDEX() {
         return this.ES_TAG_INDEX;
@@ -204,13 +210,16 @@ public class ElasticConfig implements ServletContextListener {
         try (InputStream is = ElasticConfig.class.getResourceAsStream(mapping)) {
             BooleanResponse exits = client.indices().exists(ExistsRequest.of(e -> e.index(esIndex)));
             if(!exits.value()) {
-
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
-                                c -> c.index(esIndex).withJson(is)));
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, esIndex, result.acknowledged()));
+                                c -> c.index(ES_CHANNEL_INDEX)
+                                        .withJson(is)
+                                        .settings(IndexSettings.of(builder -> builder.maxResultWindow(ES_MAX_RESULT_WINDOW_SIZE)))));
+                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_CHANNEL_INDEX, result.acknowledged()));
             }
-
+            PutIndicesSettingsResponse response = client.indices()
+                    .putSettings(PutIndicesSettingsRequest.of(builder -> builder.index(ES_CHANNEL_INDEX).settings(IndexSettings.of(i -> i.maxResultWindow(ES_MAX_RESULT_WINDOW_SIZE)))));
+            logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.UPDATE_INDEX_ACKNOWLEDGED, ES_CHANNEL_INDEX, response.acknowledged()));
         } catch (IOException e) {
             logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, esIndex), e);
         }
