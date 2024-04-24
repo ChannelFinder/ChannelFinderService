@@ -308,7 +308,7 @@ public class ChannelManager {
             }
 
             // Validate request parameters
-            validateChannelRequest(channels);   
+            validateChannelRequest(channels);
 
             final long time = System.currentTimeMillis() - start;
             channelManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.PATH_POST_PREPERATION_TIME, servletContext.getContextPath(), time));
