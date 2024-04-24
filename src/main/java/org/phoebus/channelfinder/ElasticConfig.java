@@ -112,6 +112,9 @@ public class ElasticConfig implements ServletContextListener {
     public int getES_QUERY_SIZE() {
         return this.ES_QUERY_SIZE;
     }
+    public int getES_MAX_RESULT_WINDOW_SIZE() {
+        return ES_MAX_RESULT_WINDOW_SIZE;
+    }
 
     ObjectMapper objectMapper = new ObjectMapper()
             .addMixIn(Tag.class, Tag.OnlyTag.class)

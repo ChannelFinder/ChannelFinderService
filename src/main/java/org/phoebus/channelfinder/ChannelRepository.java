@@ -412,11 +412,17 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
      */
     public SearchResult search(MultiValueMap<String, String> searchParameters) {
         BuiltQuery builtQuery = getBuiltQuery(searchParameters);
+        Integer finalSize = builtQuery.size;
+        Integer finalFrom = builtQuery.from;
+
+        if(builtQuery.size + builtQuery.from >= esService.getES_MAX_RESULT_WINDOW_SIZE()) {
+            String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE,
+                    searchParameters,
+                    "Max search window exceeded, use the " + CFResourceDescriptors.SCROLL_RESOURCE_URI + " api.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
 
         try {
-            Integer finalSize = builtQuery.size;
-            Integer finalFrom = builtQuery.from;
-
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
             searchBuilder.index(esService.getES_CHANNEL_INDEX())
                             .query(builtQuery.boolQuery.build()._toQuery())
