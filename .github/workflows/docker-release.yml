@@ -4,6 +4,8 @@ name: Release docker image
 on:
   push:
     branches: [ "master" ]
+    tags:
+      - '**'
 
 env:
   REGISTRY: ghcr.io
