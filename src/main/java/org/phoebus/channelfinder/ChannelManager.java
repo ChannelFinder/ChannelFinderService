@@ -65,7 +65,7 @@ public class ChannelManager {
     ChannelProcessorService channelProcessorService;
 
     /**
-     * GET method for retrieving a collection of Channel instances, based on a
+     * GET method for querying a collection of Channel instances, based on a
      * multi-parameter query specifying patterns for tags, property values, and
      * channel names to match against.
      * 
@@ -77,11 +77,26 @@ public class ChannelManager {
         return channelRepository.search(allRequestParams).channels();
     }
 
+    /**
+     * GET method for querying for a collection of Channel instances, based on a
+     * multi-parameter query specifying patterns for tags, property values, and
+     * channel names to match against.
+     *
+     * @param allRequestParams query parameters
+     * @return SearchResult a count to the total number of matches and the first 10k hits
+     */
     @GetMapping("/combined")
     public SearchResult combinedQuery(@RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.search(allRequestParams);
     }
 
+    /**
+     * GET method for quering the number of matches to a multi-parameter query specifying patterns for tags, property values, and
+     * channel names to match against.
+     *
+     * @param allRequestParams query parameters
+     * @return a total number of channels that match the query parameters
+     */
     @GetMapping("/count")
     public long queryCount(@RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.count(allRequestParams);
