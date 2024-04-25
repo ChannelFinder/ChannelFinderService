@@ -215,14 +215,14 @@ public class ElasticConfig implements ServletContextListener {
             if(!exits.value()) {
                 CreateIndexResponse result = client.indices().create(
                         CreateIndexRequest.of(
-                                c -> c.index(ES_CHANNEL_INDEX)
+                                c -> c.index(esIndex)
                                         .withJson(is)
                                         .settings(IndexSettings.of(builder -> builder.maxResultWindow(ES_MAX_RESULT_WINDOW_SIZE)))));
-                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, ES_CHANNEL_INDEX, result.acknowledged()));
+                logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATED_INDEX_ACKNOWLEDGED, esIndex, result.acknowledged()));
             }
             PutIndicesSettingsResponse response = client.indices()
-                    .putSettings(PutIndicesSettingsRequest.of(builder -> builder.index(ES_CHANNEL_INDEX).settings(IndexSettings.of(i -> i.maxResultWindow(ES_MAX_RESULT_WINDOW_SIZE)))));
-            logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.UPDATE_INDEX_ACKNOWLEDGED, ES_CHANNEL_INDEX, response.acknowledged()));
+                    .putSettings(PutIndicesSettingsRequest.of(builder -> builder.index(esIndex).settings(IndexSettings.of(i -> i.maxResultWindow(ES_MAX_RESULT_WINDOW_SIZE)))));
+            logger.log(Level.INFO, () -> MessageFormat.format(TextUtil.UPDATE_INDEX_ACKNOWLEDGED, esIndex, response.acknowledged()));
         } catch (IOException e) {
             logger.log(Level.WARNING, MessageFormat.format(TextUtil.FAILED_TO_CREATE_INDEX, esIndex), e);
         }
