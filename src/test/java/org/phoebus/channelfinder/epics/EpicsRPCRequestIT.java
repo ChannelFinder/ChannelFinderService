@@ -33,6 +33,7 @@ import java.util.logging.Logger;
  *
  */
 
+// TODO fix test in CI
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelFinderEpicsService.class)
 @WithMockUser(roles = "CF-ADMINS")

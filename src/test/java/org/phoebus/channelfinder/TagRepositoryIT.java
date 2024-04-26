@@ -228,7 +228,7 @@ class TagRepositoryIT {
         // verify the tag was deleted from all channels as expected
         MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
         params.add("~tag","testChannel");
-        List<Channel> chans = channelRepository.search(params).getChannels();
+        List<Channel> chans = channelRepository.search(params).channels();
         Assertions.assertTrue(chans.isEmpty(), "Failed to remove tag from channel");
         
         // channel clean up
@@ -241,11 +241,10 @@ class TagRepositoryIT {
 
     @AfterEach
     public void cleanup() {
-        // clean up
-        cleanupTestTags.forEach(tag -> {
-            if (tagRepository.existsById(tag.getName())) {
-                tagRepository.deleteById(tag.getName());
-            }
-        });
+        
+        MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+        map.set("~name", "*");
+        channelRepository.search(map).channels().forEach(c -> channelRepository.deleteById(c.getName()));
+        tagRepository.findAll().forEach(t -> tagRepository.deleteById(t.getName()));
     }
 }

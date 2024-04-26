@@ -40,6 +40,7 @@ services:
       embedded_ldap.enabled: "false"
       demo_auth.enabled: "true"
       skipITCoverage: "true"
+      EPICS_PVAS_INTF_ADDR_LIST: "0.0.0.0"
     command: >
       /bin/bash -c "
         if [ ${skipITCoverage} == false ]; then
@@ -54,7 +55,7 @@ services:
       retries: 5
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.2.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.2
     hostname: elasticsearch-cf
     networks:
       - channelfinder-net
@@ -80,7 +81,3 @@ volumes:
 networks:
   channelfinder-net:
     driver: bridge
-    enable_ipv6: true
-    ipam:
-      config:
-        - subnet: 2001:0DB8::/112

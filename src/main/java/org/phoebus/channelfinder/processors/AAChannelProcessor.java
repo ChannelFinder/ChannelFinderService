@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,15 +71,31 @@ public class AAChannelProcessor implements ChannelProcessor {
     }
 
     @Override
-    public String processorName() {
-        return "Process " + archivePropertyName + " properties on channels";
+    public String processorInfo() {
+        Map<String, String> processorProperties = Map.of("archiveProperty", archivePropertyName,
+                "archiverProperty", archiverPropertyName,
+                "Archivers", aaURLs.keySet().toString(),
+                "AutoPauseOn", autoPauseOptions.toString()
+        );
+        return "AAChannelProcessor: ProcessProperties " + processorProperties;
     }
 
+    /**
+     * Processes a list of channels through the archiver workflow.
+     * First the status of each pv is checked against the archiver.
+     * If the pv is not being archived and is not paused then the pv will be submitted to be archived.
+     * If the pvStatus auto pause is set, then the pv will be auto pause resumed as well.
+     *
+     * @param channels List of channels
+     * @return Return number of channels processed
+     * @throws JsonProcessingException If processing archiver responses fail.
+     */
     @Override
-    public void process(List<Channel> channels) throws JsonProcessingException {
+    public long process(List<Channel> channels) throws JsonProcessingException {
         if (channels.isEmpty()) {
-            return;
+            return 0;
         }
+
         Map<String, List<ArchivePV>> aaArchivePVS = new HashMap<>(); // AA identifier, ArchivePV
         for (String alias : aaURLs.keySet()) {
             aaArchivePVS.put(alias, new ArrayList<>());
@@ -91,36 +108,49 @@ public class AAChannelProcessor implements ChannelProcessor {
                     .filter(xmlProperty -> archivePropertyName.equalsIgnoreCase(xmlProperty.getName()))
                     .findFirst();
             if (archiveProperty.isPresent()) {
-                String pvStatus = channel.getProperties().stream()
-                        .filter(xmlProperty -> PV_STATUS_PROPERTY_NAME.equalsIgnoreCase(xmlProperty.getName()))
-                        .findFirst()
-                        .map(Property::getValue)
-                        .orElse(PV_STATUS_INACTIVE);
-                String archiverAlias = channel.getProperties().stream()
-                        .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
-                        .findFirst()
-                        .map(Property::getValue)
-                        .orElse(defaultArchiver);
-                ArchivePV newArchiverPV = createArchivePV(
-                        policyLists.get(archiverAlias),
-                        channel,
-                        archiveProperty.get().getValue(),
-                        autoPauseOptions.contains(PV_STATUS_PROPERTY_NAME) ? pvStatus : PV_STATUS_ACTIVE);
-                aaArchivePVS.get(archiverAlias).add(newArchiverPV);
+                try {
+                    addChannelChange(channel, aaArchivePVS, policyLists, archiveProperty);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, String.format("Failed to process %s", channel), e);
+                }
             } else if (autoPauseOptions.contains(archivePropertyName)) {
                 aaURLs.keySet().forEach(archiverAlias -> aaArchivePVS
                         .get(archiverAlias)
                         .add(createArchivePV(List.of(), channel, "", PV_STATUS_INACTIVE)));
             }
         });
-
+        long count = 0;
         for (Map.Entry<String, List<ArchivePV>> e : aaArchivePVS.entrySet()) {
             String archiverURL = aaURLs.get(e.getKey());
             Map<String, ArchivePV> archivePVSList =
                     e.getValue().stream().collect(Collectors.toMap(archivePV -> archivePV.pv, archivePV -> archivePV));
             Map<ArchiveAction, List<ArchivePV>> archiveActionArchivePVMap =
                     getArchiveActions(archivePVSList, archiverURL);
-            configureAA(archiveActionArchivePVMap, archiverURL);
+            count += configureAA(archiveActionArchivePVMap, archiverURL);
+        }
+        long finalCount = count;
+        logger.log(Level.INFO, () -> String.format("Configured %s channels.", finalCount));
+        return finalCount;
+    }
+
+    private void addChannelChange(Channel channel, Map<String, List<ArchivePV>> aaArchivePVS, Map<String, List<String>> policyLists, Optional<Property> archiveProperty) {
+        String pvStatus = channel.getProperties().stream()
+                .filter(xmlProperty -> PV_STATUS_PROPERTY_NAME.equalsIgnoreCase(xmlProperty.getName()))
+                .findFirst()
+                .map(Property::getValue)
+                .orElse(PV_STATUS_INACTIVE);
+        String archiverAlias = channel.getProperties().stream()
+                .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
+                .findFirst()
+                .map(Property::getValue)
+                .orElse(defaultArchiver);
+        if (aaArchivePVS.containsKey(archiverAlias) && archiveProperty.isPresent()) {
+            ArchivePV newArchiverPV = createArchivePV(
+                    policyLists.get(archiverAlias),
+                    channel,
+                    archiveProperty.get().getValue(),
+                    autoPauseOptions.contains(PV_STATUS_PROPERTY_NAME) ? pvStatus : PV_STATUS_ACTIVE);
+            aaArchivePVS.get(archiverAlias).add(newArchiverPV);
         }
     }
 
@@ -140,6 +170,10 @@ public class AAChannelProcessor implements ChannelProcessor {
 
     private Map<ArchiveAction, List<ArchivePV>> getArchiveActions(
             Map<String, ArchivePV> archivePVS, String archiverURL) {
+        if (StringUtils.isEmpty(archiverURL)) {
+            return Map.of();
+        }
+
         logger.log(Level.INFO, () -> String.format("Get archiver status in archiver %s", archiverURL));
 
         Map<ArchiveAction, List<ArchivePV>> result = new EnumMap<>(ArchiveAction.class);
@@ -180,7 +214,7 @@ public class AAChannelProcessor implements ChannelProcessor {
 
         } catch (JsonProcessingException e) {
             // problem collecting policies from AA, so warn and return empty list
-            logger.log(Level.WARNING, "Could not get AA pv Status list: " + e.getMessage());
+            logger.log(Level.WARNING, () -> "Could not get AA pv Status list: " + e.getMessage());
             return result;
         }
     }
@@ -198,13 +232,13 @@ public class AAChannelProcessor implements ChannelProcessor {
         return newArchiverPV;
     }
 
-    private void configureAA(Map<ArchiveAction, List<ArchivePV>> archivePVS, String aaURL)
+    private long configureAA(Map<ArchiveAction, List<ArchivePV>> archivePVS, String aaURL)
             throws JsonProcessingException {
         logger.log(Level.INFO, () -> String.format("Configure PVs %s in %s", archivePVS.toString(), aaURL));
-
+        long count = 0;
         // Don't request to archive an empty list.
         if (archivePVS.isEmpty()) {
-            return;
+            return count;
         }
         if (!archivePVS.get(ArchiveAction.ARCHIVE).isEmpty()) {
             logger.log(
@@ -215,6 +249,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                     objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.ARCHIVE)),
                     ArchiveAction.ARCHIVE.endpoint,
                     aaURL);
+            count += archivePVS.get(ArchiveAction.ARCHIVE).size();
         }
         if (!archivePVS.get(ArchiveAction.PAUSE).isEmpty()) {
             logger.log(
@@ -227,6 +262,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                             .collect(Collectors.toList())),
                     ArchiveAction.PAUSE.endpoint,
                     aaURL);
+            count += archivePVS.get(ArchiveAction.PAUSE).size();
         }
         if (!archivePVS.get(ArchiveAction.RESUME).isEmpty()) {
             logger.log(
@@ -239,31 +275,40 @@ public class AAChannelProcessor implements ChannelProcessor {
                             .collect(Collectors.toList())),
                     ArchiveAction.RESUME.endpoint,
                     aaURL);
+            count += archivePVS.get(ArchiveAction.RESUME).size();
         }
+        return count;
     }
 
     private void submitAction(String values, String endpoint, String aaURL) {
+        try {
+            String response = client.post()
+                    .uri(URI.create(aaURL + MGMT_RESOURCE + endpoint))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(values)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.of(10, ChronoUnit.SECONDS))
+                    .block();
+            logger.log(Level.FINE, () -> response);
 
-        String response = client.post()
-                .uri(URI.create(aaURL + MGMT_RESOURCE + endpoint))
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(values)
-                .retrieve()
-                .bodyToMono(String.class)
-                .timeout(Duration.of(10, ChronoUnit.SECONDS))
-                .block();
-        logger.log(Level.FINE, () -> response);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, String.format("Failed to submit %s to %s on %s", values, endpoint, aaURL), e);
+        }
     }
 
     private Map<String, List<String>> getAAsPolicies(Map<String, String> aaURLs) {
         Map<String, List<String>> result = new HashMap<>();
-        for (String aaAlias : aaURLs.keySet()) {
-            result.put(aaAlias, getAAPolicies(aaURLs.get(aaAlias)));
+        for (Map.Entry<String, String> aa : aaURLs.entrySet()) {
+            result.put(aa.getKey(), getAAPolicies(aa.getValue()));
         }
         return result;
     }
 
     private List<String> getAAPolicies(String aaURL) {
+        if (StringUtils.isEmpty(aaURL)) {
+            return List.of();
+        }
         try {
             String response = client.get()
                     .uri(URI.create(aaURL + POLICY_RESOURCE))

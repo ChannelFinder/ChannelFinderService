@@ -17,6 +17,7 @@ package org.phoebus.channelfinder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,8 +30,16 @@ import co.elastic.clients.elasticsearch.indices.CreateIndexResponse;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,14 +69,19 @@ public class ElasticConfig implements ServletContextListener {
 
     private ElasticsearchClient searchClient;
     private ElasticsearchClient indexClient;
-    private static final AtomicBoolean esInitialized = new AtomicBoolean();
 
-    @Value("${elasticsearch.cluster.name:elasticsearch}")
-    private String clusterName;
     @Value("${elasticsearch.network.host:localhost}")
     private String host;
+    @Value("${elasticsearch.host_urls:http://localhost:9200}")
+    private String[] httpHostUrls;
     @Value("${elasticsearch.http.port:9200}")
     private int port;
+    @Value("${elasticsearch.authorization.header:}")
+    private String authorizationHeader;
+    @Value("${elasticsearch.authorization.username:}")
+    private String username;
+    @Value("${elasticsearch.authorization.password:}")
+    private String password;
     @Value("${elasticsearch.create.indices:true}")
     private String createIndices;
 
@@ -98,11 +112,23 @@ public class ElasticConfig implements ServletContextListener {
             .addMixIn(Property.class, Property.OnlyProperty.class);
 
     private static ElasticsearchClient createClient(ElasticsearchClient currentClient, ObjectMapper objectMapper,
-                                                    String host, int port, String createIndices, ElasticConfig config) {
+                                                    HttpHost[] httpHosts, String createIndices, ElasticConfig config) {
         ElasticsearchClient client;
         if (currentClient == null) {
             // Create the low-level client
-            RestClient httpClient = RestClient.builder(new HttpHost(host, port)).build();
+            RestClientBuilder clientBuilder = RestClient.builder(httpHosts);
+            // Configure authentication
+            if (!config.authorizationHeader.isEmpty()) {
+                clientBuilder.setDefaultHeaders(new Header[] {new BasicHeader("Authorization", config.authorizationHeader)});
+                if (!config.username.isEmpty() || !config.password.isEmpty()) {
+                    logger.warning("elasticsearch.authorization_header is set, ignoring elasticsearch.username and elasticsearch.password.");
+                }
+            } else if (!config.username.isEmpty() || !config.password.isEmpty()) {
+                final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+                credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(config.username, config.password));
+                clientBuilder.setHttpClientConfigCallback(httpClientBuilder -> httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
+            }
+            RestClient httpClient = clientBuilder.build();
 
             // Create the Java API Client with the same low level client
             ElasticsearchTransport transport = new RestClientTransport(httpClient, new JacksonJsonpMapper(objectMapper));
@@ -111,22 +137,40 @@ public class ElasticConfig implements ServletContextListener {
         } else {
             client = currentClient;
         }
-        esInitialized.set(!Boolean.parseBoolean(createIndices));
-        if (esInitialized.compareAndSet(false, true)) {
+        if (Boolean.parseBoolean(createIndices)) {
             config.elasticIndexValidation(client);
         }
         return client;
 
     }
+
+    private HttpHost[] getHttpHosts() {
+        boolean hostIsDefault = host.equals("localhost");
+        boolean hostUrlsIsDefault = httpHostUrls.length == 1 && httpHostUrls[0].equals("http://localhost:9200");
+        boolean portIsDefault = (port == 9200);
+        if (hostUrlsIsDefault && (!hostIsDefault || !portIsDefault)) {
+            logger.warning("Specifying elasticsearch.network.host and elasticsearch.http.port is deprecated, please consider using elasticsearch.host_urls instead.");
+            return new HttpHost[] {new HttpHost(host, port)};
+        } else {
+            if (!hostIsDefault) {
+                logger.warning("Only one of elasticsearch.host_urls and elasticsearch.network.host can be set, ignoring elasticsearch.network.host.");
+            }
+            if (!portIsDefault) {
+                logger.warning("Only one of elasticsearch.host_urls and elasticsearch.http.port can be set, ignoring elasticsearch.http.port.");
+            }
+            return Arrays.stream(httpHostUrls).map(HttpHost::create).toArray(HttpHost[]::new);
+        }
+    }
+
     @Bean({ "searchClient" })
     public ElasticsearchClient getSearchClient() {
-        searchClient = createClient(searchClient, objectMapper, host, port, createIndices, this);
+        searchClient = createClient(searchClient, objectMapper, getHttpHosts(), createIndices, this);
         return searchClient;
     }
 
     @Bean({ "indexClient" })
     public ElasticsearchClient getIndexClient() {
-        indexClient = createClient(indexClient, objectMapper, host, port, createIndices, this);
+        indexClient = createClient(indexClient, objectMapper, getHttpHosts(), createIndices, this);
         return indexClient;
     }
 

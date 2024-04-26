@@ -3,6 +3,7 @@ package org.phoebus.channelfinder;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldSort;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.SortOptions;
@@ -10,6 +11,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.DisMaxQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.IdsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
 import co.elastic.clients.elasticsearch.core.BulkRequest;
 import co.elastic.clients.elasticsearch.core.BulkResponse;
@@ -66,7 +68,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     @Autowired
     @Qualifier("indexClient")
     ElasticsearchClient client;
-
+    
     final ObjectMapper objectMapper = new ObjectMapper()
             .addMixIn(Tag.class, Tag.OnlyTag.class)
             .addMixIn(Property.class, Property.OnlyProperty.class);
@@ -422,7 +424,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                             .size(finalSize)
                             .trackTotalHits(builder -> builder.enabled(builtQuery.trackTotalHits))
                             .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
-            builtQuery.searchAfter.ifPresent(searchBuilder::searchAfter);
+            builtQuery.searchAfter.ifPresent(s -> searchBuilder.searchAfter(FieldValue.of(s)));
 
             SearchResponse<Channel> response = client.search(searchBuilder.build(),
                                                                 Channel.class
@@ -448,7 +450,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         int from = 0;
         boolean trackTotalHits = false;
         Optional<String> searchAfter = Optional.empty();
-        String valueSplitPattern = "[\\|,;]";
+        String valueSplitPattern = "[|,;]";
         for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
             String key = parameter.getKey().trim();
             boolean isNot = key.endsWith("!");
@@ -460,7 +462,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                     for (String value : parameter.getValue()) {
                         DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
                         for (String pattern : value.split(valueSplitPattern)) {
-                            nameQuery.queries(WildcardQuery.of(w -> w.field("name").caseInsensitive(true).value(pattern.trim()))._toQuery());
+                            nameQuery.queries(getSingleValueQuery("name", pattern.trim()));
                         }
                         boolQuery.must(nameQuery.build()._toQuery());
                     }
@@ -471,7 +473,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                         for (String pattern : value.split(valueSplitPattern)) {
                             tagQuery.queries(
                                     NestedQuery.of(n -> n.path("tags").query(
-                                            WildcardQuery.of(w -> w.field("tags.name").caseInsensitive(true).value(pattern.trim()))._toQuery()))._toQuery());
+                                            getSingleValueQuery("tags.name", pattern.trim())))._toQuery());
                         }
                         if (isNot) {
                             boolQuery.mustNot(tagQuery.build()._toQuery());
@@ -510,11 +512,11 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                             String finalKey = key;
                             BoolQuery bq;
                             if (isNot) {
-                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
-                                        .mustNot(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
+                                bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", finalKey))
+                                        .mustNot(getSingleValueQuery("properties.value", pattern.trim())));
                             } else {
-                                bq = BoolQuery.of(p -> p.must(WildcardQuery.of(name -> name.field("properties.name").caseInsensitive(true).value(finalKey))._toQuery())
-                                        .must(WildcardQuery.of(val -> val.field("properties.value").caseInsensitive(true).value(pattern.trim()))._toQuery()));
+                                bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", finalKey))
+                                        .must(getSingleValueQuery("properties.value", pattern.trim())));
                             }
                             propertyQuery.queries(
                                     NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
@@ -526,6 +528,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             }
         }
         return new BuiltQuery(boolQuery, size, from, searchAfter, trackTotalHits);
+    }
+
+    private static Query getSingleValueQuery(String name, String pattern) {
+        return WildcardQuery.of(w -> w.field(name).caseInsensitive(true).value(pattern))._toQuery();
     }
 
     private static class BuiltQuery {

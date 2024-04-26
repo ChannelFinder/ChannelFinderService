@@ -11,80 +11,92 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 
 @Service
 @PropertySource(value = "classpath:application.properties")
 public class MetricsService {
 
+    private static final Logger logger = Logger.getLogger(MetricsService.class.getName());
+    public static final String CF_TOTAL_CHANNEL_COUNT = "cf.total.channel.count";
+    public static final String CF_PROPERTY_COUNT = "cf.property.count";
+    public static final String CF_TAG_COUNT = "cf.tag.count";
+    public static final String CF_CHANNEL_COUNT = "cf.channel.count";
+    private static final String METRIC_DESCRIPTION_TOTAL_CHANNEL_COUNT = "Count of all ChannelFinder channels";
+    private static final String METRIC_DESCRIPTION_PROPERTY_COUNT = "Count of all ChannelFinder properties";
+    private static final String METRIC_DESCRIPTION_TAG_COUNT = "Count of all ChannelFinder tags";
+    private static final String METRIC_DESCRIPTION_CHANNEL_COUNT =
+            "Count of channels with specific property with and specific value";
+    private final ChannelRepository channelRepository;
+    private final PropertyRepository propertyRepository;
+    private final TagRepository tagRepository;
+    private final MeterRegistry meterRegistry;
+
+    MultiGauge channelCounts;
+
     @Value("${metrics.tags}")
     private String[] tags;
 
-    @Value("#{${metrics.properties:{'pvStatus': 'Active'}}}")
-    private Map<String, String> properties;
+    @Value("#{${metrics.properties:{{'pvStatus', 'Active'}, {'pvStatus', 'Inactive'}}}}")
+    private String[][] properties;
 
-    private static final Logger logger = Logger.getLogger(MetricsService.class.getName());
-    private static final String METRIC_NAME_CHANNEL_COUNT = "cf_channel_count";
-    private static final String METRIC_NAME_PROPERTIES_COUNT = "cf_properties_count";
-    private static final String METRIC_NAME_TAGS_COUNT = "cf_tags_count";
-    private static final String METRIC_NAME_CHANNEL_COUNT_PER_PROPERTY = "cf_channel_count_per_property";
-    private static final String METRIC_NAME_CHANNEL_COUNT_PER_TAG = "cf_channel_count_per_tag";
-    private static final String METRIC_DESCRIPTION_CHANNEL_COUNT = "Count of channel finder channels";
-    private static final String METRIC_DESCRIPTION_PROPERTIES_COUNT = "Count of channel finder properties";
-    private static final String METRIC_DESCRIPTION_TAGS_COUNT = "Count of channel finder tags";
-    private static final String METRIC_DESCRIPTION_CHANNEL_COUNT_PER_PROPERTY = "Count of channels with specific property with and specific value";
-    private static final String METRIC_DESCRIPTION_CHANNEL_COUNT_PER_TAG = "Count of channels with specific tag";
-
-    private final ChannelRepository channelRepository;
-    private final PropertyRepository propertyRepository;
     @Autowired
-    public MetricsService(final ChannelRepository channelRepository, final PropertyRepository propertyRepository, final TagRepository tagRepository, final MeterRegistry meterRegistry) {
+    public MetricsService(
+            final ChannelRepository channelRepository,
+            final PropertyRepository propertyRepository,
+            final TagRepository tagRepository,
+            final MeterRegistry meterRegistry) {
         this.channelRepository = channelRepository;
         this.propertyRepository = propertyRepository;
-        registerGaugeMetrics(meterRegistry, tagRepository);
+        this.tagRepository = tagRepository;
+        this.meterRegistry = meterRegistry;
+        registerGaugeMetrics();
     }
 
-    MultiGauge propertyCounts;
-    MultiGauge tagCounts;
-
-    private void registerGaugeMetrics(MeterRegistry meterRegistry, TagRepository tagRepository){
-        Gauge.builder(METRIC_NAME_CHANNEL_COUNT, () -> channelRepository.count(new LinkedMultiValueMap<>()))
+    private void registerGaugeMetrics() {
+        Gauge.builder(CF_TOTAL_CHANNEL_COUNT, () -> channelRepository.count(new LinkedMultiValueMap<>()))
+                .description(METRIC_DESCRIPTION_TOTAL_CHANNEL_COUNT)
+                .register(meterRegistry);
+        Gauge.builder(CF_PROPERTY_COUNT, propertyRepository::count)
+                .description(METRIC_DESCRIPTION_PROPERTY_COUNT)
+                .register(meterRegistry);
+        Gauge.builder(CF_TAG_COUNT, tagRepository::count)
+                .description(METRIC_DESCRIPTION_TAG_COUNT)
+                .register(meterRegistry);
+        channelCounts = MultiGauge.builder(CF_CHANNEL_COUNT)
                 .description(METRIC_DESCRIPTION_CHANNEL_COUNT)
+                .baseUnit("channels")
                 .register(meterRegistry);
-        Gauge.builder(METRIC_NAME_PROPERTIES_COUNT,
-                        propertyRepository::count)
-                .description(METRIC_DESCRIPTION_PROPERTIES_COUNT)
-                .register(meterRegistry);
-        Gauge.builder(METRIC_NAME_TAGS_COUNT,
-                        tagRepository::count)
-                .description(METRIC_DESCRIPTION_TAGS_COUNT)
-                .register(meterRegistry);
-
-        propertyCounts = MultiGauge.builder(METRIC_NAME_CHANNEL_COUNT_PER_PROPERTY)
-                .description(METRIC_DESCRIPTION_CHANNEL_COUNT_PER_PROPERTY)
-                .register(meterRegistry);
-
-        tagCounts = MultiGauge.builder(METRIC_NAME_CHANNEL_COUNT_PER_TAG)
-                .description(METRIC_DESCRIPTION_CHANNEL_COUNT_PER_TAG)
-                .register(meterRegistry);
-
     }
 
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 5000)
     public void updateMetrics() {
-        logger.log(Level.INFO, "Updating metrics");
-        propertyCounts.register(
-                properties.entrySet().stream().map(property -> MultiGauge.Row.of(Tags.of(property.getKey(), property.getValue()),
-                                channelRepository.countByProperty(property.getKey(), property.getValue()))).collect(Collectors.toList())
-        );
-        tagCounts.register(
-                Arrays.stream(tags).map(tag -> MultiGauge.Row.of(Tags.of("tag", tag),
-                                channelRepository.countByTag(tag))).collect(Collectors.toList())
-        );
+        logger.log(
+                Level.FINER,
+                () -> "Updating metrics for properties " + Arrays.deepToString(properties) + " and tags " + Arrays.toString(tags));
+        ArrayList<MultiGauge.Row<?>> rows = new ArrayList<>();
+
+        // Add tags
+        for (String tag: tags) {
+            long count = channelRepository.countByTag(tag);
+            rows.add(MultiGauge.Row.of(Tags.of("tag", tag), count ));
+            logger.log(
+                    Level.FINER,
+                    () -> "Updating metrics for tag " + tag + " to " + count);
+        }
+
+        // Add properties
+        for (String[] propertyValue: properties) {
+            long count = channelRepository.countByProperty(propertyValue[0], propertyValue[1]);
+            rows.add(MultiGauge.Row.of(Tags.of(propertyValue[0], propertyValue[1]), count));
+            logger.log(
+                    Level.FINER,
+                    () -> "Updating metrics for property " + propertyValue[0]  + ":" + propertyValue[1] + " to " + count);
+        }
+
+        channelCounts.register(rows, true);
     }
 }
