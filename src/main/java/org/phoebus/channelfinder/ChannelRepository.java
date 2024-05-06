@@ -415,7 +415,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         Integer finalSize = builtQuery.size;
         Integer finalFrom = builtQuery.from;
 
-        if(builtQuery.size + builtQuery.from >= esService.getES_MAX_RESULT_WINDOW_SIZE()) {
+        if(builtQuery.size + builtQuery.from > esService.getES_MAX_RESULT_WINDOW_SIZE()) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE,
                     searchParameters,
                     "Max search window exceeded, use the " + CFResourceDescriptors.SCROLL_RESOURCE_URI + " api.");
