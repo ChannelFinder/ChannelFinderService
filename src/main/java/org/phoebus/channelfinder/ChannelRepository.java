@@ -275,7 +275,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(esService.getES_CHANNEL_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
             return new HashSet<>(response.hits()
@@ -329,7 +329,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(esService.getES_CHANNEL_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
