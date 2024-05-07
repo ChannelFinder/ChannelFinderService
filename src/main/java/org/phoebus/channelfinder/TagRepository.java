@@ -264,7 +264,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
             SearchRequest.Builder searchBuilder = new Builder()
                     .index(esService.getES_TAG_INDEX())
                     .query(new MatchAllQuery.Builder().build()._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
             return response.hits().hits().stream().map(Hit::source).toList();
@@ -287,7 +287,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
             SearchRequest.Builder searchBuilder = new Builder()
                     .index(esService.getES_TAG_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
             return response.hits().hits().stream().map(Hit::source).toList();

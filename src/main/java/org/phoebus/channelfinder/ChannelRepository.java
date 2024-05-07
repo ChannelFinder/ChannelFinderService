@@ -275,7 +275,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(esService.getES_CHANNEL_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
             return new HashSet<>(response.hits()
@@ -329,7 +329,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(esService.getES_CHANNEL_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
             return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
@@ -412,11 +412,17 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
      */
     public SearchResult search(MultiValueMap<String, String> searchParameters) {
         BuiltQuery builtQuery = getBuiltQuery(searchParameters);
+        Integer finalSize = builtQuery.size;
+        Integer finalFrom = builtQuery.from;
+
+        if(builtQuery.size + builtQuery.from > esService.getES_MAX_RESULT_WINDOW_SIZE()) {
+            String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE,
+                    searchParameters,
+                    "Max search window exceeded, use the " + CFResourceDescriptors.SCROLL_RESOURCE_URI + " api.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+        }
 
         try {
-            Integer finalSize = builtQuery.size;
-            Integer finalFrom = builtQuery.from;
-
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
             searchBuilder.index(esService.getES_CHANNEL_INDEX())
                             .query(builtQuery.boolQuery.build()._toQuery())

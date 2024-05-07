@@ -305,6 +305,8 @@ If called without URL parameters, the operation lists all channels in the direct
 |               | from given page                                                       |
 +---------------+-----------------------------------------------------------------------+
 
+**Note:** pagination is limited to the max search window setting, use the :ref:`pay-single-chan`
+
 
 **Examples:**
 
@@ -643,6 +645,9 @@ Method: GET		Returns: Scroll		Required Role: None
 Return scroll object, including scroll id for the next query and a list of the first 100(current default size) channels.
 
 Parameters for this should be the same as used in the normal channel query.
+
+
+.. _scroll_api:
 
 Continue Channels Query
 """""""""""""""""""""""

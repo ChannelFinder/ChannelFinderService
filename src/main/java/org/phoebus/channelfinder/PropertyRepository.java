@@ -262,7 +262,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(esService.getES_PROPERTY_INDEX())
                     .query(new MatchAllQuery.Builder().build()._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
             return response.hits().hits().stream().map(Hit::source).toList();
@@ -286,7 +286,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder()
                     .index(esService.getES_PROPERTY_INDEX())
                     .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-                    .size(10000)
+                    .size(esService.getES_QUERY_SIZE())
                     .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
             SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
             return response.hits().hits().stream().map(Hit::source).toList();
