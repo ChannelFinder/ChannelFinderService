@@ -55,7 +55,7 @@ public class AAChannelProcessor implements ChannelProcessor {
     @Value("#{${aa.urls:{'default': 'http://localhost:17665'}}}")
     private Map<String, String> aaURLs;
     @Value("${aa.default_alias:default}")
-    private List<String> defaultArchiver;
+    private List<String> defaultArchivers;
     @Value("${aa.pva:false}")
     private boolean aaPVA;
     @Value("${aa.archive_property_name:archive}")
@@ -113,7 +113,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                         .map(Property::getValue)
                         .collect(Collectors.toList()))
                         .filter(list -> !list.isEmpty())
-                        .orElse(defaultArchiver);
+                        .orElse(defaultArchivers);
                 for(String archiverAlias : archivers) {
                     try {
                         addChannelChange(channel, aaArchivePVS, policyLists, archiveProperty, archiverAlias);
