@@ -108,19 +108,28 @@ public class AAChannelProcessor implements ChannelProcessor {
                     .filter(xmlProperty -> archivePropertyName.equalsIgnoreCase(xmlProperty.getName()))
                     .findFirst();
             if (archiveProperty.isPresent()) {
-                List<String> archivers = Optional.of(channel.getProperties().stream()
+                channel.getProperties().stream()
                         .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
-                        .map(Property::getValue)
-                        .collect(Collectors.toList()))
-                        .filter(list -> !list.isEmpty())
-                        .orElse(defaultArchivers);
-                for(String archiverAlias : archivers) {
-                    try {
-                        addChannelChange(channel, aaArchivePVS, policyLists, archiveProperty, archiverAlias);
-                    } catch (Exception e) {
-                        logger.log(Level.WARNING, String.format("Failed to process %s", channel), e);
-                    }
-                }
+                        .findFirst()
+                        .map(xmlProperty -> {
+                            String archiverValue = xmlProperty.getValue();
+                            // archiver property can be comma separated list of archivers
+                            if (archiverValue != null && !archiverValue.isEmpty()) {
+                                return Arrays.stream(archiverValue.split(","))
+                                        .map(String::trim)
+                                        .filter(s -> !s.isEmpty());
+                            } else {
+                                return defaultArchivers.stream();
+                            }
+                        })
+                        .orElse(defaultArchivers.stream()) // Use defaultArchivers list if no matching property found
+                        .forEach(archiverAlias -> {
+                            try {
+                                addChannelChange(channel, aaArchivePVS, policyLists, archiveProperty, archiverAlias);
+                            } catch (Exception e) {
+                                logger.log(Level.WARNING, String.format("Failed to process %s", channel), e);
+                            }
+                        });
             } else if (autoPauseOptions.contains(archivePropertyName)) {
                 aaURLs.keySet().forEach(archiverAlias -> aaArchivePVS
                         .get(archiverAlias)
