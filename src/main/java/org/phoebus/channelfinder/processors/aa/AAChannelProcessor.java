@@ -1,13 +1,12 @@
-package org.phoebus.channelfinder.processors;
+package org.phoebus.channelfinder.processors.aa;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -27,8 +26,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static com.fasterxml.jackson.annotation.JsonInclude.Include;
 
 /**
  * A post processor which uses the channel property *archive* to add pv's to the archiver appliance The archive
@@ -140,7 +137,7 @@ public class AAChannelProcessor implements ChannelProcessor {
         for (Map.Entry<String, List<ArchivePV>> e : aaArchivePVS.entrySet()) {
             String archiverURL = aaURLs.get(e.getKey());
             Map<String, ArchivePV> archivePVSList =
-                    e.getValue().stream().collect(Collectors.toMap(archivePV -> archivePV.pv, archivePV -> archivePV));
+                    e.getValue().stream().collect(Collectors.toMap(ArchivePV::getPv, archivePV -> archivePV));
             Map<ArchiveAction, List<ArchivePV>> archiveActionArchivePVMap =
                     getArchiveActions(archivePVSList, archiverURL);
             count += configureAA(archiveActionArchivePVMap, archiverURL);
@@ -260,7 +257,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                             + archivePVS.get(ArchiveAction.ARCHIVE).size() + " pvs");
             submitAction(
                     objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.ARCHIVE)),
-                    ArchiveAction.ARCHIVE.endpoint,
+                    ArchiveAction.ARCHIVE.getEndpoint(),
                     aaURL);
             count += archivePVS.get(ArchiveAction.ARCHIVE).size();
         }
@@ -273,7 +270,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                     objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.PAUSE).stream()
                             .map(ArchivePV::getPv)
                             .collect(Collectors.toList())),
-                    ArchiveAction.PAUSE.endpoint,
+                    ArchiveAction.PAUSE.getEndpoint(),
                     aaURL);
             count += archivePVS.get(ArchiveAction.PAUSE).size();
         }
@@ -286,7 +283,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                     objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.RESUME).stream()
                             .map(ArchivePV::getPv)
                             .collect(Collectors.toList())),
-                    ArchiveAction.RESUME.endpoint,
+                    ArchiveAction.RESUME.getEndpoint(),
                     aaURL);
             count += archivePVS.get(ArchiveAction.RESUME).size();
         }
@@ -338,121 +335,4 @@ public class AAChannelProcessor implements ChannelProcessor {
         }
     }
 
-    enum ArchiveAction {
-        ARCHIVE("/archivePV"),
-        PAUSE("/pauseArchivingPV"),
-        RESUME("/resumeArchivingPV"),
-        NONE("");
-
-        private final String endpoint;
-
-        ArchiveAction(final String endpoint) {
-            this.endpoint = endpoint;
-        }
-
-        public String getEndpoint() {
-            return this.endpoint;
-        }
-    }
-
-    @JsonInclude(Include.NON_NULL)
-    public static class ArchivePV {
-        private String pv;
-        private String samplingMethod;
-        private String samplingPeriod;
-        private String policy;
-        @JsonIgnore
-        private String pvStatus;
-
-        @Override
-        public String toString() {
-            return "ArchivePV{" + "pv='"
-                    + pv + '\'' + ", samplingMethod='"
-                    + samplingMethod + '\'' + ", samplingPeriod='"
-                    + samplingPeriod + '\'' + ", policy='"
-                    + policy + '\'' + ", pvStatus='"
-                    + pvStatus + '\'' + '}';
-        }
-
-        public String getPv() {
-            return pv;
-        }
-
-        public void setPv(String pv) {
-            this.pv = pv;
-        }
-
-        /**
-         * process the archive property value string to configure the sampling method and rate
-         *
-         * @param parameters string expected in the form monitor@1.0
-         */
-        public void setSamplingParameters(String parameters, List<String> policyList) {
-            if (parameters.equalsIgnoreCase("default")) {
-                return;
-            }
-            if (policyList.contains(parameters)) {
-                setPolicy(parameters);
-                return;
-            }
-            String[] p = parameters.split("@");
-            if (p.length == 2) {
-                switch (p[0].toUpperCase()) {
-                    case "MONITOR":
-                        setSamplingMethod("MONITOR");
-                        break;
-                    case "SCAN":
-                        setSamplingMethod("SCAN");
-                        break;
-                    default:
-                        // invalid sampling method
-                        logger.log(Level.WARNING, "Invalid sampling method " + p[0]);
-                        return;
-                }
-                // ignore anything after first space
-                String sp = p[1].split("\\s")[0];
-                // catch number format errors
-                try {
-                    Float.parseFloat(sp);
-                } catch (NumberFormatException e) {
-                    logger.log(Level.WARNING, "Invalid sampling period" + sp);
-                    setSamplingMethod(null);
-                    return;
-                }
-                setSamplingPeriod(sp);
-            }
-        }
-
-        public String getSamplingMethod() {
-            return samplingMethod;
-        }
-
-        public void setSamplingMethod(String samplingMethod) {
-            this.samplingMethod = samplingMethod;
-        }
-
-        public String getSamplingPeriod() {
-            return samplingPeriod;
-        }
-
-        public void setSamplingPeriod(String samplingPeriod) {
-            this.samplingPeriod = samplingPeriod;
-        }
-
-        public String getPolicy() {
-            return policy;
-        }
-
-        public void setPolicy(String policy) {
-            this.policy = policy;
-        }
-
-        public String getPvStatus() {
-            return pvStatus;
-        }
-
-        public void setPvStatus(String pvStatus) {
-            this.pvStatus = pvStatus;
-        }
-    }
 }
