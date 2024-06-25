@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 public class ArchiverClient {
     private static final Logger logger = Logger.getLogger(ArchiverClient.class.getName());
+    private static final int STATUS_BATCH_SIZE = 100; // Limit comes from tomcat server maxHttpHeaderSize which by default is a header of size 8k
 
     private final WebClient client = WebClient.create();
 
@@ -31,9 +32,24 @@ public class ArchiverClient {
     private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+
+    private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
+        List<String> list = new ArrayList<>(pvSet);
+        return IntStream.range(0, (list.size() + pageSize - 1) / pageSize)
+                .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
+    }
+
     List<Map<String, String>> getStatuses(Map<String, ArchivePV> archivePVS, String archiverURL) throws JsonProcessingException {
+        var pvs = archivePVS.keySet();
+        var stream = partitionSet(pvs, STATUS_BATCH_SIZE);
+
+        return stream.map(pvList -> getStatusesFromPvList(archiverURL, pvList)).flatMap(List::stream).toList();
+    }
+
+
+    private List<Map<String, String>> getStatusesFromPvList(String archiverURL, List<String> pvs) {
         URI pvStatusURI = UriComponentsBuilder.fromUri(URI.create(archiverURL + PV_STATUS_RESOURCE))
-                .queryParam("pv", archivePVS)
+                .queryParam("pv", pvs)
                 .build()
                 .toUri();
 
