@@ -1,21 +1,13 @@
 package org.phoebus.channelfinder.processors.aa;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -38,15 +30,13 @@ import java.util.stream.Collectors;
 public class AAChannelProcessor implements ChannelProcessor {
 
     private static final Logger logger = Logger.getLogger(AAChannelProcessor.class.getName());
-    private static final String MGMT_RESOURCE = "/mgmt/bpl";
-    private static final String POLICY_RESOURCE = MGMT_RESOURCE + "/getPolicyList";
-    private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final String PV_STATUS_PROPERTY_NAME = "pvStatus"; // Matches in recsync
     private static final String PV_STATUS_INACTIVE = "Inactive";
     public static final String PV_STATUS_ACTIVE = "Active";
-    private final WebClient client = WebClient.create();
+
+    private static final ArchiverClient archiverClient = new ArchiverClient();
+
     @Value("${aa.enabled:true}")
     private boolean aaEnabled;
     @Value("#{${aa.urls:{'default': 'http://localhost:17665'}}}")
@@ -140,7 +130,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                     e.getValue().stream().collect(Collectors.toMap(ArchivePV::getPv, archivePV -> archivePV));
             Map<ArchiveAction, List<ArchivePV>> archiveActionArchivePVMap =
                     getArchiveActions(archivePVSList, archiverURL);
-            count += configureAA(archiveActionArchivePVMap, archiverURL);
+            count += archiverClient.configureAA(archiveActionArchivePVMap, archiverURL);
         }
         long finalCount = count;
         logger.log(Level.INFO, () -> String.format("Configured %s channels.", finalCount));
@@ -194,25 +184,8 @@ public class AAChannelProcessor implements ChannelProcessor {
         }
 
         try {
-            URI pvStatusURI = UriComponentsBuilder.fromUri(URI.create(archiverURL + PV_STATUS_RESOURCE))
-                    .queryParam("pv", archivePVS.keySet())
-                    .build()
-                    .toUri();
-
-            String response = client.post()
-                    .uri(pvStatusURI)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.of(10, ChronoUnit.SECONDS))
-                    .block();
-
-            // Structure of response is
-            // [{"pvName":"PV:1", "status":"Paused", ... }, {"pvName": "PV:2"}, {"status": "Being archived"}, ...}, ...
-            // ]
-
-            objectMapper
-                    .readValue(response, new TypeReference<List<Map<String, String>>>() {})
+            List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverURL);
+            statuses
                     .forEach(archivePVStatusJsonMap -> {
                         String archiveStatus = archivePVStatusJsonMap.get("status");
                         String pvName = archivePVStatusJsonMap.get("pvName");
@@ -242,97 +215,14 @@ public class AAChannelProcessor implements ChannelProcessor {
         return newArchiverPV;
     }
 
-    private long configureAA(Map<ArchiveAction, List<ArchivePV>> archivePVS, String aaURL)
-            throws JsonProcessingException {
-        logger.log(Level.INFO, () -> String.format("Configure PVs %s in %s", archivePVS.toString(), aaURL));
-        long count = 0;
-        // Don't request to archive an empty list.
-        if (archivePVS.isEmpty()) {
-            return count;
-        }
-        if (!archivePVS.get(ArchiveAction.ARCHIVE).isEmpty()) {
-            logger.log(
-                    Level.INFO,
-                    () -> "Submitting to be archived "
-                            + archivePVS.get(ArchiveAction.ARCHIVE).size() + " pvs");
-            submitAction(
-                    objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.ARCHIVE)),
-                    ArchiveAction.ARCHIVE.getEndpoint(),
-                    aaURL);
-            count += archivePVS.get(ArchiveAction.ARCHIVE).size();
-        }
-        if (!archivePVS.get(ArchiveAction.PAUSE).isEmpty()) {
-            logger.log(
-                    Level.INFO,
-                    () -> "Submitting to be paused "
-                            + archivePVS.get(ArchiveAction.PAUSE).size() + " pvs");
-            submitAction(
-                    objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.PAUSE).stream()
-                            .map(ArchivePV::getPv)
-                            .collect(Collectors.toList())),
-                    ArchiveAction.PAUSE.getEndpoint(),
-                    aaURL);
-            count += archivePVS.get(ArchiveAction.PAUSE).size();
-        }
-        if (!archivePVS.get(ArchiveAction.RESUME).isEmpty()) {
-            logger.log(
-                    Level.INFO,
-                    () -> "Submitting to be resumed "
-                            + archivePVS.get(ArchiveAction.RESUME).size() + " pvs");
-            submitAction(
-                    objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.RESUME).stream()
-                            .map(ArchivePV::getPv)
-                            .collect(Collectors.toList())),
-                    ArchiveAction.RESUME.getEndpoint(),
-                    aaURL);
-            count += archivePVS.get(ArchiveAction.RESUME).size();
-        }
-        return count;
-    }
-
-    private void submitAction(String values, String endpoint, String aaURL) {
-        try {
-            String response = client.post()
-                    .uri(URI.create(aaURL + MGMT_RESOURCE + endpoint))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(values)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.of(10, ChronoUnit.SECONDS))
-                    .block();
-            logger.log(Level.FINE, () -> response);
-
-        } catch (Exception e) {
-            logger.log(Level.WARNING, String.format("Failed to submit %s to %s on %s", values, endpoint, aaURL), e);
-        }
-    }
 
     private Map<String, List<String>> getAAsPolicies(Map<String, String> aaURLs) {
         Map<String, List<String>> result = new HashMap<>();
         for (Map.Entry<String, String> aa : aaURLs.entrySet()) {
-            result.put(aa.getKey(), getAAPolicies(aa.getValue()));
+            result.put(aa.getKey(), archiverClient.getAAPolicies(aa.getValue()));
         }
         return result;
     }
 
-    private List<String> getAAPolicies(String aaURL) {
-        if (StringUtils.isEmpty(aaURL)) {
-            return List.of();
-        }
-        try {
-            String response = client.get()
-                    .uri(URI.create(aaURL + POLICY_RESOURCE))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.of(10, ChronoUnit.SECONDS))
-                    .block();
-            Map<String, String> policyMap = objectMapper.readValue(response, Map.class);
-            return new ArrayList<>(policyMap.keySet());
-        } catch (Exception e) {
-            // problem collecting policies from AA, so warn and return empty list
-            logger.log(Level.WARNING, "Could not get AA policies list: " + e.getMessage());
-            return List.of();
-        }
-    }
 
 }
