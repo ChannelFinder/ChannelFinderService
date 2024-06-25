@@ -35,7 +35,6 @@ public class AAChannelProcessor implements ChannelProcessor {
     private static final String PV_STATUS_INACTIVE = "Inactive";
     public static final String PV_STATUS_ACTIVE = "Active";
 
-    private static final ArchiverClient archiverClient = new ArchiverClient();
 
     @Value("${aa.enabled:true}")
     private boolean aaEnabled;
@@ -51,6 +50,10 @@ public class AAChannelProcessor implements ChannelProcessor {
     private String archiverPropertyName;
     @Value("${aa.auto_pause:}")
     private List<String> autoPauseOptions;
+    @Value("${aa.version:1.1.0}")
+    private String archiverVersion;
+
+    private final ArchiverClient archiverClient = new ArchiverClient();
 
     @Override
     public boolean enabled() {
@@ -184,7 +187,7 @@ public class AAChannelProcessor implements ChannelProcessor {
         }
 
         try {
-            List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverURL);
+            List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverURL, archiverVersion);
             statuses
                     .forEach(archivePVStatusJsonMap -> {
                         String archiveStatus = archivePVStatusJsonMap.get("status");

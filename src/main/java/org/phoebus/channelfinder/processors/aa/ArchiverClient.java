@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -21,9 +23,30 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@Component
 public class ArchiverClient {
     private static final Logger logger = Logger.getLogger(ArchiverClient.class.getName());
     private static final int STATUS_BATCH_SIZE = 100; // Limit comes from tomcat server maxHttpHeaderSize which by default is a header of size 8k
+    private static final List<String> AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION = List.of("1.1.0", 
+            "Before_JDK_12_Upgrade", 
+            "v0.0.1_SNAPSHOT_03-November-2015", 
+            "v0.0.1_SNAPSHOT_09-Oct-2018", 
+            "v0.0.1_SNAPSHOT_10-June-2017", 
+            "v0.0.1_SNAPSHOT_10-Sep-2015", 
+            "v0.0.1_SNAPSHOT_12-May-2016", 
+            "v0.0.1_SNAPSHOT_12-Oct-2016", 
+            "v0.0.1_SNAPSHOT_13-Nov-2019", 
+            "v0.0.1_SNAPSHOT_14-Jun-2018", 
+            "v0.0.1_SNAPSHOT_15-Nov-2018", 
+            "v0.0.1_SNAPSHOT_20-Sept-2016", 
+            "v0.0.1_SNAPSHOT_22-June-2016", 
+            "v0.0.1_SNAPSHOT_22-June-2017", 
+            "v0.0.1_SNAPSHOT_23-Sep-2015", 
+            "v0.0.1_SNAPSHOT_26-January-2016", 
+            "v0.0.1_SNAPSHOT_27-Nov-2017", 
+            "v0.0.1_SNAPSHOT_29-July-2015", 
+            "v0.0.1_SNAPSHOT_30-March-2016", 
+            "v0.0.1_SNAPSHOT_30-September-2021");
 
     private final WebClient client = WebClient.create();
 
@@ -31,7 +54,7 @@ public class ArchiverClient {
     private static final String POLICY_RESOURCE = MGMT_RESOURCE + "/getPolicyList";
     private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
     private static final ObjectMapper objectMapper = new ObjectMapper();
-
+    private static final int TIMEOUT_SECONDS = 15;
 
     private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
         List<String> list = new ArrayList<>(pvSet);
@@ -39,27 +62,50 @@ public class ArchiverClient {
                 .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
     }
 
-    List<Map<String, String>> getStatuses(Map<String, ArchivePV> archivePVS, String archiverURL) throws JsonProcessingException {
-        var pvs = archivePVS.keySet();
-        var stream = partitionSet(pvs, STATUS_BATCH_SIZE);
+    List<Map<String, String>> getStatuses(Map<String, ArchivePV> archivePVS, String archiverURL, String archiverVersion) throws JsonProcessingException {
+        Set<String> pvs = archivePVS.keySet();
+        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion)) {
 
-        return stream.map(pvList -> getStatusesFromPvList(archiverURL, pvList)).flatMap(List::stream).toList();
+            Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
+
+            return stream.map(pvList -> getStatusesFromPvListQuery(archiverURL, pvList)).flatMap(List::stream).toList();
+        } else {
+            return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
+        }
     }
 
-
-    private List<Map<String, String>> getStatusesFromPvList(String archiverURL, List<String> pvs) {
+    private List<Map<String, String>> getStatusesFromPvListQuery(String archiverURL, List<String> pvs) {
         URI pvStatusURI = UriComponentsBuilder.fromUri(URI.create(archiverURL + PV_STATUS_RESOURCE))
                 .queryParam("pv", pvs)
                 .build()
                 .toUri();
 
-        String response = client.post()
+        String response = client.get()
                 .uri(pvStatusURI)
-                .contentType(MediaType.APPLICATION_JSON)
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.of(10, ChronoUnit.SECONDS))
+                .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
                 .block();
+
+        try {
+            return objectMapper
+                    .readValue(response, new TypeReference<>() {
+                    });
+        } catch (JsonProcessingException e) {
+            logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
+        }
+        return List.of();
+    }
+
+    private List<Map<String, String>> getStatusesFromPvListBody(String archiverURL, List<String> pvs) {
+        String response = client.post()
+                    .uri(URI.create(archiverURL + PV_STATUS_RESOURCE))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(pvs)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .block();
 
         // Structure of response is
         // [{"pvName":"PV:1", "status":"Paused", ... }, {"pvName": "PV:2"}, {"status": "Being archived"}, ...}, ...
@@ -83,7 +129,7 @@ public class ArchiverClient {
                     .bodyValue(values)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.of(10, ChronoUnit.SECONDS))
+                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
                     .block();
             logger.log(Level.FINE, () -> response);
 
