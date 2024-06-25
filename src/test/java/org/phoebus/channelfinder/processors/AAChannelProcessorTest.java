@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.phoebus.channelfinder.processors.AAChannelProcessor.ArchivePV;
+import org.phoebus.channelfinder.processors.aa.ArchivePV;
 
 class AAChannelProcessorTest {
 
