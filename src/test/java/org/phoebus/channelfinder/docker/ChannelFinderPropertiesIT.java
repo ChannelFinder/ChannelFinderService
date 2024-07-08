@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Integration tests for ChannelFinder and Elasticsearch with focus on usage of 
+ * Integration tests for ChannelFinder and Elasticsearch with focus on usage of
  * {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}.
  * Existing dockerization is used with <tt>docker-compose-integrationtest.yml</tt> and <tt>Dockerfile.integrationtest</tt>.
  *
@@ -146,11 +146,10 @@ class ChannelFinderPropertiesIT {
     @Test
     void channelfinderUp() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER;
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER);
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }

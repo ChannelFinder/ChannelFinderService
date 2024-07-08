@@ -30,7 +30,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -87,6 +92,8 @@ public class ITUtil {
     private static final String HTTP_REPLY        = "HTTP";
 
     // integration test - docker
+
+    private static final HttpClient CLIENT = HttpClient.newHttpClient();
 
     public static final String INTEGRATIONTEST_DOCKER_COMPOSE = "docker-compose-integrationtest.yml";
     public static final String INTEGRATIONTEST_LOG_MESSAGE    = ".*Started Application.*";
@@ -149,43 +156,43 @@ public class ITUtil {
     }
 
     /**
-     * Do GET request with given string as URL and return response code.
+     * Send GET request with given string as URI and return response status code.
      *
-     * @param spec string to parse as URL
-     * @return response code
-     *
+     * @param str string to parse as URI
+     * @return response status code
+     * @throws URISyntaxException If request is created with non-legal URI characters
+     * @throws InterruptedException
      * @throws IOException
      */
-    static int doGet(String spec) throws IOException {
-        URL url = new URL(spec);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        return con.getResponseCode();
+    static int sendRequestStatusCode(String str) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(str))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = CLIENT.send(request, BodyHandlers.ofString());
+
+        return response.statusCode();
     }
 
     /**
-     * Do GET request with given string as URL and return response with string array with response code and response string.
+     * Send GET request with given string as URI and return string array with response status code and response body.
      *
-     * @param spec string to parse as URL
-     * @return string array with response code and response string
-     *
+     * @param str string to parse as URI
+     * @return string array with response status code and response body
+     * @throws URISyntaxException If request is created with non-legal URI characters
+     * @throws InterruptedException
      * @throws IOException
      */
-    static String[] doGetJson(String spec) throws IOException {
-        URL url = new URL(spec);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        int responseCode = con.getResponseCode();
+    static String[] sendRequest(String str) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(str))
+                .GET()
+                .build();
 
-        String line;
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = responseCode == HttpURLConnection.HTTP_OK
-                ? new BufferedReader(new InputStreamReader(con.getInputStream()))
-                : new BufferedReader(new InputStreamReader(con.getErrorStream()))) {
-            while((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-        }
+        HttpResponse<String> response = CLIENT.send(request, BodyHandlers.ofString());
 
-        return new String[] {String.valueOf(responseCode), sb.toString().trim()};
+        return new String[] {String.valueOf(response.statusCode()), response.body()};
     }
 
     /**

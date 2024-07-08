@@ -127,7 +127,7 @@ public class ITUtilChannels {
             String[] response = null;
             Channel actual = null;
 
-            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + path);
+            response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + path);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel.class);
@@ -193,7 +193,7 @@ public class ITUtilChannels {
             String[] response = null;
             Channel[] actual = null;
 
-            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + queryString);
+            response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + queryString);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = mapper.readValue(response[1], Channel[].class);
@@ -252,7 +252,7 @@ public class ITUtilChannels {
             String[] response = null;
             Integer actual = -1;
 
-            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + "/count" + queryString);
+            response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + "/count" + queryString);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
                 actual = Integer.parseInt(response[1]);

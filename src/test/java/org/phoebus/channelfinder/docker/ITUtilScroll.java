@@ -76,7 +76,7 @@ public class ITUtilScroll {
             String[] response = null;
             Scroll actual = null;
 
-            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + queryString);
+            response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + queryString);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
             	actual = mapper.readValue(response[1], Scroll.class);
@@ -128,7 +128,7 @@ public class ITUtilScroll {
             String[] response = null;
             Scroll actual = null;
 
-            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + path);
+            response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + path);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
             	actual = mapper.readValue(response[1], Scroll.class);
