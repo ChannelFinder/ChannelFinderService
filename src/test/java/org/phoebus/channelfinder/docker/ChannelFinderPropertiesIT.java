@@ -30,7 +30,6 @@ import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -828,8 +827,6 @@ class ChannelFinderPropertiesIT {
             ITUtilProperties.assertAddMultipleProperties("", json_multiple, HttpURLConnection.HTTP_BAD_REQUEST);
 
             ITUtilProperties.assertListProperties(0);
-        } catch (IOException e) {
-            fail();
         } catch (Exception e) {
             fail();
         }

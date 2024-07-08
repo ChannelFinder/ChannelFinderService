@@ -21,7 +21,6 @@ package org.phoebus.channelfinder.docker;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,32 +71,25 @@ public class ITUtilScroll {
      * @return scroll object
      */
     public static Scroll assertQueryChannels(String queryString, int expectedResponseCode, String expectedId, int expectedLength) {
+        Scroll actual = null;
         try {
-            String[] response = null;
-            Scroll actual = null;
+            String[] response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + queryString);
 
-            response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + queryString);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
-            	actual = mapper.readValue(response[1], Scroll.class);
+                actual = mapper.readValue(response[1], Scroll.class);
             }
-
-            // (if non-null) expected id
             if (expectedId != null) {
-            	assertEquals(expectedId, actual.getId());
+                assertEquals(expectedId, actual.getId());
             }
             // (if non-negative number) expected length of channels
             if (expectedLength >= 0) {
                 assertEquals(expectedLength, actual.getChannels().size());
             }
-
-            return actual;
-        } catch (IOException e) {
-            fail();
         } catch (Exception e) {
             fail();
         }
-        return null;
+        return actual;
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -124,32 +116,26 @@ public class ITUtilScroll {
      * @return scroll object
      */
     public static Scroll assertContinueChannelsQuery(String path, int expectedResponseCode, String expectedId, int expectedLength) {
+        Scroll actual = null;
         try {
             String[] response = null;
-            Scroll actual = null;
 
             response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + path);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
-            	actual = mapper.readValue(response[1], Scroll.class);
+                actual = mapper.readValue(response[1], Scroll.class);
             }
-
-            // (if non-null) expected id
             if (expectedId != null) {
-            	assertEquals(expectedId, actual.getId());
+                assertEquals(expectedId, actual.getId());
             }
             // (if non-negative number) expected length of channels
             if (expectedLength >= 0) {
                 assertEquals(expectedLength, actual.getChannels().size());
             }
-
-            return actual;
-        } catch (IOException e) {
-            fail();
         } catch (Exception e) {
             fail();
         }
-        return null;
+        return actual;
     }
 
 }
