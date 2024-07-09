@@ -64,17 +64,17 @@ class ChannelFinderPropertiesIT {
     //     ChannelFinder - Enhanced Directory Service
     //         https://channelfinder.readthedocs.io/en/latest/api.html
     //     ------------------------------------------------------------------------------------------------
-    //     CHANNELFINDER API                                                                       PropertyManager
-    //     --------------------                                                                    --------------------
-    //     Retrieve a Property                    .../properties/<name>                            (GET)       read(String, boolean)
-    //     List Properties                        .../properties                                   (GET)       list()
-    //     Create/Replace a Property              .../properties/<name>                            (PUT)       create(String, Property)
-    //     Add Property to a Single Channel       .../properties/<property_name>/<channel_name>    (PUT)       addSingle(String, String, Property)
-    //     Create/Replace Properties              .../properties                                   (PUT)       create(Iterable<Property>)
-    //     Add Property to Multiple Channels      .../properties/<name>                            (POST)      update(String, Property)
-    //     Add Multiple Properties                .../properties                                   (POST)      update(Iterable<Property>)
-    //     Remove Property from Single Channel    .../properties/<property_name>/<channel_name>    (DELETE)    removeSingle(String, String)
-    //     Remove Property                        .../properties/<name>                            (DELETE)    remove(String)
+    //     CHANNELFINDER API
+    //     --------------------
+    //     Retrieve a Property                        .../properties/<name>                                GET
+    //     List Properties                            .../properties                                       GET
+    //     Create/Replace a Property                  .../properties/<name>                                PUT
+    //     Add Property to a Single Channel           .../properties/<property_name>/<channel_name>        PUT
+    //     Create/Replace Properties                  .../properties                                       PUT
+    //     Add Property to Multiple Channels          .../properties/<name>                                POST
+    //     Add Multiple Properties                    .../properties                                       POST
+    //     Remove Property from Single Channel        .../properties/<property_name>/<channel_name>        DELETE
+    //     Remove Property                            .../properties/<name>                                DELETE
     //     ------------------------------------------------------------------------------------------------
 
     // test data
@@ -162,16 +162,6 @@ class ChannelFinderPropertiesIT {
         //     check(s) for retrieve tag
         //         e.g.
         //             retrieve non-existing property
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //         List Properties
-        //         Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //         Remove Property
 
         ITUtilProperties.assertRetrieveProperty("/p11", HttpURLConnection.HTTP_NOT_FOUND);
     }
@@ -185,16 +175,6 @@ class ChannelFinderPropertiesIT {
         //     check(s) for remove property
         //         e.g.
         //             remove non-existing property
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Property
-        //         List Properties
-        //         Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
 
         try {
             // might be both 401, 404
@@ -223,16 +203,6 @@ class ChannelFinderPropertiesIT {
         //                 name    - null, empty
         //                 owner   - null, empty
         //                 channel - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //     x   Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //         Remove Property
 
         String json_incomplete1 = "{\"incomplete\"}";
         String json_incomplete2 = "{\"incomplete\"";
@@ -300,16 +270,6 @@ class ChannelFinderPropertiesIT {
         //                 name    - null, empty
         //                 owner   - null, empty
         //                 channel - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //     x   Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //         Remove Property
 
         Property property_check = new Property();
 
@@ -360,18 +320,7 @@ class ChannelFinderPropertiesIT {
         // what
         //     user with required role PropertyMod
         //     create property
-        //     --------------------------------------------------------------------------------
-        //     list, create property, list, retrieve, delete (unauthorized), delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
+        //         list, create property, list, retrieve, delete (unauthorized), delete, list
 
         try {
             ITUtilProperties.assertListProperties(0);
@@ -401,18 +350,7 @@ class ChannelFinderPropertiesIT {
     void handleProperty2() {
         // what
         //     create properties, one by one
-        //     --------------------------------------------------------------------------------
-        //     list, create property * 2, list, retrieve, retrieve, delete, list, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
+        //         list, create property * 2, list, retrieve, retrieve, delete, list, retrieve, delete, list
 
         try {
             ITUtilProperties.assertListProperties(0);
@@ -449,18 +387,7 @@ class ChannelFinderPropertiesIT {
     void handleProperty3RenameOwner() {
         // what
         //     replace property, rename owner
-        //     --------------------------------------------------------------------------------
-        //     list, create property, list, retrieve, update, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //     x   Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
+        //         list, create property, list, retrieve, update, retrieve, delete, list
 
         try {
             ITUtilProperties.assertListProperties(0);
@@ -490,18 +417,7 @@ class ChannelFinderPropertiesIT {
     void handleProperty4ReplaceNonExisting() {
         // what
         //     replace non-existing property
-        //     --------------------------------------------------------------------------------
-        //     list, update, list, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //         Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //     x   Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
+        //         list, update, list, retrieve, delete, list
 
         try {
             ITUtilProperties.assertListProperties(0);
@@ -525,23 +441,13 @@ class ChannelFinderPropertiesIT {
      */
     @Test
     void handleProperty5SingleChannel() {
+        // what
         //     add property to single channel
-        //     --------------------------------------------------------------------------------
-        //     clean start, create property, create channel,
-        //     add property to single channel,
-        //     list, retrieve
-        //     remove property from single channel,
-        //     delete channel, delete property, clean end
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //     x   Add Property to a Single Channel
-        //         Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //     x   Remove Property from Single Channel
-        //     x   Remove Property
+        //         clean start, create property, create channel,
+        //         add property to single channel,
+        //         list, retrieve
+        //         remove property from single channel,
+        //         delete channel, delete property, clean end
 
         Channel channel_c1 = new Channel("c1", "o1");
 
@@ -631,22 +537,12 @@ class ChannelFinderPropertiesIT {
      */
     @Test
     void handleProperty6MultipleChannels() {
+        // what
         //     add property to multiple channels
-        //     --------------------------------------------------------------------------------
-        //     clean start, create property, create channel(s),
-        //     add property to multiple channel(s),
-        //     list, retrieve
-        //     delete property, delete channel(s), clean end
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //     x   Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
+        //         clean start, create property, create channel(s),
+        //         add property to multiple channel(s),
+        //         list, retrieve
+        //         delete property, delete channel(s), clean end
 
         Channel channel_c1 = new Channel("c1", "o1");
         Channel channel_c2 = new Channel("c2", "o1");
@@ -755,16 +651,6 @@ class ChannelFinderPropertiesIT {
         //                 name    - null, empty
         //                 owner   - null, empty
         //                 channel - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Property
-        //     x   List Properties
-        //         Create/Replace a Property
-        //         Add Property to a Single Channel
-        //     x   Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //     x   Add Multiple Properties
-        //         Remove Property from Single Channel
-        //         Remove Property
 
         String json_incomplete1          = "{\"incomplete\"}";
         String json_property_p1_name_na  = "{\"na\":\"p1\",\"owner\":\"o1\"}";
@@ -839,18 +725,7 @@ class ChannelFinderPropertiesIT {
     void handleProperties() {
         // what
         //     create properties
-        //     --------------------------------------------------------------------------------
-        //     list, create properties (10), list, retrieve (10), delete (5), list, delete (5), list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //         Create/Replace a Property
-        //         Add Property to a Single Channel
-        //     x   Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //         Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
+        //         list, create properties (10), list, retrieve (10), delete (5), list, delete (5), list
 
         Property[] properties_10 = new Property[] {
                 property_p1_owner_o1,
@@ -925,18 +800,7 @@ class ChannelFinderPropertiesIT {
     void handleProperties2ReplaceNonExisting() {
         // what
         //     replace non-existing properties
-        //     --------------------------------------------------------------------------------
-        //     list, update properties (10), list, retrieve (10), delete (5), list, delete (5), list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //         Create/Replace a Property
-        //         Add Property to a Single Channel
-        //         Create/Replace Properties
-        //         Add Property to Multiple Channels
-        //     x   Add Multiple Properties
-        //         Remove Property from Single Channel
-        //     x   Remove Property
+        //         list, update properties (10), list, retrieve (10), delete (5), list, delete (5), list
 
         Property[] properties_10 = new Property[] {
                 property_p1_owner_o1,

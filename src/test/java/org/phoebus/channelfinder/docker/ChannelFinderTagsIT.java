@@ -64,17 +64,17 @@ class ChannelFinderTagsIT {
     //     ChannelFinder - Enhanced Directory Service
     //         https://channelfinder.readthedocs.io/en/latest/api.html
     //     ------------------------------------------------------------------------------------------------
-    //     CHANNELFINDER API                                                       TagManager
-    //     --------------------                                                    --------------------
-    //     Retrieve a Tag                    .../tags/<name>                       (GET)    read(String, boolean)
-    //     List Tags                         .../tags                              (GET)    list()
-    //     Create/Replace a Tag              .../tags/<name>                       (PUT)    create(String, Tag)
-    //     Add Tag to a Single Channel       .../tags/<tag_name>/<channel_name>    (PUT)    addSingle(String, String, Tag)
-    //     Create/Replace Tags               .../tags/<name>                       (PUT)    create(Iterable<Tag>)
-    //     Add Tag to Multiple Channels      .../tags/<name>                       (POST)   update(String, Tag)
-    //     Add Multiple Tags                 .../tags                              (POST)   update(Iterable<Tag>)
-    //     Remove Tag from Single Channel    .../tags/<tag_name>/<channel_name>    (DELETE) removeSingle(String, String)
-    //     Remove Tag                        .../tags/<name>                       (DELETE) remove(String)
+    //     CHANNELFINDER API
+    //     --------------------
+    //     Retrieve a Tag                        .../tags/<name>                           GET
+    //     List Tags                             .../tags                                  GET
+    //     Create/Replace a Tag                  .../tags/<name>                           PUT
+    //     Add Tag to a Single Channel           .../tags/<tag_name>/<channel_name>        PUT
+    //     Create/Replace Tags                   .../tags/<name>                           PUT
+    //     Add Tag to Multiple Channels          .../tags/<name>                           POST
+    //     Add Multiple Tags                     .../tags                                  POST
+    //     Delete Tag from Single Channel        .../tags/<tag_name>/<channel_name>        DELETE
+    //     Delete Tag                            .../tags/<name>                           DELETE
     //     ------------------------------------------------------------------------------------------------
 
     // test data
@@ -156,16 +156,6 @@ class ChannelFinderTagsIT {
         //     check(s) for retrieve tag
         //         e.g.
         //             retrieve non-existing tag
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //         List Tags
-        //         Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //         Remove Tag
 
         ITUtilTags.assertRetrieveTag("/t11", HttpURLConnection.HTTP_NOT_FOUND);
     }
@@ -179,16 +169,6 @@ class ChannelFinderTagsIT {
         //     check(s) for remove tag
         //         e.g.
         //             remove non-existing tag
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Tag
-        //         List Tags
-        //         Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
 
         try {
             // might be both 401, 404
@@ -217,16 +197,6 @@ class ChannelFinderTagsIT {
         //                 name    - null, empty
         //                 owner   - null, empty
         //                 channel - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Tag
-        //     x   List Tags
-        //     x   Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //     x   Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //         Remove Tag
 
         String json_incomplete1 = "{\"incomplete\"}";
         String json_incomplete2 = "{\"incomplete\"";
@@ -292,16 +262,6 @@ class ChannelFinderTagsIT {
         //                 name    - null, empty
         //                 owner   - null, empty
         //                 channel - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Tag
-        //     x   List Tags
-        //     x   Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //     x   Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //         Remove Tag
 
         Tag tag_check = new Tag();
 
@@ -352,18 +312,7 @@ class ChannelFinderTagsIT {
         // what
         //     user with required role TagMod
         //     create tag
-        //     --------------------------------------------------------------------------------
-        //     list, create tag, list, retrieve, delete (unauthorized), delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //     x   Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         list, create tag, list, retrieve, delete (unauthorized), delete, list
 
         try {
             ITUtilTags.assertListTags(0);
@@ -393,18 +342,7 @@ class ChannelFinderTagsIT {
     void handleTag2() {
         // what
         //     create tags, one by one
-        //     --------------------------------------------------------------------------------
-        //     list, create tag * 2, list, retrieve, retrieve, delete, list, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //     x   Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         list, create tag * 2, list, retrieve, retrieve, delete, list, retrieve, delete, list
 
         try {
             ITUtilTags.assertListTags(0);
@@ -440,18 +378,7 @@ class ChannelFinderTagsIT {
     void handleTag3RenameOwner() {
         // what
         //     replace tag, rename owner
-        //     --------------------------------------------------------------------------------
-        //     list, create tag, list, retrieve, update, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //     x   Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //     x   Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         list, create tag, list, retrieve, update, retrieve, delete, list
 
         try {
             ITUtilTags.assertListTags(0);
@@ -481,18 +408,7 @@ class ChannelFinderTagsIT {
     void handleTag4ReplaceNonExisting() {
         // what
         //     replace non-existing tag
-        //     --------------------------------------------------------------------------------
-        //     list, update, list, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //         Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //     x   Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         list, update, list, retrieve, delete, list
 
         try {
             ITUtilTags.assertListTags(0);
@@ -516,23 +432,13 @@ class ChannelFinderTagsIT {
      */
     @Test
     void handleTag5SingleChannel() {
+        // what
         //     add tag to single channel
-        //     --------------------------------------------------------------------------------
-        //     clean start, create tag, create channel,
-        //     add tag to single channel,
-        //     list, retrieve
-        //     remove tag from single channel,
-        //     delete channel, delete tag, clean end
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //     x   Create/Replace a Tag
-        //     x   Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //     x   Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         clean start, create tag, create channel,
+        //         add tag to single channel,
+        //         list, retrieve
+        //         remove tag from single channel,
+        //         delete channel, delete tag, clean end
 
         Channel channel_c1 = new Channel("c1", "o1");
 
@@ -623,22 +529,12 @@ class ChannelFinderTagsIT {
      */
     @Test
     void handleTag6MultipleChannels() {
+        // what
         //     add tag to multiple channels
-        //     --------------------------------------------------------------------------------
-        //     clean start, create tag, create channel(s),
-        //     add tag to multiple channel(s),
-        //     list, retrieve
-        //     delete tag, delete channel(s), clean end
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //     x   Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //     x   Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         clean start, create tag, create channel(s),
+        //         add tag to multiple channel(s),
+        //         list, retrieve
+        //         delete tag, delete channel(s), clean end
 
         Channel channel_c1 = new Channel("c1", "o1");
         Channel channel_c2 = new Channel("c2", "o1");
@@ -745,16 +641,6 @@ class ChannelFinderTagsIT {
         //                 name    - null, empty
         //                 owner   - null, empty
         //                 channel - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Tag
-        //     x   List Tags
-        //         Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //     x   Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //     x   Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //         Remove Tag
 
         String json_incomplete1     = "{\"incomplete\"}";
         String json_tag_t1_name_na  = "{\"na\":\"t1\",\"owner\":\"o1\"}";
@@ -829,18 +715,7 @@ class ChannelFinderTagsIT {
     void handleTags() {
         // what
         //     create tags
-        //     --------------------------------------------------------------------------------
-        //     list, create tags (10), list, retrieve (10), delete (5), list, delete (5), list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //         Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //     x   Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //         Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         list, create tags (10), list, retrieve (10), delete (5), list, delete (5), list
 
         Tag[] tags_10 = new Tag[] {
                 tag_t1_owner_o1,
@@ -915,18 +790,7 @@ class ChannelFinderTagsIT {
     void handleTags2ReplaceNonExisting() {
         // what
         //     replace non-existing tags
-        //     --------------------------------------------------------------------------------
-        //     list, update tags (10), list, retrieve (10), delete (5), list, delete (5), list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Tag
-        //     x   List Tags
-        //         Create/Replace a Tag
-        //         Add Tag to a Single Channel
-        //         Create/Replace Tags
-        //         Add Tag to Multiple Channels
-        //     x   Add Multiple Tags
-        //         Remove Tag from Single Channel
-        //     x   Remove Tag
+        //         list, update tags (10), list, retrieve (10), delete (5), list, delete (5), list
 
         Tag[] tags_10 = new Tag[] {
                 tag_t1_owner_o1,
