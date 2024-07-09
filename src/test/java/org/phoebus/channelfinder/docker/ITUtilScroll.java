@@ -23,9 +23,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.net.HttpURLConnection;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-
 import org.phoebus.channelfinder.entity.Scroll;
 
 /**
@@ -36,9 +33,6 @@ import org.phoebus.channelfinder.entity.Scroll;
  * @see org.phoebus.channelfinder.docker.ITUtil
  */
 public class ITUtilScroll {
-
-    static final ObjectMapper mapper      = new ObjectMapper();
-    static final Scroll    SCROLL_NULL = null;
 
     /**
      * This class is not to be instantiated.
@@ -77,7 +71,7 @@ public class ITUtilScroll {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
-                actual = mapper.readValue(response[1], Scroll.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Scroll.class);
             }
             if (expectedId != null) {
                 assertEquals(expectedId, actual.getId());
@@ -123,7 +117,7 @@ public class ITUtilScroll {
             response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL + path);
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (expectedResponseCode == HttpURLConnection.HTTP_OK) {
-                actual = mapper.readValue(response[1], Scroll.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Scroll.class);
             }
             if (expectedId != null) {
                 assertEquals(expectedId, actual.getId());

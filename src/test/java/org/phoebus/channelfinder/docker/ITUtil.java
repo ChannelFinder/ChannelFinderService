@@ -24,6 +24,7 @@ import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 
 import java.io.File;
@@ -48,38 +49,33 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 public class ITUtil {
 
-    static final String CHANNELFINDER = "channelfinder";
+    // note
+    //     port numbers can be exposed differently to avoid interference with any running instance
 
-    static final String AUTH_USER     = "user:userPass";
-    static final String AUTH_ADMIN    = "admin:adminPass";
-    static final String HTTP          = "http://";
-    static final String HEADER_JSON   = "application/json";
-    static final String HEADER_BASIC  = "Basic ";
+    private static final String AUTH_USER     = "user:userPass";
+    private static final String AUTH_ADMIN    = "admin:adminPass";
+    private static final String HEADER_JSON   = "application/json";
+    private static final String HEADER_BASIC  = "Basic ";
 
-    // port numbers
-    //     can be exposed differently externally to avoid interference with any running instance
+    private static final String RESOURCES_CHANNELS    = "/resources/channels";
+    private static final String RESOURCES_PROPERTIES  = "/resources/properties";
+    private static final String RESOURCES_SCROLL      = "/resources/scroll";
+    private static final String RESOURCES_TAGS        = "/resources/tags";
 
-    static final String IP_PORT_CHANNELFINDER = "127.0.0.1:8080/ChannelFinder";
-    static final String IP_PORT_ELASTICSEARCH = "127.0.0.1:9201";
-
-    static final String RESOURCES_CHANNELS    = "/resources/channels";
-    static final String RESOURCES_PROPERTIES  = "/resources/properties";
-    static final String RESOURCES_SCROLL      = "/resources/scroll";
-    static final String RESOURCES_TAGS        = "/resources/tags";
-
-    static final String HTTP_IP_PORT_CHANNELFINDER = HTTP + IP_PORT_CHANNELFINDER;
-
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS   = ITUtil.HTTP + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES = ITUtil.HTTP + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_PROPERTIES;
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL     = ITUtil.HTTP + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_SCROLL;
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS       = ITUtil.HTTP + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_TAGS;
+    public static final String HTTP_IP_PORT_CHANNELFINDER                      = "http://127.0.0.1:8080/ChannelFinder";
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS   = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_PROPERTIES;
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL     = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_SCROLL;
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS       = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_TAGS;
 
     // integration test - docker
 
     private static final HttpClient CLIENT = HttpClient.newHttpClient();
 
+    public static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public static final String CHANNELFINDER = "channelfinder";
     public static final String INTEGRATIONTEST_DOCKER_COMPOSE = "docker-compose-integrationtest.yml";
-    public static final String INTEGRATIONTEST_LOG_MESSAGE    = ".*Started Application.*";
 
     // code coverage
 
@@ -136,60 +132,6 @@ public class ITUtil {
                 // proceed if file cannot be copied
             }
         }
-    }
-
-    /**
-     * Send GET request with given string as URI and return response status code.
-     *
-     * @param str string to parse as URI
-     * @return response status code
-     * @throws URISyntaxException If request is created with non-legal URI characters
-     * @throws InterruptedException
-     * @throws IOException
-     */
-    static int sendRequestStatusCode(String str) throws URISyntaxException, IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(str))
-                .GET()
-                .build();
-
-        HttpResponse<String> response = CLIENT.send(request, BodyHandlers.ofString());
-
-        return response.statusCode();
-    }
-
-    /**
-     * Send GET request with given string as URI and return string array with response status code and response body.
-     *
-     * @param str string to parse as URI
-     * @return string array with response status code and response body
-     * @throws URISyntaxException If request is created with non-legal URI characters
-     * @throws InterruptedException
-     * @throws IOException
-     */
-    static String[] sendRequest(String str) throws URISyntaxException, IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(str))
-                .GET()
-                .build();
-
-        HttpResponse<String> response = CLIENT.send(request, BodyHandlers.ofString());
-
-        return new String[] {String.valueOf(response.statusCode()), response.body()};
-    }
-
-    /**
-     * Send request and return response with string array with response code and response string.
-     *
-     * @param request request
-     * @return string array with response code and response string
-     * @throws InterruptedException
-     * @throws IOException
-     */
-    static String[] sendRequest(HttpRequest request) throws IOException, InterruptedException {
-        HttpResponse<String> response = CLIENT.send(request, BodyHandlers.ofString());
-
-        return new String[] {String.valueOf(response.statusCode()), response.body()};
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -277,8 +219,7 @@ public class ITUtil {
                 : "";
 
         String str =
-                  ITUtil.HTTP
-                + ITUtil.IP_PORT_CHANNELFINDER
+                  ITUtil.HTTP_IP_PORT_CHANNELFINDER
                 + ITUtil.buildUri(endpointChoice)
                 + pathstr;
 
@@ -354,6 +295,56 @@ public class ITUtil {
         default:
             return StringUtils.EMPTY;
         }
+    }
+
+    /**
+     * Send GET request with given string as URI and return response status code.
+     *
+     * @param str string to parse as URI
+     * @return response status code
+     * @throws URISyntaxException If request is created with non-legal URI characters
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    static int sendRequestStatusCode(String str) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(str))
+                .GET()
+                .build();
+
+        return Integer.parseInt(sendRequest(request)[0]);
+    }
+
+    /**
+     * Send GET request with given string as URI and return string array with response status code and response body.
+     *
+     * @param str string to parse as URI
+     * @return string array with response status code and response body
+     * @throws URISyntaxException If request is created with non-legal URI characters
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    static String[] sendRequest(String str) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(str))
+                .GET()
+                .build();
+
+        return sendRequest(request);
+    }
+
+    /**
+     * Send request and return response with string array with response code and response string.
+     *
+     * @param request request
+     * @return string array with response code and response string
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    static String[] sendRequest(HttpRequest request) throws IOException, InterruptedException {
+        HttpResponse<String> response = CLIENT.send(request, BodyHandlers.ofString());
+
+        return new String[] {String.valueOf(response.statusCode()), response.body()};
     }
 
 }

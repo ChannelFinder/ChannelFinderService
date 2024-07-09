@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.net.HttpURLConnection;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
@@ -43,9 +42,8 @@ import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
  */
 public class ITUtilChannels {
 
-    static final ObjectMapper mapper        = new ObjectMapper();
-    static final Channel[] CHANNELS_NULL = null;
-    static final Channel   CHANNEL_NULL  = null;
+    private static final Channel[] CHANNELS_NULL = null;
+    private static final Channel   CHANNEL_NULL  = null;
 
     /**
      * This class is not to be instantiated.
@@ -79,7 +77,7 @@ public class ITUtilChannels {
      */
     static String object2Json(Channel value) {
         try {
-            return mapper.writeValueAsString(value);
+            return ITUtil.MAPPER.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -93,7 +91,7 @@ public class ITUtilChannels {
      */
     static String object2Json(Channel[] value) {
         try {
-            return mapper.writeValueAsString(value);
+            return ITUtil.MAPPER.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -128,7 +126,7 @@ public class ITUtilChannels {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Channel.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Channel.class);
             }
             if (expected != null) {
                 assertEquals(expected, actual);
@@ -188,7 +186,7 @@ public class ITUtilChannels {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Channel[].class);
+                actual = ITUtil.MAPPER.readValue(response[1], Channel[].class);
             }
             // expected number of items in list
             //     (if non-negative number)
@@ -292,7 +290,7 @@ public class ITUtilChannels {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Channel.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Channel.class);
             }
             if (expected != null) {
                 assertEquals(expected, actual);
@@ -333,7 +331,7 @@ public class ITUtilChannels {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Channel[].class);
+                actual = ITUtil.MAPPER.readValue(response[1], Channel[].class);
             }
 
             if (expected != null) {
@@ -381,7 +379,7 @@ public class ITUtilChannels {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Channel.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Channel.class);
             }
             if (expected != null) {
                 assertEquals(expected, actual);
@@ -421,7 +419,7 @@ public class ITUtilChannels {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Channel[].class);
+                actual = ITUtil.MAPPER.readValue(response[1], Channel[].class);
             }
             if (expected != null) {
                 assertEqualsChannels(expected, actual);

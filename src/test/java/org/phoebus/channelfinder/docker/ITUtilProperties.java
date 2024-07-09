@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.net.HttpURLConnection;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
@@ -43,9 +42,8 @@ import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
  */
 public class ITUtilProperties {
 
-    static final ObjectMapper  mapper          = new ObjectMapper();
-    static final Property[] PROPERTIES_NULL = null;
-    static final Property   PROPERTY_NULL   = null;
+    private static final Property[] PROPERTIES_NULL = null;
+    private static final Property   PROPERTY_NULL   = null;
 
     /**
      * This class is not to be instantiated.
@@ -80,7 +78,7 @@ public class ITUtilProperties {
      */
     static String object2Json(Property value) {
         try {
-            return mapper.writeValueAsString(value);
+            return ITUtil.MAPPER.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -94,7 +92,7 @@ public class ITUtilProperties {
      */
     static String object2Json(Property[] value) {
         try {
-            return mapper.writeValueAsString(value);
+            return ITUtil.MAPPER.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             fail();
         }
@@ -129,7 +127,7 @@ public class ITUtilProperties {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Property.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Property.class);
             }
             if (expected != null) {
                 assertEquals(expected, actual);
@@ -164,7 +162,7 @@ public class ITUtilProperties {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Property[].class);
+                actual = ITUtil.MAPPER.readValue(response[1], Property[].class);
             }
             // expected number of items in list
             //     (if non-negative number)
@@ -226,7 +224,7 @@ public class ITUtilProperties {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Property.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Property.class);
             }
             if (expected != null) {
                 assertEquals(expected, actual);
@@ -256,11 +254,11 @@ public class ITUtilProperties {
     public static Property assertAddPropertySingleChannel(String path, Property value, int expectedResponseCode, Property expected) {
         Property actual = null;
         try {
-            String[] response = ITUtil.sendRequest(ITUtil.buildRequest(MethodChoice.PUT, AuthorizationChoice.ADMIN, EndpointChoice.PROPERTIES, path, mapper.writeValueAsString(value)));
+            String[] response = ITUtil.sendRequest(ITUtil.buildRequest(MethodChoice.PUT, AuthorizationChoice.ADMIN, EndpointChoice.PROPERTIES, path, ITUtil.MAPPER.writeValueAsString(value)));
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Property.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Property.class);
             }
             if (expected != null) {
                 assertEquals(expected, actual);
@@ -301,7 +299,7 @@ public class ITUtilProperties {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Property[].class);
+                actual = ITUtil.MAPPER.readValue(response[1], Property[].class);
             }
             if (expected != null) {
                 assertEqualsXmlProperties(expected, actual);
@@ -348,7 +346,7 @@ public class ITUtilProperties {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Property.class);
+                actual = ITUtil.MAPPER.readValue(response[1], Property.class);
             }
             if (expected != null) {
                 assertEquals(expected, actual);
@@ -388,7 +386,7 @@ public class ITUtilProperties {
 
             ITUtil.assertResponseLength2Code(response, expectedResponseCode);
             if (HttpURLConnection.HTTP_OK == expectedResponseCode) {
-                actual = mapper.readValue(response[1], Property[].class);
+                actual = ITUtil.MAPPER.readValue(response[1], Property[].class);
             }
             if (expected != null) {
                 assertEqualsXmlProperties(expected, actual);
