@@ -91,6 +91,12 @@ class AAChannelProcessorIT {
             String archiverEndpoint,
             String submissionBody)
             throws JsonProcessingException, InterruptedException {
+        // Request to version
+        Map<String, String> versions = Map.of("mgmt_version", "Archiver Appliance Version 1.1.0");
+        mockArchiverAppliance.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(versions))
+                .addHeader("Content-Type", "application/json"));
+
         // Request to policies
         Map<String, String> policyList = Map.of("policy", "description");
         mockArchiverAppliance.enqueue(new MockResponse()
@@ -119,6 +125,11 @@ class AAChannelProcessorIT {
         assertEquals(count, archiverEndpoint.isEmpty() ? 0 : 1);
 
         int expectedRequests = 1;
+        RecordedRequest requestVersion = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+        assert requestVersion != null;
+        assertEquals("/mgmt/bpl/getVersions", requestVersion.getPath());
+
+        expectedRequests += 1;
         RecordedRequest requestPolicy = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
         assert requestPolicy != null;
         assertEquals("/mgmt/bpl/getPolicyList", requestPolicy.getPath());

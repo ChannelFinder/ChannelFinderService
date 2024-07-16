@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -53,6 +52,7 @@ public class ArchiverClient {
     private static final String MGMT_RESOURCE = "/mgmt/bpl";
     private static final String POLICY_RESOURCE = MGMT_RESOURCE + "/getPolicyList";
     private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
+    private static final String ARCHIVER_VERSIONS_RESOURCE = MGMT_RESOURCE + "/getVersions";
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final int TIMEOUT_SECONDS = 15;
 
@@ -62,7 +62,7 @@ public class ArchiverClient {
                 .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
     }
 
-    List<Map<String, String>> getStatuses(Map<String, ArchivePV> archivePVS, String archiverURL, String archiverVersion) throws JsonProcessingException {
+    List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion) throws JsonProcessingException {
         Set<String> pvs = archivePVS.keySet();
         if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion)) {
 
@@ -139,7 +139,7 @@ public class ArchiverClient {
     }
 
 
-    long configureAA(Map<ArchiveAction, List<ArchivePV>> archivePVS, String aaURL)
+    long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL)
             throws JsonProcessingException {
         logger.log(Level.INFO, () -> String.format("Configure PVs %s in %s", archivePVS.toString(), aaURL));
         long count = 0;
@@ -165,7 +165,7 @@ public class ArchiverClient {
                             + archivePVS.get(ArchiveAction.PAUSE).size() + " pvs");
             submitAction(
                     objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.PAUSE).stream()
-                            .map(ArchivePV::getPv)
+                            .map(ArchivePVOptions::getPv)
                             .collect(Collectors.toList())),
                     ArchiveAction.PAUSE.getEndpoint(),
                     aaURL);
@@ -178,7 +178,7 @@ public class ArchiverClient {
                             + archivePVS.get(ArchiveAction.RESUME).size() + " pvs");
             submitAction(
                     objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.RESUME).stream()
-                            .map(ArchivePV::getPv)
+                            .map(ArchivePVOptions::getPv)
                             .collect(Collectors.toList())),
                     ArchiveAction.RESUME.getEndpoint(),
                     aaURL);
@@ -205,5 +205,27 @@ public class ArchiverClient {
             logger.log(Level.WARNING, "Could not get AA policies list from: " + aaURL, e);
             return List.of();
         }
+    }
+
+    String getVersion(String archiverURL) {
+        try {
+
+            String response = client.get()
+                    .uri(URI.create(archiverURL + ARCHIVER_VERSIONS_RESOURCE))
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .block();
+            Map<String, String> versionMap = objectMapper.readValue(response, Map.class);
+            String[] mgmtVersion = versionMap.get("mgmt_version").split("Archiver Appliance Version ");
+            if (mgmtVersion.length > 1) {
+                return mgmtVersion[1];
+            }
+
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Could not get version from: " + archiverURL, e);
+            return "";
+        }
+        return "";
     }
 }

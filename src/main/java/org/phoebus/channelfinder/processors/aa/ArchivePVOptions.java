@@ -8,8 +8,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ArchivePV {
-    private static final Logger logger = Logger.getLogger(ArchivePV.class.getName());
+public class ArchivePVOptions {
+    private static final Logger logger = Logger.getLogger(ArchivePVOptions.class.getName());
 
     private String pv;
     private String samplingMethod;
