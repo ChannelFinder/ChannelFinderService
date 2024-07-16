@@ -62,7 +62,7 @@ public class AAChannelProcessor implements ChannelProcessor {
     private String archivePropertyName;
     @Value("${aa.archiver_property_name:archiver}")
     private String archiverPropertyName;
-    @Value("${aa.auto_pause:pvStatus,archive}")
+    @Value("${aa.auto_pause:}")
     private List<String> autoPauseOptions;
 
     @Override
