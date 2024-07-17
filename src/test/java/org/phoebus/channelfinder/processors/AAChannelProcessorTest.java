@@ -13,13 +13,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.phoebus.channelfinder.processors.AAChannelProcessor.ArchivePV;
+import org.phoebus.channelfinder.processors.aa.ArchivePVOptions;
 
 class AAChannelProcessorTest {
 
     @Test
     void archivePropertyParsePass() {
-        ArchivePV ar = new ArchivePV();
+        ArchivePVOptions ar = new ArchivePVOptions();
         List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
         ar.setPv("sim://testing");
         ar.setSamplingParameters("monitor@1.0", testPolicyList);
@@ -34,7 +34,7 @@ class AAChannelProcessorTest {
     @MethodSource("provideArchivePropertyArguments")
     void testArchiveProperty(String parameters, List<String> policyList,
                              String expectedSamplingMethod, String expectedSamplingPeriod) {
-        ArchivePV ar = new ArchivePV();
+        ArchivePVOptions ar = new ArchivePVOptions();
         ar.setSamplingParameters(parameters, policyList);
         Assertions.assertEquals(expectedSamplingMethod, ar.getSamplingMethod());
         Assertions.assertEquals(expectedSamplingPeriod, ar.getSamplingPeriod());
@@ -68,7 +68,7 @@ class AAChannelProcessorTest {
 
     @Test
     void defaultArchiveTag() {
-        ArchivePV ar = new ArchivePV();
+        ArchivePVOptions ar = new ArchivePVOptions();
         List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
         ar.setPv("sim://testing");
         ar.setSamplingParameters("default", testPolicyList);
@@ -81,7 +81,7 @@ class AAChannelProcessorTest {
 
     @Test
     void archivePolicyParsing() {
-        ArchivePV ar = new ArchivePV();
+        ArchivePVOptions ar = new ArchivePVOptions();
         ar.setPv("sim://testingPolicy");
         ar.setPolicy("Fast");
 
@@ -103,11 +103,11 @@ class AAChannelProcessorTest {
 
     @Test
     void archivePVJson() throws JsonProcessingException {
-        ArchivePV ar1 = new ArchivePV();
+        ArchivePVOptions ar1 = new ArchivePVOptions();
         ar1.setPv("sim://testing1");
         ar1.setSamplingParameters("monitor@1.0", new ArrayList<>());
 
-        ArchivePV ar2 = new ArchivePV();
+        ArchivePVOptions ar2 = new ArchivePVOptions();
         ar2.setPv("sim://testing2");
         ar2.setSamplingParameters("scan@0.2", new ArrayList<>());
 
@@ -118,7 +118,7 @@ class AAChannelProcessorTest {
         Assertions.assertEquals(str, expectedString);
 
         // Only a pv name
-        ArchivePV ar3 = new ArchivePV();
+        ArchivePVOptions ar3 = new ArchivePVOptions();
         ar3.setPv("sim://testing3");
         str = objectMapper.writeValueAsString(List.of(ar3));
 
@@ -129,7 +129,7 @@ class AAChannelProcessorTest {
         List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
 
         // Valid policy
-        ArchivePV ar4 = new ArchivePV();
+        ArchivePVOptions ar4 = new ArchivePVOptions();
         ar4.setPv("sim://testing4");
         ar4.setSamplingParameters("Fast", testPolicyList);
         str = objectMapper.writeValueAsString(List.of(ar4));
@@ -138,7 +138,7 @@ class AAChannelProcessorTest {
         Assertions.assertEquals(str, expectedString);
 
         // Invalid policy
-        ArchivePV ar5 = new ArchivePV();
+        ArchivePVOptions ar5 = new ArchivePVOptions();
         ar5.setPv("sim://testing5");
         ar5.setSamplingParameters("Fastest", testPolicyList);
         str = objectMapper.writeValueAsString(List.of(ar5));
