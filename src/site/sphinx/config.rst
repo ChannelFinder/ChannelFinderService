@@ -99,7 +99,7 @@ A list of archiver appliance URLs and aliases. ::
 
     aa.urls={'default': 'http://archiver-01.example.com:17665', 'neutron-controls': 'http://archiver-02.example.com:17665'}
 
-To set the choice of default archiver appliance, set the property :ref:`aa.default_alias` to the alias of the default archiver appliance.
+To set the choice of default archiver appliance, set the property :ref:`aa.default_alias` to the alias of the default archiver appliance. This setting can also be a comma-separated list if you want multiple default archivers.
 
 To pass the PV as "pva://PVNAME" to the archiver appliance, set the property :ref:`aa.pva` to **true**.
 
@@ -135,6 +135,10 @@ For named policy PVs, the AA plugin will first check that the named policy exist
    record(ao, "MyPV2") {
       info(archive,  "monitor@0.1")
       info(archiver, "aa_appliance1")
+   }
+   record(ao, "MyPVWithMultipleArchivers") {
+      info(archive,  "monitor@0.1")
+      info(archiver, "aa_appliance0,aa_appliance1")
    }
    record(ao, "MyPolicyPV") {
       info(archive,  "AAPolicyName")
