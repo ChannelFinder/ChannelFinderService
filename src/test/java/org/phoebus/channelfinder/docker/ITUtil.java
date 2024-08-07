@@ -18,22 +18,26 @@
 
 package org.phoebus.channelfinder.docker;
 
+import org.springframework.http.HttpHeaders;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.util.Base64;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -45,51 +49,33 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 public class ITUtil {
 
-    static final String CHANNELFINDER = "channelfinder";
+    // note
+    //     port numbers can be exposed differently to avoid interference with any running instance
 
-    static final String AUTH_USER     = "user:userPass";
-    static final String AUTH_ADMIN    = "admin:adminPass";
-    static final String EMPTY_JSON    = "[]";
-    static final String HTTP          = "http://";
-    static final String HEADER_JSON   = "'Content-Type: application/json'";
+    private static final String AUTH_USER     = "user:userPass";
+    private static final String AUTH_ADMIN    = "admin:adminPass";
+    private static final String HEADER_JSON   = "application/json";
+    private static final String HEADER_BASIC  = "Basic ";
 
-    // port numbers
-    //     can be exposed differently externally to avoid interference with any running instance
+    private static final String RESOURCES_CHANNELS    = "/resources/channels";
+    private static final String RESOURCES_PROPERTIES  = "/resources/properties";
+    private static final String RESOURCES_SCROLL      = "/resources/scroll";
+    private static final String RESOURCES_TAGS        = "/resources/tags";
 
-    static final String IP_PORT_CHANNELFINDER = "127.0.0.1:8080/ChannelFinder";
-    static final String IP_PORT_ELASTICSEARCH = "127.0.0.1:9201";
-
-    static final String RESOURCES_CHANNELS = "/resources/channels";
-    static final String RESOURCES_PROPERTIES = "/resources/properties";
-    static final String RESOURCES_SCROLL = "/resources/scroll";
-    static final String RESOURCES_TAGS = "/resources/tags";
-
-    static final String HTTP_IP_PORT_CHANNELFINDER = HTTP + IP_PORT_CHANNELFINDER;
-
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS              = ITUtil.HTTP +                           ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
-    static final String HTTP_AUTH_USER_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS    = ITUtil.HTTP + ITUtil.AUTH_USER  + "@" + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
-    static final String HTTP_AUTH_ADMIN_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS   = ITUtil.HTTP + ITUtil.AUTH_ADMIN + "@" + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
-
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES            = ITUtil.HTTP +                           ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_PROPERTIES;
-    static final String HTTP_AUTH_USER_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES  = ITUtil.HTTP + ITUtil.AUTH_USER  + "@" + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_PROPERTIES;
-    static final String HTTP_AUTH_ADMIN_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES = ITUtil.HTTP + ITUtil.AUTH_ADMIN + "@" + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_PROPERTIES;
-
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL                = ITUtil.HTTP + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_SCROLL;
-
-    static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS                  = ITUtil.HTTP +                           ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_TAGS;
-    static final String HTTP_AUTH_USER_IP_PORT_CHANNELFINDER_RESOURCES_TAGS        = ITUtil.HTTP + ITUtil.AUTH_USER  + "@" + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_TAGS;
-    static final String HTTP_AUTH_ADMIN_IP_PORT_CHANNELFINDER_RESOURCES_TAGS       = ITUtil.HTTP + ITUtil.AUTH_ADMIN + "@" + ITUtil.IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_TAGS;
-
-    private static final String BRACKET_BEGIN     = "[";
-    private static final String BRACKET_END       = "]";
-    private static final String CURLY_BRACE_BEGIN = "{";
-    private static final String CURLY_BRACE_END   = "}";
-    private static final String HTTP_REPLY        = "HTTP";
+    public static final String HTTP_IP_PORT_CHANNELFINDER                      = "http://127.0.0.1:8080/ChannelFinder";
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS   = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_CHANNELS;
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_PROPERTIES = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_PROPERTIES;
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_SCROLL     = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_SCROLL;
+    public static final String HTTP_IP_PORT_CHANNELFINDER_RESOURCES_TAGS       = ITUtil.HTTP_IP_PORT_CHANNELFINDER + ITUtil.RESOURCES_TAGS;
 
     // integration test - docker
 
+    private static final HttpClient CLIENT = HttpClient.newHttpClient();
+
+    public static final ObjectMapper MAPPER = new ObjectMapper();
+
+    public static final String CHANNELFINDER = "channelfinder";
     public static final String INTEGRATIONTEST_DOCKER_COMPOSE = "docker-compose-integrationtest.yml";
-    public static final String INTEGRATIONTEST_LOG_MESSAGE    = ".*Started Application.*";
 
     // code coverage
 
@@ -146,100 +132,6 @@ public class ITUtil {
                 // proceed if file cannot be copied
             }
         }
-    }
-
-    /**
-     * Do GET request with given string as URL and return response code.
-     *
-     * @param spec string to parse as URL
-     * @return response code
-     *
-     * @throws IOException
-     */
-    static int doGet(String spec) throws IOException {
-        URL url = new URL(spec);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        return con.getResponseCode();
-    }
-
-    /**
-     * Do GET request with given string as URL and return response with string array with response code and response string.
-     *
-     * @param spec string to parse as URL
-     * @return string array with response code and response string
-     *
-     * @throws IOException
-     */
-    static String[] doGetJson(String spec) throws IOException {
-        URL url = new URL(spec);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        int responseCode = con.getResponseCode();
-
-        String line;
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = responseCode == HttpURLConnection.HTTP_OK
-                ? new BufferedReader(new InputStreamReader(con.getInputStream()))
-                : new BufferedReader(new InputStreamReader(con.getErrorStream()))) {
-            while((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-        }
-
-        return new String[] {String.valueOf(responseCode), sb.toString().trim()};
-    }
-
-    /**
-     * Run a shell command and return response with string array with response code and response string.
-     *
-     * @param command shell command
-     * @return string array with response code and response string
-     *
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws Exception
-     */
-    static String[] runShellCommand(String command) throws IOException, InterruptedException, Exception {
-        // run shell command & return http response code if available
-
-        final ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command("bash", "-c", command);
-
-        String responseCode = null;
-        String responseContent = null;
-        try {
-            final Process process = processBuilder.start();
-            final BufferedReader errorStream = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            final BufferedReader inputStream = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            final boolean processFinished = process.waitFor(30, TimeUnit.SECONDS);
-
-            String line = null;
-            while ((line = inputStream.readLine()) != null) {
-                if (line.startsWith(HTTP_REPLY)) {
-                    // response code, e.g. "HTTP/1.1 200", "HTTP/1.1 401", "HTTP/1.1 500"
-                    String[] s = line.trim().split(" ");
-                    if (s != null && s.length == 2) {
-                        responseCode = s[1];
-                    }
-                } else if ((line.startsWith(BRACKET_BEGIN) && line.endsWith(BRACKET_END))
-                        || (line.startsWith(CURLY_BRACE_BEGIN) && line.endsWith(CURLY_BRACE_END))) {
-                    // response string, json
-                    responseContent = line;
-                }
-            }
-
-            if (!processFinished) {
-                throw new Exception("Timed out waiting to execute command: " + command);
-            }
-            if (process.exitValue() != 0) {
-                throw new Exception(
-                        String.format("Shell command finished with status %d error: %s",
-                                process.exitValue(),
-                                errorStream.lines().collect(Collectors.joining())));
-            }
-        } catch (IOException | InterruptedException e) {
-            throw e;
-        }
-        return new String[] {responseCode, responseContent};
     }
 
     // ----------------------------------------------------------------------------------------------------
@@ -311,83 +203,86 @@ public class ITUtil {
     static enum EndpointChoice      {CHANNELS, PROPERTIES, SCROLL, TAGS};
 
     /**
-     * Prepare curl command for test to run for contacting server.
+     * Utility method to build http request for test to run.
      *
      * @param methodChoice method choice
      * @param authorizationChoice authorization choice
      * @param endpointChoice endpoint choice
      * @param path particular path
      * @param json json data
-     * @return curl command to run
+     * @return http request to run
+     * @throws URISyntaxException If request is created with non-legal URI characters
      */
-    static String curlMethodAuthEndpointPathJson(MethodChoice methodChoice, AuthorizationChoice authorizationChoice, EndpointChoice endpointChoice, String path, String json) {
+    static HttpRequest buildRequest(MethodChoice methodChoice, AuthorizationChoice authorizationChoice, EndpointChoice endpointChoice, String path, String json) throws URISyntaxException  {
         String pathstr = !StringUtils.isEmpty(path)
                 ? path
                 : "";
 
-        String data = !StringUtils.isEmpty(json)
-                ? " -d '" + json + "'"
-                : "";
+        String str =
+                  ITUtil.HTTP_IP_PORT_CHANNELFINDER
+                + ITUtil.buildUri(endpointChoice)
+                + pathstr;
 
-        return "curl"
-            + " -H " + ITUtil.HEADER_JSON
-            + " -X"  + ITUtil.getMethodString(methodChoice)
-            + " -i "
-            + ITUtil.HTTP
-            + ITUtil.getAuthorizationString(authorizationChoice)
-            + ITUtil.IP_PORT_CHANNELFINDER
-            + ITUtil.getEndpointString(endpointChoice)
-            + pathstr
-            + data;
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(new URI(str))
+                .header(HttpHeaders.CONTENT_TYPE, HEADER_JSON);
+
+        builder = buildAuthorization(builder, authorizationChoice);
+
+        return buildMethodJson(builder, methodChoice, json).build();
     }
 
     /**
-     * Utility method to return string for http method. To be used when constructing url to send query to server.
+     * Utility method to build http request for method and json data.
      *
+     * @param builder http request builder
      * @param methodChoice method choice, i.e. POST, GET, PUT, DELETE, PATCH
-     * @return string for http method
+     * @param json json data
+     * @return http request builder
      */
-    private static String getMethodString(MethodChoice methodChoice) {
+    private static HttpRequest.Builder buildMethodJson(HttpRequest.Builder builder, MethodChoice methodChoice, String json) {
         switch (methodChoice) {
         case POST:
-            return "POST";
+           return builder.POST(HttpRequest.BodyPublishers.ofString(json));
         case GET:
-            return "GET";
+           return builder.GET();
         case PUT:
-            return "PUT";
+           return builder.PUT(HttpRequest.BodyPublishers.ofString(json));
         case DELETE:
-            return "DELETE";
+           return builder.DELETE();
         default:
-            return "GET";
+           return builder.GET();
         }
     }
 
     /**
-     * Utility method to return string for authorization. To be used when constructing url to send query to server.
+     * Utility method to build http client for authentication and authorization.
+     * Http basic authorization is used.
      *
+     * @param builder http request builder
      * @param authorizationChoice authorization choice
-     * @return string for authorization
+     * @return http request builder
      */
-    private static String getAuthorizationString(AuthorizationChoice authorizationChoice) {
+    private static HttpRequest.Builder buildAuthorization(HttpRequest.Builder builder, AuthorizationChoice authorizationChoice) {
         switch (authorizationChoice) {
         case ADMIN:
-            return ITUtil.AUTH_ADMIN  + "@";
+            return builder.headers(HttpHeaders.AUTHORIZATION, HEADER_BASIC + Base64.getEncoder().encodeToString(AUTH_ADMIN.getBytes()));
         case USER:
-            return ITUtil.AUTH_USER  + "@";
+            return builder.headers(HttpHeaders.AUTHORIZATION, HEADER_BASIC + Base64.getEncoder().encodeToString(AUTH_USER.getBytes()));
         case NONE:
-            return StringUtils.EMPTY;
+            return builder;
         default:
-            return StringUtils.EMPTY;
+            return builder;
         }
     }
 
     /**
-     * Utility method to return string for endpoint. To be used when constructing url to send query to server.
+     * Utility method to build string for endpoint. To be used when constructing uri to send query to server.
      *
      * @param endpointChoice endpoint choice
      * @return string for endpoint
      */
-    private static String getEndpointString(EndpointChoice endpointChoice) {
+    private static String buildUri(EndpointChoice endpointChoice) {
         switch (endpointChoice) {
         case CHANNELS:
             return ITUtil.RESOURCES_CHANNELS;
@@ -402,5 +297,54 @@ public class ITUtil {
         }
     }
 
+    /**
+     * Send GET request with given string as URI and return response status code.
+     *
+     * @param str string to parse as URI
+     * @return response status code
+     * @throws URISyntaxException If request is created with non-legal URI characters
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    static int sendRequestStatusCode(String str) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(str))
+                .GET()
+                .build();
+
+        return Integer.parseInt(sendRequest(request)[0]);
+    }
+
+    /**
+     * Send GET request with given string as URI and return string array with response status code and response body.
+     *
+     * @param str string to parse as URI
+     * @return string array with response status code and response body
+     * @throws URISyntaxException If request is created with non-legal URI characters
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    static String[] sendRequest(String str) throws URISyntaxException, IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI(str))
+                .GET()
+                .build();
+
+        return sendRequest(request);
+    }
+
+    /**
+     * Send request and return response with string array with response code and response string.
+     *
+     * @param request request
+     * @return string array with response code and response string
+     * @throws InterruptedException
+     * @throws IOException
+     */
+    static String[] sendRequest(HttpRequest request) throws IOException, InterruptedException {
+        HttpResponse<String> response = CLIENT.send(request, BodyHandlers.ofString());
+
+        return new String[] {String.valueOf(response.statusCode()), response.body()};
+    }
 
 }

@@ -37,7 +37,7 @@ jobs:
       shell: bash
       run: docker image prune -af
     - name: Integration Test with Maven
-      run: mvn clean install test-compile failsafe:integration-test failsafe:verify verify --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false -DskipITCoverage=false
+      run: mvn clean install test-compile failsafe:integration-test failsafe:verify --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false -DskipITCoverage=false
       env:
         EPICS_PVA_ENABLE_IP6: "false"
     - name: Publish Test Report

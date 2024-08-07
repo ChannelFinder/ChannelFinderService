@@ -24,7 +24,6 @@ import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -70,55 +69,50 @@ class ChannelFinderIT {
     @Test
     void channelfinderUp() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER;
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER);
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }
     @Test
     void channelfinderUpTags() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/tags";
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/tags");
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }
     @Test
     void channelfinderUpProperties() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/properties";
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/properties");
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }
     @Test
     void channelfinderUpChannels() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/channels";
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/channels");
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }
     @Test
     void channelfinderUpScroll() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/scroll";
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/scroll");
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }

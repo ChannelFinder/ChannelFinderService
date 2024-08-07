@@ -43,7 +43,7 @@ It is possible to test ChannelFinder API by running ChannelFinder and Elasticsea
 [ChannelFinderIT.java](src/test/java/org/phoebus/channelfinder/docker/ChannelFinderIT.java)
 
 ```
-@Test 
+@Test
 void channelfinderUp()
 ```
 
@@ -58,7 +58,7 @@ How
 [ChannelFinderPropertiesIT.java](src/test/java/org/phoebus/channelfinder/docker/ChannelFinderPropertiesIT.java)
 
 ```
-@Test 
+@Test
 void handleProperty()
 ```
 
@@ -73,7 +73,7 @@ How
 [ChannelFinderChannelsIT.java](src/test/java/org/phoebus/channelfinder/docker/ChannelFinderChannelsIT.java)
 
 ```
-@Test 
+@Test
 void handleChannels3QueryByPattern()
 ```
 
@@ -99,11 +99,10 @@ class ChannelFinderIT {
     @Test
     void channelfinderUp() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER;
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER);
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }
@@ -148,13 +147,7 @@ class ChannelFinderPropertiesIT {
         // what
         //     user with required role PropertyMod
         //     create property
-        //     --------------------------------------------------------------------------------
-        //     list, create property, list, retrieve, delete (unauthorized), delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Property
-        //     x   List Properties
-        //     x   Create/Replace a Property
-        //     x   Remove Property
+        //         list, create property, list, retrieve, delete (unauthorized), delete, list
 
         try {
             ITUtilProperties.assertListProperties(0);
@@ -279,16 +272,14 @@ public class ITUtilChannels {
      * @return number of channels
      */
     public static Channel[] assertListChannels(String queryString, int responseCode, int expectedGreaterThanOrEqual, int expectedLessThanOrEqual, Channel... expected) {
+        Channel[] actual = null;
         try {
-            String[] response = null;
-            Channel[] actual = null;
+            String[] response = ITUtil.sendRequest(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + queryString);
 
-            response = ITUtil.doGetJson(ITUtil.HTTP_IP_PORT_CHANNELFINDER_RESOURCES_CHANNELS + queryString);
             ITUtil.assertResponseLength2Code(response, responseCode);
             if (HttpURLConnection.HTTP_OK == responseCode) {
                 actual = mapper.readValue(response[1], Channel[].class);
             }
-
             // expected number of items in list
             //     (if non-negative number)
             //     expectedGreaterThanOrEqual <= nbr of items <= expectedLessThanOrEqual
@@ -298,19 +289,13 @@ public class ITUtilChannels {
             if (expectedLessThanOrEqual >= 0) {
                 assertTrue(actual.length <= expectedLessThanOrEqual);
             }
-
-            // expected content
             if (expected != null) {
                 assertEqualsChannels(actual, expected);
             }
-
-            return actual;
-        } catch (IOException e) {
-            fail();
         } catch (Exception e) {
             fail();
         }
-        return null;
+        return actual;
     }
 ```
 

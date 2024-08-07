@@ -29,14 +29,13 @@ import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Integration tests for ChannelFinder and Elasticsearch with focus on usage of 
+ * Integration tests for ChannelFinder and Elasticsearch with focus on usage of
  * {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}.
  * Existing dockerization is used with <tt>docker-compose-integrationtest.yml</tt> and <tt>Dockerfile.integrationtest</tt>.
  *
@@ -66,18 +65,17 @@ public class ChannelFinderChannelsIT {
     //     ChannelFinder - Enhanced Directory Service
     //         https://channelfinder.readthedocs.io/en/latest/api.html
     //     ------------------------------------------------------------------------------------------------
-    //     CHANNELFINDER API                                            ChannelManager
-    //     --------------------                                         --------------------
-    //     Retrieve a Channel                    .../channels/<name>    (GET)       read(String)
-    //     List Channels / Query by Pattern      .../channels?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...
-    //                                                                  (GET)       query(MultiValueMap<String, String>)
-    //     Query Count                           .../channels/count?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...
-    //                                                                  (GET)       query(MultiValueMap<String, String>)
-    //     Create / Replace Channel              .../channels/<name>    (PUT)       create(String, Channel)
-    //     Create / Replace Multiple Channels    .../channels           (PUT)       create(Iterable<Channel>)
-    //     Update Channel                        .../channels/<name>    (POST)      update(String, Channel)
-    //     Update Channels                       .../channels           (POST)      update(Iterable<Channel>)
-    //     Delete a Channel                      .../channels/<name>    (DELETE)    remove(String)
+    //     CHANNELFINDER API
+    //     --------------------
+    //     Retrieve a Channel                        .../channels/<name>                                                            GET
+    //     List Channels / Query by Pattern          .../channels?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...                 GET
+    //     Query Count                               .../channels/count?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...           GET
+    //     Query Combined                            .../channels/combined?prop1=patt1&prop2=patt2&~tag=patt3&~name=patt4...        GET
+    //     Create / Replace Channel                  .../channels/<name>                                                            PUT
+    //     Create / Replace Multiple Channels        .../channels                                                                   PUT
+    //     Update Channel                            .../channels/<name>                                                            POST
+    //     Update Channels                           .../channels                                                                   POST
+    //     Delete a Channel                          .../channels/<name>                                                            DELETE
     //     ------------------------------------------------------------------------------------------------
 
     // test data
@@ -142,11 +140,10 @@ public class ChannelFinderChannelsIT {
     @Test
     void channelfinderUp() {
         try {
-            String address = ITUtil.HTTP_IP_PORT_CHANNELFINDER;
-            int responseCode = ITUtil.doGet(address);
+            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER);
 
             assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (IOException e) {
+        } catch (Exception e) {
             fail();
         }
     }
@@ -160,15 +157,6 @@ public class ChannelFinderChannelsIT {
         //     check(s) for retrieve channel
         //         e.g.
         //             retrieve non-existing channel
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Channel
-        //         List Channels / Query by Pattern
-        //         Query Count
-        //         Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //         Update Channel
-        //         Update Channels
-        //         Delete a Channel
 
         ITUtilChannels.assertRetrieveChannel("/c11", HttpURLConnection.HTTP_NOT_FOUND);
     }
@@ -182,15 +170,6 @@ public class ChannelFinderChannelsIT {
         //     check(s) for delete channel
         //         e.g.
         //             remove non-existing channel
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Channel
-        //         List Channels / Query by Pattern
-        //         Query Count
-        //         Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //         Update Channel
-        //         Update Channels
-        //     x   Delete a Channel
 
         try {
             // might be both 401, 404
@@ -220,15 +199,6 @@ public class ChannelFinderChannelsIT {
         //                 owner      - null, empty
         //                 properties - exists
         //                 tags       - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //     x   Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //     x   Update Channel
-        //         Update Channels
-        //         Delete a Channel
 
         String json_incomplete1 = "{\"incomplete\"}";
         String json_incomplete2 = "{\"incomplete\"";
@@ -293,15 +263,6 @@ public class ChannelFinderChannelsIT {
         //                 owner      - null, empty
         //                 properties - exists
         //                 tags       - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //     x   Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //     x   Update Channel
-        //         Update Channels
-        //         Delete a Channel
 
         Channel channel_check = new Channel();
 
@@ -354,17 +315,7 @@ public class ChannelFinderChannelsIT {
         // what
         //     user with required role ChannelMod
         //     create channel
-        //     --------------------------------------------------------------------------------
-        //     list, create channel, list, retrieve, delete (unauthorized), delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //     x   Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //         Update Channel
-        //         Update Channels
-        //     x   Delete a Channel
+        //         list, create channel, list, retrieve, delete (unauthorized), delete, list
 
         try {
             ITUtilChannels.assertCountChannels(0);
@@ -395,17 +346,7 @@ public class ChannelFinderChannelsIT {
     void handleChannel2() {
         // what
         //     create channels, one by one
-        //     --------------------------------------------------------------------------------
-        //     list, create channel * 2, list, retrieve, retrieve, delete, list, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //     x   Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //         Update Channel
-        //         Update Channels
-        //     x   Delete a Channel
+        //         list, create channel * 2, list, retrieve, retrieve, delete, list, retrieve, delete, list
 
         try {
             ITUtilChannels.assertCountChannels(0);
@@ -445,17 +386,7 @@ public class ChannelFinderChannelsIT {
     void handleChannel3RenameOwner() {
         // what
         //     replace channel, rename channel
-        //     --------------------------------------------------------------------------------
-        //     list, create channel, list, retrieve, update, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //     x   Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //     x   Update Channel
-        //         Update Channels
-        //     x   Delete a Channel
+        //         list, create channel, list, retrieve, update, retrieve, delete, list
 
         try {
             ITUtilChannels.assertCountChannels(0);
@@ -488,17 +419,7 @@ public class ChannelFinderChannelsIT {
     void handleChannel4ReplaceNonExisting() {
         // what
         //     replace non-existing channel
-        //     --------------------------------------------------------------------------------
-        //     list, update, list, retrieve, delete, list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //         Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //     x   Update Channel
-        //         Update Channels
-        //     x   Delete a Channel
+        //         list, update, list, retrieve, delete, list
 
         try {
             ITUtilChannels.assertCountChannels(0);
@@ -535,15 +456,6 @@ public class ChannelFinderChannelsIT {
         //                 owner      - null, empty
         //                 properties - exists
         //                 tags       - exists
-        //     --------------------------------------------------------------------------------
-        //         Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //         Create / Replace Channel
-        //     x   Create / Replace Multiple Channels
-        //         Update Channel
-        //     x   Update Channels
-        //         Delete a Channel
 
         String json_incomplete1         = "{\"incomplete\"}";
         String json_channel_c1_name_na  = "{\"na\":\"c1\",\"owner\":\"o1\"}";
@@ -608,8 +520,6 @@ public class ChannelFinderChannelsIT {
 
             ITUtilChannels.assertCountChannels(0);
             ITUtilChannels.assertListChannels(0);
-        } catch (IOException e) {
-            fail();
         } catch (Exception e) {
             fail();
         }
@@ -622,17 +532,7 @@ public class ChannelFinderChannelsIT {
     void handleChannels() {
         // what
         //     create channels
-        //     --------------------------------------------------------------------------------
-        //     list, create channels (10), list, retrieve (10), delete (5), list, delete (5), list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //         Create / Replace Channel
-        //     x   Create / Replace Multiple Channels
-        //         Update Channel
-        //         Update Channels
-        //     x   Delete a Channel
+        //         list, create channels (10), list, retrieve (10), delete (5), list, delete (5), list
 
         Channel[] channels_10 = new Channel[] {
                 channel_c1_owner_o1,
@@ -701,17 +601,7 @@ public class ChannelFinderChannelsIT {
     void handleChannels2ReplaceNonExisting() {
         // what
         //     replace non-existing channels
-        //     --------------------------------------------------------------------------------
-        //     list, update channels (10), list, retrieve (10), delete (5), list, delete (5), list
-        //     --------------------------------------------------------------------------------
-        //     x   Retrieve a Channel
-        //     x   List Channels / Query by Pattern
-        //     x   Query Count
-        //         Create / Replace Channel
-        //         Create / Replace Multiple Channels
-        //         Update Channel
-        //     x   Update Channels
-        //     x   Delete a Channel
+        //         list, update channels (10), list, retrieve (10), delete (5), list, delete (5), list
 
         Channel[] channels_10 = new Channel[] {
                 channel_c1_owner_o1,
