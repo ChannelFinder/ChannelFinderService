@@ -1,6 +1,6 @@
 package org.phoebus.channelfinder.processors.aa;
 
-enum ArchiveAction {
+public enum ArchiveAction {
     ARCHIVE("/archivePV"),
     PAUSE("/pauseArchivingPV"),
     RESUME("/resumeArchivingPV"),

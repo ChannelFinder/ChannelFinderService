@@ -86,7 +86,7 @@ class AAChannelProcessorIT {
             MockWebServer mockArchiverAppliance,
             ObjectMapper objectMapper,
             ChannelProcessor aaChannelProcessor,
-            Channel channel,
+            List<Channel> channels,
             String archiveStatus,
             String archiverEndpoint,
             String submissionBody)
@@ -107,7 +107,7 @@ class AAChannelProcessorIT {
 
             // Request to archiver status
             List<Map<String, String>> archivePVStatuses =
-                    List.of(Map.of("pvName", channel.getName(), "status", archiveStatus));
+                    channels.stream().map(channel -> Map.of("pvName", channel.getName(), "status", archiveStatus)).toList();
             mockArchiverAppliance.enqueue(new MockResponse()
                     .setBody(objectMapper.writeValueAsString(archivePVStatuses))
                     .addHeader("Content-Type", "application/json"));
@@ -115,14 +115,14 @@ class AAChannelProcessorIT {
         if (!archiverEndpoint.isEmpty()) {
             // Request to archiver to archive
             List<Map<String, String>> archiverResponse =
-                    List.of(Map.of("pvName", channel.getName(), "status", "Archive request submitted"));
+                    channels.stream().map(channel -> Map.of("pvName", channel.getName(), "status", "Archive request submitted")).toList();
             mockArchiverAppliance.enqueue(new MockResponse()
                     .setBody(objectMapper.writeValueAsString(archiverResponse))
                     .addHeader("Content-Type", "application/json"));
         }
 
-        long count = aaChannelProcessor.process(List.of(channel));
-        assertEquals(count, archiverEndpoint.isEmpty() ? 0 : 1);
+        long count = aaChannelProcessor.process(channels);
+        assertEquals(count, archiverEndpoint.isEmpty() ? 0 : channels.size());
 
         int expectedRequests = 1;
         RecordedRequest requestVersion = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
@@ -182,7 +182,7 @@ class AAChannelProcessorIT {
                 mockArchiverAppliance,
                 objectMapper,
                 aaChannelProcessor,
-                channel,
+                List.of(channel),
                 archiveStatus,
                 archiverEndpoint,
                 submissionBody);
