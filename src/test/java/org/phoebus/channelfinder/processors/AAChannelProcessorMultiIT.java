@@ -162,6 +162,13 @@ class AAChannelProcessorMultiIT {
         assert requestStatus != null;
         assert requestStatus.getRequestUrl() != null;
         assertEquals("/mgmt/bpl/getPVStatus", requestStatus.getRequestUrl().encodedPath());
+        String pvStatusRequestParameter = requestStatus.getRequestUrl().queryParameter("pv");
+        namesToStatuses.keySet().forEach(
+            name -> {
+                assert pvStatusRequestParameter != null;
+                assertTrue(pvStatusRequestParameter.contains(name));
+            }
+        );
 
         while (mockArchiverAppliance.getRequestCount() > 0) {
             RecordedRequest requestAction = null;

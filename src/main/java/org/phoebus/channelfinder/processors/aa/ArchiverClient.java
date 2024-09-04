@@ -76,7 +76,7 @@ public class ArchiverClient {
 
     private List<Map<String, String>> getStatusesFromPvListQuery(String archiverURL, List<String> pvs) {
         URI pvStatusURI = UriComponentsBuilder.fromUri(URI.create(archiverURL + PV_STATUS_RESOURCE))
-                .queryParam("pv", pvs)
+                .queryParam("pv", String.join(",", pvs))
                 .build()
                 .toUri();
 
