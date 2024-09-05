@@ -74,7 +74,7 @@ class AAChannelProcessorTagPauseIT {
                 mockArchiverAppliance,
                 objectMapper,
                 aaChannelProcessor,
-                channel,
+                List.of(channel),
                 archiveStatus,
                 archiverEndpoint,
                 submissionBody

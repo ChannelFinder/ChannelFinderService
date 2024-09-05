@@ -73,7 +73,7 @@ class AAChannelProcessorNoPauseIT {
                 mockArchiverAppliance,
                 objectMapper,
                 aaChannelProcessor,
-                channel,
+                List.of(channel),
                 archiveStatus,
                 archiverEndpoint,
                 submissionBody);
