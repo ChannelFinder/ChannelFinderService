@@ -38,7 +38,7 @@ public class ChannelProcessorService {
      * @param channels list of channels to be processed
      */
     public void sendToProcessors(List<Channel> channels) {
-        logger.log(Level.INFO, channels.stream().map(Channel::toLog).collect(Collectors.joining()));
+        logger.log(Level.FINEST, () -> channels.stream().map(Channel::toLog).collect(Collectors.joining()));
         if (channelProcessors.isEmpty()) {
             return;
         }
