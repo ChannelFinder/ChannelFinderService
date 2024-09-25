@@ -134,7 +134,7 @@ You can also start up channelfinder with demo data using the command line argume
 
 ```
 java -jar target/ChannelFinder-4.7.*.jar --demo-data=1
-java -jar target/ChannelFinder-4.7..jar --cleanup=1
+java -jar target/ChannelFinder-4.7.*.jar --cleanup=1
 ```
   
 ```
