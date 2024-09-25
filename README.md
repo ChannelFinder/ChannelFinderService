@@ -91,14 +91,29 @@ $ curl --fail-with-body http://localhost:8080/ChannelFinder
     "version" : "8.2.0"
   }
 }
-$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/tags
-[]
-$ curl --basic -u admin:1234 --fail-with-body -H 'Content-Type: application/json' \
+
+
+# Verify by creating a simple Channel using the demo auth
+$ curl --location -u admin:adminPass --request PUT 'http://localhost:7070/ChannelFinder/resources/channels/test_channel' \
+--header 'Content-Type: application/json' \
+--data '{
+        "name": "test_channel",
+        "owner": "admin"
+        }'
+
+$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/channels
+
+...
+$ curl --basic -u admin:adminPass --fail-with-body -H 'Content-Type: application/json' \
   -X PUT -d '{"name":"foo", "owner":"admin"}' \
   http://localhost:8080/ChannelFinder/resources/tags/foo
+
+$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/tags
+
 ...
 $ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/tags
 [{"name":"foo","owner":"admin","channels":[]}]
+
 $ curl --basic -u admin:1234 --fail-with-body -X DELETE \
   http://localhost:8080/ChannelFinder/resources/tags/foo
 ```
@@ -118,8 +133,8 @@ java -Dspring.config.location=file:./application.properties -jar ChannelFinder-4
 You can also start up channelfinder with demo data using the command line argument `demo-data` followed by an integer number `n`. For example, `--demo-data=n`. With this argument, `n*1500` channels will be created to simulate some of the most common types of devices found in accelerators like magnets, power supplies, etc...  
 
 ```
-java -jar target/ChannelFinder-4.7.0.jar --demo-data=1
-java -jar target/ChannelFinder-4.7.0.jar --cleanup=1
+java -jar target/ChannelFinder-4.7.*.jar --demo-data=1
+java -jar target/ChannelFinder-4.7..jar --cleanup=1
 ```
   
 ```
