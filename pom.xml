@@ -364,6 +364,9 @@
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
                     <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
                     <format>json</format>
+                    <excludeProperties>
+                        <excludeProperty>^git.build.*$</excludeProperty>
+                    </excludeProperties>
                 </configuration>
             </plugin>
         </plugins>
