@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-cf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch-cf
+  template:
+    metadata:
+      labels:
+        app: elasticsearch-cf
+    spec:
+      containers:
+        - name: elasticsearch
+          image: "{{ .Values.elasticsearch.image }}:{{ .Values.elasticsearch.tag }}"
+          imagePullPolicy: { { .Values.elasticsearch.pullPolicy } }
+          ports:
+            - containerPort: { { .Values.elasticsearchService.port } }
+          env:
+            - name: cluster.name
+              value: channelfinder
+            - name: discovery.type
+              value: single-node
+            - name: bootstrap.memory_lock
+              value: "true"
+            - name: xpack.security.enabled
+              value: "false"
+            - name: EPICS_PVAS_INTF_ADDR_LIST
+              value: "0.0.0.0"
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: es-data
+          persistentVolumeClaim:
+            claimName: es-data
