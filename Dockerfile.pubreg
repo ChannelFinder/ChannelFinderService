@@ -1,0 +1,13 @@
+FROM eclipse-temurin:17-jdk
+
+RUN apt-get update && \
+    apt-get install -y maven git && \
+    apt-get clean
+
+WORKDIR /workspace
+COPY . /workspace
+
+RUN mvn clean install
+
+
+CMD ["java", "-jar", "target/ChannelFinder-*.jar", "--spring.config.name=application"]
