@@ -1,0 +1,40 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: { { include "channelfinder.fullname" . } }
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: { { include "channelfinder.name" . } }
+  template:
+    metadata:
+      labels:
+        app: { { include "channelfinder.name" . } }
+    spec:
+      containers:
+        - name: channelfinder
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: { { .Values.image.pullPolicy } }
+          ports:
+            - containerPort: { { .Values.service.port } }
+          env:
+            - name: ELASTICSEARCH_NETWORK_HOST
+              value: "elasticsearch-cf"
+          command:
+            - /bin/bash
+            - -c
+            - |
+              until curl --silent --fail http://elasticsearch-cf:9200/_cluster/health; do
+                echo 'Waiting for Elasticsearch';
+                sleep 1;
+              done;
+              java -jar /channelfinder/ChannelFinder-*.jar
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: es-data
+          persistentVolumeClaim:
+            claimName: es-data
