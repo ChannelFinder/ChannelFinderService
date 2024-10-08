@@ -15,9 +15,9 @@ spec:
       containers:
         - name: elasticsearch
           image: "{{ .Values.elasticsearch.image }}:{{ .Values.elasticsearch.tag }}"
-          imagePullPolicy: { { .Values.elasticsearch.pullPolicy } }
+          imagePullPolicy: {{ .Values.elasticsearch.pullPolicy }}
           ports:
-            - containerPort: { { .Values.elasticsearchService.port } }
+            - containerPort: {{ .Values.elasticsearchService.port }}
           env:
             - name: cluster.name
               value: channelfinder

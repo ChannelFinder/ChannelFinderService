@@ -1,24 +1,23 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: { { include "channelfinder.fullname" . } }
+  name: {{ include "channelfinder.fullname" . }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: { { include "channelfinder.name" . } }
+      app: {{ include "channelfinder.name" . }}
   template:
     metadata:
       labels:
-        app: { { include "channelfinder.name" . } }
+        app: {{ include "channelfinder.name" . }}
     spec:
       containers:
         - name: channelfinder
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: { { .Values.image.pullPolicy } }
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: { { .Values.service.port } }
+            - containerPort: {{ .Values.service.port }}
           env:
             - name: ELASTICSEARCH_NETWORK_HOST
               value: "elasticsearch-cf"
