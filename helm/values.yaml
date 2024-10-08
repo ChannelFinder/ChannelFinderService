@@ -93,8 +93,8 @@ tolerations: []
 affinity: {}
 
 image:
-  repository: channelfinder
-  tag: "latest"
+  image: gcr.io/diamond-pubreg/channelfinder/channelfinder
+  tag: "alpha"
   pullPolicy: IfNotPresent
 
 elasticsearch:
