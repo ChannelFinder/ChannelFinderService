@@ -45,7 +45,7 @@ Collected installation recipes and notes may be found on [wiki pages](https://gi
 * Build 
 ```
 # Debian 10
-sudo apt-get install openjdk-17-jdk maven git curl wget
+sudo apt-get install openjdk-17-jdk git curl wget
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.2.0-amd64.deb
 sudo dpkg -i elasticsearch-8.2.0-amd64.deb
 sudo systemctl start elasticsearch
@@ -53,7 +53,7 @@ sudo systemctl start elasticsearch
 #### Checkout and build ChannelFinder service source
 git clone https://github.com/ChannelFinder/ChannelFinderService.git
 cd ChannelFinderService
-mvn clean install
+.\mvnw clean install
 
 ``` 
 
@@ -62,7 +62,7 @@ mvn clean install
 * Using spring boot via Maven
 
 ```
-mvn spring-boot:run
+.\mvnw spring-boot:run
 ```
 
 * or using the jar
@@ -123,7 +123,7 @@ $ curl --basic -u admin:1234 --fail-with-body -X DELETE \
 You can start the channelfinder service with your own applications.properties file as follows:  
 
 ```
-mvn spring-boot:run -Dspring.config.location=file:./application.properties
+.\mvnw spring-boot:run -Dspring.config.location=file:./application.properties
 ```
 or  
 ```
@@ -138,8 +138,8 @@ java -jar target/ChannelFinder-4.7.*.jar --cleanup=1
 ```
   
 ```
-mvn spring-boot:run -Dspring-boot.run.arguments="--demo-data=1"
-mvn spring-boot:run -Dspring-boot.run.arguments="--cleanup=1"
+.\mvnw spring-boot:run -Dspring-boot.run.arguments="--demo-data=1"
+.\mvnw spring-boot:run -Dspring-boot.run.arguments="--cleanup=1"
 ```
 
 #### Integration tests with Docker containers
@@ -156,7 +156,7 @@ There are tests for properties, tags and channels separately and in combination.
 Integration tests can be run in IDE and via Maven.
 
 ```
-mvn failsafe:integration-test -DskipITs=false
+.\mvnw failsafe:integration-test -DskipITs=false
 ```
 
 See
@@ -188,12 +188,12 @@ Create a sonatype account and update the maven settings.xml file with your sonat
 ```
 
 **Prepare the release**  
-`mvn release:prepare`  
+`.\mvnw release:prepare`  
 In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
 A full list of checks is documented [here](https://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html):
 
 **Perform the release**  
-`mvn release:perform`  
+`.\mvnw release:perform`  
 Checkout the release tag, build, sign and push the build binaries to sonatype.
 
 **Publish**  
