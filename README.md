@@ -1,200 +1,187 @@
-### Channel Finder
+# Channel Finder
 
-#### A simple directory service
+ChannelFinder is a directory server, implemented as a REST style web service.
+Its intended use is for control systems, namely the EPICS Control system.
 
-  ChannelFinder is a directory server, implemented as a REST style web service.
-Its intended use is within control systems, namely the EPICS Control system, for which it has been written.
+- [Documentation](https://channelfinder.readthedocs.io/en/latest/)
+- [Releases](https://github.com/ChannelFinder/ChannelFinderService/releases)
+- [Docker Containers](https://github.com/ChannelFinder/ChannelFinderService/pkgs/container/channelfinderservice)
 
-* Motivation and Objectives
+## Description
 
-  High level applications tend to prefer an hierarchical view of the control system name space. They group channel names by location or physical function. The name space of the EPICS Channel Access protocol, on the other hand, is flat. A good and thoroughly enforced naming convention may solve the problem of creating unique predictable names. It does not free every application from being configured explicitly, so that it knows all channel names it might be interested in beforehand.
+* **Motivation and Objectives**
 
-  ChannelFinder tries to overcome this limitation by implementing a generic directory service, which applications can query for a list of channels that match certain conditions, such as physical functionality or location. It also provides mechanisms to create channel name aliases, allowing for different perspectives of the same set of channel names.
+  High level applications tend to prefer a hierarchical view of the control system name space. They group channel names
+  by location or physical function. The name space of the EPICS Channel Access protocol, on the other hand, is flat. A
+  good and thoroughly enforced naming convention may solve the problem of creating unique predictable names. It does not
+  free every application from being configured explicitly, so that it knows all channel names it might be interested in
+  beforehand.
 
-* Directory Data Structure
+  ChannelFinder tries to overcome this limitation by implementing a generic directory service, which applications can
+  query for a list of channels that match certain conditions, such as physical functionality or location. It also
+  provides mechanisms to create channel name aliases, allowing for different perspectives of the same set of channel
+  names.
 
- Each directory entry consists of a channel `<name>`, an arbitrary set of `<properties>` (name-value pairs), and an arbitrary set of `<tags>` (names).
+* **Directory Data Structure**
 
-* Basic Operation
+  Each directory entry consists of a channel `<name>`, an arbitrary set of `<properties>` (name-value pairs), and an
+  arbitrary set of `<tags>` (names).
 
- An application sends an HTTP query to the service, specifying an expression that references tags, properties and their values, or channel names. The service returns a list of matching channels with their properties and tags, as JSON documents.
+* **Basic Operation**
 
+  An application sends an HTTP query to the service, specifying an expression that references tags, properties and their
+  values, or channel names. The service returns a list of matching channels with their properties and tags, as JSON
+  documents.
 
-#### API reference guide
-
-https://channelfinder.readthedocs.io/en/latest/
-
-#### Installation
+## Installation
 
 ChannelFinder is a Java EE5 REST-style web service. The directory data is held in a ElasticSearch index.
 
-Collected installation recipes and notes may be found on [wiki pages](https://github.com/ChannelFinder/ChannelFinder-SpringBoot/wiki).
+### Docker Compose
+
+For using docker containers there is a barebones [docker compose file](./docker-compose.yml).
+
+### Manual Installation
+
+* Prerequisites
+
+    * JDK 17
+    * Elastic version 8.11.x
+    * **For authN/authZ using LDAP:** LDAP server, e.g. OpenLDAP
+
+#### Setup Elasticsearch
+
+Options:
+
+- Download and install elasticsearch (version 8.11.0)
+  from [elastic.com](https://www.elastic.co) following the instructions for
+  your platform.
+- Install the elastic server from your distribution using a package manager.
+- Run Elasticsearch in a [docker container](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
+
+#### Running
+
+```bash
+sudo apt-get install openjdk-17-jre git curl wget
+sudo systemctl start elasticsearch # Or other command to run elastic search
+
+# Replace verison with the release you want
+wget https://github.com/ChannelFinder/ChannelFinderService/releases/download/ChannelFinder-{version}/ChannelFinder-{version}.jar 
+java -jar target/ChannelFinder-*.jar
+``` 
+
+Other installation recipes can be found
+on [the wiki pages](https://github.com/ChannelFinder/ChannelFinder-SpringBoot/wiki).
+
+### Configuration
+
+By default, the channelfinder service will start on port 8080 with the default settings. To start with a
+different `application.properties` file:
+
+```bash
+java -Dspring.config.location=file:./application.properties -jar ChannelFinder-*.jar
+```
+
+The default authentication includes an embedded ldap server with users and roles defined in
+the [`cf.ldif`](src/main/resources/cf.ldif) file.
+Note that `cf.ldif` contains **default credentials** and should only be used during testing and evaluation.
+
+### Verification
+
+To check that the server is running correctly, visit [the default homepage](http://localhost:8080/).
+
+## Development
+
+It's strongly encouraged to use a modern IDE such as [Intelij](https://www.jetbrains.com/idea/) and [Eclipse](https://eclipseide.org/).
 
 * Prerequisites
 
   * JDK 17
-  * Elastic version 8.2.x
-  * <For authN/authZ using LDAP:> LDAP server, e.g. OpenLDAP
+  * Maven (via package manager or via the wrapper `./mvnw`) (version specified in [the wrapper properties](./.mvn/wrapper/maven-wrapper.properties))
 
-* setup elastic search  
-  **Install**  
-  Download and install elasticsearch (verision 8.2.0) from [elastic.com](https://www.elastic.co/downloads/past-releases/elasticsearch-8-2-0)
-  following the instructions for your platform.\
-  <Alternatively:> Install the elastic server from your distribution using a package manager.  
-  
-* Build 
-```
-# Debian 10
-sudo apt-get install openjdk-17-jdk git curl wget
-wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.2.0-amd64.deb
-sudo dpkg -i elasticsearch-8.2.0-amd64.deb
-sudo systemctl start elasticsearch
+For the following commands `mvn` can be interchangeably used instead via `./mvnw`
 
-#### Checkout and build ChannelFinder service source
-git clone https://github.com/ChannelFinder/ChannelFinderService.git
-cd ChannelFinderService
-.\mvnw clean install
+To build:
 
-``` 
-
-#### Start the service  
-
-* Using spring boot via Maven
-
-```
-.\mvnw spring-boot:run
+```bash
+mvn clean install
 ```
 
-* or using the jar
+To test:
 
-```
-java -jar target/ChannelFinder-4.7.0.jar
-```
-
-The above command will start the channelfinder service on port 8080 with the default settings,
-which use embedded ldap server with users and roles defined in the [`cf.ldif`](src/main/resources/cf.ldif) file.
-Note that `cf.ldif` contains **default credentials** and should only be used during testing and evaluation.
-
-#### Verification
-
-To check that the server is running correctly.
-
-```
-$ curl --fail-with-body http://localhost:8080/ChannelFinder
-{
-  "name" : "ChannelFinder Service",
-  "version" : "4.7.0",
-  "elastic" : {
-    "status" : "Connected",
-    "clusterName" : "elasticsearch",
-    "clusterUuid" : "sA2L_cpoRD-H46c_Mya3mA",
-    "version" : "8.2.0"
-  }
-}
-
-
-# Verify by creating a simple Channel using the demo auth
-$ curl --location -u admin:adminPass --request PUT 'http://localhost:7070/ChannelFinder/resources/channels/test_channel' \
---header 'Content-Type: application/json' \
---data '{
-        "name": "test_channel",
-        "owner": "admin"
-        }'
-
-$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/channels
-
-...
-$ curl --basic -u admin:adminPass --fail-with-body -H 'Content-Type: application/json' \
-  -X PUT -d '{"name":"foo", "owner":"admin"}' \
-  http://localhost:8080/ChannelFinder/resources/tags/foo
-
-$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/tags
-
-...
-$ curl --fail-with-body http://localhost:8080/ChannelFinder/resources/tags
-[{"name":"foo","owner":"admin","channels":[]}]
-
-$ curl --basic -u admin:1234 --fail-with-body -X DELETE \
-  http://localhost:8080/ChannelFinder/resources/tags/foo
+```bash
+mvn test
 ```
 
-#### Start up options  
+To run the server in development (you need a running version of Elasticsearch)
 
-You can start the channelfinder service with your own applications.properties file as follows:  
-
-```
-.\mvnw spring-boot:run -Dspring.config.location=file:./application.properties
-```
-or  
-```
-java -Dspring.config.location=file:./application.properties -jar ChannelFinder-4.7.0.jar
+```bash
+mvn spring-boot:run
 ```
 
-You can also start up channelfinder with demo data using the command line argument `demo-data` followed by an integer number `n`. For example, `--demo-data=n`. With this argument, `n*1500` channels will be created to simulate some of the most common types of devices found in accelerators like magnets, power supplies, etc...  
-
-```
-java -jar target/ChannelFinder-4.7.*.jar --demo-data=1
-java -jar target/ChannelFinder-4.7.*.jar --cleanup=1
-```
-  
-```
-.\mvnw spring-boot:run -Dspring-boot.run.arguments="--demo-data=1"
-.\mvnw spring-boot:run -Dspring-boot.run.arguments="--cleanup=1"
-```
-
-#### Integration tests with Docker containers
+### Integration tests with Docker containers
 
 Purpose is to have integration tests for ChannelFinder API with Docker.
 
 See `src/test/java` and package
+
 * `org.phoebus.channelfinder.docker`
 
-Integration tests start docker containers for ChannelFinder and Elasticsearch and run http requests (GET) and curl commands (POST, PUT, DELETE) towards the application to test behavior (read, list, query, create, update, remove) and replies are received and checked if content is as expected.
+Integration tests start docker containers for ChannelFinder and Elasticsearch and run http requests (GET, POST, PUT, DELETE) towards the application to test behavior (read, list, query, create, update, remove) and
+replies are received and checked if content is as expected.
 
 There are tests for properties, tags and channels separately and in combination.
 
 Integration tests can be run in IDE and via Maven.
 
 ```
-.\mvnw failsafe:integration-test -DskipITs=false
+mvn failsafe:integration-test -DskipITs=false
 ```
 
-See
+See also
+
 * [How to run Integration test with Docker](src/test/resources/INTEGRATIONTEST_DOCKER_RUN.md)
 * [Tutorial for Integration test with Docker](src/test/resources/INTEGRATIONTEST_DOCKER_TUTORIAL.md)
 
-#### ChannelFinder data managment
-
-The [cf-manager](https://github.com/ChannelFinder/cf-manager) project provides tools to perform operations on large queries ( potentially the entire directory ).
-Some examples of these operations include running checks to validate the pv names or producing reports about the number of active PVs, a list of IOC names, etc..
-
 ### Release ChannelFinder Server binaries to maven central
 
-The Phoebus ChannelFinder service uses the maven release plugin to prepare the publish the ChannelFinder server binaries to maven central
+The Phoebus ChannelFinder service uses the maven release plugin to prepare the publish the ChannelFinder server binaries
+to maven central
 using the sonatype repositories.
 
-**Setup**
+#### Setup
 
 Create a sonatype account and update the maven settings.xml file with your sonatype credentials
 
-```
+```xml
   <servers>
    <server>
       <id>phoebus-releases</id>
-      <username>shroffk</username>
+      <username>username</username>
       <password>*******</password>
    </server>
   </servers>
 ```
 
-**Prepare the release**  
-`.\mvnw release:prepare`  
-In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
-A full list of checks is documented [here](https://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html):
+#### Prepare the release
 
-**Perform the release**  
-`.\mvnw release:perform`  
+```bash
+mvn release:prepare
+```  
+In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
+A full list of checks is
+documented [here](https://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html):
+
+#### Perform the release
+
+
+```bash
+mvn release:perform
+```
+
 Checkout the release tag, build, sign and push the build binaries to sonatype.
 
-**Publish**  
-Open the staging repository in [sonatype](https://s01.oss.sonatype.org/#stagingRepositories) and hit the *publish* button
+#### Publish
+
+Open the staging repository in [sonatype](https://s01.oss.sonatype.org/#stagingRepositories) and hit the *publish*
+button
