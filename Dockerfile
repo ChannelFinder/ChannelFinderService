@@ -13,7 +13,7 @@ WORKDIR /workspace
 CMD ["/bin/bash"]
 
 # Stage 2: Build stage
-FROM eclipse-temurin:17-jdk AS builder
+FROM developer as builder
 
 # Copy the application code from the developer workspace or local context
 COPY . /workspace
