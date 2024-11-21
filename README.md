@@ -88,16 +88,19 @@ Note that `cf.ldif` contains **default credentials** and should only be used dur
 
 ### Verification
 
-To check that the server is running correctly, visit [the default homepage](http://localhost:8080/).
+To check that the server is running correctly, visit [the default homepage](http://localhost:8080/). For more
+information on the api see the [swagger docs endpoint](http://localhost:8080/swagger-ui/index.html). 
 
 ## Development
 
-It's strongly encouraged to use a modern IDE such as [Intelij](https://www.jetbrains.com/idea/) and [Eclipse](https://eclipseide.org/).
+It's strongly encouraged to use a modern IDE such as [Intelij](https://www.jetbrains.com/idea/)
+and [Eclipse](https://eclipseide.org/).
 
 * Prerequisites
 
-  * JDK 17
-  * Maven (via package manager or via the wrapper `./mvnw`) (version specified in [the wrapper properties](./.mvn/wrapper/maven-wrapper.properties))
+    * JDK 17
+    * Maven (via package manager or via the wrapper `./mvnw`) (version specified
+      in [the wrapper properties](./.mvn/wrapper/maven-wrapper.properties))
 
 For the following commands `mvn` can be interchangeably used instead via `./mvnw`
 
@@ -127,7 +130,8 @@ See `src/test/java` and package
 
 * `org.phoebus.channelfinder.docker`
 
-Integration tests start docker containers for ChannelFinder and Elasticsearch and run http requests (GET, POST, PUT, DELETE) towards the application to test behavior (read, list, query, create, update, remove) and
+Integration tests start docker containers for ChannelFinder and Elasticsearch and run http requests (GET, POST, PUT,
+DELETE) towards the application to test behavior (read, list, query, create, update, remove) and
 replies are received and checked if content is as expected.
 
 There are tests for properties, tags and channels separately and in combination.
@@ -154,13 +158,13 @@ using the sonatype repositories.
 Create a sonatype account and update the maven settings.xml file with your sonatype credentials
 
 ```xml
-  <servers>
-   <server>
-      <id>phoebus-releases</id>
-      <username>username</username>
-      <password>*******</password>
-   </server>
-  </servers>
+<servers>
+    <server>
+        <id>phoebus-releases</id>
+        <username>username</username>
+        <password>*******</password>
+    </server>
+</servers>
 ```
 
 #### Prepare the release
@@ -168,12 +172,12 @@ Create a sonatype account and update the maven settings.xml file with your sonat
 ```bash
 mvn release:prepare
 ```  
+
 In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
 A full list of checks is
 documented [here](https://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html):
 
 #### Perform the release
-
 
 ```bash
 mvn release:perform
