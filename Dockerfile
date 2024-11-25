@@ -1,10 +1,19 @@
 # Stage 1: Development stage
 FROM eclipse-temurin:17-jdk AS developer
 
+ENV DOCKER=docker-27.3.1
+
 # Install Maven and Git for development purposes
 RUN apt-get update && \
     apt-get install -y maven git && \
     apt-get clean
+
+
+# install the docker ce cli binary
+RUN curl -O https://download.docker.com/linux/static/stable/x86_64/${DOCKER}.tgz && \
+    tar xvf ${DOCKER}.tgz && \
+    cp docker/docker /usr/bin && \
+    rm -r ${DOCKER}.tgz docker
 
 # Set the working directory for development
 WORKDIR /workspace
