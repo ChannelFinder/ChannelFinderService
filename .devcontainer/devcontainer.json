@@ -31,12 +31,14 @@
         "--net=host",
         // Make sure SELinux does not disable with access to host filesystems like tmp
         "--security-opt=label=disable",
-         // add the docker socket environment variable to the container
+        // Mount the user sockets folder
+        "-v${localEnv:XDG_RUNTIME_DIR}:${localEnv:XDG_RUNTIME_DIR}",
+        // add the docker socket environment variable to the container
         "-e=DOCKER_HOST=${localEnv:DOCKER_HOST}"
     ],
     // Mount the parent as /workspaces so we can pip install peers as editable
     "workspaceMount": "source=${localWorkspaceFolder}/..,target=/workspaces,type=bind",
-        // for rootless we must not to mess with user ids inside the container
+    // for rootless we must not to mess with user ids inside the container
     "updateRemoteUserUID": false,
     // for rootless we are root inside the container
     "remoteUser": "root"
