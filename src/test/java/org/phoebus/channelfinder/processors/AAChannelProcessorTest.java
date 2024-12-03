@@ -114,7 +114,7 @@ class AAChannelProcessorTest {
         ObjectMapper objectMapper = new ObjectMapper();
         String str = objectMapper.writeValueAsString(List.of(ar1, ar2));
 
-        String expectedString = "[{\"pv\":\"sim://testing1\",\"samplingMethod\":\"MONITOR\",\"samplingPeriod\":\"1.0\"},{\"pv\":\"sim://testing2\",\"samplingMethod\":\"SCAN\",\"samplingPeriod\":\"0.2\"}]";
+        String expectedString = "[{\"pv\":\"sim://testing1\",\"samplingmethod\":\"MONITOR\",\"samplingperiod\":\"1.0\"},{\"pv\":\"sim://testing2\",\"samplingmethod\":\"SCAN\",\"samplingperiod\":\"0.2\"}]";
         Assertions.assertEquals(str, expectedString);
 
         // Only a pv name
