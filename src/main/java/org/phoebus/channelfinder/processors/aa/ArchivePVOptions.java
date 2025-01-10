@@ -2,6 +2,7 @@ package org.phoebus.channelfinder.processors.aa;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 import java.util.logging.Level;
@@ -12,7 +13,9 @@ public class ArchivePVOptions {
     private static final Logger logger = Logger.getLogger(ArchivePVOptions.class.getName());
 
     private String pv;
+    @JsonProperty("samplingmethod")
     private String samplingMethod;
+    @JsonProperty("samplingperiod")
     private String samplingPeriod;
     private String policy;
     @JsonIgnore
