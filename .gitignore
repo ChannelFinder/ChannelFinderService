@@ -1,21 +1,29 @@
+### Build and Compilation ###
 /target/
-.settings
 /bin/
+
+### Editor ###
+.settings/
+.settings/org.eclipse.core.resources.prefs
+.settings/org.eclipse.jdt.core.prefs
+.settings/org.eclipse.m2e.core.prefs
 /.project
 /.classpath
 .pydevproject
 *.iml
-*.log
-**/site/sphinx/build/*
 .idea
+.vscode/
+*.swp
+*.swo
+*~
 
-### Eclipse ###
-.settings/org.eclipse.core.resources.prefs
-.settings/org.eclipse.jdt.core.prefs
-.settings/org.eclipse.m2e.core.prefs
+### Logs ###
+*.log
+spring-shell.log
+
+### Documentation ###
+**/site/sphinx/build/*
 
 ### Docker ###
-docker-compose-local*
-
-### Spring ###
-spring-shell.log
+*compose*.yml
+!compose.yml
