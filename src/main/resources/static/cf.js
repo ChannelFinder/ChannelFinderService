@@ -5,7 +5,7 @@ var ChannelFinder = (function() {
 
 function ChannelFinder(opts) {
     opts = opts || {};
-    this.baseurl = opts.baseurl || "/ChannelFinder";
+    this.baseurl = opts.baseurl || "ChannelFinder";
 }
 
 function doReq(suffix, opts) {
