@@ -75,7 +75,7 @@ public class ITUtil {
     public static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static final String CHANNELFINDER = "channelfinder";
-    public static final String INTEGRATIONTEST_DOCKER_COMPOSE = "src/test/resources/docker-compose-integrationtest.yml";
+    public static final String INTEGRATIONTEST_DOCKER_COMPOSE = "src/test/resources/compose.yml";
 
     // code coverage
 

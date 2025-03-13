@@ -18,9 +18,7 @@
 
 services:
   channelfinder:
-    build: 
-      context: .
-      dockerfile: Dockerfile.integrationtest
+    build: .
     hostname: channelfinder
     networks:
       - channelfinder-net
