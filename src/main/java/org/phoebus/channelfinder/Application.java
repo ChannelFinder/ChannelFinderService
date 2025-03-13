@@ -20,6 +20,8 @@ import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.servers.Server;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +40,11 @@ import org.springframework.util.FileCopyUtils;
 @EnableAutoConfiguration
 @ComponentScan(basePackages="org.phoebus.channelfinder")
 @EnableScheduling
+@OpenAPIDefinition(
+    servers = {
+        @Server(url = "/")
+    }
+)
 @SpringBootApplication
 public class Application implements ApplicationRunner {
 
