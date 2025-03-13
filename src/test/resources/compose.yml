@@ -18,7 +18,9 @@
 
 services:
   channelfinder:
-    build: .
+    build:
+      context: ../../..
+      dockerfile: src/test/resources/Dockerfile
     hostname: channelfinder
     networks:
       - channelfinder-net
