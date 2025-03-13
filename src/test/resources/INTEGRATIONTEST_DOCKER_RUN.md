@@ -78,7 +78,7 @@ mvn clean install test-compile failsafe:integration-test failsafe:verify --batch
 
 ##### Configuration
 
-* Configuration in folder `src/test/java` and package `org.phoebus.channelfinder.docker`, e.g. urls and port numbers, is coupled to files `Dockerfile.integrationtest` and `docker-compose-integrationtest.yml` (beside `src/main/resources/application.properties`)
+* Configuration in folder `src/test/java` and package `org.phoebus.channelfinder.docker`, e.g. urls and port numbers, is coupled to files `src/test/resources/Dockerfile.integrationtest` and `src/test/resources/docker-compose-integrationtest.yml` (beside `src/main/resources/application.properties`)
 
 ##### Debug
 

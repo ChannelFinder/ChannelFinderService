@@ -33,8 +33,8 @@ It is possible to test ChannelFinder API by running ChannelFinder and Elasticsea
 ##### Files
 
 * folder `src/test/java` and package `org.phoebus.channelfinder.docker`
-* [docker-compose-integrationtest.yml](docker-compose-integrationtest.yml)
-* [Dockerfile.integrationtest](Dockerfile.integrationtest)
+* [docker-compose-integrationtest.yml](src/test/resources/docker-compose-integrationtest.yml)
+* [Dockerfile.integrationtest](src/test/resources/Dockerfile.integrationtest)
 
 ### Examples
 
@@ -87,7 +87,7 @@ How
 
 ### How it works - big picture
 
-Integration tests are implemented in test class annotated with `@Testcontainers`. Test class starts a docker container for the application (ChannelFinder service) and another docker container for elastic (Elasticsearch) through `docker-compose-integrationtest.yml` and `Dockerfile.integrationtest` after which JUnit tests are run.
+Integration tests are implemented in test class annotated with `@Testcontainers`. Test class starts a docker container for the application (ChannelFinder service) and another docker container for elastic (Elasticsearch) through `src/test/resources/docker-compose-integrationtest.yml` and `src/test/resources/Dockerfile.integrationtest` after which JUnit tests are run.
 
 ```
 @Testcontainers
@@ -321,7 +321,7 @@ public class ChannelFinderChannelsIT {
 ##### Note
 
 * (Re) Build after change in `src/main/java` is needed in order for change to be tested as `Dockerfile.integrationtest` relies on built code.
-* Configuration in folder `src/test/java` and package `org.phoebus.channelfinder.docker`, e.g. urls and port numbers, is coupled to files `Dockerfile.integrationtest` and `docker-compose-integrationtest.yml` (beside `src/main/resources/application.properties`).
+* Configuration in folder `src/test/java` and package `org.phoebus.channelfinder.docker`, e.g. urls and port numbers, is coupled to files `src/test/resources/Dockerfile.integrationtest` and `src/test/resources/docker-compose-integrationtest.yml` (beside `src/main/resources/application.properties`).
 * Both positive and negative tests are important to ensure validation works as expected.
 
 ### How to run
