@@ -73,12 +73,12 @@ mvn clean install test-compile failsafe:integration-test failsafe:verify --batch
 ##### Build
 
 * (Re) Build after change in `src/main/java` in order for change to be tested
-* `Dockerfile.integrationtest` relies on built code and not on Maven central
+* `Dockerfile` relies on built code and not on Maven central
 * Requires a deployable jar
 
 ##### Configuration
 
-* Configuration in folder `src/test/java` and package `org.phoebus.channelfinder.docker`, e.g. urls and port numbers, is coupled to files `Dockerfile.integrationtest` and `docker-compose-integrationtest.yml` (beside `src/main/resources/application.properties`)
+* Configuration in folder `src/test/java` and package `org.phoebus.channelfinder.docker`, e.g. urls and port numbers, is coupled to files `src/test/resources/Dockerfile` and `src/test/resources/compose.yml` (beside `src/main/resources/application.properties`)
 
 ##### Debug
 

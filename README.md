@@ -39,7 +39,7 @@ ChannelFinder is a Java EE5 REST-style web service. The directory data is held i
 
 ### Docker Compose
 
-For using docker containers there is a barebones [docker compose file](./docker-compose.yml).
+For using docker containers there is a barebones [docker compose file](./compose.yml).
 
 ### Manual Installation
 

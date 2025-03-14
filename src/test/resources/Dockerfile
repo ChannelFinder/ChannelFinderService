@@ -19,9 +19,9 @@
 FROM eclipse-temurin:17-jre
 
 # deployment unit
-COPY target/ChannelFinder-*.jar /channelfinder/ChannelFinder-*.jar
+COPY ../../../target/ChannelFinder-*.jar /channelfinder/ChannelFinder-*.jar
 
 # code coverage
-COPY target/jacoco/jacocoagent.jar /channelfinder/jacocoagent.jar
+COPY ../../../target/jacoco/jacocoagent.jar /channelfinder/jacocoagent.jar
 
 CMD ["java", "-jar", "/channelfinder/ChannelFinder-*.jar", "--spring.config.name=application"]

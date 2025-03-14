@@ -37,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on usage of
  * {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}.
- * Existing dockerization is used with <tt>docker-compose-integrationtest.yml</tt> and <tt>Dockerfile.integrationtest</tt>.
  *
  * @author Lars Johansson
  *
