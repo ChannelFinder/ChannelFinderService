@@ -31,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on endpoints being available.
- * Existing dockerization is used with <tt>docker-compose-integrationtest.yml</tt> and <tt>Dockerfile.integrationtest</tt>.
  *
  * @author Lars Johansson
  *

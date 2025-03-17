@@ -16,12 +16,11 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # ------------------------------------------------------------------------------
 
-version: "3.7"
 services:
   channelfinder:
-    build: 
-      context: .
-      dockerfile: Dockerfile.integrationtest
+    build:
+      context: ../../..
+      dockerfile: src/test/resources/Dockerfile
     hostname: channelfinder
     networks:
       - channelfinder-net

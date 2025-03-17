@@ -1,4 +1,3 @@
-version: "3"
 services:
   channelfinder:
     build: .
@@ -8,21 +7,15 @@ services:
       - channelfinder-net
     ports:
       - "8443:8443"
-    depends_on:
-      - elasticsearch
     environment:
-      - ELASTICSEARCH_NETWORK_HOST=elasticsearch-cf
-    command: >
-      /bin/bash -c "
-        until curl --silent --fail http://elasticsearch-cf:9200/_cluster/health; do
-          echo 'Waiting for Elasticsearch'
-          sleep 1
-        done
-        java -jar /channelfinder/ChannelFinder-*.jar"
+      - ELASTICSEARCH_NETWORK_HOST=elasticsearch
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.11.2
-    hostname: elasticsearch-cf
+    hostname: elasticsearch
     networks:
       - channelfinder-net
     ports:
@@ -35,6 +28,11 @@ services:
       EPICS_PVAS_INTF_ADDR_LIST: "0.0.0.0"
     volumes:
       - channelfinder-es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 volumes:
   channelfinder-es-data:
     driver: local
