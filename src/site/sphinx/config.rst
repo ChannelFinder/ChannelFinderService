@@ -163,3 +163,28 @@ Or to not have the EPICS PV Access Server listen, then:
 
     EPICS_PVAS_INTF_ADDR_LIST="0.0.0.0"
 
+Metrics
+^^^^^^^
+
+Metrics can be exposed by setting the `management.endpoints.web.exposure.include=prometheus` property. 
+
+.. code-block::
+
+    management.endpoints.web.exposure.include=prometheus, metrics, health, info
+
+Adding the prometheus property will expose the prometheus endpoint which can be scraped by prometheus.
+
+You can also set the metrics.tags to add counts of number of channels per tag. These are exposed as
+`cf_channel_count{tag=tagName}` 
+
+.. code-block::
+
+    metrics.tags=Accelerator, Beamline, Beamline1, Beamline2, Beamline3
+
+You can also set the metrics.properties to add counts of number of channels per property and value. These are exposed as
+`cf_propertyName_channels_count{propertyName=propertyValue}`. 
+
+
+.. code-block::
+
+    metrics.properties=pvStatus:Active, Inactive; archive: default, fast, slow; archiver: aa_beamline, aa_acccelerator
