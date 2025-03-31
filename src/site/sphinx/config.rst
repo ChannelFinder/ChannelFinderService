@@ -145,6 +145,70 @@ For named policy PVs, the AA plugin will first check that the named policy exist
       # no archiver tag so PV sent to archiver in aa.default_alias
    }
 
+Metrics
+^^^^^^^
+
+Metrics can be exposed by setting the `management.endpoints.web.exposure.include=prometheus` property.
+
+.. code-block::
+
+    management.endpoints.web.exposure.include=prometheus, metrics, health, info
+
+Adding the prometheus property will expose the prometheus endpoint which can be scraped by prometheus.
+
+The default metrics exposed by specifying "metrics" are:
+
+.. code-block::
+
+    cf.total.channel.count - Count of all ChannelFinder channels
+    cf.property.count - Count of all Property Names
+    cf.tag.count - Count of all tags
+
+Tag Metrics
+"""""""""""
+
+You can also set the metrics.tags to add counts of number of channels per tag. These are exposed as
+`cf.tag_on_channels.count{tag=tagName}`. For example
+
+.. code-block::
+
+    metrics.tags=Accelerator, Beamline1, Beamline2, Beamline3
+
+Would produce metrics:
+
+.. code-block::
+
+    cf.tag_on_channels.count=109
+    cf.tag_on_channels.count{tag=Accelerator} = 100
+    cf.tag_on_channels.count{tag=Beamline1} = 3
+    cf.tag_on_channels.count{tag=Beamline2} = 3
+    cf.tag_on_channels.count{tag=Beamline3} = 3
+
+Property Metrics
+""""""""""""""""
+
+You can also set the metrics.properties to add counts of number of channels per property and value. These are exposed as
+`cf_propertyName_channels_count{propertyName=propertyValue}`. For example:
+
+
+.. code-block::
+
+    metrics.properties=pvStatus:Active, Inactive; archive: default, fast, slow; archiver: aa_beamline, aa_acccelerator
+
+Would produce metrics:
+
+.. code-block::
+
+    cf.pvStatus.channel.count=100
+    cf.pvStatus.channel.count{pvStatus=Active}=50
+    cf.pvStatus.channel.count{pvStatus=Active}=50
+    cf.archive.channel.count=21
+    cf.archive.channel.count{archive=default}=1
+    cf.archive.channel.count{archive=fast}=10
+    cf.archive.channel.count{archive=slow}=10
+    cf.archiver.channel.count=20
+    cf.archive.channel.count{archive=aa_beamline}=10
+    cf.archive.channel.count{archive=aa_acccelerator}=10
 
 EPICS PV Access Server
 ----------------------
@@ -162,29 +226,3 @@ IPv4 you can set the environment variable
 Or to not have the EPICS PV Access Server listen, then:
 
     EPICS_PVAS_INTF_ADDR_LIST="0.0.0.0"
-
-Metrics
-^^^^^^^
-
-Metrics can be exposed by setting the `management.endpoints.web.exposure.include=prometheus` property. 
-
-.. code-block::
-
-    management.endpoints.web.exposure.include=prometheus, metrics, health, info
-
-Adding the prometheus property will expose the prometheus endpoint which can be scraped by prometheus.
-
-You can also set the metrics.tags to add counts of number of channels per tag. These are exposed as
-`cf_channel_count{tag=tagName}` 
-
-.. code-block::
-
-    metrics.tags=Accelerator, Beamline, Beamline1, Beamline2, Beamline3
-
-You can also set the metrics.properties to add counts of number of channels per property and value. These are exposed as
-`cf_propertyName_channels_count{propertyName=propertyValue}`. 
-
-
-.. code-block::
-
-    metrics.properties=pvStatus:Active, Inactive; archive: default, fast, slow; archiver: aa_beamline, aa_acccelerator
