@@ -2,22 +2,16 @@ package org.phoebus.channelfinder;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.MultiGauge;
-import io.micrometer.core.instrument.Tags;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,10 +22,11 @@ public class MetricsService {
     public static final String CF_PROPERTY_COUNT = "cf.property.count";
     public static final String CF_TAG_COUNT = "cf.tag.count";
     public static final String CF_PROPERTY_FORMAT_STRING = "cf.%s.channel.count";
-    public static final String CF_CHANNEL_COUNT = "cf.channel.count";
+    public static final String CF_TAG_ON_CHANNELS_COUNT = "cf.tag_on_channels.count";
     private static final String METRIC_DESCRIPTION_TOTAL_CHANNEL_COUNT = "Count of all ChannelFinder channels";
     private static final String METRIC_DESCRIPTION_PROPERTY_COUNT = "Count of all ChannelFinder properties";
     private static final String METRIC_DESCRIPTION_TAG_COUNT = "Count of all ChannelFinder tags";
+    private static final String BASE_UNIT = "channels";
 
     private final ChannelRepository channelRepository;
     private final PropertyRepository propertyRepository;
@@ -85,13 +80,12 @@ public class MetricsService {
     }
 
     private void registerTagMetrics() {
-
         // Add tags
         for (String tag : tags) {
-            Gauge.builder(CF_CHANNEL_COUNT, () -> channelRepository.countByTag(tag))
+            Gauge.builder(CF_TAG_ON_CHANNELS_COUNT, () -> channelRepository.countByTag(tag))
                 .description("Number of channels with tag")
                 .tag("tag", tag)
-                .baseUnit("channels")
+                .baseUnit(BASE_UNIT)
                 .register(meterRegistry);
         }
     }
@@ -103,7 +97,7 @@ public class MetricsService {
             Gauge.builder(String.format(CF_PROPERTY_FORMAT_STRING, propertyName), () -> channelRepository.countByProperty(propertyName, propertyValue))
                 .description(String.format("Number of channels with property '%s'", propertyName))
                 .tag(propertyName, propertyValue)
-                .baseUnit("channels")
+                .baseUnit(BASE_UNIT)
                 .register(meterRegistry))
         );
     }
