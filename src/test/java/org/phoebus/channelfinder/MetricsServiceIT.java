@@ -12,6 +12,7 @@ import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.parameters.P;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,39 +20,32 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK, classes = Application.class)
 @AutoConfigureMockMvc
 @ActiveProfiles("metrics")
 @TestPropertySource(
-        locations = "classpath:application_test.properties",
-        properties = {
-            "metrics.tags=testTag0, testTag1",
-            "metrics.properties={{'testProperty0', 'testProperty0Value'}, {'testProperty1', 'testProperty1Value'}}"
-        })
+    locations = "classpath:application_test.properties",
+    properties = {
+        "metrics.tags=testTag0, testTag1",
+        "metrics.properties=testProperty0: value0, value1; testProperty1: value0, !*"
+    })
 class MetricsServiceIT {
 
     public static final String METRICS_ENDPOINT = "/actuator/metrics/";
-    public static final String METRICS_TAG_LABEL = "tag";
-    public static final String PROPERTY_0_LABEL = "testProperty0:testProperty0Value";
-    public static final String PROPERTY_1_LABEL = "testProperty1:testProperty1Value";
-    public static final String TAG_0_LABEL = "tag:testTag0";
-    public static final String TAG_1_LABEL = "tag:testTag1";
-    private final List<Tag> testTags =
-            Arrays.asList(new Tag("testTag0", "testTagOwner0"), new Tag("testTag1", "testTagOwner1"));
-    private final List<Property> testProperties = Arrays.asList(
-            new Property("testProperty0", "testPropertyOwner0"),
-            new Property("testProperty1", "testPropertyOwner1"),
-            new Property("testProperty2", "testPropertyOwner2"));
+    public static final String PROPERTY_NAME = "testProperty";
+    public static final String OWNER = "testOwner";
+    public static final String TAG_NAME = "testTag";
+    public static final String METRICS_PARAM_KEY = "tag";
+    public static final String PROPERTY_VALUE = "value";
+
 
     @Autowired
     ChannelRepository channelRepository;
@@ -92,81 +86,115 @@ class MetricsServiceIT {
         tagRepository.findAll().forEach(t -> tagRepository.deleteById(t.getName()));
         propertyRepository.findAll().forEach(p -> propertyRepository.deleteById(p.getName()));
     }
+
+    private void getAndExpectMetric(String paramValue, String endpoint, int expectedValue) throws Exception {
+        mockMvc.perform(get(METRICS_ENDPOINT + endpoint)
+                .param(METRICS_PARAM_KEY, paramValue))
+            .andExpect(jsonPath("$.measurements[0].value").value(expectedValue));
+    }
+
+    private void getAndExpectMetricParent(String endpoint, int expectedValue) throws Exception {
+        mockMvc.perform(get(METRICS_ENDPOINT + endpoint))
+            .andExpect(jsonPath("$.measurements[0].value").value(expectedValue));
+    }
+
     @Test
     void testGaugeMetrics() throws Exception {
         mockMvc.perform(get(METRICS_ENDPOINT)).andExpect(status().is(200));
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_TOTAL_CHANNEL_COUNT))
-                .andExpect(jsonPath("$.measurements[0].value").value(0));
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_PROPERTY_COUNT))
-                .andExpect(jsonPath("$.measurements[0].value").value(0));
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_TAG_COUNT))
-                .andExpect(jsonPath("$.measurements[0].value").value(0));
+        getAndExpectMetricParent(MetricsService.CF_TOTAL_CHANNEL_COUNT, 0);
+        getAndExpectMetricParent(MetricsService.CF_PROPERTY_COUNT, 0);
+        getAndExpectMetricParent(MetricsService.CF_TAG_COUNT, 0);
 
         Channel testChannel = new Channel("testChannel", "testOwner");
         channelRepository.save(testChannel);
-        propertyRepository.saveAll(testProperties);
-        tagRepository.saveAll(testTags);
+        propertyRepository.saveAll(propertyList(3));
+        tagRepository.saveAll(tagList(2));
 
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_TOTAL_CHANNEL_COUNT))
-                .andExpect(jsonPath("$.measurements[0].value").value(1));
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_PROPERTY_COUNT))
-                .andExpect(jsonPath("$.measurements[0].value").value(3));
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_TAG_COUNT))
-                .andExpect(jsonPath("$.measurements[0].value").value(2));
+        getAndExpectMetricParent(MetricsService.CF_TOTAL_CHANNEL_COUNT, 1);
+        getAndExpectMetricParent(MetricsService.CF_PROPERTY_COUNT, 3);
+        getAndExpectMetricParent(MetricsService.CF_TAG_COUNT, 2);
+    }
+
+    private List<Tag> tagList(int count) {
+        return IntStream.range(0, count).mapToObj(i -> new Tag(TAG_NAME + i, OWNER)).toList();
+    }
+
+    private String tagParamValue(Tag tag) {
+        return String.format("tag:%s", tag.getName());
+    }
+
+
+    private void getAndExpectTagMetric(Tag tag, int expectedValue) throws Exception {
+        getAndExpectMetric(tagParamValue(tag), MetricsService.CF_TAG_ON_CHANNELS_COUNT, expectedValue);
     }
 
     @Test
     void testTagMultiGaugeMetrics() throws Exception {
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                        .param(METRICS_TAG_LABEL, TAG_0_LABEL))
-                .andExpect(jsonPath("$.measurements[0].value").value(0));
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                        .param(METRICS_TAG_LABEL, TAG_1_LABEL))
-                .andExpect(jsonPath("$.measurements[0].value").value(0));
+        List<Tag> testTags = tagList(3);
+        getAndExpectMetricParent(MetricsService.CF_TAG_ON_CHANNELS_COUNT, 0);
+        getAndExpectTagMetric(testTags.get(0), 0);
+        getAndExpectTagMetric(testTags.get(1), 0);
 
         tagRepository.saveAll(testTags);
 
         Channel testChannel = new Channel("testChannelTag", "testOwner", List.of(), testTags);
         channelRepository.save(testChannel);
+        Channel testChannel1 = new Channel("testChannelTag1", "testOwner", List.of(), List.of(testTags.get(0)));
+        channelRepository.save(testChannel1);
 
-        await().untilAsserted(() -> {
-            mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                            .param(METRICS_TAG_LABEL, TAG_0_LABEL))
-                    .andExpect(jsonPath("$.measurements[0].value").value(1));
-            mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                            .param(METRICS_TAG_LABEL, TAG_1_LABEL))
-                    .andExpect(jsonPath("$.measurements[0].value").value(1));
-        });
+        getAndExpectTagMetric(testTags.get(0), 2);
+        getAndExpectTagMetric(testTags.get(1), 1);
+        getAndExpectMetricParent(MetricsService.CF_TAG_ON_CHANNELS_COUNT, 3);
+    }
+
+    private List<Property> propertyList(int count) {
+        return IntStream.range(0, count).mapToObj(i -> new Property(PROPERTY_NAME + i, OWNER)).toList();
+    }
+
+    private String propertyParamValue(Property property) {
+        return String.format("%s:%s", property.getName(), property.getValue());
+    }
+
+    private void getAndExpectPropertyMetric(Property property, int expectedValue) throws Exception {
+        getAndExpectMetric(propertyParamValue(property), MetricsService.CF_CHANNEL_COUNT, expectedValue);
     }
 
     @Test
     void testPropertyMultiGaugeMetrics() throws Exception {
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                        .param(METRICS_TAG_LABEL, PROPERTY_0_LABEL))
-                .andExpect(jsonPath("$.measurements[0].value").value(0));
-        mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                        .param(METRICS_TAG_LABEL, PROPERTY_1_LABEL))
-                .andExpect(jsonPath("$.measurements[0].value").value(0));
+        List<Property> testProperties = propertyList(2);
 
+        Channel testChannel = new Channel(
+            "testChannelProp",
+            "testOwner",
+            List.of(
+                new Property(testProperties.get(0).getName(), OWNER, PROPERTY_VALUE + 0),
+                new Property(testProperties.get(1).getName(), OWNER, PROPERTY_VALUE + 0)),
+            List.of());
+
+        Channel testChannel1 = new Channel(
+            "testChannelProp1",
+            "testOwner",
+            List.of(new Property(testProperties.get(0).getName(), OWNER, PROPERTY_VALUE + 1)),
+            List.of());
+
+        getAndExpectMetricParent(MetricsService.CF_CHANNEL_COUNT, 0);
+        getAndExpectPropertyMetric(testChannel.getProperties().get(0), 0);
+        getAndExpectPropertyMetric(testChannel1.getProperties().get(0), 0);
+
+        getAndExpectPropertyMetric(testChannel.getProperties().get(1), 0);
+        getAndExpectPropertyMetric(new Property(testProperties.get(1).getName(), OWNER, MetricsService.NOT_SET), 0);
 
         propertyRepository.saveAll(testProperties);
 
-        Channel testChannel = new Channel(
-                "testChannelProp",
-                "testOwner",
-                testProperties.stream()
-                        .map(p -> new Property(p.getName(), p.getOwner(), p.getName() + "Value"))
-                        .collect(Collectors.toList()),
-                testTags);
         channelRepository.save(testChannel);
+        channelRepository.save(testChannel1);
 
-        await().untilAsserted(() -> {
-            mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                            .param(METRICS_TAG_LABEL, PROPERTY_0_LABEL))
-                    .andExpect(jsonPath("$.measurements[0].value").value(1));
-            mockMvc.perform(get(METRICS_ENDPOINT + MetricsService.CF_CHANNEL_COUNT)
-                            .param(METRICS_TAG_LABEL, PROPERTY_1_LABEL))
-                    .andExpect(jsonPath("$.measurements[0].value").value(1));
-        });
+        getAndExpectMetricParent(MetricsService.CF_CHANNEL_COUNT, 2);
+        getAndExpectPropertyMetric(testChannel.getProperties().get(0), 1);
+        getAndExpectPropertyMetric(testChannel1.getProperties().get(0), 1);
+
+        getAndExpectPropertyMetric(testChannel.getProperties().get(1), 1);
+        getAndExpectPropertyMetric(new Property(testProperties.get(1).getName(), OWNER, MetricsService.NOT_SET), 1);
+
     }
 }
