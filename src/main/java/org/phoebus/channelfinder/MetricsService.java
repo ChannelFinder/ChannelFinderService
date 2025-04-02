@@ -143,7 +143,11 @@ public class MetricsService {
         List<Tag> metricTags = new ArrayList<>();
         for (Map.Entry<String, String> entry : multiValueMap.toSingleValueMap().entrySet()) {
             if (entry.getKey().endsWith(NEGATE)) {
-                metricTags.add(new ImmutableTag(entry.getKey().substring(0, entry.getKey().length() - 1), NOT_SET));
+                if (entry.getValue().equals("*")) {
+                    metricTags.add(new ImmutableTag(entry.getKey().substring(0, entry.getKey().length() - 1), NOT_SET));
+                } else {
+                    metricTags.add(new ImmutableTag(entry.getKey().substring(0, entry.getKey().length() - 1), NEGATE + entry.getValue()));
+                }
             } else {
                 metricTags.add(new ImmutableTag(entry.getKey(), entry.getValue()));
             }

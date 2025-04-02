@@ -91,124 +91,16 @@ SSL Config
 
     server.ssl.key-store - Path to SSL keystore file
 
-Archiver Appliance Configuration Processor
+Archiver Appliance Processor Configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-To enable the archiver appliance configuration processor, set the property :ref:`aa.enabled` to **true**.
 
-A list of archiver appliance URLs and aliases. ::
-
-    aa.urls={'default': 'http://archiver-01.example.com:17665', 'neutron-controls': 'http://archiver-02.example.com:17665'}
-
-To set the choice of default archiver appliance, set the property :ref:`aa.default_alias` to the alias of the default archiver appliance. This setting can also be a comma-separated list if you want multiple default archivers.
-
-To pass the PV as "pva://PVNAME" to the archiver appliance, set the property :ref:`aa.pva` to **true**.
-
-The properties checked for setting a PV to be archived are ::
-
-    aa.archive_property_name=archive
-    aa.archiver_property_name=archiver
-
-To set the auto pause behaviour, configure the parameter :ref:`aa.auto_pause`. Set to pvStatus to pause on pvStatus=Inactive,
-and resume on pvStatus=Active. Set to archive to pause on archive_property_name not existing. Set to both to pause on pvStatus=Inactive and archive_property_name::
-
-    aa.auto_pause=pvStatus,archive
-
-AA Plugin Example
-"""""""""""""""""
-
-A common use case for the archiver appliance processor is for sites that use the Recsync project to populate Channel Finder.
-With the reccaster module, info tags in the IOC database specify the archiving parameters and these properties will be pushed to Channel Finder by the recceiver service.
-
-In the example database below, the AA plugin will make requests to archive each PV.
-The plugin will request MyPV to be archived with the SCAN method and sampling rate of 10 seconds to the "aa_appliance0" instance specified in aa.urls property.
-MyPV2 will use the MONITOR method and a sampling rate of 0.1 seconds, and the request will be sent to the URL mapped to the the "aa_appliance1: key.
-MyPolicyPV shows an example that uses an archiver appliance "Named Policy" string and also uses the URL specified in the aa.default_alias property since the "archiver" tag is missing.
-
-For named policy PVs, the AA plugin will first check that the named policy exists in the appliance using the getPolicyList BPL endpoint.
-
-.. code-block::
-
-   record(ao, "MyPV") {
-       info(archive,  "scan@10")
-       info(archiver, "aa_appliance0")
-   }
-   record(ao, "MyPV2") {
-      info(archive,  "monitor@0.1")
-      info(archiver, "aa_appliance1")
-   }
-   record(ao, "MyPVWithMultipleArchivers") {
-      info(archive,  "monitor@0.1")
-      info(archiver, "aa_appliance0,aa_appliance1")
-   }
-   record(ao, "MyPolicyPV") {
-      info(archive,  "AAPolicyName")
-      # no archiver tag so PV sent to archiver in aa.default_alias
-   }
+See :ref:`_aa_processor_config`.
 
 Metrics
 ^^^^^^^
 
-Metrics can be exposed by setting the `management.endpoints.web.exposure.include=prometheus` property.
+See :ref:`_metrics`.
 
-.. code-block::
-
-    management.endpoints.web.exposure.include=prometheus, metrics, health, info
-
-Adding the prometheus property will expose the prometheus endpoint which can be scraped by prometheus.
-
-The default metrics exposed by specifying "metrics" are:
-
-.. code-block::
-
-    cf.total.channel.count - Count of all ChannelFinder channels
-    cf.property.count - Count of all Property Names
-    cf.tag.count - Count of all tags
-
-Tag Metrics
-"""""""""""
-
-You can also set the metrics.tags to add counts of number of channels per tag. These are exposed as
-`cf.tag_on_channels.count{tag=tagName}`. For example
-
-.. code-block::
-
-    metrics.tags=Accelerator, Beamline1, Beamline2, Beamline3
-
-Would produce metrics:
-
-.. code-block::
-
-    cf.tag_on_channels.count=109
-    cf.tag_on_channels.count{tag=Accelerator} = 100
-    cf.tag_on_channels.count{tag=Beamline1} = 3
-    cf.tag_on_channels.count{tag=Beamline2} = 3
-    cf.tag_on_channels.count{tag=Beamline3} = 3
-
-Property Metrics
-""""""""""""""""
-
-You can also set the metrics.properties to add counts of number of channels per property and value. These are exposed as
-`cf_propertyName_channels_count{propertyName=propertyValue}`. For example:
-
-
-.. code-block::
-
-    metrics.properties=pvStatus:Active, Inactive; archive: default, fast, slow; archiver: aa_beamline, aa_acccelerator
-
-Would produce metrics:
-
-.. code-block::
-
-    cf.pvStatus.channel.count=100
-    cf.pvStatus.channel.count{pvStatus=Active}=50
-    cf.pvStatus.channel.count{pvStatus=Active}=50
-    cf.archive.channel.count=21
-    cf.archive.channel.count{archive=default}=1
-    cf.archive.channel.count{archive=fast}=10
-    cf.archive.channel.count{archive=slow}=10
-    cf.archiver.channel.count=20
-    cf.archive.channel.count{archive=aa_beamline}=10
-    cf.archive.channel.count{archive=aa_acccelerator}=10
 
 EPICS PV Access Server
 ----------------------
