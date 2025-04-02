@@ -12,6 +12,7 @@ import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.parameters.P;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -34,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     locations = "classpath:application_test.properties",
     properties = {
         "metrics.tags=testTag0, testTag1",
-        "metrics.properties=testProperty0: value0, value1; testProperty1: value0"
+        "metrics.properties=testProperty0: value0, value1; testProperty1: value0, !*"
     })
 class MetricsServiceIT {
 
@@ -155,11 +156,7 @@ class MetricsServiceIT {
     }
 
     private void getAndExpectPropertyMetric(Property property, int expectedValue) throws Exception {
-        getAndExpectMetric(propertyParamValue(property), String.format(MetricsService.CF_PROPERTY_FORMAT_STRING, property.getName()), expectedValue);
-    }
-
-    private void getAndExpectParentPropertyMetric(Property property, int expectedValue) throws Exception {
-        getAndExpectMetricParent(String.format(MetricsService.CF_PROPERTY_FORMAT_STRING, property.getName()), expectedValue);
+        getAndExpectMetric(propertyParamValue(property), MetricsService.CF_CHANNEL_COUNT, expectedValue);
     }
 
     @Test
@@ -180,24 +177,24 @@ class MetricsServiceIT {
             List.of(new Property(testProperties.get(0).getName(), OWNER, PROPERTY_VALUE + 1)),
             List.of());
 
-        getAndExpectParentPropertyMetric(testProperties.get(0), 0);
+        getAndExpectMetricParent(MetricsService.CF_CHANNEL_COUNT, 0);
         getAndExpectPropertyMetric(testChannel.getProperties().get(0), 0);
         getAndExpectPropertyMetric(testChannel1.getProperties().get(0), 0);
 
-        getAndExpectParentPropertyMetric(testProperties.get(1), 0);
         getAndExpectPropertyMetric(testChannel.getProperties().get(1), 0);
+        getAndExpectPropertyMetric(new Property(testProperties.get(1).getName(), OWNER, MetricsService.NOT_SET), 0);
 
         propertyRepository.saveAll(testProperties);
 
         channelRepository.save(testChannel);
         channelRepository.save(testChannel1);
 
-        getAndExpectParentPropertyMetric(testProperties.get(0), 2);
+        getAndExpectMetricParent(MetricsService.CF_CHANNEL_COUNT, 2);
         getAndExpectPropertyMetric(testChannel.getProperties().get(0), 1);
         getAndExpectPropertyMetric(testChannel1.getProperties().get(0), 1);
 
-        getAndExpectParentPropertyMetric(testProperties.get(1), 1);
         getAndExpectPropertyMetric(testChannel.getProperties().get(1), 1);
+        getAndExpectPropertyMetric(new Property(testProperties.get(1).getName(), OWNER, MetricsService.NOT_SET), 1);
 
     }
 }

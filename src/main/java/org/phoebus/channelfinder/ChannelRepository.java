@@ -465,70 +465,26 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 }
             switch (key) {
                 case "~name":
-                    for (String value : parameter.getValue()) {
-                        DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
-                        for (String pattern : value.split(valueSplitPattern)) {
-                            nameQuery.queries(getSingleValueQuery("name", pattern.trim()));
-                        }
-                        boolQuery.must(nameQuery.build()._toQuery());
-                    }
+                    addNameQuery(parameter, valueSplitPattern, boolQuery);
                     break;
                 case "~tag":
-                    for (String value : parameter.getValue()) {
-                        DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
-                        for (String pattern : value.split(valueSplitPattern)) {
-                            tagQuery.queries(
-                                    NestedQuery.of(n -> n.path("tags").query(
-                                            getSingleValueQuery("tags.name", pattern.trim())))._toQuery());
-                        }
-                        if (isNot) {
-                            boolQuery.mustNot(tagQuery.build()._toQuery());
-                        } else {
-                            boolQuery.must(tagQuery.build()._toQuery());
-                        }
-
-                    }
+                    addTagsQuery(parameter, valueSplitPattern, isNot, boolQuery);
                     break;
                 case "~size":
-                    Optional<String> maxSize = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
-                    if (maxSize.isPresent()) {
-                        size = Integer.parseInt(maxSize.get());
-                    }
+                    size = parseCountParameter(parameter, size);
                     break;
                 case "~from":
-                    Optional<String> maxFrom = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
-                    if (maxFrom.isPresent()) {
-                        from = Integer.parseInt(maxFrom.get());
-                    }
+                    from = parseCountParameter(parameter, from);
                     break;
                 case "~search_after":
                     searchAfter = parameter.getValue().stream().findFirst();
                     break;
 
                 case "~track_total_hits":
-                    Optional<String> firstTrackTotalHits = parameter.getValue().stream().findFirst();
-                    if (firstTrackTotalHits.isPresent()) {
-                        trackTotalHits = Boolean.parseBoolean(firstTrackTotalHits.get());
-                    }
+                    trackTotalHits = isTrackTotalHits(parameter, trackTotalHits);
                     break;
                 default:
-                    DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
-                    for (String value : parameter.getValue()) {
-                        for (String pattern : value.split(valueSplitPattern)) {
-                            String finalKey = key;
-                            BoolQuery bq;
-                            if (isNot) {
-                                bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", finalKey))
-                                        .mustNot(getSingleValueQuery("properties.value", pattern.trim())));
-                            } else {
-                                bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", finalKey))
-                                        .must(getSingleValueQuery("properties.value", pattern.trim())));
-                            }
-                            propertyQuery.queries(
-                                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
-                            );
-                        }
-                    }
+                    DisMaxQuery.Builder propertyQuery = calculatePropertiesQuery(parameter, valueSplitPattern, key, isNot);
                     boolQuery.must(propertyQuery.build()._toQuery());
                     break;
             }
@@ -536,24 +492,99 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         return new BuiltQuery(boolQuery, size, from, searchAfter, trackTotalHits);
     }
 
+    private static DisMaxQuery.Builder calculatePropertiesQuery(Map.Entry<String, List<String>> parameter, String valueSplitPattern, String key, boolean isNot) {
+        DisMaxQuery.Builder propertyQuery = new DisMaxQuery.Builder();
+        for (String value : parameter.getValue()) {
+            for (String pattern : value.split(valueSplitPattern)) {
+                BoolQuery bq;
+                bq = calculatePropertyQuery(key, isNot, pattern);
+                addPropertyQuery(isNot, pattern, propertyQuery, bq);
+            }
+        }
+        return propertyQuery;
+    }
+
+    private static void addPropertyQuery(boolean isNot, String pattern, DisMaxQuery.Builder propertyQuery, BoolQuery bq) {
+        if (isNot && pattern.trim().equals("*")) {
+
+            propertyQuery.queries(
+                BoolQuery.of( p -> p.mustNot(
+                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
+                ))._toQuery()
+            );
+        } else {
+
+            propertyQuery.queries(
+                NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
+            );
+        }
+    }
+
+    private static BoolQuery calculatePropertyQuery(String key, boolean isNot, String pattern) {
+        BoolQuery bq;
+        if (isNot) {
+            if (pattern.trim().equals("*")) {
+                bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", key)));
+            } else {
+                bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", key))
+                    .mustNot(getSingleValueQuery("properties.value", pattern.trim())));
+            }
+        } else {
+            bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", key))
+                    .must(getSingleValueQuery("properties.value", pattern.trim())));
+        }
+        return bq;
+    }
+
+    private static boolean isTrackTotalHits(Map.Entry<String, List<String>> parameter, boolean trackTotalHits) {
+        Optional<String> firstTrackTotalHits = parameter.getValue().stream().findFirst();
+        if (firstTrackTotalHits.isPresent()) {
+            trackTotalHits = Boolean.parseBoolean(firstTrackTotalHits.get());
+        }
+        return trackTotalHits;
+    }
+
+    private static int parseCountParameter(Map.Entry<String, List<String>> parameter, int size) {
+        Optional<String> maxSize = parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
+        if (maxSize.isPresent()) {
+            size = Integer.parseInt(maxSize.get());
+        }
+        return size;
+    }
+
+    private static void addTagsQuery(Map.Entry<String, List<String>> parameter, String valueSplitPattern, boolean isNot, BoolQuery.Builder boolQuery) {
+        for (String value : parameter.getValue()) {
+            DisMaxQuery.Builder tagQuery = new DisMaxQuery.Builder();
+            for (String pattern : value.split(valueSplitPattern)) {
+                tagQuery.queries(
+                        NestedQuery.of(n -> n.path("tags").query(
+                                getSingleValueQuery("tags.name", pattern.trim())))._toQuery());
+            }
+            if (isNot) {
+                boolQuery.mustNot(tagQuery.build()._toQuery());
+            } else {
+                boolQuery.must(tagQuery.build()._toQuery());
+            }
+
+        }
+    }
+
+    private static void addNameQuery(Map.Entry<String, List<String>> parameter, String valueSplitPattern, BoolQuery.Builder boolQuery) {
+        for (String value : parameter.getValue()) {
+            DisMaxQuery.Builder nameQuery = new DisMaxQuery.Builder();
+            for (String pattern : value.split(valueSplitPattern)) {
+                nameQuery.queries(getSingleValueQuery("name", pattern.trim()));
+            }
+            boolQuery.must(nameQuery.build()._toQuery());
+        }
+    }
+
     private static Query getSingleValueQuery(String name, String pattern) {
         return WildcardQuery.of(w -> w.field(name).caseInsensitive(true).value(pattern))._toQuery();
     }
 
-    private static class BuiltQuery {
-        public final BoolQuery.Builder boolQuery;
-        public final Integer size;
-        public final Integer from;
-        public final Optional<String> searchAfter;
-        public final boolean trackTotalHits;
-
-        public BuiltQuery(BoolQuery.Builder boolQuery, Integer size, Integer from, Optional<String> searchAfter, boolean trackTotalHits) {
-            this.boolQuery = boolQuery;
-            this.size = size;
-            this.from = from;
-            this.searchAfter = searchAfter;
-            this.trackTotalHits = trackTotalHits;
-        }
+    private record BuiltQuery(BoolQuery.Builder boolQuery, Integer size, Integer from, Optional<String> searchAfter,
+                              boolean trackTotalHits) {
     }
 
     /**

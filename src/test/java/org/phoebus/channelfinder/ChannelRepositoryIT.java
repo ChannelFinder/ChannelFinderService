@@ -258,6 +258,34 @@ class ChannelRepositoryIT {
     }
 
     /**
+     * find channels using not modifier
+     */
+    @Test
+    void findLackOfChannels() {
+        Property extraTestProperty = new Property(testProperties.get(0).getName(), "testOwner", "value2");
+        Channel testChannel = new Channel("testChannel","testOwner",List.of(testProperties.get(0)),testTags);
+        Channel testChannel1 = new Channel("testChannel1","testOwner1",testProperties,testTags);
+        Channel testChannel2 = new Channel("testChannel2","testOwner2",List.of(),List.of());
+        Channel testChannel3 = new Channel("testChannel3","testOwner3",List.of(extraTestProperty),List.of());
+        List<Channel> testChannels = Arrays.asList(testChannel, testChannel1, testChannel2, testChannel3);
+        SearchResult foundChannelsResponse = null;
+
+        List<Channel> createdChannels = channelRepository.indexAll(testChannels);
+        SearchResult createdSearchResult = new SearchResult(createdChannels, 4);
+        cleanupTestChannels = testChannels;
+
+        try {
+            MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
+            searchParameters.set(testProperties.get(0).getName().toLowerCase() + "!", "*");
+            foundChannelsResponse = channelRepository.search(searchParameters);
+            Assertions.assertEquals(new SearchResult(List.of(createdChannels.get(2)), 1), foundChannelsResponse);
+
+        } catch (ResponseStatusException e) {
+            Assertions.fail(e);
+        }
+    }
+
+    /**
      * find channels using case insensitive names searches
      */
     @Test
