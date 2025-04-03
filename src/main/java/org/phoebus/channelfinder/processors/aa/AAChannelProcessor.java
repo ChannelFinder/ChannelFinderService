@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A post processor which uses the channel property *archive* to add pv's to the archiver appliance The archive
@@ -48,6 +49,8 @@ public class AAChannelProcessor implements ChannelProcessor {
     private String archivePropertyName;
     @Value("${aa.archiver_property_name:archiver}")
     private String archiverPropertyName;
+    @Value("${aa.archive_extra_fields_property_name:archive_extra_fields}")
+    private String archiveExtraFieldsPropertyName;
     @Value("${aa.auto_pause:}")
     private List<String> autoPauseOptions;
 
@@ -63,7 +66,8 @@ public class AAChannelProcessor implements ChannelProcessor {
         Map<String, String> processorProperties = Map.of("archiveProperty", archivePropertyName,
                 "archiverProperty", archiverPropertyName,
                 "Archivers", aaURLs.keySet().toString(),
-                "AutoPauseOn", autoPauseOptions.toString()
+                "AutoPauseOn", autoPauseOptions.toString(),
+                "archiveExtraFieldsProperty", archiveExtraFieldsPropertyName
         );
         return "AAChannelProcessor: ProcessProperties " + processorProperties;
     }
@@ -104,31 +108,21 @@ public class AAChannelProcessor implements ChannelProcessor {
                 channel.getProperties().stream()
                         .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
                         .findFirst()
-                        .map(xmlProperty -> {
-                            String archiverValue = xmlProperty.getValue();
-                            // archiver property can be comma separated list of archivers
-                            if (archiverValue != null && !archiverValue.isEmpty()) {
-                                return Arrays.stream(archiverValue.split(","))
-                                        .map(String::trim)
-                                        .filter(s -> !s.isEmpty());
-                            } else {
-                                return defaultArchivers.stream();
-                            }
-                        })
+                        .map(this::getArchiversStrings)
                         .orElse(defaultArchivers.stream()) // Use defaultArchivers list if no matching property found
-                        .forEach(archiverAlias -> {
-                            try {
-                                addChannelChange(channel, archiverAliasToArchivePVOptions, archiversInfo, archiveProperty, archiverAlias);
-                            } catch (Exception e) {
-                                logger.log(Level.WARNING, String.format("Failed to process %s", channel), e);
-                            }
-                        });
+                        .forEach(archiverAlias -> tryAddChannelChange(channel, archiverAlias, archiverAliasToArchivePVOptions, archiversInfo, archiveProperty));
             } else if (autoPauseOptions.contains(archivePropertyName)) {
                 aaURLs.keySet().forEach(archiverAlias -> archiverAliasToArchivePVOptions
                         .get(archiverAlias)
-                        .add(createArchivePV(List.of(), channel, "", PV_STATUS_INACTIVE)));
+                        .add(createArchivePV(List.of(), channel.getName(), "", PV_STATUS_INACTIVE)));
             }
         });
+        long finalCount = processArchiversAndOptions(archiverAliasToArchivePVOptions, archiversInfo);
+        logger.log(Level.INFO, () -> String.format("Configured %s channels.", finalCount));
+        return finalCount;
+    }
+
+    private long processArchiversAndOptions(Map<String, List<ArchivePVOptions>> archiverAliasToArchivePVOptions, Map<String, ArchiverInfo> archiversInfo) throws JsonProcessingException {
         long count = 0;
         for (Map.Entry<String, List<ArchivePVOptions>> e : archiverAliasToArchivePVOptions.entrySet()) {
             ArchiverInfo archiverInfo = archiversInfo.get(e.getKey());
@@ -142,9 +136,27 @@ public class AAChannelProcessor implements ChannelProcessor {
                     getArchiveActions(archivePVSList, archiverInfo);
             count += archiverClient.configureAA(archiveActionArchivePVMap, archiverInfo.url());
         }
-        long finalCount = count;
-        logger.log(Level.INFO, () -> String.format("Configured %s channels.", finalCount));
-        return finalCount;
+        return count;
+    }
+
+    private void tryAddChannelChange(Channel channel, String archiverAlias, Map<String, List<ArchivePVOptions>> archiverAliasToArchivePVOptions, Map<String, ArchiverInfo> archiversInfo, Optional<Property> archiveProperty) {
+        try {
+            addChannelChange(channel, archiverAliasToArchivePVOptions, archiversInfo, archiveProperty, archiverAlias);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, String.format("Failed to process %s", channel), e);
+        }
+    }
+
+    private Stream<String> getArchiversStrings(Property xmlProperty) {
+        String archiverValue = xmlProperty.getValue();
+        // archiver property can be comma separated list of archivers
+        if (archiverValue != null && !archiverValue.isEmpty()) {
+            return Arrays.stream(archiverValue.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty());
+        } else {
+            return defaultArchivers.stream();
+        }
     }
 
     private void addChannelChange(Channel channel,
@@ -157,14 +169,32 @@ public class AAChannelProcessor implements ChannelProcessor {
                 .findFirst()
                 .map(Property::getValue)
                 .orElse(PV_STATUS_INACTIVE);
+        String pvStatusAutoPause = autoPauseOptions.contains(PV_STATUS_PROPERTY_NAME) ? pvStatus : PV_STATUS_ACTIVE;
+        List<String> extraFields = channel.getProperties().stream()
+            .filter(property -> archiveExtraFieldsPropertyName.equalsIgnoreCase(property.getName()))
+            .findFirst()
+            .map(Property::getValue)
+            .map(AAChannelProcessor::parseExtraFieldsProperty)
+            .orElse(List.of());
         if (aaArchivePVS.containsKey(archiverAlias) && archiveProperty.isPresent()) {
             ArchivePVOptions newArchiverPV = createArchivePV(
                     archiversInfo.get(archiverAlias).policies(),
-                    channel,
+                    channel.getName(),
                     archiveProperty.get().getValue(),
-                    autoPauseOptions.contains(PV_STATUS_PROPERTY_NAME) ? pvStatus : PV_STATUS_ACTIVE);
+                    pvStatusAutoPause);
+            List<ArchivePVOptions> extraFieldsPVs = extraFields.stream().map(f -> createArchivePV(
+                archiversInfo.get(archiverAlias).policies(),
+                String.format("%s.%s", channel.getName(), f),
+                archiveProperty.get().getValue(),
+                pvStatusAutoPause)
+            ).toList();
             aaArchivePVS.get(archiverAlias).add(newArchiverPV);
+            aaArchivePVS.get(archiverAlias).addAll(extraFieldsPVs);
         }
+    }
+
+    public static List<String> parseExtraFieldsProperty(String s) {
+        return Arrays.stream(s.split(" ")).toList();
     }
 
     private ArchiveAction pickArchiveAction(String archiveStatus, String pvStatus) {
@@ -216,12 +246,12 @@ public class AAChannelProcessor implements ChannelProcessor {
     }
 
     private ArchivePVOptions createArchivePV(
-            List<String> policyList, Channel channel, String archiveProperty, String pvStaus) {
+            List<String> policyList, String channelName, String archiveProperty, String pvStaus) {
         ArchivePVOptions newArchiverPV = new ArchivePVOptions();
-        if (aaPVA && !channel.getName().contains("://")) {
-            newArchiverPV.setPv("pva://" + channel.getName());
+        if (aaPVA && !channelName.contains("://")) {
+            newArchiverPV.setPv("pva://" + channelName);
         } else {
-            newArchiverPV.setPv(channel.getName());
+            newArchiverPV.setPv(channelName);
         }
         newArchiverPV.setSamplingParameters(archiveProperty, policyList);
         newArchiverPV.setPvStatus(pvStaus);
