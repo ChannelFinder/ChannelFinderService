@@ -111,6 +111,20 @@ class AAChannelProcessorMultiIT {
                           Map<ArchiveAction, List<String>> actionsToNames,
                           int expectedProcessedChannels)
         throws JsonProcessingException, InterruptedException {
+        paramableMultiAAChannelProcessorTest(mockArchiverAppliance, objectMapper, aaChannelProcessor,
+            channels, namesToStatuses, actionsToNames, expectedProcessedChannels
+        );
+    }
+
+    static void paramableMultiAAChannelProcessorTest(
+        MockWebServer mockArchiverAppliance,
+        ObjectMapper objectMapper,
+        AAChannelProcessor aaChannelProcessor,
+        List<Channel> channels,
+        Map<String, String> namesToStatuses,
+        Map<ArchiveAction, List<String>> actionsToNames,
+        int expectedProcessedChannels)
+        throws JsonProcessingException, InterruptedException {
 
         // Request to version
         Map<String, String> versions = Map.of("mgmt_version", "Archiver Appliance Version 1.1.0");
@@ -194,7 +208,7 @@ class AAChannelProcessorMultiIT {
     }
 
 
-    public ArchiveAction actionFromEndpoint(final String endpoint) {
+    public static ArchiveAction actionFromEndpoint(final String endpoint) {
         for (ArchiveAction action : ArchiveAction.values()) {
             if (action.getEndpoint().equals(endpoint)) {
                 return action;

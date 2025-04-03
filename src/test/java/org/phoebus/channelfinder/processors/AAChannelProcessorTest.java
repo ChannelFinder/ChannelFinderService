@@ -13,19 +13,28 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.phoebus.channelfinder.processors.aa.AAChannelProcessor;
 import org.phoebus.channelfinder.processors.aa.ArchivePVOptions;
 
 class AAChannelProcessorTest {
 
+    public static final String SIM_TESTING_POLICY = "sim://testingPolicy";
+    public static final String POLICY_FAST = "Fast";
+    public static final String POLICY_SLOW_CONTROLLED = "SlowControlled";
+    public static final String SAMPLING_METHOD_SCAN = "SCAN";
+    public static final String POLICY_FAST_CONTROLLED = "FastControlled";
+    public static final String POLICY_SLOW = "Slow";
+    public static final String SAMPLING_METHOD_MONITOR = "MONITOR";
+
     @Test
     void archivePropertyParsePass() {
         ArchivePVOptions ar = new ArchivePVOptions();
-        List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
+        List<String> testPolicyList = Arrays.asList(POLICY_FAST, POLICY_FAST_CONTROLLED, POLICY_SLOW, POLICY_SLOW_CONTROLLED);
         ar.setPv("sim://testing");
         ar.setSamplingParameters("monitor@1.0", testPolicyList);
 
         Assertions.assertEquals(ar.getPv(), "sim://testing");
-        Assertions.assertEquals(ar.getSamplingMethod(), "MONITOR");
+        Assertions.assertEquals(ar.getSamplingMethod(), SAMPLING_METHOD_MONITOR);
         Assertions.assertEquals(ar.getSamplingPeriod(), "1.0");
 
     }
@@ -41,7 +50,7 @@ class AAChannelProcessorTest {
     }
 
     private static Stream<Arguments> provideArchivePropertyArguments() {
-        List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
+        List<String> testPolicyList = Arrays.asList(POLICY_FAST, POLICY_FAST_CONTROLLED, POLICY_SLOW, POLICY_SLOW_CONTROLLED);
         return Stream.of(
             // Failure
             Arguments.of("@blah", testPolicyList, null, null),
@@ -55,21 +64,21 @@ class AAChannelProcessorTest {
             Arguments.of("INVALID", testPolicyList, null, null),
             Arguments.of("MMMONITOR@10.0", testPolicyList, null, null),
             // Success
-            Arguments.of("MONITOR@0.01 ignore me", testPolicyList, "MONITOR", "0.01"),
-            Arguments.of("MONITOR@1 ignore me", testPolicyList, "MONITOR", "1"),
-            Arguments.of("MONITOR@0.01 ignore me", testPolicyList, "MONITOR", "0.01"),
-            Arguments.of("ScAn@10.01000", testPolicyList, "SCAN", "10.01000"),
-            Arguments.of("MONITOR@0.01", testPolicyList, "MONITOR", "0.01"),
-            Arguments.of("MONITOR@1", testPolicyList, "MONITOR", "1"),
-            Arguments.of("scan@.01", testPolicyList, "SCAN", ".01"),
-            Arguments.of("scan@1.01", testPolicyList, "SCAN", "1.01")
+            Arguments.of("MONITOR@0.01 ignore me", testPolicyList, SAMPLING_METHOD_MONITOR, "0.01"),
+            Arguments.of("MONITOR@1 ignore me", testPolicyList, SAMPLING_METHOD_MONITOR, "1"),
+            Arguments.of("MONITOR@0.01 ignore me", testPolicyList, SAMPLING_METHOD_MONITOR, "0.01"),
+            Arguments.of("ScAn@10.01000", testPolicyList, SAMPLING_METHOD_SCAN, "10.01000"),
+            Arguments.of("MONITOR@0.01", testPolicyList, SAMPLING_METHOD_MONITOR, "0.01"),
+            Arguments.of("MONITOR@1", testPolicyList, SAMPLING_METHOD_MONITOR, "1"),
+            Arguments.of("scan@.01", testPolicyList, SAMPLING_METHOD_SCAN, ".01"),
+            Arguments.of("scan@1.01", testPolicyList, SAMPLING_METHOD_SCAN, "1.01")
         );
     }
 
     @Test
     void defaultArchiveTag() {
         ArchivePVOptions ar = new ArchivePVOptions();
-        List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
+        List<String> testPolicyList = Arrays.asList(POLICY_FAST, POLICY_FAST_CONTROLLED, POLICY_SLOW, POLICY_SLOW_CONTROLLED);
         ar.setPv("sim://testing");
         ar.setSamplingParameters("default", testPolicyList);
 
@@ -82,23 +91,27 @@ class AAChannelProcessorTest {
     @Test
     void archivePolicyParsing() {
         ArchivePVOptions ar = new ArchivePVOptions();
-        ar.setPv("sim://testingPolicy");
-        ar.setPolicy("Fast");
+        ar.setPv(SIM_TESTING_POLICY);
+        ar.setPolicy(POLICY_FAST);
 
-        Assertions.assertEquals(ar.getPv(), "sim://testingPolicy");
+        Assertions.assertEquals(ar.getPv(), SIM_TESTING_POLICY);
         Assertions.assertNull(ar.getSamplingMethod());
         Assertions.assertNull(ar.getSamplingPeriod());
-        Assertions.assertEquals(ar.getPolicy(), "Fast");
+        Assertions.assertEquals(ar.getPolicy(), POLICY_FAST);
 
-        ar.setPolicy("SlowControlled");
+        ar.setPolicy(POLICY_SLOW_CONTROLLED);
         Assertions.assertNull(ar.getSamplingMethod());
         Assertions.assertNull(ar.getSamplingPeriod());
-        Assertions.assertEquals(ar.getPolicy(), "SlowControlled");
+        Assertions.assertEquals(ar.getPolicy(), POLICY_SLOW_CONTROLLED);
 
         ar.setSamplingParameters("scan@60", new ArrayList<>());
-        Assertions.assertEquals(ar.getSamplingMethod(), "SCAN");
+        Assertions.assertEquals(ar.getSamplingMethod(), SAMPLING_METHOD_SCAN);
         Assertions.assertEquals(ar.getSamplingPeriod(), "60");
-        Assertions.assertEquals(ar.getPolicy(), "SlowControlled");
+        Assertions.assertEquals(ar.getPolicy(), POLICY_SLOW_CONTROLLED);
+    }
+    @Test
+    void archiveExtraFieldParsing() {
+        Assertions.assertEquals(List.of("a", "b", "c"), AAChannelProcessor.parseExtraFieldsProperty("a b c"));
     }
 
     @Test
@@ -126,12 +139,12 @@ class AAChannelProcessorTest {
         Assertions.assertEquals(str, expectedString);
 
         // Test policies
-        List<String> testPolicyList = Arrays.asList("Fast", "FastControlled", "Slow", "SlowControlled");
+        List<String> testPolicyList = Arrays.asList(POLICY_FAST, POLICY_FAST_CONTROLLED, POLICY_SLOW, POLICY_SLOW_CONTROLLED);
 
         // Valid policy
         ArchivePVOptions ar4 = new ArchivePVOptions();
         ar4.setPv("sim://testing4");
-        ar4.setSamplingParameters("Fast", testPolicyList);
+        ar4.setSamplingParameters(POLICY_FAST, testPolicyList);
         str = objectMapper.writeValueAsString(List.of(ar4));
 
         expectedString = "[{\"pv\":\"sim://testing4\",\"policy\":\"Fast\"}]";
