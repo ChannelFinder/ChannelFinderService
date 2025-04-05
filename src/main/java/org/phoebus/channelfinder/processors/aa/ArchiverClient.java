@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
 import java.time.Duration;
@@ -85,6 +86,10 @@ public class ArchiverClient {
                 .retrieve()
                 .bodyToMono(String.class)
                 .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                .onErrorResume(e -> {
+                    logger.log(Level.WARNING, String.format("There was an error getting status from pv list query response with URI: %s. Error: %s", pvStatusURI, e.getMessage()));
+                    return Mono.empty();
+                })
                 .block();
 
         try {
@@ -93,18 +98,25 @@ public class ArchiverClient {
                     });
         } catch (JsonProcessingException e) {
             logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
         }
         return List.of();
     }
 
     private List<Map<String, String>> getStatusesFromPvListBody(String archiverURL, List<String> pvs) {
+        String uriString = archiverURL + PV_STATUS_RESOURCE;
         String response = client.post()
-                    .uri(URI.create(archiverURL + PV_STATUS_RESOURCE))
+                    .uri(URI.create(uriString))
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(pvs)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .onErrorResume(e -> {
+                        logger.log(Level.WARNING, String.format("There was an error getting status from pv list body response with URI: %s. Error: %s", uriString, e.getMessage()));
+                        return Mono.empty();
+                    })
                     .block();
 
         // Structure of response is
@@ -117,19 +129,26 @@ public class ArchiverClient {
                     });
         } catch (JsonProcessingException e) {
             logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
         }
         return List.of();
     }
 
     private void submitAction(String values, String endpoint, String aaURL) {
+        String uriString = aaURL + MGMT_RESOURCE + endpoint;
         try {
             String response = client.post()
-                    .uri(URI.create(aaURL + MGMT_RESOURCE + endpoint))
+                    .uri(URI.create(uriString))
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(values)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .onErrorResume(e -> {
+                        logger.log(Level.WARNING, String.format("There was an error submitting action response with URI: %s. Error: %s", uriString, e.getMessage()));
+                        return Mono.empty();
+                    })
                     .block();
             logger.log(Level.FINE, () -> response);
 
@@ -192,12 +211,17 @@ public class ArchiverClient {
             return List.of();
         }
         try {
+            String uriString = aaURL + POLICY_RESOURCE;
             String response = client.get()
                     .uri(URI.create(aaURL + POLICY_RESOURCE))
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.of(10, ChronoUnit.SECONDS))
-                    .block();
+                    .onErrorResume(e -> {
+                        logger.log(Level.WARNING, String.format("There was an error getting version response with URI: %s. Error: %s", uriString, e.getMessage()));
+                        return Mono.empty();
+                    })
+                    .block();;
             Map<String, String> policyMap = objectMapper.readValue(response, Map.class);
             return new ArrayList<>(policyMap.keySet());
         } catch (Exception e) {
@@ -209,13 +233,17 @@ public class ArchiverClient {
 
     String getVersion(String archiverURL) {
         try {
-
+            String uriString = archiverURL + ARCHIVER_VERSIONS_RESOURCE;
             String response = client.get()
                     .uri(URI.create(archiverURL + ARCHIVER_VERSIONS_RESOURCE))
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
-                    .block();
+                    .onErrorResume(e -> {
+                        logger.log(Level.WARNING, String.format("There was an error getting version response with URI: %s. Error: %s", uriString, e.getMessage()));
+                        return Mono.empty();
+                    })
+                    .block();;
             Map<String, String> versionMap = objectMapper.readValue(response, Map.class);
             String[] mgmtVersion = versionMap.get("mgmt_version").split("Archiver Appliance Version ");
             if (mgmtVersion.length > 1) {
