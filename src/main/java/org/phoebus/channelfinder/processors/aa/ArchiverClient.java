@@ -58,8 +58,8 @@ public class ArchiverClient {
 
     @Value("${aa.timeout_seconds:15}")
     private int TIMEOUT_SECONDS;
-    @Value("${aa.query_support_override:false}")
-    private boolean QUERY_SUPPORT_OVERRIDE;
+    @Value("#{${aa.query_support_override_map:{'default': false}}}")
+    private Map<String, Boolean> QUERY_SUPPORT_OVERRIDE_MAP;
 
     private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
         List<String> list = new ArrayList<>(pvSet);
@@ -67,10 +67,13 @@ public class ArchiverClient {
                 .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
     }
 
-    List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion) throws JsonProcessingException {
+    List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion, String archiverAlias) throws JsonProcessingException {
         Set<String> pvs = archivePVS.keySet();
-        logger.log(Level.INFO, String.format("Timeout: %d, Query Support: %b", TIMEOUT_SECONDS, QUERY_SUPPORT_OVERRIDE));
-        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion) || QUERY_SUPPORT_OVERRIDE) {
+        Boolean querySupportOverride = QUERY_SUPPORT_OVERRIDE_MAP.getOrDefault(archiverAlias, false);
+        logger.log(Level.INFO, String.format("Archiver Alias: %s, Query Support Override: %b, Query Support Map: %s", 
+            archiverAlias, querySupportOverride, QUERY_SUPPORT_OVERRIDE_MAP));
+            
+        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion) || querySupportOverride) {
 
             Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
 

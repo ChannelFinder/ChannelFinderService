@@ -199,7 +199,7 @@ public class AAChannelProcessor implements ChannelProcessor {
         }
 
         try {
-            List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.version());
+            List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.version(), archiverInfo.alias());
             statuses
                     .forEach(archivePVStatusJsonMap -> {
                         String archiveStatus = archivePVStatusJsonMap.get("status");
