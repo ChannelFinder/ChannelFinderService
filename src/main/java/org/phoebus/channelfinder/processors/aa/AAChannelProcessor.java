@@ -7,6 +7,7 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +52,7 @@ public class AAChannelProcessor implements ChannelProcessor {
     @Value("${aa.auto_pause:}")
     private List<String> autoPauseOptions;
 
+    @Autowired
     private final ArchiverClient archiverClient = new ArchiverClient();
 
     @Override

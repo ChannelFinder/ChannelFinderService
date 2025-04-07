@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.net.URI;
 import java.time.Duration;
@@ -54,7 +55,11 @@ public class ArchiverClient {
     private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
     private static final String ARCHIVER_VERSIONS_RESOURCE = MGMT_RESOURCE + "/getVersions";
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final int TIMEOUT_SECONDS = 15;
+
+    @Value("${aa.timeout_seconds:15}")
+    private int TIMEOUT_SECONDS;
+    @Value("${aa.query_support_override:false}")
+    private boolean QUERY_SUPPORT_OVERRIDE;
 
     private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
         List<String> list = new ArrayList<>(pvSet);
@@ -64,7 +69,8 @@ public class ArchiverClient {
 
     List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion) throws JsonProcessingException {
         Set<String> pvs = archivePVS.keySet();
-        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion)) {
+        logger.log(Level.INFO, String.format("Timeout: %d, Query Support: %b", TIMEOUT_SECONDS, QUERY_SUPPORT_OVERRIDE));
+        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion) || QUERY_SUPPORT_OVERRIDE) {
 
             Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
 
