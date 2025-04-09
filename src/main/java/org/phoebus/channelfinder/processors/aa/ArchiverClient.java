@@ -68,7 +68,7 @@ public class ArchiverClient {
                 .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
     }
 
-    List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion, String archiverAlias) throws JsonProcessingException {
+    List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion, String archiverAlias) {
         Set<String> pvs = archivePVS.keySet();
         Boolean querySupportOverride = querySupportOverrideMap.getOrDefault(archiverAlias, false);
         logger.log(Level.INFO, "Query Support Override Map: {0}", querySupportOverrideMap);
