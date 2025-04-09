@@ -71,7 +71,7 @@ public class ArchiverClient {
     List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion, String archiverAlias) throws JsonProcessingException {
         Set<String> pvs = archivePVS.keySet();
         Boolean querySupportOverride = querySupportOverrideMap.getOrDefault(archiverAlias, false);
-        logger.log(Level.INFO, "Query Support Override Map: {0}", querySupportOverrideMap.toString());
+        logger.log(Level.INFO, "Query Support Override Map: {0}", querySupportOverrideMap);
             
         if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion) || Boolean.TRUE.equals(querySupportOverride)) {
 
