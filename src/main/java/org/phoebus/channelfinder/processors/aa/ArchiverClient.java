@@ -58,9 +58,9 @@ public class ArchiverClient {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${aa.timeout_seconds:15}")
-    private int TIMEOUT_SECONDS;
+    private int timeoutSeconds;
     @Value("#{${aa.query_support_override_map:{'default': false}}}")
-    private Map<String, Boolean> QUERY_SUPPORT_OVERRIDE_MAP;
+    private Map<String, Boolean> querySupportOverrideMap;
 
     private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
         List<String> list = new ArrayList<>(pvSet);
@@ -70,11 +70,10 @@ public class ArchiverClient {
 
     List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion, String archiverAlias) throws JsonProcessingException {
         Set<String> pvs = archivePVS.keySet();
-        Boolean querySupportOverride = QUERY_SUPPORT_OVERRIDE_MAP.getOrDefault(archiverAlias, false);
-        logger.log(Level.INFO, String.format("Archiver Alias: %s, Query Support Override: %b, Query Support Map: %s", 
-            archiverAlias, querySupportOverride, QUERY_SUPPORT_OVERRIDE_MAP));
+        Boolean querySupportOverride = querySupportOverrideMap.getOrDefault(archiverAlias, false);
+        logger.log(Level.INFO, "Query Support Override Map: {0}", querySupportOverrideMap.toString());
             
-        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion) || querySupportOverride) {
+        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion) || Boolean.TRUE.equals(querySupportOverride)) {
 
             Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
 
@@ -95,7 +94,7 @@ public class ArchiverClient {
                 .uri(pvStatusURI)
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                 .onErrorResume(e -> showError(uriString, e))
                 .block();
 
@@ -119,7 +118,7 @@ public class ArchiverClient {
                     .bodyValue(pvs)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                     .onErrorResume(e -> showError(uriString, e))
                     .block();
 
@@ -148,7 +147,7 @@ public class ArchiverClient {
                     .bodyValue(values)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                     .onErrorResume(e -> showError(uriString, e))
                     .block();
             logger.log(Level.FINE, () -> response);
@@ -236,7 +235,7 @@ public class ArchiverClient {
                     .uri(URI.create(uriString))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                     .onErrorResume(e -> showError(uriString, e))
                     .block();
             Map<String, String> versionMap = objectMapper.readValue(response, Map.class);
