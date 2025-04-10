@@ -197,7 +197,7 @@ public class AAChannelProcessor implements ChannelProcessor {
         if (archivePVS.isEmpty()) {
             return result;
         }
-        List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.version(), archiverInfo.alias());
+        List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
         statuses
                 .forEach(archivePVStatusJsonMap -> {
                     String archiveStatus = archivePVStatusJsonMap.get("status");
