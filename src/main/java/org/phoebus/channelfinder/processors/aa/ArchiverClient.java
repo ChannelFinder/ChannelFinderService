@@ -28,26 +28,6 @@ import java.util.stream.Stream;
 public class ArchiverClient {
     private static final Logger logger = Logger.getLogger(ArchiverClient.class.getName());
     private static final int STATUS_BATCH_SIZE = 100; // Limit comes from tomcat server maxHttpHeaderSize which by default is a header of size 8k
-    private static final List<String> AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION = List.of("1.1.0", 
-            "Before_JDK_12_Upgrade", 
-            "v0.0.1_SNAPSHOT_03-November-2015", 
-            "v0.0.1_SNAPSHOT_09-Oct-2018", 
-            "v0.0.1_SNAPSHOT_10-June-2017", 
-            "v0.0.1_SNAPSHOT_10-Sep-2015", 
-            "v0.0.1_SNAPSHOT_12-May-2016", 
-            "v0.0.1_SNAPSHOT_12-Oct-2016", 
-            "v0.0.1_SNAPSHOT_13-Nov-2019", 
-            "v0.0.1_SNAPSHOT_14-Jun-2018", 
-            "v0.0.1_SNAPSHOT_15-Nov-2018", 
-            "v0.0.1_SNAPSHOT_20-Sept-2016", 
-            "v0.0.1_SNAPSHOT_22-June-2016", 
-            "v0.0.1_SNAPSHOT_22-June-2017", 
-            "v0.0.1_SNAPSHOT_23-Sep-2015", 
-            "v0.0.1_SNAPSHOT_26-January-2016", 
-            "v0.0.1_SNAPSHOT_27-Nov-2017", 
-            "v0.0.1_SNAPSHOT_29-July-2015", 
-            "v0.0.1_SNAPSHOT_30-March-2016", 
-            "v0.0.1_SNAPSHOT_30-September-2021");
 
     private final WebClient client = WebClient.create();
 
@@ -73,7 +53,7 @@ public class ArchiverClient {
         Boolean querySupportOverride = querySupportOverrideMap.getOrDefault(archiverAlias, false);
         logger.log(Level.INFO, "Query Support Override Map: {0}", querySupportOverrideMap);
             
-        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion) || Boolean.TRUE.equals(querySupportOverride)) {
+        if (Boolean.TRUE.equals(querySupportOverride)) {
 
             Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
 
