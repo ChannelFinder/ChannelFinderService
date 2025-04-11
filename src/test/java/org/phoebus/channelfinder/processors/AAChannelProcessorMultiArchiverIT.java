@@ -175,7 +175,7 @@ class AAChannelProcessorMultiArchiverIT {
             }
         });
 
-        long count = aaChannelProcessor.process(channels);
+        aaChannelProcessor.process(channels);
 
         AtomicInteger expectedQueryRequests = new AtomicInteger(1);
         RecordedRequest requestQueryVersion = mockQueryArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);

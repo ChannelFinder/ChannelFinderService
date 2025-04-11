@@ -33,7 +33,7 @@ import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.archiveP
 import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.inactiveProperty;
 
 @WebMvcTest(AAChannelProcessor.class)
-@TestPropertySource(locations = "classpath:application_test.properties", properties = "aa.post_support:default")
+@TestPropertySource(value = "classpath:application_test.properties")
 class AAChannelProcessorMultiIT {
 
     public static final String BEING_ARCHIVED = "Being archived";
