@@ -84,6 +84,8 @@ public class ArchiverClient {
                     });
         } catch (JsonProcessingException e) {
             logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
         }
         return List.of();
     }
@@ -110,6 +112,8 @@ public class ArchiverClient {
                     });
         } catch (JsonProcessingException e) {
             logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
+        } catch (Exception e) {
+            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
         }
         return List.of();
     }
