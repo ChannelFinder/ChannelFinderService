@@ -39,8 +39,8 @@ public class ArchiverClient {
 
     @Value("${aa.timeout_seconds:15}")
     private int timeoutSeconds;
-    @Value("#{${aa.query_support_override_map:{'default': false}}}")
-    private Map<String, Boolean> querySupportOverrideMap;
+    @Value("${aa.post_support:default}")
+    private List<String> postSupportArchivers;
 
     private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
         List<String> list = new ArrayList<>(pvSet);
@@ -50,16 +50,15 @@ public class ArchiverClient {
 
     List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverAlias) {
         Set<String> pvs = archivePVS.keySet();
-        Boolean querySupportOverride = querySupportOverrideMap.getOrDefault(archiverAlias, false);
-        logger.log(Level.INFO, "Query Support Override Map: {0}", querySupportOverrideMap);
+        Boolean postSupportOverride = postSupportArchivers.contains(archiverAlias);
+        logger.log(Level.INFO, "Post Support Override Archivers: {0}", postSupportArchivers);
             
-        if (Boolean.TRUE.equals(querySupportOverride)) {
-
+        if (Boolean.TRUE.equals(postSupportOverride)) {
+            return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
+        } else {
             Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
 
             return stream.map(pvList -> getStatusesFromPvListQuery(archiverURL, pvList)).flatMap(List::stream).toList();
-        } else {
-            return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
         }
     }
 
