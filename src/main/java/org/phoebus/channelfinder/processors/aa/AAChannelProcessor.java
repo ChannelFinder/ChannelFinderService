@@ -7,6 +7,7 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +52,7 @@ public class AAChannelProcessor implements ChannelProcessor {
     @Value("${aa.auto_pause:}")
     private List<String> autoPauseOptions;
 
+    @Autowired
     private final ArchiverClient archiverClient = new ArchiverClient();
 
     @Override
@@ -195,24 +197,16 @@ public class AAChannelProcessor implements ChannelProcessor {
         if (archivePVS.isEmpty()) {
             return result;
         }
-
-        try {
-            List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.version());
-            statuses
-                    .forEach(archivePVStatusJsonMap -> {
-                        String archiveStatus = archivePVStatusJsonMap.get("status");
-                        String pvName = archivePVStatusJsonMap.get("pvName");
-                        String pvStatus = archivePVS.get(pvName).getPvStatus();
-                        ArchiveAction action = pickArchiveAction(archiveStatus, pvStatus);
-                        result.get(action).add(archivePVS.get(pvName));
-                    });
-            return result;
-
-        } catch (JsonProcessingException e) {
-            // problem collecting policies from AA, so warn and return empty list
-            logger.log(Level.WARNING, () -> "Could not get AA pv Status list: " + e.getMessage());
-            return result;
-        }
+        List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
+        statuses
+                .forEach(archivePVStatusJsonMap -> {
+                    String archiveStatus = archivePVStatusJsonMap.get("status");
+                    String pvName = archivePVStatusJsonMap.get("pvName");
+                    String pvStatus = archivePVS.get(pvName).getPvStatus();
+                    ArchiveAction action = pickArchiveAction(archiveStatus, pvStatus);
+                    result.get(action).add(archivePVS.get(pvName));
+                });
+        return result;
     }
 
     private ArchivePVOptions createArchivePV(
