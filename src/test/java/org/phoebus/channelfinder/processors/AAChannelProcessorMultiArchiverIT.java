@@ -33,8 +33,8 @@ import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.archiveP
 import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.inactiveProperty;
 
 @WebMvcTest(AAChannelProcessor.class)
-@TestPropertySource(locations = "classpath:application_test.properties", properties = "aa.post_support:default")
-class AAChannelProcessorMultiIT {
+@TestPropertySource(value = "classpath:application_test_multi.properties")
+class AAChannelProcessorMultiArchiverIT {
 
     public static final String BEING_ARCHIVED = "Being archived";
     public static final String PAUSED = "Paused";
@@ -43,20 +43,24 @@ class AAChannelProcessorMultiIT {
     @Autowired
     AAChannelProcessor aaChannelProcessor;
 
-    MockWebServer mockArchiverAppliance;
+    MockWebServer mockQueryArchiverAppliance;
+    MockWebServer mockPostArchiverAppliance;
     ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() throws IOException {
-        mockArchiverAppliance = new MockWebServer();
-        mockArchiverAppliance.start(17665);
+        mockQueryArchiverAppliance = new MockWebServer();
+        mockQueryArchiverAppliance.start(17664);
+        mockPostArchiverAppliance = new MockWebServer();
+        mockPostArchiverAppliance.start(17665);
 
         objectMapper = new ObjectMapper();
     }
 
     @AfterEach
     void teardown() throws IOException {
-        mockArchiverAppliance.shutdown();
+        mockQueryArchiverAppliance.shutdown();
+        mockPostArchiverAppliance.shutdown();
     }
 
     static Stream<Arguments> provideArguments() {
@@ -88,7 +92,7 @@ class AAChannelProcessorMultiIT {
             ArchiveAction.PAUSE, List.of("PVArchivedInactive", "PVArchivedNotag"),
             ArchiveAction.ARCHIVE, List.of("PVNoneActive0", "PVNoneActive1", "PVNoneActive2")
         );
-        int expectedProcessedChannels = 6;
+        int expectedProcessedChannels = 12;
 
         List<String> massPVNames = IntStream.range(1, 100).mapToObj(i -> "PV" + i).toList();
         return Stream.of(
@@ -103,28 +107,28 @@ class AAChannelProcessorMultiIT {
 
     @ParameterizedTest
     @MethodSource("provideArguments")
-    void testProcessMulti(List<Channel> channels,
+    void testProcessMultiArchivers(List<Channel> channels,
                           Map<String, String> namesToStatuses,
                           Map<ArchiveAction, List<String>> actionsToNames,
                           int expectedProcessedChannels)
         throws JsonProcessingException, InterruptedException {
 
         // Request to version
-        Map<String, String> versions = Map.of("mgmt_version", "Archiver Appliance Version 1.1.0");
-        mockArchiverAppliance.enqueue(new MockResponse()
-            .setBody(objectMapper.writeValueAsString(versions))
+        Map<String, String> queryVersions = Map.of("mgmt_version", "Archiver Appliance Version 1.1.0 Query Support");
+        mockQueryArchiverAppliance.enqueue(new MockResponse()
+            .setBody(objectMapper.writeValueAsString(queryVersions))
             .addHeader("Content-Type", "application/json"));
 
         // Request to policies
         Map<String, String> policyList = Map.of("policy", "description");
-        mockArchiverAppliance.enqueue(new MockResponse()
+        mockQueryArchiverAppliance.enqueue(new MockResponse()
             .setBody(objectMapper.writeValueAsString(policyList))
             .addHeader("Content-Type", "application/json"));
 
         // Request to archiver status
         List<Map<String, String>> archivePVStatuses =
             namesToStatuses.entrySet().stream().map(entry -> Map.of("pvName", entry.getKey(), "status", entry.getValue())).toList();
-        mockArchiverAppliance.enqueue(new MockResponse()
+        mockQueryArchiverAppliance.enqueue(new MockResponse()
             .setBody(objectMapper.writeValueAsString(archivePVStatuses))
             .addHeader("Content-Type", "application/json"));
 
@@ -133,7 +137,37 @@ class AAChannelProcessorMultiIT {
             List<Map<String, String>> archiverResponse =
                 value.stream().map(channel -> Map.of("pvName", channel, "status", key + " request submitted")).toList();
             try {
-                mockArchiverAppliance.enqueue(new MockResponse()
+                mockQueryArchiverAppliance.enqueue(new MockResponse()
+                    .setBody(objectMapper.writeValueAsString(archiverResponse))
+                    .addHeader("Content-Type", "application/json"));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+
+        // Request to query version
+        Map<String, String> postVersions = Map.of("mgmt_version", "Archiver Appliance Version 1.1.0 Post Support");
+        mockPostArchiverAppliance.enqueue(new MockResponse()
+            .setBody(objectMapper.writeValueAsString(postVersions))
+            .addHeader("Content-Type", "application/json"));
+
+        // Request to policies
+        mockPostArchiverAppliance.enqueue(new MockResponse()
+            .setBody(objectMapper.writeValueAsString(policyList))
+            .addHeader("Content-Type", "application/json"));
+
+        // Request to archiver status
+        mockPostArchiverAppliance.enqueue(new MockResponse()
+            .setBody(objectMapper.writeValueAsString(archivePVStatuses))
+            .addHeader("Content-Type", "application/json"));
+
+        // Requests to archiver
+        actionsToNames.forEach((key, value) -> {
+            List<Map<String, String>> archiverResponse =
+                value.stream().map(channel -> Map.of("pvName", channel, "status", key + " request submitted")).toList();
+            try {
+                mockPostArchiverAppliance.enqueue(new MockResponse()
                     .setBody(objectMapper.writeValueAsString(archiverResponse))
                     .addHeader("Content-Type", "application/json"));
             } catch (JsonProcessingException e) {
@@ -142,42 +176,50 @@ class AAChannelProcessorMultiIT {
         });
 
         long count = aaChannelProcessor.process(channels);
-        assertEquals(count, expectedProcessedChannels);
 
-        AtomicInteger expectedRequests = new AtomicInteger(1);
-        RecordedRequest requestVersion = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-        assert requestVersion != null;
-        assertEquals("/mgmt/bpl/getVersions", requestVersion.getPath());
+        AtomicInteger expectedQueryRequests = new AtomicInteger(1);
+        RecordedRequest requestQueryVersion = mockQueryArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+        assert requestQueryVersion != null;
+        assertEquals("/mgmt/bpl/getVersions", requestQueryVersion.getPath());
 
-        expectedRequests.addAndGet(1);
-        RecordedRequest requestPolicy = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-        assert requestPolicy != null;
-        assertEquals("/mgmt/bpl/getPolicyList", requestPolicy.getPath());
+        expectedQueryRequests.addAndGet(1);
+        RecordedRequest requestQueryPolicy = mockQueryArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+        assert requestQueryPolicy != null;
+        assertEquals("/mgmt/bpl/getPolicyList", requestQueryPolicy.getPath());
 
-        expectedRequests.addAndGet(1);
-        RecordedRequest requestStatus = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-        assert requestStatus != null;
-        assert requestStatus.getRequestUrl() != null;
-        assertEquals("/mgmt/bpl/getPVStatus", requestStatus.getRequestUrl().encodedPath());
-        String pvStatusRequestParameter = requestStatus.getRequestUrl().queryParameter("pv");
-        namesToStatuses.keySet().forEach(
-            name -> {
-                assert pvStatusRequestParameter != null;
-                assertTrue(pvStatusRequestParameter.contains(name));
-            }
-        );
+        expectedQueryRequests.addAndGet(1);
+        RecordedRequest requestQueryStatus = mockQueryArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+        assert requestQueryStatus != null;
+        assert requestQueryStatus.getRequestUrl() != null;
+        assertEquals("/mgmt/bpl/getPVStatus", requestQueryStatus.getRequestUrl().encodedPath());
+        
+        AtomicInteger expectedPostRequests = new AtomicInteger(1);
+        RecordedRequest requestPostVersion = mockPostArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+        assert requestPostVersion != null;
+        assertEquals("/mgmt/bpl/getVersions", requestPostVersion.getPath());
 
-        while (mockArchiverAppliance.getRequestCount() > 0) {
+        expectedPostRequests.addAndGet(1);
+        RecordedRequest requestPostPolicy = mockPostArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+        assert requestPostPolicy != null;
+        assertEquals("/mgmt/bpl/getPolicyList", requestPostPolicy.getPath());
+
+        expectedPostRequests.addAndGet(1);
+        RecordedRequest requestPostStatus = mockPostArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+        assert requestPostStatus != null;
+        assert requestPostStatus.getRequestUrl() != null;
+        assertEquals("/mgmt/bpl/getPVStatus", requestPostStatus.getRequestUrl().encodedPath());
+
+        while (mockQueryArchiverAppliance.getRequestCount() > 0) {
             RecordedRequest requestAction = null;
             try {
-                requestAction = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+                requestAction = mockQueryArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
             if (requestAction == null) {
                 break;
             }
-            expectedRequests.addAndGet(1);
+            expectedQueryRequests.addAndGet(1);
             assert requestAction.getPath() != null;
             assertTrue(requestAction.getPath().startsWith("/mgmt/bpl"));
             ArchiveAction key = actionFromEndpoint(requestAction.getPath().substring("/mgmt/bpl".length()));
@@ -187,7 +229,28 @@ class AAChannelProcessorMultiIT {
             );
         }
 
-        assertEquals(mockArchiverAppliance.getRequestCount(), expectedRequests.get());
+        while (mockPostArchiverAppliance.getRequestCount() > 0) {
+            RecordedRequest requestAction = null;
+            try {
+                requestAction = mockPostArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if (requestAction == null) {
+                break;
+            }
+            expectedPostRequests.addAndGet(1);
+            assert requestAction.getPath() != null;
+            assertTrue(requestAction.getPath().startsWith("/mgmt/bpl"));
+            ArchiveAction key = actionFromEndpoint(requestAction.getPath().substring("/mgmt/bpl".length()));
+            String body = requestAction.getBody().readUtf8();
+            actionsToNames.get(key).forEach(pv ->
+                assertTrue(body.contains(pv))
+            );
+        }
+
+        assertEquals(mockPostArchiverAppliance.getRequestCount(), expectedPostRequests.get());
+        assertEquals(mockQueryArchiverAppliance.getRequestCount(), expectedQueryRequests.get());
     }
 
 

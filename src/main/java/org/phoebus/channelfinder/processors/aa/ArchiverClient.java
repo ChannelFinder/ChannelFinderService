@@ -39,7 +39,7 @@ public class ArchiverClient {
 
     @Value("${aa.timeout_seconds:15}")
     private int timeoutSeconds;
-    @Value("${aa.post_support:default}")
+    @Value("${aa.post_support:}")
     private List<String> postSupportArchivers;
 
     private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
@@ -51,11 +51,14 @@ public class ArchiverClient {
     List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverAlias) {
         Set<String> pvs = archivePVS.keySet();
         Boolean postSupportOverride = postSupportArchivers.contains(archiverAlias);
+        logger.log(Level.INFO, "Archiver Alias: {0}", archiverAlias);
         logger.log(Level.INFO, "Post Support Override Archivers: {0}", postSupportArchivers);
             
         if (Boolean.TRUE.equals(postSupportOverride)) {
+            logger.log(Level.INFO, "Post Support");
             return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
         } else {
+            logger.log(Level.INFO, "Query Support");
             Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
 
             return stream.map(pvList -> getStatusesFromPvListQuery(archiverURL, pvList)).flatMap(List::stream).toList();
@@ -112,7 +115,7 @@ public class ArchiverClient {
         } catch (JsonProcessingException e) {
             logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
+            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list body: %s", e.getMessage()));
         }
         return List.of();
     }
