@@ -4,7 +4,7 @@
 
 	<artifactId>ChannelFinder</artifactId>
 	<groupId>org.phoebus</groupId>
-	<version>4.7.3-SNAPSHOT</version>
+	<version>4.7.3</version>
 	<name>ChannelFinder Service</name>
 
     <description>A RESTful directory services for a list channels</description>
