@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -27,26 +28,6 @@ import java.util.stream.Stream;
 public class ArchiverClient {
     private static final Logger logger = Logger.getLogger(ArchiverClient.class.getName());
     private static final int STATUS_BATCH_SIZE = 100; // Limit comes from tomcat server maxHttpHeaderSize which by default is a header of size 8k
-    private static final List<String> AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION = List.of("1.1.0", 
-            "Before_JDK_12_Upgrade", 
-            "v0.0.1_SNAPSHOT_03-November-2015", 
-            "v0.0.1_SNAPSHOT_09-Oct-2018", 
-            "v0.0.1_SNAPSHOT_10-June-2017", 
-            "v0.0.1_SNAPSHOT_10-Sep-2015", 
-            "v0.0.1_SNAPSHOT_12-May-2016", 
-            "v0.0.1_SNAPSHOT_12-Oct-2016", 
-            "v0.0.1_SNAPSHOT_13-Nov-2019", 
-            "v0.0.1_SNAPSHOT_14-Jun-2018", 
-            "v0.0.1_SNAPSHOT_15-Nov-2018", 
-            "v0.0.1_SNAPSHOT_20-Sept-2016", 
-            "v0.0.1_SNAPSHOT_22-June-2016", 
-            "v0.0.1_SNAPSHOT_22-June-2017", 
-            "v0.0.1_SNAPSHOT_23-Sep-2015", 
-            "v0.0.1_SNAPSHOT_26-January-2016", 
-            "v0.0.1_SNAPSHOT_27-Nov-2017", 
-            "v0.0.1_SNAPSHOT_29-July-2015", 
-            "v0.0.1_SNAPSHOT_30-March-2016", 
-            "v0.0.1_SNAPSHOT_30-September-2021");
 
     private final WebClient client = WebClient.create();
 
@@ -55,7 +36,11 @@ public class ArchiverClient {
     private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
     private static final String ARCHIVER_VERSIONS_RESOURCE = MGMT_RESOURCE + "/getVersions";
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final int TIMEOUT_SECONDS = 15;
+
+    @Value("${aa.timeout_seconds:15}")
+    private int timeoutSeconds;
+    @Value("${aa.post_support:}")
+    private List<String> postSupportArchivers;
 
     private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
         List<String> list = new ArrayList<>(pvSet);
@@ -63,15 +48,20 @@ public class ArchiverClient {
                 .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
     }
 
-    List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverVersion) throws JsonProcessingException {
+    List<Map<String, String>> getStatuses(Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverAlias) {
         Set<String> pvs = archivePVS.keySet();
-        if (AA_STATUS_ENDPOINT_ONLY_SUPPORT_QUERY_VERSION.contains(archiverVersion)) {
-
+        Boolean postSupportOverride = postSupportArchivers.contains(archiverAlias);
+        logger.log(Level.INFO, "Archiver Alias: {0}", archiverAlias);
+        logger.log(Level.INFO, "Post Support Override Archivers: {0}", postSupportArchivers);
+            
+        if (Boolean.TRUE.equals(postSupportOverride)) {
+            logger.log(Level.INFO, "Post Support");
+            return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
+        } else {
+            logger.log(Level.INFO, "Query Support");
             Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
 
             return stream.map(pvList -> getStatusesFromPvListQuery(archiverURL, pvList)).flatMap(List::stream).toList();
-        } else {
-            return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
         }
     }
 
@@ -86,7 +76,7 @@ public class ArchiverClient {
                 .uri(pvStatusURI)
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                 .onErrorResume(e -> showError(uriString, e))
                 .block();
 
@@ -110,7 +100,7 @@ public class ArchiverClient {
                     .bodyValue(pvs)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                     .onErrorResume(e -> showError(uriString, e))
                     .block();
 
@@ -125,7 +115,7 @@ public class ArchiverClient {
         } catch (JsonProcessingException e) {
             logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
+            logger.log(Level.WARNING, String.format("Error when trying to get status from pv list body: %s", e.getMessage()));
         }
         return List.of();
     }
@@ -139,7 +129,7 @@ public class ArchiverClient {
                     .bodyValue(values)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                     .onErrorResume(e -> showError(uriString, e))
                     .block();
             logger.log(Level.FINE, () -> response);
@@ -227,7 +217,7 @@ public class ArchiverClient {
                     .uri(URI.create(uriString))
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.of(TIMEOUT_SECONDS, ChronoUnit.SECONDS))
+                    .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
                     .onErrorResume(e -> showError(uriString, e))
                     .block();
             Map<String, String> versionMap = objectMapper.readValue(response, Map.class);

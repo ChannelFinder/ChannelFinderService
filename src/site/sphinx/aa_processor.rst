@@ -11,6 +11,11 @@ A list of archiver appliance URLs and aliases. ::
 
     aa.urls={'default': 'http://archiver-01.example.com:17665', 'neutron-controls': 'http://archiver-02.example.com:17665'}
 
+By default the listed archivers will get statuses by pv query.
+To set the archivers to use get statuses by pv list body, set the property :ref:`aa.post_support` to a comma separated list of archiver aliases. ::
+    
+    aa.post_support=default, neutron-controls
+
 To set the choice of default archiver appliance, set the property :ref:`aa.default_alias` to the alias of the default archiver appliance. This setting can also be a comma-separated list if you want multiple default archivers.
 
 To pass the PV as "pva://PVNAME" to the archiver appliance, set the property :ref:`aa.pva` to **true**.
