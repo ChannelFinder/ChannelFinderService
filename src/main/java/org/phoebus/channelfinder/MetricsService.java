@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.Map.Entry;
 
@@ -40,6 +43,9 @@ public class MetricsService {
     private final PropertyRepository propertyRepository;
     private final TagRepository tagRepository;
     private final MeterRegistry meterRegistry;
+
+    private Map<MultiValueMap<String, String>, AtomicLong> propertyMetrics;
+    private Map<String, AtomicLong> tagMetrics;
 
     @Value("${metrics.tags}")
     private String[] tags;
@@ -87,10 +93,14 @@ public class MetricsService {
         registerPropertyMetrics();
     }
 
+
     private void registerTagMetrics() {
         // Add tags
+        tagMetrics = Arrays.stream(tags)
+            .map(t -> Map.entry(t, new AtomicLong(0)))
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
         for (String tag : tags) {
-            Gauge.builder(CF_TAG_ON_CHANNELS_COUNT, () -> channelRepository.countByTag(tag))
+            Gauge.builder(CF_TAG_ON_CHANNELS_COUNT, tagMetrics, m -> m.get(tag).doubleValue())
                 .description("Number of channels with tag")
                 .tag("tag", tag)
                 .baseUnit(BASE_UNIT)
@@ -154,14 +164,39 @@ public class MetricsService {
         }
         return metricTags;
     }
+
     private void registerPropertyMetrics() {
         Map<String, List<String>> properties = parseProperties();
 
         List<MultiValueMap<String, String>> combinations = generateAllMultiValueMaps(properties);
-        combinations.forEach(map -> Gauge.builder(CF_CHANNEL_COUNT, () -> channelRepository.count(map))
+
+        propertyMetrics = combinations.stream()
+            .map(t -> Map.entry(t, new AtomicLong(0)))
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        combinations.forEach(map -> Gauge.builder(CF_CHANNEL_COUNT, propertyMetrics, m -> m.get(map).doubleValue())
             .description(METRIC_DESCRIPTION_CHANNEL_COUNT)
             .tags(metricTagsFromMultiValueMap(map))
             .register(meterRegistry)
         );
+    }
+
+    private void updateTagMetrics() {
+        for (Map.Entry<String, AtomicLong> tagMetricEntry : tagMetrics.entrySet()) {
+            tagMetricEntry.getValue()
+                .set(channelRepository.countByTag(tagMetricEntry.getKey()));
+        }
+    }
+
+    private void updatePropertyMetrics() {
+        for (Map.Entry<MultiValueMap<String, String>, AtomicLong> propertyMetricEntry : propertyMetrics.entrySet()) {
+            propertyMetricEntry.getValue()
+                .set(channelRepository.count(propertyMetricEntry.getKey()));
+        }
+    }
+
+    @Scheduled(fixedRateString = "${metrics.updateInterval}", timeUnit = TimeUnit.SECONDS)
+    public void updateMetrics() {
+        updateTagMetrics();
+        updatePropertyMetrics();
     }
 }
