@@ -12,7 +12,6 @@ import org.phoebus.channelfinder.example.PopulateService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.parameters.P;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,7 +34,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
     locations = "classpath:application_test.properties",
     properties = {
         "metrics.tags=testTag0, testTag1",
-        "metrics.properties=testProperty0: value0, value1; testProperty1: value0, !*"
+        "metrics.properties=testProperty0: value0, value1; testProperty1: value0, !*",
+        "metrics.updateInterval=1"
     })
 class MetricsServiceIT {
 
@@ -142,6 +142,7 @@ class MetricsServiceIT {
         Channel testChannel1 = new Channel("testChannelTag1", "testOwner", List.of(), List.of(testTags.get(0)));
         channelRepository.save(testChannel1);
 
+        Thread.sleep(2000); // Update interval is 1 second
         getAndExpectTagMetric(testTags.get(0), 2);
         getAndExpectTagMetric(testTags.get(1), 1);
         getAndExpectMetricParent(MetricsService.CF_TAG_ON_CHANNELS_COUNT, 3);
@@ -188,6 +189,8 @@ class MetricsServiceIT {
 
         channelRepository.save(testChannel);
         channelRepository.save(testChannel1);
+
+        Thread.sleep(2000); // Update interval is 1 second
 
         getAndExpectMetricParent(MetricsService.CF_CHANNEL_COUNT, 2);
         getAndExpectPropertyMetric(testChannel.getProperties().get(0), 1);
