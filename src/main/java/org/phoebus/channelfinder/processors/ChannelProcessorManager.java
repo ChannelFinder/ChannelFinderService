@@ -1,5 +1,10 @@
 package org.phoebus.channelfinder.processors;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.phoebus.channelfinder.AuthorizationService;
 import org.phoebus.channelfinder.ChannelScroll;
 import org.phoebus.channelfinder.entity.Channel;
@@ -48,16 +53,42 @@ public class ChannelProcessorManager {
     @Value("${elasticsearch.query.size:10000}")
     private int defaultMaxSize;
 
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Number of channel-processors",
+                            content = @Content(schema = @Schema(implementation = Long.class)))
+            })
     @GetMapping("/count")
     public long processorCount() {
         return channelProcessorService.getProcessorCount();
     }
 
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "List of processor-info",
+                            content = @Content(
+                                    array = @ArraySchema (schema = @Schema(implementation = String.class))))
+            })
     @GetMapping("/info")
     public List<String> processorInfo() {
         return channelProcessorService.getProcessorsInfo();
     }
 
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Number of channels where processor was called",
+                            content = @Content(schema = @Schema(implementation = Long.class))),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @PutMapping("/process/all")
     public long processAllChannels() {
         logger.log(Level.INFO, "Calling processor on ALL channels in ChannelFinder");
@@ -77,6 +108,13 @@ public class ChannelProcessorManager {
         }
     }
 
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Number of channels where processor was called",
+                            content = @Content(schema = @Schema(implementation = Long.class)))
+            })
     @PutMapping("/process/query")
     public long processChannels(@RequestParam MultiValueMap<String, String> allRequestParams) {
         long channelCount = 0;

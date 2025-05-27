@@ -2,6 +2,11 @@ package org.phoebus.channelfinder;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.PROPERTY_RESOURCE_URI;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,6 +64,19 @@ public class PropertyManager {
      *
      * @return list of all properties
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "List of properties",
+                            content = @Content(
+                                    array =
+                                    @ArraySchema(schema = @Schema(implementation = Property.class)))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while listing properties",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @GetMapping
     public Iterable<Property> list() {
         return propertyRepository.findAll();
@@ -73,6 +91,17 @@ public class PropertyManager {
      * @param withChannels - get the channels with the property
      * @return found property
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Fetch property by propertyName",
+                            content = @Content(schema = @Schema(implementation = Property.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Property not found",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @GetMapping("/{propertyName}")
     public Property read(@PathVariable("propertyName") String propertyName,
                          @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
@@ -105,6 +134,25 @@ public class PropertyManager {
      * @param property - an Property instance with the list of channels to add the property <code>propertyName</code> to
      * @return the created property
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Property created",
+                            content = @Content(schema = @Schema(implementation = Property.class))),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Property not found",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to create property",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @PutMapping("/{propertyName}")
     public Property create(@PathVariable("propertyName") String propertyName, @RequestBody Property property) {
         // check if authorized role
@@ -155,6 +203,21 @@ public class PropertyManager {
      * @param properties - XmlProperties to be created
      * @return the list of properties created
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Properties created",
+                            content = @Content(schema = @Schema(implementation = Property.class))),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to create properties",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @PutMapping()
     public Iterable<Property> create(@RequestBody Iterable<Property> properties) {
         // check if authorized role
@@ -216,6 +279,29 @@ public class PropertyManager {
      * @param property - property payload with value
      * @return added property
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Property added to the channel",
+                            content = @Content(schema = @Schema(implementation = Property.class))),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid request",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Property-, or Channel-name does not exist",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to add property",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @PutMapping("/{propertyName}/{channelName}")
     public Property addSingle(@PathVariable("propertyName") String propertyName, @PathVariable("channelName") String channelName, @RequestBody Property property) {
         // check if authorized role
@@ -267,6 +353,29 @@ public class PropertyManager {
      * @param property - a Property instance with the list of channels to add the property <code>propertyName</code> to
      * @return the updated property
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Property updated",
+                            content = @Content(schema = @Schema(implementation = Property.class))),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid request",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Property does not exist",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to update property",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @PostMapping("/{propertyName}")
     public Property update(@PathVariable("propertyName") String propertyName, @RequestBody Property property) {
         // check if authorized role
@@ -364,6 +473,30 @@ public class PropertyManager {
      * @param properties - XmlProperties to be updated
      * @return the updated properties
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Properties updated",
+                            content = @Content(
+                                    array = @ArraySchema(schema = @Schema(implementation = Property.class)))),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid request",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Property does not exist",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to update properties",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @PostMapping()
     public Iterable<Property> update(@RequestBody Iterable<Property> properties) {
         // check if authorized role
@@ -451,6 +584,24 @@ public class PropertyManager {
      *
      * @param propertyName - name of property to remove
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Property deleted"),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Property does not exist",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to delete property",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @DeleteMapping("/{propertyName}")
     public void remove(@PathVariable("propertyName") String propertyName) {
         // check if authorized role
@@ -485,6 +636,24 @@ public class PropertyManager {
      * @param propertyName - name of property to remove
      * @param channelName - channel to remove <code>propertyName</code> from
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Property deleted from the channel"),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Authorization problem",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Property does not exist",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to delete property from a channel",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @DeleteMapping("/{propertyName}/{channelName}")
     public void removeSingle(@PathVariable("propertyName") final String propertyName, @PathVariable("channelName") String channelName) {
         // check if authorized role

@@ -2,6 +2,10 @@ package org.phoebus.channelfinder;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CF_SERVICE_INFO;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,6 +45,12 @@ public class InfoManager {
      * 
      * @return Information about the ChannelFinder service
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "ChannelFinder info", content = @Content(schema = @Schema(implementation = String.class)))
+            })
     @GetMapping
     public String info() {
 
