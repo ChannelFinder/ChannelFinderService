@@ -142,7 +142,7 @@ public class PropertyManager {
                             content = @Content(schema = @Schema(implementation = Property.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -211,7 +211,7 @@ public class PropertyManager {
                             content = @Content(schema = @Schema(implementation = Property.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "500",
@@ -291,7 +291,7 @@ public class PropertyManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -365,7 +365,7 @@ public class PropertyManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -486,7 +486,7 @@ public class PropertyManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -591,7 +591,7 @@ public class PropertyManager {
                             description = "Property deleted"),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -643,7 +643,7 @@ public class PropertyManager {
                             description = "Property deleted from the channel"),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",

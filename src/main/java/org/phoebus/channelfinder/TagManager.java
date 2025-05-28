@@ -147,7 +147,7 @@ public class TagManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -226,7 +226,7 @@ public class TagManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -326,7 +326,7 @@ public class TagManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -398,7 +398,7 @@ public class TagManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -498,7 +498,7 @@ public class TagManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -585,7 +585,7 @@ public class TagManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -641,7 +641,7 @@ public class TagManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",

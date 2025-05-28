@@ -66,7 +66,7 @@ public class ChannelScroll {
             value = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "List of channels",
+                            description = "Scroll that contains a collection of channel instances",
                             content = @Content(schema = @Schema(implementation = Scroll.class))),
                     @ApiResponse(
                             responseCode = "500",
@@ -90,7 +90,7 @@ public class ChannelScroll {
             value = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "List of channels",
+                            description = "Scroll List of channels",
                             content = @Content(schema = @Schema(implementation = Scroll.class))),
                     @ApiResponse(
                             responseCode = "500",

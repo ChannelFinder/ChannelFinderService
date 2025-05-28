@@ -81,7 +81,7 @@ public class ChannelManager {
             value = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "List of all channels",
+                            description = "List of channels",
                             content = @Content(
                                     array = @ArraySchema(schema = @Schema(implementation = Channel.class)))),
                     @ApiResponse(
@@ -138,7 +138,7 @@ public class ChannelManager {
             value = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Number of channels that matches the criteria",
+                            description = "The number of channels matching the query",
                             content = @Content(schema = @Schema(implementation = Long.class))),
                     @ApiResponse(
                             responseCode = "500",
@@ -161,7 +161,7 @@ public class ChannelManager {
             value = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Channels with the desired name",
+                            description = "Channel with the specified name",
                             content = @Content(schema = @Schema(implementation = Channel.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -203,7 +203,7 @@ public class ChannelManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -267,7 +267,7 @@ public class ChannelManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -367,7 +367,7 @@ public class ChannelManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -446,7 +446,7 @@ public class ChannelManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
@@ -509,12 +509,8 @@ public class ChannelManager {
                             responseCode = "200",
                             description = "Channel deleted"),
                     @ApiResponse(
-                            responseCode = "400",
-                            description = "Invalid request",
-                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-                    @ApiResponse(
                             responseCode = "401",
-                            description = "Authorization problem",
+                            description = "Unauthorized",
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
                     @ApiResponse(
                             responseCode = "404",
