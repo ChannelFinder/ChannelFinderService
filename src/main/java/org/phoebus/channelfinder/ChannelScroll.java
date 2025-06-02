@@ -2,6 +2,10 @@ package org.phoebus.channelfinder;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.SCROLL_RESOURCE_URI;
 
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
@@ -58,6 +62,17 @@ public class ChannelScroll {
      * @param allRequestParams search parameters
      * @return list of all channels
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Scroll that contains a collection of channel instances",
+                            content = @Content(schema = @Schema(implementation = Scroll.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to list channels",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @GetMapping
     public Scroll query(@RequestParam MultiValueMap<String, String> allRequestParams) {
         return search(null, allRequestParams);
@@ -71,6 +86,17 @@ public class ChannelScroll {
      * @param scrollId scroll Id
      * @return list of all channels
      */
+    @ApiResponses(
+            value = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Scroll List of channels",
+                            content = @Content(schema = @Schema(implementation = Scroll.class))),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error while trying to list channels",
+                            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+            })
     @GetMapping("/{scrollId}")
     public Scroll query(@PathVariable("scrollId") String scrollId, @RequestParam MultiValueMap<String, String> searchParameters) {
         return search(scrollId, searchParameters);
