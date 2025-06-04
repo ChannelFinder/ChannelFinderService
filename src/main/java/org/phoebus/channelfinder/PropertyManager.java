@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,6 +65,12 @@ public class PropertyManager {
      *
      * @return list of all properties
      */
+    @Operation(
+        summary = "List all properties",
+        description = "Retrieve the list of all properties in the database.",
+        operationId = "listProperties",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -91,6 +98,12 @@ public class PropertyManager {
      * @param withChannels - get the channels with the property
      * @return found property
      */
+    @Operation(
+        summary = "Get property by name",
+        description = "Retrieve a property by its name. Optionally include its channels.",
+        operationId = "getPropertyByName",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -134,6 +147,12 @@ public class PropertyManager {
      * @param property - an Property instance with the list of channels to add the property <code>propertyName</code> to
      * @return the created property
      */
+    @Operation(
+        summary = "Create or update a property",
+        description = "Create and exclusively update the property identified by the path parameter.",
+        operationId = "createOrUpdateProperty",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -203,6 +222,12 @@ public class PropertyManager {
      * @param properties - XmlProperties to be created
      * @return the list of properties created
      */
+    @Operation(
+        summary = "Create multiple properties",
+        description = "Create multiple properties in a single request.",
+        operationId = "createMultipleProperties",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -279,6 +304,12 @@ public class PropertyManager {
      * @param property - property payload with value
      * @return added property
      */
+    @Operation(
+        summary = "Add property to a single channel",
+        description = "Add the property identified by propertyName to the channel identified by channelName.",
+        operationId = "addPropertyToChannel",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -353,6 +384,12 @@ public class PropertyManager {
      * @param property - a Property instance with the list of channels to add the property <code>propertyName</code> to
      * @return the updated property
      */
+    @Operation(
+        summary = "Update a property",
+        description = "Update the property identified by the path parameter, adding it to all channels in the payload.",
+        operationId = "updateProperty",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -473,6 +510,12 @@ public class PropertyManager {
      * @param properties - XmlProperties to be updated
      * @return the updated properties
      */
+    @Operation(
+        summary = "Update multiple properties",
+        description = "Update multiple properties and all appropriate channels.",
+        operationId = "updateMultipleProperties",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -584,6 +627,12 @@ public class PropertyManager {
      *
      * @param propertyName - name of property to remove
      */
+    @Operation(
+        summary = "Delete a property",
+        description = "Delete the property identified by the path parameter from all channels.",
+        operationId = "deleteProperty",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -636,6 +685,12 @@ public class PropertyManager {
      * @param propertyName - name of property to remove
      * @param channelName - channel to remove <code>propertyName</code> from
      */
+    @Operation(
+        summary = "Delete property from a channel",
+        description = "Delete the property identified by propertyName from the channel identified by channelName.",
+        operationId = "deletePropertyFromChannel",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(

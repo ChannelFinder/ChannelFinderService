@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -45,6 +46,12 @@ public class InfoManager {
      * 
      * @return Information about the ChannelFinder service
      */
+    @Operation(
+        summary = "Get ChannelFinder service info",
+        description = "Returns information about the ChannelFinder service and its Elasticsearch backend.",
+        operationId = "getServiceInfo",
+        tags = {"Info"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(

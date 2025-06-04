@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,6 +63,12 @@ public class TagManager {
      *
      * @return list of all tags
      */
+    @Operation(
+        summary = "List all tags",
+        description = "Retrieve the list of all tags in the database.",
+        operationId = "listTags",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -88,6 +95,12 @@ public class TagManager {
      * @param withChannels - channels with the tag tagName
      * @return found tag
      */
+    @Operation(
+        summary = "Get tag by name",
+        description = "Retrieve a tag by its name. Optionally include its channels.",
+        operationId = "getTagByName",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -135,6 +148,12 @@ public class TagManager {
      * @param tag - Tag structure containing the list of channels to be tagged
      * @return the created tag
      */
+    @Operation(
+        summary = "Create or update a tag",
+        description = "Create and exclusively update the tag identified by the path parameter.",
+        operationId = "createOrUpdateTag",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -212,6 +231,12 @@ public class TagManager {
      * @param tags - XmlTags to be created
      * @return the list of tags created
      */
+    @Operation(
+        summary = "Create multiple tags",
+        description = "Create multiple tags in a single request.",
+        operationId = "createMultipleTags",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -314,6 +339,12 @@ public class TagManager {
      * @param channelName - channel to update <code>tag</code> to
      * @return added tag
      */
+    @Operation(
+        summary = "Add tag to a single channel",
+        description = "Add the tag identified by tagName to the channel identified by channelName.",
+        operationId = "addTagToChannel",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -386,6 +417,12 @@ public class TagManager {
      * @param tag - Tag with list of channels to addSingle the tag <code>name</code> to
      * @return the updated tag
      */
+    @Operation(
+        summary = "Update a tag",
+        description = "Update the tag identified by the path parameter, adding it to all channels in the payload.",
+        operationId = "updateTag",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -485,6 +522,12 @@ public class TagManager {
      * @param tags - XmlTags to be updated
      * @return the updated tags
      */
+    @Operation(
+        summary = "Update multiple tags",
+        description = "Update multiple tags and all appropriate channels.",
+        operationId = "updateMultipleTags",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -574,6 +617,12 @@ public class TagManager {
      *
      * @param tagName - name of tag to remove
      */
+    @Operation(
+        summary = "Delete a tag",
+        description = "Delete the tag identified by the path parameter from all channels.",
+        operationId = "deleteTag",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -630,6 +679,12 @@ public class TagManager {
      * @param tagName - name of tag to remove
      * @param channelName - channel to remove <code>tagName</code> from
      */
+    @Operation(
+        summary = "Delete tag from a channel",
+        description = "Delete the tag identified by tagName from the channel identified by channelName.",
+        operationId = "deleteTagFromChannel",
+        tags = {"Tag"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(

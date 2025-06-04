@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
@@ -77,6 +78,12 @@ public class ChannelManager {
      * @param allRequestParams query parameters
      * @return list of all channels
      */
+    @Operation(
+        summary = "Query channels",
+        description = "Query a collection of Channel instances based on tags, property values, and channel names.",
+        operationId = "queryChannels",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -106,6 +113,12 @@ public class ChannelManager {
      * @param allRequestParams query parameters
      * @return SearchResult a count to the total number of matches and the first 10k hits
      */
+    @Operation(
+        summary = "Combined query for channels",
+        description = "Query for a collection of Channel instances and get a count and the first 10k hits.",
+        operationId = "combinedQueryChannels",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -134,6 +147,12 @@ public class ChannelManager {
      * @param allRequestParams query parameters
      * @return a total number of channels that match the query parameters
      */
+    @Operation(
+        summary = "Count channels matching query",
+        description = "Get the number of channels matching the given query parameters.",
+        operationId = "countChannels",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -157,6 +176,12 @@ public class ChannelManager {
      * @param channelName - channel name to search for
      * @return found channel
      */
+    @Operation(
+        summary = "Get channel by name",
+        description = "Retrieve a Channel instance by its name.",
+        operationId = "getChannelByName",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -191,6 +216,12 @@ public class ChannelManager {
      * @param channel - new data (properties/tags) for channel <code>chan</code>
      * @return the created channel
      */
+    @Operation(
+        summary = "Create or replace a channel",
+        description = "Create or replace a channel instance identified by the payload.",
+        operationId = "createOrReplaceChannel",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -254,6 +285,12 @@ public class ChannelManager {
      * @param channels - XmlChannels to be created
      * @return the list of channels created
      */
+    @Operation(
+        summary = "Create or replace multiple channels",
+        description = "Create or replace multiple channel instances.",
+        operationId = "createOrReplaceChannels",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -355,6 +392,12 @@ public class ChannelManager {
      * @param channel - new Channel data (properties/tags) to be merged into channel <code>channelName</code>
      * @return the updated channel         
      */
+    @Operation(
+        summary = "Update a channel",
+        description = "Merge properties and tags of the channel identified by the payload into an existing channel.",
+        operationId = "updateChannel",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -434,6 +477,12 @@ public class ChannelManager {
      * @param channels - XmlChannels to be updated
      * @return the updated channels
      */
+    @Operation(
+        summary = "Update multiple channels",
+        description = "Merge properties and tags of the channels identified by the payload into existing channels.",
+        operationId = "updateChannels",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -503,6 +552,12 @@ public class ChannelManager {
      *
      * @param channelName - name of channel to remove
      */
+    @Operation(
+        summary = "Delete a channel",
+        description = "Delete a channel instance identified by its name.",
+        operationId = "deleteChannel",
+        tags = {"Channel"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
