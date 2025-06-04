@@ -42,10 +42,6 @@ public class InfoManager {
 
     private static final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-    /**
-     * 
-     * @return Information about the ChannelFinder service
-     */
     @Operation(
         summary = "Get ChannelFinder service info",
         description = "Returns information about the ChannelFinder service and its Elasticsearch backend.",

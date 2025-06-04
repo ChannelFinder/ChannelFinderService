@@ -70,14 +70,6 @@ public class ChannelManager {
     @Autowired
     ChannelProcessorService channelProcessorService;
 
-    /**
-     * GET method for querying a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     * 
-     * @param allRequestParams query parameters
-     * @return list of all channels
-     */
     @Operation(
         summary = "Query channels",
         description = "Query a collection of Channel instances based on tags, property values, and channel names.",
@@ -105,14 +97,6 @@ public class ChannelManager {
         return channelRepository.search(allRequestParams).channels();
     }
 
-    /**
-     * GET method for querying for a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param allRequestParams query parameters
-     * @return SearchResult a count to the total number of matches and the first 10k hits
-     */
     @Operation(
         summary = "Combined query for channels",
         description = "Query for a collection of Channel instances and get a count and the first 10k hits.",
@@ -140,13 +124,6 @@ public class ChannelManager {
         return channelRepository.search(allRequestParams);
     }
 
-    /**
-     * GET method for querying the number of matches to a multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param allRequestParams query parameters
-     * @return a total number of channels that match the query parameters
-     */
     @Operation(
         summary = "Count channels matching query",
         description = "Get the number of channels matching the given query parameters.",
@@ -169,13 +146,6 @@ public class ChannelManager {
         return channelRepository.count(allRequestParams);
     }
 
-    /**
-     * GET method for retrieving an instance of Channel identified by
-     * <code>channelName</code>.
-     *
-     * @param channelName - channel name to search for
-     * @return found channel
-     */
     @Operation(
         summary = "Get channel by name",
         description = "Retrieve a Channel instance by its name.",
@@ -207,15 +177,6 @@ public class ChannelManager {
         }
     }
 
-    /**
-     * PUT method for creating/replacing a channel instance identified by the
-     * payload. The <b>complete</b> set of properties for the channel must be
-     * supplied, which will replace the existing set of properties.
-     *
-     * @param channelName - name of channel to be created 
-     * @param channel - new data (properties/tags) for channel <code>chan</code>
-     * @return the created channel
-     */
     @Operation(
         summary = "Create or replace a channel",
         description = "Create or replace a channel instance identified by the payload.",
@@ -279,12 +240,6 @@ public class ChannelManager {
         }
     }
 
-    /**
-     * PUT method for creating multiple channels.
-     *
-     * @param channels - XmlChannels to be created
-     * @return the list of channels created
-     */
     @Operation(
         summary = "Create or replace multiple channels",
         description = "Create or replace multiple channel instances.",
@@ -384,14 +339,6 @@ public class ChannelManager {
         }
     }
 
-    /**
-     * POST method for merging properties and tags of the channel identified by the
-     * payload into an existing channel.
-     *
-     * @param channelName - name of channel to add
-     * @param channel - new Channel data (properties/tags) to be merged into channel <code>channelName</code>
-     * @return the updated channel         
-     */
     @Operation(
         summary = "Update a channel",
         description = "Merge properties and tags of the channel identified by the payload into an existing channel.",
@@ -470,13 +417,6 @@ public class ChannelManager {
         }
     }
 
-    /**
-     * POST method for merging properties and tags of the Channels identified by the
-     * payload into existing channels.
-     *
-     * @param channels - XmlChannels to be updated
-     * @return the updated channels
-     */
     @Operation(
         summary = "Update multiple channels",
         description = "Merge properties and tags of the channels identified by the payload into existing channels.",
@@ -546,12 +486,6 @@ public class ChannelManager {
         }
     }
 
-    /**
-     * DELETE method for deleting a channel instance identified by path parameter
-     * <code>channelName</code>.
-     *
-     * @param channelName - name of channel to remove
-     */
     @Operation(
         summary = "Delete a channel",
         description = "Delete a channel instance identified by its name.",

@@ -55,14 +55,6 @@ public class ChannelScroll {
     @Qualifier("indexClient")
     ElasticsearchClient client;
 
-    /**
-     * GET method for retrieving a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param allRequestParams search parameters
-     * @return list of all channels
-     */
     @Operation(
         summary = "Scroll query for channels",
         description = "Retrieve a collection of Channel instances based on multi-parameter search.",
@@ -85,14 +77,6 @@ public class ChannelScroll {
         return search(null, allRequestParams);
     }
 
-    /**
-     * GET method for retrieving a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param scrollId scroll Id
-     * @return list of all channels
-     */
     @Operation(
         summary = "Scroll query by scrollId",
         description = "Retrieve a collection of Channel instances using a scrollId and search parameters.",

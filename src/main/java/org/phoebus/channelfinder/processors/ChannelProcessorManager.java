@@ -30,11 +30,6 @@ import java.util.logging.Logger;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_RESOURCE_URI;
 
-/**
- * A rest end point for retrieving information about the various channel processors included
- * in this installation of ChannelFinder and end points for manually triggering their processing.
- */
-
 @RestController
 @RequestMapping(CHANNEL_PROCESSOR_RESOURCE_URI)
 @EnableAutoConfiguration
