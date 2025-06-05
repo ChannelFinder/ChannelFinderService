@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
@@ -54,14 +55,12 @@ public class ChannelScroll {
     @Qualifier("indexClient")
     ElasticsearchClient client;
 
-    /**
-     * GET method for retrieving a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param allRequestParams search parameters
-     * @return list of all channels
-     */
+    @Operation(
+        summary = "Scroll query for channels",
+        description = "Retrieve a collection of Channel instances based on multi-parameter search.",
+        operationId = "scrollQueryChannels",
+        tags = {"ChannelScroll"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -78,14 +77,12 @@ public class ChannelScroll {
         return search(null, allRequestParams);
     }
 
-    /**
-     * GET method for retrieving a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param scrollId scroll Id
-     * @return list of all channels
-     */
+    @Operation(
+        summary = "Scroll query by scrollId",
+        description = "Retrieve a collection of Channel instances using a scrollId and search parameters.",
+        operationId = "scrollQueryById",
+        tags = {"ChannelScroll"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(

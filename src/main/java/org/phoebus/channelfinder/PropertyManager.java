@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,11 +60,12 @@ public class PropertyManager {
     @Autowired
     AuthorizationService authorizationService;
 
-    /**
-     * GET method for retrieving the list of properties in the database.
-     *
-     * @return list of all properties
-     */
+    @Operation(
+        summary = "List all properties",
+        description = "Retrieve the list of all properties in the database.",
+        operationId = "listProperties",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -82,15 +84,12 @@ public class PropertyManager {
         return propertyRepository.findAll();
     }
 
-    /**
-     * GET method for retrieving the property with the path parameter <code>propertyName</code> 
-     * <p>
-     * To get all its channels use the parameter "withChannels"
-     *
-     * @param propertyName - property name to search for
-     * @param withChannels - get the channels with the property
-     * @return found property
-     */
+    @Operation(
+        summary = "Get property by name",
+        description = "Retrieve a property by its name. Optionally include its channels.",
+        operationId = "getPropertyByName",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -122,18 +121,12 @@ public class PropertyManager {
         }
     }
 
-    /**
-     * PUT method for creating and <b>exclusively</b> adding the property
-     * identified by the path parameter <code>propertyName</code> to all channels
-     * identified by the payload structure <code>property</code>. Setting the owner
-     * attribute in the XML root element is mandatory. Values for the properties
-     * are taken from the payload.
-     *
-     *
-     * @param propertyName - name of property to be created
-     * @param property - an Property instance with the list of channels to add the property <code>propertyName</code> to
-     * @return the created property
-     */
+    @Operation(
+        summary = "Create or update a property",
+        description = "Create and exclusively update the property identified by the path parameter.",
+        operationId = "createOrUpdateProperty",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -197,12 +190,12 @@ public class PropertyManager {
         }
     }
 
-    /**
-     * PUT method for creating multiple properties.
-     *
-     * @param properties - XmlProperties to be created
-     * @return the list of properties created
-     */
+    @Operation(
+        summary = "Create multiple properties",
+        description = "Create multiple properties in a single request.",
+        operationId = "createMultipleProperties",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -267,18 +260,12 @@ public class PropertyManager {
         }
     }
 
-    /**
-     * PUT method for adding the property identified by <code>property</code> to the single
-     * channel <code>chan</code> (both path parameters).
-     * 
-     * TODO: could be simplified with multi index update and script which can use
-     * wildcards thus removing the need to explicitly define the entire property
-     * 
-     * @param propertyName - name of tag to be created
-     * @param channelName - channel to update <code>property</code> to
-     * @param property - property payload with value
-     * @return added property
-     */
+    @Operation(
+        summary = "Add property to a single channel",
+        description = "Add the property identified by propertyName to the channel identified by channelName.",
+        operationId = "addPropertyToChannel",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -343,16 +330,12 @@ public class PropertyManager {
         }
     }
 
-    /**
-     * POST method for updating the property identified by the path parameter
-     * <code>propertyName</code>, adding it to all channels identified by the payload structure
-     * <code>property</code>. Setting the owner attribute in the XML root element is
-     * mandatory. Values for the properties are taken from the payload.
-     *
-     * @param propertyName - name of property to be updated
-     * @param property - a Property instance with the list of channels to add the property <code>propertyName</code> to
-     * @return the updated property
-     */
+    @Operation(
+        summary = "Update a property",
+        description = "Update the property identified by the path parameter, adding it to all channels in the payload.",
+        operationId = "updateProperty",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -461,18 +444,14 @@ public class PropertyManager {
         }
 
         return updatedProperty;
-
     }
 
-    /**
-     * POST method for updating multiple properties and updating all the appropriate
-     * channels.
-     *
-     * If the channels don't exist it will fail
-     *
-     * @param properties - XmlProperties to be updated
-     * @return the updated properties
-     */
+    @Operation(
+        summary = "Update multiple properties",
+        description = "Update multiple properties and all appropriate channels.",
+        operationId = "updateMultipleProperties",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -578,12 +557,12 @@ public class PropertyManager {
         }
     }
 
-    /**
-     * DELETE method for deleting the property identified by the path parameter
-     * <code>propertyName</code> from all channels.
-     *
-     * @param propertyName - name of property to remove
-     */
+    @Operation(
+        summary = "Delete a property",
+        description = "Delete the property identified by the path parameter from all channels.",
+        operationId = "deleteProperty",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -629,13 +608,12 @@ public class PropertyManager {
         }
     }
 
-    /**
-     * DELETE method for deleting the property identified by <code>propertyName</code> from the
-     * channel <code>channelName</code> (both path parameters).
-     *
-     * @param propertyName - name of property to remove
-     * @param channelName - channel to remove <code>propertyName</code> from
-     */
+    @Operation(
+        summary = "Delete property from a channel",
+        description = "Delete the property identified by propertyName from the channel identified by channelName.",
+        operationId = "deletePropertyFromChannel",
+        tags = {"Property"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(

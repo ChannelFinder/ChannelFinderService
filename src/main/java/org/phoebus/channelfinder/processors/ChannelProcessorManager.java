@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import org.phoebus.channelfinder.AuthorizationService;
 import org.phoebus.channelfinder.ChannelScroll;
 import org.phoebus.channelfinder.entity.Channel;
@@ -29,11 +30,6 @@ import java.util.logging.Logger;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_RESOURCE_URI;
 
-/**
- * A rest end point for retrieving information about the various channel processors included
- * in this installation of ChannelFinder and end points for manually triggering their processing.
- */
-
 @RestController
 @RequestMapping(CHANNEL_PROCESSOR_RESOURCE_URI)
 @EnableAutoConfiguration
@@ -53,6 +49,12 @@ public class ChannelProcessorManager {
     @Value("${elasticsearch.query.size:10000}")
     private int defaultMaxSize;
 
+    @Operation(
+        summary = "Get processor count",
+        description = "Returns the number of channel processors.",
+        operationId = "getProcessorCount",
+        tags = {"ChannelProcessor"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -65,6 +67,12 @@ public class ChannelProcessorManager {
         return channelProcessorService.getProcessorCount();
     }
 
+    @Operation(
+        summary = "Get processor info",
+        description = "Returns information about all channel processors.",
+        operationId = "getProcessorInfo",
+        tags = {"ChannelProcessor"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -78,6 +86,12 @@ public class ChannelProcessorManager {
         return channelProcessorService.getProcessorsInfo();
     }
 
+    @Operation(
+        summary = "Process all channels",
+        description = "Manually trigger processing on all channels in ChannelFinder.",
+        operationId = "processAllChannels",
+        tags = {"ChannelProcessor"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -108,6 +122,12 @@ public class ChannelProcessorManager {
         }
     }
 
+    @Operation(
+        summary = "Process channels by query",
+        description = "Manually trigger processing on channels matching the given query.",
+        operationId = "processChannelsByQuery",
+        tags = {"ChannelProcessor"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
