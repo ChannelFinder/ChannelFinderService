@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.phoebus.channelfinder.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
+import static org.phoebus.channelfinder.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
 
 @CrossOrigin
 @RestController
@@ -93,7 +95,9 @@ public class ChannelManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
             })
     @GetMapping
-    public List<Channel> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public List<Channel> query(
+            @Parameter(description = SEARCH_PARAM_DESCRIPTION)
+            @RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.search(allRequestParams).channels();
     }
 
@@ -120,7 +124,9 @@ public class ChannelManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
             })
     @GetMapping("/combined")
-    public SearchResult combinedQuery(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public SearchResult combinedQuery(
+            @Parameter(description = SEARCH_PARAM_DESCRIPTION)
+            @RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.search(allRequestParams);
     }
 
@@ -142,7 +148,9 @@ public class ChannelManager {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
             })
     @GetMapping("/count")
-    public long queryCount(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public long queryCount(
+            @Parameter(description = SEARCH_PARAM_DESCRIPTION)
+            @RequestParam MultiValueMap<String, String> allRequestParams) {
         return channelRepository.count(allRequestParams);
     }
 

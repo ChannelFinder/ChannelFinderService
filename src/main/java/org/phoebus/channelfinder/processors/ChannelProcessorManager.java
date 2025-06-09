@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.phoebus.channelfinder.AuthorizationService;
 import org.phoebus.channelfinder.ChannelScroll;
 import org.phoebus.channelfinder.entity.Channel;
@@ -29,6 +30,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_RESOURCE_URI;
+import static org.phoebus.channelfinder.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
 
 @RestController
 @RequestMapping(CHANNEL_PROCESSOR_RESOURCE_URI)
@@ -136,7 +138,9 @@ public class ChannelProcessorManager {
                             content = @Content(schema = @Schema(implementation = Long.class)))
             })
     @PutMapping("/process/query")
-    public long processChannels(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public long processChannels(
+            @Parameter(description = SEARCH_PARAM_DESCRIPTION)
+            @RequestParam MultiValueMap<String, String> allRequestParams) {
         long channelCount = 0;
         Scroll scrollResult = channelScroll.query(allRequestParams);
         channelCount += scrollResult.getChannels().size();
