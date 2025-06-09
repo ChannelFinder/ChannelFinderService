@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
@@ -54,14 +56,12 @@ public class ChannelScroll {
     @Qualifier("indexClient")
     ElasticsearchClient client;
 
-    /**
-     * GET method for retrieving a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param allRequestParams search parameters
-     * @return list of all channels
-     */
+    @Operation(
+        summary = "Scroll query for channels",
+        description = "Retrieve a collection of Channel instances based on multi-parameter search.",
+        operationId = "scrollQueryChannels",
+        tags = {"ChannelScroll"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -74,18 +74,18 @@ public class ChannelScroll {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
             })
     @GetMapping
-    public Scroll query(@RequestParam MultiValueMap<String, String> allRequestParams) {
+    public Scroll query(
+            @Parameter(description = CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION)
+            @RequestParam MultiValueMap<String, String> allRequestParams) {
         return search(null, allRequestParams);
     }
 
-    /**
-     * GET method for retrieving a collection of Channel instances, based on a
-     * multi-parameter query specifying patterns for tags, property values, and
-     * channel names to match against.
-     *
-     * @param scrollId scroll Id
-     * @return list of all channels
-     */
+    @Operation(
+        summary = "Scroll query by scrollId",
+        description = "Retrieve a collection of Channel instances using a scrollId and search parameters.",
+        operationId = "scrollQueryById",
+        tags = {"ChannelScroll"}
+    )
     @ApiResponses(
             value = {
                     @ApiResponse(
@@ -98,7 +98,10 @@ public class ChannelScroll {
                             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
             })
     @GetMapping("/{scrollId}")
-    public Scroll query(@PathVariable("scrollId") String scrollId, @RequestParam MultiValueMap<String, String> searchParameters) {
+    public Scroll query(
+            @Parameter(description = "Scroll ID from previous query") @PathVariable("scrollId") String scrollId,
+            @Parameter(description = CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION)
+            @RequestParam MultiValueMap<String, String> searchParameters) {
         return search(scrollId, searchParameters);
     }
 
