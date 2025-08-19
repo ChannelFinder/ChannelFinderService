@@ -198,14 +198,36 @@ public class AAChannelProcessor implements ChannelProcessor {
             return result;
         }
         List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
-        statuses
-                .forEach(archivePVStatusJsonMap -> {
-                    String archiveStatus = archivePVStatusJsonMap.get("status");
-                    String pvName = archivePVStatusJsonMap.get("pvName");
-                    String pvStatus = archivePVS.get(pvName).getPvStatus();
-                    ArchiveAction action = pickArchiveAction(archiveStatus, pvStatus);
-                    result.get(action).add(archivePVS.get(pvName));
-                });
+        if (statuses == null) {
+            logger.log(Level.WARNING, "archiverClient.getStatuses returned null");
+            return result;
+        }
+        logger.log(Level.INFO, "Statuses {0}", statuses);
+        statuses.forEach(archivePVStatusJsonMap -> {
+                String archiveStatus = archivePVStatusJsonMap.get("status");
+                String pvName = archivePVStatusJsonMap.get("pvName");
+
+                if (archiveStatus == null || pvName == null) {
+                    logger.log(Level.WARNING, "Missing status or pvName in archivePVStatusJsonMap: {0}", archivePVStatusJsonMap);
+                    return;
+                }
+
+                ArchivePVOptions archivePVOptions = archivePVS.get(pvName);
+                if (archivePVOptions == null) {
+                    logger.log(Level.WARNING, "archivePVS does not contain pvName: {0}", pvName);
+                    return;
+                }
+
+                String pvStatus = archivePVOptions.getPvStatus();
+                ArchiveAction action = pickArchiveAction(archiveStatus, pvStatus);
+
+                List<ArchivePVOptions> archivePVOptionsList = result.get(action);
+                if (archivePVOptionsList == null) {
+                    logger.log(Level.WARNING, "No list found for action: {0}", action);
+                    return;
+                }
+                archivePVOptionsList.add(archivePVOptions);
+            });
         return result;
     }
 
