@@ -31,22 +31,29 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import javax.annotation.PreDestroy;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
@@ -67,10 +74,17 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   @Qualifier("indexClient")
   ElasticsearchClient client;
 
+  @Value("${index.chunk.size:1}")
+  private int chunkSize;
+
+  // Object mapper to ignore properties we don't want to index
   final ObjectMapper objectMapper =
       new ObjectMapper()
           .addMixIn(Tag.class, Tag.OnlyTag.class)
           .addMixIn(Property.class, Property.OnlyProperty.class);
+
+  private final ExecutorService executor =
+      Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
   /**
    * create a new channel using the given Channel
@@ -110,41 +124,60 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @return the created channels
    */
   public List<Channel> indexAll(List<Channel> channels) {
-    BulkRequest.Builder br = new BulkRequest.Builder();
 
-    for (Channel channel : channels) {
-      br.operations(
-              op ->
-                  op.index(
-                      idx ->
-                          idx.index(esService.getES_CHANNEL_INDEX())
-                              .id(channel.getName())
-                              .document(
-                                  JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))))
-          .refresh(Refresh.True);
+    List<Future<List<Channel>>> futures = new ArrayList<>();
+
+    for (int i = 0; i < channels.size(); i += chunkSize) {
+      List<Channel> chunk = channels.stream().skip(i).limit(chunkSize).collect(Collectors.toList());
+      futures.add(
+          executor.submit(
+              () -> {
+                BulkRequest.Builder br = new BulkRequest.Builder();
+                for (Channel channel : chunk) {
+                  br.operations(
+                          op ->
+                              op.index(
+                                  idx ->
+                                      idx.index(esService.getES_CHANNEL_INDEX())
+                                          .id(channel.getName())
+                                          .document(
+                                              JsonData.of(
+                                                  channel, new JacksonJsonpMapper(objectMapper)))))
+                      .refresh(Refresh.True);
+                }
+                BulkResponse result;
+                try {
+                  result = client.bulk(br.build());
+                  // Log errors, if any
+                  if (result.errors()) {
+                    logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+                    for (BulkResponseItem item : result.items()) {
+                      if (item.error() != null) {
+                        logger.log(Level.SEVERE, () -> item.error().reason());
+                      }
+                    }
+                    // TODO cleanup? or throw exception?
+                  } else {
+                    return chunk;
+                  }
+                } catch (IOException e) {
+                  String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, chunk);
+                  logger.log(Level.SEVERE, message, e);
+                  throw new ResponseStatusException(
+                      HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+                }
+                return Collections.emptyList();
+              }));
     }
-
-    BulkResponse result = null;
-    try {
-      result = client.bulk(br.build());
-      // Log errors, if any
-      if (result.errors()) {
-        logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-        for (BulkResponseItem item : result.items()) {
-          if (item.error() != null) {
-            logger.log(Level.SEVERE, () -> item.error().reason());
-          }
-        }
-        // TODO cleanup? or throw exception?
-      } else {
-        return channels;
+    List<Channel> allIndexed = new ArrayList<>();
+    for (Future<List<Channel>> future : futures) {
+      try {
+        allIndexed.addAll(future.get());
+      } catch (Exception e) {
+        logger.log(Level.SEVERE, "Bulk indexing failed", e);
       }
-    } catch (IOException e) {
-      String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
-      logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
     }
-    return Collections.emptyList();
+    return allIndexed;
   }
 
   /**
@@ -704,5 +737,18 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   public void deleteAllById(Iterable<? extends String> ids) {
     // TODO Auto-generated method stub
 
+  }
+
+  @PreDestroy
+  public void shutdownExecutor() {
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
   }
 }
