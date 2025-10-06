@@ -35,6 +35,7 @@ import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
@@ -43,14 +44,20 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.annotation.PreDestroy;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -68,10 +75,16 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     @Autowired
     @Qualifier("indexClient")
     ElasticsearchClient client;
-    
+
+    @Value("${index.chunk.size:1}")
+    private int chunkSize;
+
+    // Object mapper to ignore properties we don't want to index
     final ObjectMapper objectMapper = new ObjectMapper()
             .addMixIn(Tag.class, Tag.OnlyTag.class)
             .addMixIn(Property.class, Property.OnlyProperty.class);
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     /**
      * create a new channel using the given Channel
@@ -100,6 +113,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         return null;
     }
 
+
     /**
      * create new channels using the given XmlChannels
      *
@@ -107,41 +121,58 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
      * @return the created channels
      */
     public List<Channel> indexAll(List<Channel> channels) {
-        BulkRequest.Builder br = new BulkRequest.Builder();
 
-        for (Channel channel : channels) {
-            br.operations(op -> op
-                    .index(idx -> idx
-                            .index(esService.getES_CHANNEL_INDEX())
-                            .id(channel.getName())
-                            .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
-                    )
-            ).refresh(Refresh.True);
-        }
+        List<Future<List<Channel>>> futures = new ArrayList<>();
 
-        BulkResponse result = null;
-        try {
-            result = client.bulk(br.build());
-            // Log errors, if any
-            if (result.errors()) {
-                logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-                for (BulkResponseItem item : result.items()) {
-                    if (item.error() != null) {
-                        logger.log(Level.SEVERE, () -> item.error().reason());
-                    }
+        for (int i = 0; i < channels.size(); i += chunkSize) {
+            List<Channel> chunk = channels.stream().skip(i).limit(chunkSize).collect(Collectors.toList());
+            futures.add(executor.submit(() -> {
+                BulkRequest.Builder br = new BulkRequest.Builder();
+                for (Channel channel : chunk) {
+                    br.operations(op -> op
+                            .index(idx -> idx
+                                    .index(esService.getES_CHANNEL_INDEX())
+                                    .id(channel.getName())
+                                    .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))
+                            )
+                    ).refresh(Refresh.True);
                 }
-                // TODO cleanup? or throw exception?
-            } else {
-                return channels;
-            }
-        } catch (IOException e) {
-            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
-            logger.log(Level.SEVERE, message, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+                BulkResponse result;
+                try {
+                    result = client.bulk(br.build());
+                    // Log errors, if any
+                    if (result.errors()) {
+                        logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+                        for (BulkResponseItem item : result.items()) {
+                            if (item.error() != null) {
+                                logger.log(Level.SEVERE, () -> item.error().reason());
+                            }
+                        }
+                        // TODO cleanup? or throw exception?
+                    } else {
+                        return chunk;
+                    }
+                } catch (IOException e) {
+                    String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, chunk);
+                    logger.log(Level.SEVERE, message, e);
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
+                }
+                return Collections.emptyList();
+            }));
         }
-        return Collections.emptyList();
+        List<Channel> allIndexed = new ArrayList<>();
+        for (Future<List<Channel>> future : futures) {
+            try {
+                allIndexed.addAll(future.get());
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Bulk indexing failed", e);
+            }
+        }
+        return allIndexed;
     }
+
+
 
     /**
      * update/save channel using the given Channel
@@ -639,6 +670,19 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     public void deleteAllById(Iterable<? extends String> ids) {
         // TODO Auto-generated method stub
         
+    }
+
+    @PreDestroy
+    public void shutdownExecutor() {
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
 }
