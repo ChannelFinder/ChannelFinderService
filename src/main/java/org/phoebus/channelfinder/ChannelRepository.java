@@ -173,12 +173,11 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     }
 
 
-
     /**
      * update/save channel using the given Channel
      *
      * @param channelName - name of channel to be saved
-     * @param channel - channel to be saved
+     * @param channel     - channel to be saved
      * @return the updated/saved channel
      */
     public Channel save(String channelName, Channel channel) {
@@ -201,70 +200,89 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     }
 
     /**
+     * Saves the given channel entity.
+     * This method is required by the CrudRepository interface.
      *
+     * @param channel the channel entity to save
+     * @return the saved channel entity
      */
     @Override
     public Channel save(Channel channel) {
-        return save(channel.getName(),channel);
+        return save(channel.getName(), channel);
     }
 
     /**
      * update/save channels using the given XmlChannels
      *
-     * @param <S> extends Channel
+     * @param <S>      extends Channel
      * @param channels - channels to be saved
      * @return the updated/saved channels
      */
     @SuppressWarnings("unchecked")
     @Override
     public <S extends Channel> Iterable<S> saveAll(Iterable<S> channels) {
-        // Create a list of all channel names
-        List<String> ids = StreamSupport.stream(channels.spliterator(), false).map(Channel::getName).collect(Collectors.toList());
+        List<Future<List<Channel>>> futures = new ArrayList<>();
+        List<Channel> channelList = StreamSupport.stream(channels.spliterator(), false).collect(Collectors.toList());
 
-        try {
+        for (int i = 0; i < channelList.size(); i += chunkSize) {
+            List<Channel> chunk = channelList.stream().skip(i).limit(chunkSize).toList();
+            // Create a list of all channel names
+            List<String> ids = StreamSupport.stream(chunk.spliterator(), false).map(Channel::getName).collect(Collectors.toList());
             Map<String, Channel> existingChannels = findAllById(ids).stream().collect(Collectors.toMap(Channel::getName, c -> c));
 
-            BulkRequest.Builder br = new BulkRequest.Builder();
-
-            for (Channel channel : channels) {
-                if (existingChannels.containsKey(channel.getName())) {
-                    // merge with existing channel
-                    Channel updatedChannel = existingChannels.get(channel.getName());
-                    if (channel.getOwner() != null && !channel.getOwner().isEmpty())
-                        updatedChannel.setOwner(channel.getOwner());
-                    updatedChannel.addProperties(channel.getProperties());
-                    updatedChannel.addTags(channel.getTags());
-                    br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
-                            .id(updatedChannel.getName())
-                            .document(JsonData.of(updatedChannel, new JacksonJsonpMapper(objectMapper)))));
-                } else {
-                    br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
-                            .id(channel.getName())
-                            .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))));
-                }
-
-            }
-            BulkResponse result = null;
-            result = client.bulk(br.refresh(Refresh.True).build());
-            // Log errors, if any
-            if (result.errors()) {
-                logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-                for (BulkResponseItem item : result.items()) {
-                    if (item.error() != null) {
-                        logger.log(Level.SEVERE, () -> item.error().reason());
+            futures.add(executor.submit(() -> {
+                BulkRequest.Builder br = new BulkRequest.Builder();
+                for (Channel channel : chunk) {
+                    if (existingChannels.containsKey(channel.getName())) {
+                        // merge with existing channel
+                        Channel updatedChannel = existingChannels.get(channel.getName());
+                        if (channel.getOwner() != null && !channel.getOwner().isEmpty())
+                            updatedChannel.setOwner(channel.getOwner());
+                        updatedChannel.addProperties(channel.getProperties());
+                        updatedChannel.addTags(channel.getTags());
+                        br.operations(op -> op.index(ch -> ch.index(esService.getES_CHANNEL_INDEX())
+                                .id(updatedChannel.getName())
+                                .document(JsonData.of(updatedChannel, new JacksonJsonpMapper(objectMapper)))));
+                    } else {
+                        br.operations(op -> op.index(ch -> ch.index(esService.getES_CHANNEL_INDEX())
+                                .id(channel.getName())
+                                .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))));
                     }
-                }
-                // TODO cleanup? or throw exception?
-            } else {
-                return (Iterable<S>) findAllById(ids);
-            }
-        } catch (IOException e) {
-            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
-            logger.log(Level.SEVERE, message, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
 
+                }
+                BulkResponse result;
+                try {
+                    result = client.bulk(br.refresh(Refresh.True).build());
+                    // Log errors, if any
+                    if (result.errors()) {
+                        logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+                        for (BulkResponseItem item : result.items()) {
+                            if (item.error() != null) {
+                                logger.log(Level.SEVERE, () -> item.error().reason());
+                            }
+                        }
+                        // TODO cleanup? or throw exception?
+                    } else {
+                        return findAllById(ids);
+                    }
+                } catch (IOException e) {
+                    String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
+                    logger.log(Level.SEVERE, message, e);
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+                }
+                return Collections.emptyList();
+            }));
         }
-        return null;
+
+        List<Channel> allSaved = new ArrayList<>();
+        for (Future<List<Channel>> future : futures) {
+            try {
+                allSaved.addAll(future.get());
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, "Bulk saving failed", e);
+            }
+        }
+        return (Iterable<S>) allSaved;
     }
 
     /**
@@ -296,6 +314,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
     /**
      * Find all channels with given ids
+     *
      * @param channelIds - list of channel ids to verify exists
      * @return true if all the channel id's exist
      */
@@ -320,6 +339,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
     /**
      * Check is channel with name 'channelName' exists
+     *
      * @param channelName
      * @return true if channel exists
      */
@@ -412,10 +432,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         BulkRequest.Builder br = new BulkRequest.Builder();
         for (Channel channel : channels) {
             br.operations(op -> op
-                    . delete(idx -> idx
+                    .delete(idx -> idx
                             .index(esService.getES_CHANNEL_INDEX())
                             .id(channel.getName()))
-                    ).refresh(Refresh.True);
+            ).refresh(Refresh.True);
         }
         try {
             BulkResponse result = client.bulk(br.build());
@@ -446,7 +466,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         Integer finalSize = builtQuery.size;
         Integer finalFrom = builtQuery.from;
 
-        if(builtQuery.size + builtQuery.from > esService.getES_MAX_RESULT_WINDOW_SIZE()) {
+        if (builtQuery.size + builtQuery.from > esService.getES_MAX_RESULT_WINDOW_SIZE()) {
             String message = MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE,
                     searchParameters,
                     "Max search window exceeded, use the " + CFResourceDescriptors.SCROLL_RESOURCE_URI + " api.");
@@ -456,15 +476,15 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         try {
             SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
             searchBuilder.index(esService.getES_CHANNEL_INDEX())
-                            .query(builtQuery.boolQuery.build()._toQuery())
-                            .from(finalFrom)
-                            .size(finalSize)
-                            .trackTotalHits(builder -> builder.enabled(builtQuery.trackTotalHits))
-                            .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
+                    .query(builtQuery.boolQuery.build()._toQuery())
+                    .from(finalFrom)
+                    .size(finalSize)
+                    .trackTotalHits(builder -> builder.enabled(builtQuery.trackTotalHits))
+                    .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
             builtQuery.searchAfter.ifPresent(s -> searchBuilder.searchAfter(FieldValue.of(s)));
 
             SearchResponse<Channel> response = client.search(searchBuilder.build(),
-                                                                Channel.class
+                    Channel.class
             );
 
             List<Hit<Channel>> hits = response.hits().hits();
@@ -491,9 +511,9 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         for (Map.Entry<String, List<String>> parameter : searchParameters.entrySet()) {
             String key = parameter.getKey().trim();
             boolean isNot = key.endsWith("!");
-                if (isNot) {
-                    key = key.substring(0, key.length() - 1);
-                }
+            if (isNot) {
+                key = key.substring(0, key.length() - 1);
+            }
             switch (key) {
                 case "~name":
                     addNameQuery(parameter, valueSplitPattern, boolQuery);
@@ -539,14 +559,14 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         if (isNot && pattern.trim().equals("*")) {
 
             propertyQuery.queries(
-                BoolQuery.of( p -> p.mustNot(
-                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
-                ))._toQuery()
+                    BoolQuery.of(p -> p.mustNot(
+                            NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
+                    ))._toQuery()
             );
         } else {
 
             propertyQuery.queries(
-                NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
+                    NestedQuery.of(n -> n.path("properties").query(bq._toQuery()))._toQuery()
             );
         }
     }
@@ -558,7 +578,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", key)));
             } else {
                 bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", key))
-                    .mustNot(getSingleValueQuery("properties.value", pattern.trim())));
+                        .mustNot(getSingleValueQuery("properties.value", pattern.trim())));
             }
         } else {
             bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", key))
@@ -620,6 +640,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
     /**
      * Match count
+     *
      * @param searchParameters channel search parameters
      * @return count of the number of matches to the provided query
      */
@@ -643,18 +664,20 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
     /**
      * Match count
-     * @param propertyName channel search property name
+     *
+     * @param propertyName  channel search property name
      * @param propertyValue channel search property value
      * @return count of the number of matches to the provided query
      */
     public long countByProperty(String propertyName, String propertyValue) {
         MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-        params.add(propertyName, propertyValue == null? "*" : propertyValue);
+        params.add(propertyName, propertyValue == null ? "*" : propertyValue);
         return this.count(params);
     }
 
     /**
      * Match count
+     *
      * @param tagName channel search tag
      * @return count of the number of matches to the provided query
      */
@@ -665,11 +688,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     }
 
 
-
     @Override
     public void deleteAllById(Iterable<? extends String> ids) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @PreDestroy
