@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -44,9 +46,19 @@ public class ChannelProcessorService {
         }
         taskExecutor.execute(() -> channelProcessors.stream()
                 .filter(ChannelProcessor::enabled)
+
                 .forEach(channelProcessor -> {
                     try {
-                        channelProcessor.process(channels);
+                        Spliterator<Channel> split = channels.stream().spliterator();
+                        int chunkSize = Integer.parseInt(System.getProperty("processors.chunking.size"));
+
+                        while(true) {
+                            List<Channel> chunk = new ArrayList<>(chunkSize);
+                            for (int i = 0; i < chunkSize && split.tryAdvance(chunk::add); i++){};
+                            if (chunk.isEmpty()) break;
+                            channelProcessor.process(chunk);
+                        }
+
                     } catch (Exception e) {
                         logger.log(Level.WARNING, "ChannelProcessor " + channelProcessor.getClass().getName() + " throws exception", e);
                     }
