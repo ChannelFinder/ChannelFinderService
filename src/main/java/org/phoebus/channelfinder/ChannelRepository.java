@@ -45,12 +45,15 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Spliterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -187,53 +190,68 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     @SuppressWarnings("unchecked")
     @Override
     public <S extends Channel> Iterable<S> saveAll(Iterable<S> channels) {
+
+        Spliterator<S> split = channels.spliterator();
+        int chunkSize = Integer.parseInt(System.getProperty("repository.chunking.size"));
+
         // Create a list of all channel names
-        List<String> ids = StreamSupport.stream(channels.spliterator(), false).map(Channel::getName).collect(Collectors.toList());
+        List<S> resultList = new ArrayList<>();
+        while(true) {
+            List<Channel> chunk = new ArrayList<>(chunkSize);
+            for (int i = 0; i < chunkSize && split.tryAdvance(chunk::add); i++){};
+            if (chunk.isEmpty()) break;
+            try {
+                List<String> ids = StreamSupport.stream(channels.spliterator(), false)
+                    .map(Channel::getName)
+                    .toList();
 
-        try {
-            Map<String, Channel> existingChannels = findAllById(ids).stream().collect(Collectors.toMap(Channel::getName, c -> c));
-
-            BulkRequest.Builder br = new BulkRequest.Builder();
-
-            for (Channel channel : channels) {
-                if (existingChannels.containsKey(channel.getName())) {
-                    // merge with existing channel
-                    Channel updatedChannel = existingChannels.get(channel.getName());
-                    if (channel.getOwner() != null && !channel.getOwner().isEmpty())
-                        updatedChannel.setOwner(channel.getOwner());
-                    updatedChannel.addProperties(channel.getProperties());
-                    updatedChannel.addTags(channel.getTags());
-                    br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
-                            .id(updatedChannel.getName())
-                            .document(JsonData.of(updatedChannel, new JacksonJsonpMapper(objectMapper)))));
-                } else {
-                    br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
-                            .id(channel.getName())
-                            .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))));
-                }
-
-            }
-            BulkResponse result = null;
-            result = client.bulk(br.refresh(Refresh.True).build());
-            // Log errors, if any
-            if (result.errors()) {
-                logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-                for (BulkResponseItem item : result.items()) {
-                    if (item.error() != null) {
-                        logger.log(Level.SEVERE, () -> item.error().reason());
+                BulkResponse result = getBulkResponseForChannels(chunk, ids);
+                // Log errors, if any
+                if (result.errors()) {
+                    logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+                    for (BulkResponseItem item : result.items()) {
+                        if (item.error() != null) {
+                            logger.log(Level.SEVERE, () -> item.error().reason());
+                        }
                     }
+                    // TODO cleanup? or throw exception?
+                } else {
+                    resultList.addAll((Collection<? extends S>) findAllById(ids));
                 }
-                // TODO cleanup? or throw exception?
-            } else {
-                return (Iterable<S>) findAllById(ids);
+            } catch (IOException e) {
+                String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
+                logger.log(Level.SEVERE, message, e);
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+
             }
-        } catch (IOException e) {
-            String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
-            logger.log(Level.SEVERE, message, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+        }
+        return resultList;
+    }
+
+    private <S extends Channel> BulkResponse getBulkResponseForChannels(Iterable<S> channels, List<String> ids) throws IOException {
+        Map<String, Channel> existingChannels = findAllById(ids).stream().collect(Collectors.toMap(Channel::getName, c -> c));
+
+        BulkRequest.Builder br = new BulkRequest.Builder();
+
+        for (Channel channel : channels) {
+            if (existingChannels.containsKey(channel.getName())) {
+                // merge with existing channel
+                Channel updatedChannel = existingChannels.get(channel.getName());
+                if (channel.getOwner() != null && !channel.getOwner().isEmpty())
+                    updatedChannel.setOwner(channel.getOwner());
+                updatedChannel.addProperties(channel.getProperties());
+                updatedChannel.addTags(channel.getTags());
+                br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
+                        .id(updatedChannel.getName())
+                        .document(JsonData.of(updatedChannel, new JacksonJsonpMapper(objectMapper)))));
+            } else {
+                br.operations(op -> op.index(i -> i.index(esService.getES_CHANNEL_INDEX())
+                        .id(channel.getName())
+                        .document(JsonData.of(channel, new JacksonJsonpMapper(objectMapper)))));
+            }
 
         }
-        return null;
+        return client.bulk(br.refresh(Refresh.True).build());
     }
 
     /**
