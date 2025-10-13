@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Bean;
 
 @TestConfiguration
 public class AdditionalConfig {
-    @Bean
-    public MeterRegistry registry() {
-        return new SimpleMeterRegistry();
-    }
+  @Bean
+  public MeterRegistry registry() {
+    return new SimpleMeterRegistry();
+  }
 }
