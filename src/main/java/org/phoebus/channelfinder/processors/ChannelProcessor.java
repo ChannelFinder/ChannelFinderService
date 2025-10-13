@@ -1,16 +1,14 @@
 package org.phoebus.channelfinder.processors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.phoebus.channelfinder.entity.Channel;
-
 import java.util.List;
+import org.phoebus.channelfinder.entity.Channel;
 
 public interface ChannelProcessor {
 
-    boolean enabled();
+  boolean enabled();
 
-    String processorInfo();
+  String processorInfo();
 
-    long process(List<Channel> channels) throws JsonProcessingException;
-
+  long process(List<Channel> channels) throws JsonProcessingException;
 }

@@ -10,6 +10,8 @@
  */
 package org.phoebus.channelfinder;
 
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.servers.Server;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,9 +21,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
-import io.swagger.v3.oas.annotations.servers.Server;
 import org.phoebus.channelfinder.example.PopulateService;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,95 +37,95 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.FileCopyUtils;
 
 @EnableAutoConfiguration
-@ComponentScan(basePackages="org.phoebus.channelfinder")
+@ComponentScan(basePackages = "org.phoebus.channelfinder")
 @EnableScheduling
-@OpenAPIDefinition(
-    servers = {
-        @Server(url = "/")
-    }
-)
+@OpenAPIDefinition(servers = {@Server(url = "/")})
 @SpringBootApplication
 public class Application implements ApplicationRunner {
 
-    static final Logger logger = Logger.getLogger(Application.class.getName());
+  static final Logger logger = Logger.getLogger(Application.class.getName());
 
-    public static void main(String[] args){
-        // Set the java truststore used by channelfinder
-        configureTruststore();
-        SpringApplication.run(Application.class, args);
+  public static void main(String[] args) {
+    // Set the java truststore used by channelfinder
+    configureTruststore();
+    SpringApplication.run(Application.class, args);
+  }
+
+  /** Set the default ssl trust store */
+  private static void configureTruststore() {
+    if (System.getProperty("javax.net.ssl.trustStore") == null) {
+      logger.log(Level.INFO, "using default javax.net.ssl.trustStore");
+      try (InputStream in = Application.class.getResourceAsStream("/keystore/cacerts")) {
+        // read input
+        File tempFile = File.createTempFile("cf-", "-truststore");
+        FileOutputStream out = new FileOutputStream(tempFile);
+        FileCopyUtils.copy(in, out);
+        tempFile.deleteOnExit();
+        System.setProperty("javax.net.ssl.trustStore", tempFile.getAbsolutePath());
+      } catch (IOException e) {
+        logger.log(Level.SEVERE, "failed to configure channelfinder truststore", e);
+      }
     }
-
-    /**
-     * Set the default ssl trust store
-     */
-    private static void configureTruststore() {
-        if (System.getProperty("javax.net.ssl.trustStore") == null) {
-            logger.log(Level.INFO, "using default javax.net.ssl.trustStore");
-            try (InputStream in = Application.class.getResourceAsStream("/keystore/cacerts")) {
-                // read input
-                File tempFile= File.createTempFile("cf-", "-truststore");
-                FileOutputStream out = new FileOutputStream(tempFile);
-                FileCopyUtils.copy(in, out);
-                tempFile.deleteOnExit();
-                System.setProperty("javax.net.ssl.trustStore", tempFile.getAbsolutePath());
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "failed to configure channelfinder truststore", e);
-            }
-        }
-        if (System.getProperty("javax.net.ssl.trustStorePassword") == null) {
-            logger.log(Level.INFO, "using default javax.net.ssl.trustStorePassword");
-            System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
-        }
+    if (System.getProperty("javax.net.ssl.trustStorePassword") == null) {
+      logger.log(Level.INFO, "using default javax.net.ssl.trustStorePassword");
+      System.setProperty("javax.net.ssl.trustStorePassword", "changeit");
     }
+  }
 
-    @Autowired
-    PopulateService service;
+  @Autowired PopulateService service;
 
-    public void run(ApplicationArguments args) throws Exception {
-        if(args.containsOption("demo-data")) {
-            int numberOfCells = args.getOptionValues("demo-data").stream().mapToInt(Integer::valueOf).max().orElse(1);
-            logger.log(Level.INFO, "Populating the channelfinder service with demo data");
-            service.createDB(numberOfCells);
-        }
-        if(args.containsOption("cleanup")) {
-            int numberOfCells = args.getOptionValues("cleanup").stream().mapToInt(Integer::valueOf).max().orElse(1);
-            // This is kind of a hack, the create Db is being called to reset the channels and then deleting them
-            logger.log(Level.INFO, "Populating the channelfinder service with demo data first, then deleting them");
-            service.createDB(numberOfCells);
-            logger.log(Level.INFO, "Cleaning up the populated demo data");
-            service.cleanupDB();
-        }
+  public void run(ApplicationArguments args) throws Exception {
+    if (args.containsOption("demo-data")) {
+      int numberOfCells =
+          args.getOptionValues("demo-data").stream().mapToInt(Integer::valueOf).max().orElse(1);
+      logger.log(Level.INFO, "Populating the channelfinder service with demo data");
+      service.createDB(numberOfCells);
     }
-
-    /**
-     * List of {@link ChannelProcessor} implementations called when new channels are created or existing channels are updated
-     *
-     * @return A list of {@link ChannelProcessor}s, if any have been registered over SPI.
-     */
-    @Bean
-    public List<ChannelProcessor> channelProcessors() {
-        List<ChannelProcessor> processors = new ArrayList<>();
-        ServiceLoader<ChannelProcessor> loader = ServiceLoader.load(ChannelProcessor.class);
-        loader.stream().forEach(p -> {
-            ChannelProcessor notifier = p.get();
-            processors.add(notifier);
-        });
-        return processors;
+    if (args.containsOption("cleanup")) {
+      int numberOfCells =
+          args.getOptionValues("cleanup").stream().mapToInt(Integer::valueOf).max().orElse(1);
+      // This is kind of a hack, the create Db is being called to reset the channels and then
+      // deleting them
+      logger.log(
+          Level.INFO,
+          "Populating the channelfinder service with demo data first, then deleting them");
+      service.createDB(numberOfCells);
+      logger.log(Level.INFO, "Cleaning up the populated demo data");
+      service.cleanupDB();
     }
+  }
 
-    /**
-     * {@link TaskExecutor} used when calling {@link ChannelProcessor}s.
-     *
-     * @return A {@link TaskExecutor}
-     */
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(3);
-        taskExecutor.setMaxPoolSize(10);
-        taskExecutor.setQueueCapacity(25);
+  /**
+   * List of {@link ChannelProcessor} implementations called when new channels are created or
+   * existing channels are updated
+   *
+   * @return A list of {@link ChannelProcessor}s, if any have been registered over SPI.
+   */
+  @Bean
+  public List<ChannelProcessor> channelProcessors() {
+    List<ChannelProcessor> processors = new ArrayList<>();
+    ServiceLoader<ChannelProcessor> loader = ServiceLoader.load(ChannelProcessor.class);
+    loader.stream()
+        .forEach(
+            p -> {
+              ChannelProcessor notifier = p.get();
+              processors.add(notifier);
+            });
+    return processors;
+  }
 
-        return taskExecutor;
-    }
+  /**
+   * {@link TaskExecutor} used when calling {@link ChannelProcessor}s.
+   *
+   * @return A {@link TaskExecutor}
+   */
+  @Bean
+  public TaskExecutor taskExecutor() {
+    ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+    taskExecutor.setCorePoolSize(3);
+    taskExecutor.setMaxPoolSize(10);
+    taskExecutor.setQueueCapacity(25);
 
+    return taskExecutor;
+  }
 }

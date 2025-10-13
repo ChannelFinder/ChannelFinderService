@@ -13,23 +13,24 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource(value = "classpath:application.properties")
 public class HttpConnectorConfig {
 
-    @Value("${server.http.enable:true}")
-    private boolean httpEnabled;
-    @Value("${server.http.port:8080}")
-    private int port;
+  @Value("${server.http.enable:true}")
+  private boolean httpEnabled;
 
-    @Bean
-    @ConditionalOnProperty(name="server.http.enable")
-    public ServletWebServerFactory servletContainer() {
-        TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
-        tomcat.addAdditionalTomcatConnectors(getHttpConnector());
-        return tomcat;
-    }
+  @Value("${server.http.port:8080}")
+  private int port;
 
-    private Connector getHttpConnector() {
-        Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-        connector.setScheme("http");
-        connector.setPort(port);
-        return connector;
-    }
+  @Bean
+  @ConditionalOnProperty(name = "server.http.enable")
+  public ServletWebServerFactory servletContainer() {
+    TomcatServletWebServerFactory tomcat = new TomcatServletWebServerFactory();
+    tomcat.addAdditionalTomcatConnectors(getHttpConnector());
+    return tomcat;
+  }
+
+  private Connector getHttpConnector() {
+    Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+    connector.setScheme("http");
+    connector.setPort(port);
+    return connector;
+  }
 }

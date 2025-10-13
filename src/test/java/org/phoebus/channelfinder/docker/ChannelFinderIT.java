@@ -18,102 +18,114 @@
 
 package org.phoebus.channelfinder.docker;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.net.HttpURLConnection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.net.HttpURLConnection;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on endpoints being available.
  *
  * @author Lars Johansson
- *
  * @see ITUtil
  */
 @Testcontainers
 class ChannelFinderIT {
 
-    // Note
-    //     ------------------------------------------------------------------------------------------------
-    //     About
-    //         requires
-    //             elastic indices for ChannelFinder, ensured at start-up
-    //             environment
-    //                 default ports, can be exposed differently externally to avoid interference with any running instance
-    //                 demo_auth enabled
-    //         docker containers shared for tests
-    //             each test to leave ChannelFinder, Elasticsearch in clean state - not disturb other tests
-    //         each test uses multiple endpoints in ChannelFinder API
-    //     ------------------------------------------------------------------------------------------------
-    //     ChannelFinder - Enhanced Directory Service
-    //         https://channelfinder.readthedocs.io/en/latest/api.html
-    //     ------------------------------------------------------------------------------------------------
+  // Note
+  //
+  // ------------------------------------------------------------------------------------------------
+  //     About
+  //         requires
+  //             elastic indices for ChannelFinder, ensured at start-up
+  //             environment
+  //                 default ports, can be exposed differently externally to avoid interference with
+  // any running instance
+  //                 demo_auth enabled
+  //         docker containers shared for tests
+  //             each test to leave ChannelFinder, Elasticsearch in clean state - not disturb other
+  // tests
+  //         each test uses multiple endpoints in ChannelFinder API
+  //
+  // ------------------------------------------------------------------------------------------------
+  //     ChannelFinder - Enhanced Directory Service
+  //         https://channelfinder.readthedocs.io/en/latest/api.html
+  //
+  // ------------------------------------------------------------------------------------------------
 
-    @Container
-    public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
+  @Container public static final ComposeContainer ENVIRONMENT = ITUtil.defaultComposeContainers();
 
-    @AfterAll
-    public static void extractJacocoReport() {
-        // extract jacoco report from container file system
-        ITUtil.extractJacocoReport(ENVIRONMENT,
-                ITUtil.JACOCO_TARGET_PREFIX + ChannelFinderIT.class.getSimpleName() + ITUtil.JACOCO_TARGET_SUFFIX);
+  @AfterAll
+  public static void extractJacocoReport() {
+    // extract jacoco report from container file system
+    ITUtil.extractJacocoReport(
+        ENVIRONMENT,
+        ITUtil.JACOCO_TARGET_PREFIX
+            + ChannelFinderIT.class.getSimpleName()
+            + ITUtil.JACOCO_TARGET_SUFFIX);
+  }
+
+  @Test
+  void channelfinderUp() {
+    try {
+      int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER);
+
+      assertEquals(HttpURLConnection.HTTP_OK, responseCode);
+    } catch (Exception e) {
+      fail();
     }
+  }
 
-    @Test
-    void channelfinderUp() {
-        try {
-            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER);
+  @Test
+  void channelfinderUpTags() {
+    try {
+      int responseCode =
+          ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/tags");
 
-            assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (Exception e) {
-            fail();
-        }
+      assertEquals(HttpURLConnection.HTTP_OK, responseCode);
+    } catch (Exception e) {
+      fail();
     }
-    @Test
-    void channelfinderUpTags() {
-        try {
-            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/tags");
+  }
 
-            assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (Exception e) {
-            fail();
-        }
+  @Test
+  void channelfinderUpProperties() {
+    try {
+      int responseCode =
+          ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/properties");
+
+      assertEquals(HttpURLConnection.HTTP_OK, responseCode);
+    } catch (Exception e) {
+      fail();
     }
-    @Test
-    void channelfinderUpProperties() {
-        try {
-            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/properties");
+  }
 
-            assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (Exception e) {
-            fail();
-        }
+  @Test
+  void channelfinderUpChannels() {
+    try {
+      int responseCode =
+          ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/channels");
+
+      assertEquals(HttpURLConnection.HTTP_OK, responseCode);
+    } catch (Exception e) {
+      fail();
     }
-    @Test
-    void channelfinderUpChannels() {
-        try {
-            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/channels");
+  }
 
-            assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (Exception e) {
-            fail();
-        }
+  @Test
+  void channelfinderUpScroll() {
+    try {
+      int responseCode =
+          ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/scroll");
+
+      assertEquals(HttpURLConnection.HTTP_OK, responseCode);
+    } catch (Exception e) {
+      fail();
     }
-    @Test
-    void channelfinderUpScroll() {
-        try {
-            int responseCode = ITUtil.sendRequestStatusCode(ITUtil.HTTP_IP_PORT_CHANNELFINDER + "/resources/scroll");
-
-            assertEquals(HttpURLConnection.HTTP_OK, responseCode);
-        } catch (Exception e) {
-            fail();
-        }
-    }
-
+  }
 }

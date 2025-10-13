@@ -1,7 +1,14 @@
 package org.phoebus.channelfinder.processors;
 
+import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.activeProperty;
+import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.archiveProperty;
+import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.paramableAAChannelProcessorTest;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Stream;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,70 +22,63 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.activeProperty;
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.archiveProperty;
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.paramableAAChannelProcessorTest;
-
 @WebMvcTest(AAChannelProcessor.class)
-@TestPropertySource(locations = "classpath:application_test.properties", properties = "aa.urls:{'default': '','aa': 'http://localhost:17665'}")
+@TestPropertySource(
+    locations = "classpath:application_test.properties",
+    properties = "aa.urls:{'default': '','aa': 'http://localhost:17665'}")
 class AAChannelProcessorNoDefaultIT {
-    protected static Property archiverProperty = new Property("archiver", "owner", "aa");
+  protected static Property archiverProperty = new Property("archiver", "owner", "aa");
 
-    @Autowired
-    AAChannelProcessor aaChannelProcessor;
+  @Autowired AAChannelProcessor aaChannelProcessor;
 
-    MockWebServer mockArchiverAppliance;
-    ObjectMapper objectMapper;
+  MockWebServer mockArchiverAppliance;
+  ObjectMapper objectMapper;
 
-    private static Stream<Arguments> processNoPauseSource() {
+  private static Stream<Arguments> processNoPauseSource() {
 
-        return Stream.of(
-                Arguments.of(
-                        new Channel("PVNoneActive", "owner", List.of(archiveProperty, activeProperty), List.of()),
-                        "",
-                        "",
-                        ""),
-                Arguments.of(
-                        new Channel("PVNoneActiveArchiver", "owner", List.of(archiveProperty, activeProperty, archiverProperty), List.of()),
-                        "Not being archived",
-                        "archivePV",
-                        "[{\"pv\":\"PVNoneActiveArchiver\"}]")
-        );
-    }
+    return Stream.of(
+        Arguments.of(
+            new Channel(
+                "PVNoneActive", "owner", List.of(archiveProperty, activeProperty), List.of()),
+            "",
+            "",
+            ""),
+        Arguments.of(
+            new Channel(
+                "PVNoneActiveArchiver",
+                "owner",
+                List.of(archiveProperty, activeProperty, archiverProperty),
+                List.of()),
+            "Not being archived",
+            "archivePV",
+            "[{\"pv\":\"PVNoneActiveArchiver\"}]"));
+  }
 
-    @BeforeEach
-    void setUp() throws IOException {
-        mockArchiverAppliance = new MockWebServer();
-        mockArchiverAppliance.start(17665);
+  @BeforeEach
+  void setUp() throws IOException {
+    mockArchiverAppliance = new MockWebServer();
+    mockArchiverAppliance.start(17665);
 
-        objectMapper = new ObjectMapper();
-    }
+    objectMapper = new ObjectMapper();
+  }
 
-    @AfterEach
-    void teardown() throws IOException {
-        mockArchiverAppliance.shutdown();
-    }
+  @AfterEach
+  void teardown() throws IOException {
+    mockArchiverAppliance.shutdown();
+  }
 
-    @ParameterizedTest
-    @MethodSource("processNoPauseSource")
-    void testProcessNotArchivedActive(
-            Channel channel,
-            String archiveStatus,
-            String archiverEndpoint,
-            String submissionBody)
-            throws JsonProcessingException, InterruptedException {
-        paramableAAChannelProcessorTest(
-                mockArchiverAppliance,
-                objectMapper,
-                aaChannelProcessor,
-                List.of(channel),
-                archiveStatus,
-                archiverEndpoint,
-                submissionBody
-                );
-    }
+  @ParameterizedTest
+  @MethodSource("processNoPauseSource")
+  void testProcessNotArchivedActive(
+      Channel channel, String archiveStatus, String archiverEndpoint, String submissionBody)
+      throws JsonProcessingException, InterruptedException {
+    paramableAAChannelProcessorTest(
+        mockArchiverAppliance,
+        objectMapper,
+        aaChannelProcessor,
+        List.of(channel),
+        archiveStatus,
+        archiverEndpoint,
+        submissionBody);
+  }
 }
