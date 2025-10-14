@@ -1,11 +1,14 @@
 package org.phoebus.channelfinder.processors;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Spliterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.phoebus.channelfinder.entity.Channel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,9 @@ public class ChannelProcessorService {
   @Autowired private List<ChannelProcessor> channelProcessors;
 
   @Autowired private TaskExecutor taskExecutor;
+
+  @Value("${processors.chunking.size:10000}")
+  private int chunkSize;
 
   long getProcessorCount() {
     return channelProcessors.size();
@@ -49,7 +55,16 @@ public class ChannelProcessorService {
                 .forEach(
                     channelProcessor -> {
                       try {
-                        channelProcessor.process(channels);
+                        Spliterator<Channel> split = channels.stream().spliterator();
+
+                        while (true) {
+                          List<Channel> chunk = new ArrayList<>(chunkSize);
+                          for (int i = 0; i < chunkSize && split.tryAdvance(chunk::add); i++) {}
+                          ;
+                          if (chunk.isEmpty()) break;
+                          channelProcessor.process(chunk);
+                        }
+
                       } catch (Exception e) {
                         logger.log(
                             Level.WARNING,
