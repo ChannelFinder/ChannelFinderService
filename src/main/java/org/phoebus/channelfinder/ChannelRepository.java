@@ -35,9 +35,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -124,11 +126,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @return the created channels
    */
   public List<Channel> indexAll(List<Channel> channels) {
-
     List<Future<List<Channel>>> futures = new ArrayList<>();
 
     for (int i = 0; i < channels.size(); i += chunkSize) {
-      List<Channel> chunk = channels.stream().skip(i).limit(chunkSize).collect(Collectors.toList());
+      List<Channel> chunk = channels.stream().skip(i).limit(chunkSize).toList();
       futures.add(
           executor.submit(
               () -> {
@@ -232,16 +233,15 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   @Override
   public <S extends Channel> Iterable<S> saveAll(Iterable<S> channels) {
     List<Future<List<Channel>>> futures = new ArrayList<>();
-    List<Channel> channelList =
-        StreamSupport.stream(channels.spliterator(), false).collect(Collectors.toList());
+    Set<Channel> channelList =
+        StreamSupport.stream(channels.spliterator(), false)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
 
     for (int i = 0; i < channelList.size(); i += chunkSize) {
       List<Channel> chunk = channelList.stream().skip(i).limit(chunkSize).toList();
       // Create a list of all channel names
-      List<String> ids =
-          StreamSupport.stream(chunk.spliterator(), false)
-              .map(Channel::getName)
-              .collect(Collectors.toList());
+      Set<String> ids =
+          chunk.stream().map(Channel::getName).collect(Collectors.toCollection(LinkedHashSet::new));
       Map<String, Channel> existingChannels =
           findAllById(ids).stream().collect(Collectors.toMap(Channel::getName, c -> c));
 
