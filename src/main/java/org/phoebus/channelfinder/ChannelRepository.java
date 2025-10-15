@@ -173,7 +173,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     List<Channel> allIndexed = new ArrayList<>();
     for (Future<List<Channel>> future : futures) {
       try {
-        allIndexed.addAll(future.get());
+        allIndexed.addAll(future.get(10, TimeUnit.MINUTES));
       } catch (Exception e) {
         logger.log(Level.SEVERE, "Bulk indexing failed", e);
       }
