@@ -250,10 +250,6 @@ public class AAChannelProcessor implements ChannelProcessor {
       ArchiveAction action = pickArchiveAction(archiveStatus, pvStatus);
 
       List<ArchivePVOptions> archivePVOptionsList = result.get(action);
-      if (archivePVOptionsList == null) {
-        logger.log(Level.WARNING, "No list found for action: {0}", action);
-        return;
-      }
       archivePVOptionsList.add(archivePVOptions);
     });
     return result;
