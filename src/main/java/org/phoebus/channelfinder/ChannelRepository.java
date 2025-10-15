@@ -76,7 +76,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   @Qualifier("indexClient")
   ElasticsearchClient client;
 
-  @Value("${index.chunk.size:1}")
+  @Value("${repository.chunk.size:10000}")
   private int chunkSize;
 
   // Object mapper to ignore properties we don't want to index
