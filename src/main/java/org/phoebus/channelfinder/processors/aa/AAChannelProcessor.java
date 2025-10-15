@@ -230,11 +230,7 @@ public class AAChannelProcessor implements ChannelProcessor {
       return result;
     }
     List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
-    if (statuses == null) {
-      logger.log(Level.WARNING, "archiverClient.getStatuses returned null");
-      return result;
-    }
-    logger.log(Level.INFO, "Statuses {0}", statuses);
+    logger.log(Level.FINER, "Statuses {0}", statuses);
     statuses.forEach(archivePVStatusJsonMap -> {
       String archiveStatus = archivePVStatusJsonMap.get("status");
       String pvName = archivePVStatusJsonMap.get("pvName");
