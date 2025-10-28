@@ -15,6 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
+import org.phoebus.channelfinder.processors.ChannelProcessorInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
@@ -64,8 +65,15 @@ public class AAChannelProcessor implements ChannelProcessor {
   }
 
   @Override
-  public String processorInfo() {
-    Map<String, String> processorProperties =
+  public void setEnabled(boolean enabled) {
+    this.aaEnabled = enabled;
+  }
+
+  @Override
+  public ChannelProcessorInfo processorInfo() {
+    return new ChannelProcessorInfo(
+        "AAChannelProcessor",
+        aaEnabled,
         Map.of(
             "archiveProperty",
             archivePropertyName,
@@ -74,8 +82,7 @@ public class AAChannelProcessor implements ChannelProcessor {
             "Archivers",
             aaURLs.keySet().toString(),
             "AutoPauseOn",
-            autoPauseOptions.toString());
-    return "AAChannelProcessor: ProcessProperties " + processorProperties;
+            autoPauseOptions.toString()));
   }
 
   /**
@@ -199,7 +206,7 @@ public class AAChannelProcessor implements ChannelProcessor {
       aaArchivePVS.get(archiverAlias).add(newArchiverPV);
     }
   }
-  
+
   private ArchiveAction pickArchiveAction(String archiveStatus, String pvStatus) {
     if (archiveStatus.equals("Being archived") && (pvStatus.equals(PV_STATUS_INACTIVE))) {
       return ArchiveAction.PAUSE;
@@ -209,14 +216,13 @@ public class AAChannelProcessor implements ChannelProcessor {
         && !archiveStatus.equals("Paused")
         && pvStatus.equals(PV_STATUS_ACTIVE)) { // If archive status anything else
       return ArchiveAction.ARCHIVE;
-
     }
 
     return ArchiveAction.NONE;
   }
 
   private Map<ArchiveAction, List<ArchivePVOptions>> getArchiveActions(
-    Map<String, ArchivePVOptions> archivePVS, ArchiverInfo archiverInfo) {
+      Map<String, ArchivePVOptions> archivePVS, ArchiverInfo archiverInfo) {
     if (archiverInfo == null) {
       return Map.of();
     }
@@ -224,37 +230,43 @@ public class AAChannelProcessor implements ChannelProcessor {
     logger.log(Level.INFO, () -> String.format("Get archiver status in archiver %s", archiverInfo));
 
     Map<ArchiveAction, List<ArchivePVOptions>> result = new EnumMap<>(ArchiveAction.class);
-    Arrays.stream(ArchiveAction.values()).forEach(archiveAction -> result.put(archiveAction, new ArrayList<>()));
+    Arrays.stream(ArchiveAction.values())
+        .forEach(archiveAction -> result.put(archiveAction, new ArrayList<>()));
     // Don't request to archive an empty list.
     if (archivePVS.isEmpty()) {
       return result;
     }
-    List<Map<String, String>> statuses = archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
+    List<Map<String, String>> statuses =
+        archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
     logger.log(Level.FINER, "Statuses {0}", statuses);
-    statuses.forEach(archivePVStatusJsonMap -> {
-      String archiveStatus = archivePVStatusJsonMap.get("status");
-      String pvName = archivePVStatusJsonMap.get("pvName");
+    statuses.forEach(
+        archivePVStatusJsonMap -> {
+          String archiveStatus = archivePVStatusJsonMap.get("status");
+          String pvName = archivePVStatusJsonMap.get("pvName");
 
-      if (archiveStatus == null || pvName == null) {
-        logger.log(Level.WARNING, "Missing status or pvName in archivePVStatusJsonMap: {0}", archivePVStatusJsonMap);
-        return;
-      }
+          if (archiveStatus == null || pvName == null) {
+            logger.log(
+                Level.WARNING,
+                "Missing status or pvName in archivePVStatusJsonMap: {0}",
+                archivePVStatusJsonMap);
+            return;
+          }
 
-      ArchivePVOptions archivePVOptions = archivePVS.get(pvName);
-      if (archivePVOptions == null) {
-        logger.log(Level.WARNING, "archivePVS does not contain pvName: {0}", pvName);
-        return;
-      }
+          ArchivePVOptions archivePVOptions = archivePVS.get(pvName);
+          if (archivePVOptions == null) {
+            logger.log(Level.WARNING, "archivePVS does not contain pvName: {0}", pvName);
+            return;
+          }
 
-      String pvStatus = archivePVOptions.getPvStatus();
-      ArchiveAction action = pickArchiveAction(archiveStatus, pvStatus);
+          String pvStatus = archivePVOptions.getPvStatus();
+          ArchiveAction action = pickArchiveAction(archiveStatus, pvStatus);
 
-      List<ArchivePVOptions> archivePVOptionsList = result.get(action);
-      archivePVOptionsList.add(archivePVOptions);
-    });
+          List<ArchivePVOptions> archivePVOptionsList = result.get(action);
+          archivePVOptionsList.add(archivePVOptions);
+        });
     return result;
   }
-  
+
   private ArchivePVOptions createArchivePV(
       List<String> policyList, Channel channel, String archiveProperty, String pvStaus) {
     ArchivePVOptions newArchiverPV = new ArchivePVOptions();

@@ -2,6 +2,8 @@ package org.phoebus.channelfinder.processors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,10 +30,16 @@ public class ChannelProcessorService {
     return channelProcessors.size();
   }
 
-  List<String> getProcessorsInfo() {
-    return channelProcessors.stream()
-        .map(ChannelProcessor::processorInfo)
-        .collect(Collectors.toList());
+  List<ChannelProcessorInfo> getProcessorsInfo() {
+    return channelProcessors.stream().map(ChannelProcessor::processorInfo).toList();
+  }
+
+  void setProcessorEnabled(String name, boolean enabled) {
+    Optional<ChannelProcessor> processor =
+        channelProcessors.stream()
+            .filter(p -> Objects.equals(p.processorInfo().name(), name))
+            .findFirst();
+    processor.ifPresent(channelProcessor -> channelProcessor.setEnabled(enabled));
   }
 
   /**

@@ -25,6 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -75,10 +76,13 @@ public class ChannelProcessorManager {
             responseCode = "200",
             description = "List of processor-info",
             content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = String.class))))
+                @Content(
+                    array =
+                        @ArraySchema(
+                            schema = @Schema(implementation = ChannelProcessorInfo.class))))
       })
-  @GetMapping("/info")
-  public List<String> processorInfo() {
+  @GetMapping("/processors")
+  public List<ChannelProcessorInfo> processorInfo() {
     return channelProcessorService.getProcessorsInfo();
   }
 
@@ -150,5 +154,18 @@ public class ChannelProcessorManager {
   @PutMapping("/process/channels")
   public void processChannels(List<Channel> channels) {
     channelProcessorService.sendToProcessors(channels);
+  }
+
+  @Operation(summary = "Set if the processor is enabled or not")
+  @PutMapping(
+      value = "/processor/{processorName}/enabled",
+      produces = {"application/json"},
+      consumes = {"application/json"})
+  public void setProcessorEnabled(
+      @PathVariable("processorName") String processorName,
+      @Parameter(description = "Value of enabled to set, default value: true")
+          @RequestParam(required = false, name = "enabled", defaultValue = "true")
+          Boolean enabled) {
+    channelProcessorService.setProcessorEnabled(processorName, enabled);
   }
 }
