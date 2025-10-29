@@ -1,8 +1,8 @@
-package org.phoebus.channelfinder.processors;
+package org.phoebus.channelfinder.processors.aa;
 
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.activeProperty;
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.archiveProperty;
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.paramableAAChannelProcessorTest;
+import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
+import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.inactiveProperty;
+import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.paramableAAChannelProcessorTest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,8 +16,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.processors.aa.AAChannelProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
@@ -25,9 +23,8 @@ import org.springframework.test.context.TestPropertySource;
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(
     locations = "classpath:application_test.properties",
-    properties = "aa.urls:{'default': '','aa': 'http://localhost:17665'}")
-class AAChannelProcessorNoDefaultIT {
-  protected static Property archiverProperty = new Property("archiver", "owner", "aa");
+    properties = "aa.auto_pause=archive")
+class AAChannelProcessorTagPauseIT {
 
   @Autowired AAChannelProcessor aaChannelProcessor;
 
@@ -39,19 +36,18 @@ class AAChannelProcessorNoDefaultIT {
     return Stream.of(
         Arguments.of(
             new Channel(
-                "PVNoneActive", "owner", List.of(archiveProperty, activeProperty), List.of()),
-            "",
+                "PVArchivedInactive",
+                "owner",
+                List.of(archiveProperty, inactiveProperty),
+                List.of()),
+            "Being archived",
             "",
             ""),
         Arguments.of(
-            new Channel(
-                "PVNoneActiveArchiver",
-                "owner",
-                List.of(archiveProperty, activeProperty, archiverProperty),
-                List.of()),
-            "Not being archived",
-            "archivePV",
-            "[{\"pv\":\"PVNoneActiveArchiver\"}]"));
+            new Channel("PVArchivedNotag", "owner", List.of(), List.of()),
+            "Being archived",
+            "pauseArchivingPV",
+            "[\"PVArchivedNotag\"]"));
   }
 
   @BeforeEach
