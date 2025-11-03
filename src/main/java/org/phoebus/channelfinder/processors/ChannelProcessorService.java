@@ -19,12 +19,20 @@ public class ChannelProcessorService {
 
   private static final Logger logger = Logger.getLogger(ChannelProcessorService.class.getName());
 
-  @Autowired private List<ChannelProcessor> channelProcessors;
+  private final List<ChannelProcessor> channelProcessors;
 
-  @Autowired private TaskExecutor taskExecutor;
+  private final TaskExecutor taskExecutor;
 
-  @Value("${processors.chunking.size:10000}")
-  private int chunkSize;
+  private final int chunkSize;
+
+  public ChannelProcessorService(
+      @Autowired List<ChannelProcessor> channelProcessors,
+      @Autowired TaskExecutor taskExecutor,
+      @Value("${processors.chunking.size:10000}") int chunkSize) {
+    this.channelProcessors = channelProcessors;
+    this.taskExecutor = taskExecutor;
+    this.chunkSize = chunkSize;
+  }
 
   long getProcessorCount() {
     return channelProcessors.size();
@@ -68,7 +76,6 @@ public class ChannelProcessorService {
                         while (true) {
                           List<Channel> chunk = new ArrayList<>(chunkSize);
                           for (int i = 0; i < chunkSize && split.tryAdvance(chunk::add); i++) {}
-                          ;
                           if (chunk.isEmpty()) break;
                           channelProcessor.process(chunk);
                         }
