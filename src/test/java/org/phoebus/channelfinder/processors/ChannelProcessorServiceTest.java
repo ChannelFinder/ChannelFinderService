@@ -73,37 +73,30 @@ class ChannelProcessorServiceTest {
 
   @Test
   void testEnableAndDisableDummyProcessor() {
-    // Initially, the dummy processor should be disabled
     Assertions.assertFalse(
         dummyProcessor.enabled(), "Dummy processor should be disabled initially");
 
-    // Enable the dummy processor
     channelProcessorService.setProcessorEnabled("DummyProcessor", true);
     Assertions.assertTrue(dummyProcessor.enabled(), "Dummy processor should be enabled");
 
-    // Disable the dummy processor
     channelProcessorService.setProcessorEnabled("DummyProcessor", false);
     Assertions.assertFalse(dummyProcessor.enabled(), "Dummy processor should be disabled");
   }
 
   @Test
   void testDummyProcessorProcessing() {
-    // Disable the dummy processor
     dummyProcessor.reset();
     channelProcessorService.setProcessorEnabled("DummyProcessor", false);
     Assertions.assertFalse(dummyProcessor.enabled(), "Dummy processor should be disabled");
 
-    // Process a channel - dummy processor should not be called
     channelProcessorService.sendToProcessors(
         Collections.singletonList(new Channel("test-channel")));
     Assertions.assertFalse(
         dummyProcessor.hasBeenProcessed(), "Dummy processor should not have been called");
 
-    // Enable the dummy processor
     channelProcessorService.setProcessorEnabled("DummyProcessor", true);
     Assertions.assertTrue(dummyProcessor.enabled(), "Dummy processor should be enabled");
 
-    // Process a channel - dummy processor should be called
     channelProcessorService.sendToProcessors(
         Collections.singletonList(new Channel("test-channel")));
     Assertions.assertTrue(
