@@ -1,8 +1,8 @@
-package org.phoebus.channelfinder.processors;
+package org.phoebus.channelfinder.processors.aa;
 
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.archiveProperty;
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.inactiveProperty;
-import static org.phoebus.channelfinder.processors.AAChannelProcessorIT.paramableAAChannelProcessorTest;
+import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
+import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.inactiveProperty;
+import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.paramableAAChannelProcessorTest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +16,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.processors.aa.AAChannelProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
@@ -24,8 +23,8 @@ import org.springframework.test.context.TestPropertySource;
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(
     locations = "classpath:application_test.properties",
-    properties = "aa.auto_pause=none")
-class AAChannelProcessorNoPauseIT {
+    properties = "aa.auto_pause=pvStatus")
+class AAChannelProcessorStatusPauseIT {
 
   @Autowired AAChannelProcessor aaChannelProcessor;
 
@@ -42,8 +41,8 @@ class AAChannelProcessorNoPauseIT {
                 List.of(archiveProperty, inactiveProperty),
                 List.of()),
             "Being archived",
-            "",
-            ""),
+            "pauseArchivingPV",
+            "[\"PVArchivedInactive\"]"),
         Arguments.of(new Channel("PVArchivedNotag", "owner", List.of(), List.of()), "", "", ""));
   }
 

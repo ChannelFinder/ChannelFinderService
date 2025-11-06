@@ -2,6 +2,8 @@ package org.phoebus.channelfinder.processors;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,21 +19,35 @@ public class ChannelProcessorService {
 
   private static final Logger logger = Logger.getLogger(ChannelProcessorService.class.getName());
 
-  @Autowired private List<ChannelProcessor> channelProcessors;
+  private final List<ChannelProcessor> channelProcessors;
 
-  @Autowired private TaskExecutor taskExecutor;
+  private final TaskExecutor taskExecutor;
 
-  @Value("${processors.chunking.size:10000}")
-  private int chunkSize;
+  private final int chunkSize;
+
+  public ChannelProcessorService(
+      @Autowired List<ChannelProcessor> channelProcessors,
+      @Autowired TaskExecutor taskExecutor,
+      @Value("${processors.chunking.size:10000}") int chunkSize) {
+    this.channelProcessors = channelProcessors;
+    this.taskExecutor = taskExecutor;
+    this.chunkSize = chunkSize;
+  }
 
   long getProcessorCount() {
     return channelProcessors.size();
   }
 
-  List<String> getProcessorsInfo() {
-    return channelProcessors.stream()
-        .map(ChannelProcessor::processorInfo)
-        .collect(Collectors.toList());
+  List<ChannelProcessorInfo> getProcessorsInfo() {
+    return channelProcessors.stream().map(ChannelProcessor::processorInfo).toList();
+  }
+
+  void setProcessorEnabled(String name, boolean enabled) {
+    Optional<ChannelProcessor> processor =
+        channelProcessors.stream()
+            .filter(p -> Objects.equals(p.processorInfo().name(), name))
+            .findFirst();
+    processor.ifPresent(channelProcessor -> channelProcessor.setEnabled(enabled));
   }
 
   /**
@@ -60,7 +76,6 @@ public class ChannelProcessorService {
                         while (true) {
                           List<Channel> chunk = new ArrayList<>(chunkSize);
                           for (int i = 0; i < chunkSize && split.tryAdvance(chunk::add); i++) {}
-                          ;
                           if (chunk.isEmpty()) break;
                           channelProcessor.process(chunk);
                         }

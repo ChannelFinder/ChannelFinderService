@@ -8,7 +8,9 @@ public interface ChannelProcessor {
 
   boolean enabled();
 
-  String processorInfo();
+  void setEnabled(boolean enabled);
+
+  ChannelProcessorInfo processorInfo();
 
   long process(List<Channel> channels) throws JsonProcessingException;
 }
