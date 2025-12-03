@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.rest.controller.ChannelManager;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -37,7 +38,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}.
  *
  * @author Lars Johansson
- * @see org.phoebus.channelfinder.ChannelManager
+ * @see ChannelManager
  * @see org.phoebus.channelfinder.docker.ITTestFixture
  * @see org.phoebus.channelfinder.docker.ITUtil
  * @see org.phoebus.channelfinder.docker.ITUtilChannels

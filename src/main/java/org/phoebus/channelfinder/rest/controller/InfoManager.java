@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.rest.controller;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CF_SERVICE_INFO;
 
@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import org.phoebus.channelfinder.Application;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

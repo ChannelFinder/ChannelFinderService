@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.rest.controller.PropertyManager;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -38,7 +39,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}.
  *
  * @author Lars Johansson
- * @see org.phoebus.channelfinder.PropertyManager
+ * @see PropertyManager
  * @see org.phoebus.channelfinder.docker.ITUtil
  * @see org.phoebus.channelfinder.docker.ITUtilProperties
  */

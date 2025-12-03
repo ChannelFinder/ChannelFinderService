@@ -14,6 +14,7 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;
+import org.phoebus.channelfinder.rest.controller.PropertyManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;

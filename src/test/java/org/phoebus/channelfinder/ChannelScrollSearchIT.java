@@ -14,6 +14,7 @@ import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
+import org.phoebus.channelfinder.rest.controller.ChannelScroll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;

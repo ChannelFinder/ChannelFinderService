@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.rest.controller;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
 import static org.phoebus.channelfinder.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.servlet.ServletContext;
+import org.phoebus.channelfinder.TextUtil;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;

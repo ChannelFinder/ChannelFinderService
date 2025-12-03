@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.processors;
+package org.phoebus.channelfinder.rest.controller;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_RESOURCE_URI;
 import static org.phoebus.channelfinder.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
@@ -13,7 +13,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.ChannelScroll;
+import org.phoebus.channelfinder.processors.ChannelProcessorInfo;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.service.AuthorizationService;

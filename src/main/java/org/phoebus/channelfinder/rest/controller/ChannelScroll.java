@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.rest.controller;
 
 import static org.phoebus.channelfinder.CFResourceDescriptors.SCROLL_RESOURCE_URI;
 
@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import org.phoebus.channelfinder.CFResourceDescriptors;
+import org.phoebus.channelfinder.TextUtil;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
