@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.example.PopulateService;
+import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.processors.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -72,7 +72,7 @@ public class Application implements ApplicationRunner {
     }
   }
 
-  @Autowired PopulateService service;
+  @Autowired PopulateDBConfiguration service;
 
   public void run(ApplicationArguments args) throws Exception {
     if (args.containsOption("demo-data")) {

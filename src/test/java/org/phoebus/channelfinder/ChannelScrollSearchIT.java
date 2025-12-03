@@ -9,8 +9,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.phoebus.channelfinder.configuration.ElasticConfig;
+import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.entity.Scroll;
-import org.phoebus.channelfinder.example.PopulateService;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,17 +33,17 @@ class ChannelScrollSearchIT {
   @Autowired PropertyRepository propertyRepository;
 
   @Autowired ElasticConfig esService;
-  @Autowired PopulateService populateService;
+  @Autowired PopulateDBConfiguration populateDBConfiguration;
 
   @BeforeEach
   public void setup() throws InterruptedException {
-    populateService.createDB(1);
+    populateDBConfiguration.createDB(1);
     Thread.sleep(10000);
   }
 
   @AfterEach
   public void cleanup() throws InterruptedException {
-    populateService.cleanupDB();
+    populateDBConfiguration.cleanupDB();
     Thread.sleep(10000);
   }
 

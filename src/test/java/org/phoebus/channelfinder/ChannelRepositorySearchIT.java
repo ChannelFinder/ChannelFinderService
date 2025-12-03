@@ -1,8 +1,8 @@
 package org.phoebus.channelfinder;
 
 import static java.lang.Math.min;
-import static org.phoebus.channelfinder.example.PopulateService.valBucket;
-import static org.phoebus.channelfinder.example.PopulateService.valBucketSize;
+import static org.phoebus.channelfinder.configuration.PopulateDBConfiguration.valBucket;
+import static org.phoebus.channelfinder.configuration.PopulateDBConfiguration.valBucketSize;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -16,8 +16,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.phoebus.channelfinder.configuration.ElasticConfig;
+import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.entity.SearchResult;
-import org.phoebus.channelfinder.example.PopulateService;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
@@ -41,7 +42,7 @@ class ChannelRepositorySearchIT {
   @Autowired TagRepository tagRepository;
   @Autowired PropertyRepository propertyRepository;
   @Autowired ElasticConfig esService;
-  @Autowired PopulateService populateService;
+  @Autowired PopulateDBConfiguration populateDBConfiguration;
 
   @Value("${elasticsearch.query.size:10000}")
   int ELASTIC_LIMIT;
@@ -53,14 +54,14 @@ class ChannelRepositorySearchIT {
 
   @BeforeEach
   public void setup() throws InterruptedException {
-    populateService.cleanupDB();
-    populateService.createDB(CELLS);
+    populateDBConfiguration.cleanupDB();
+    populateDBConfiguration.createDB(CELLS);
     Thread.sleep(5000);
   }
 
   @AfterEach
   public void cleanup() throws InterruptedException {
-    populateService.cleanupDB();
+    populateDBConfiguration.cleanupDB();
   }
 
   /**
@@ -71,7 +72,7 @@ class ChannelRepositorySearchIT {
   @Test
   void searchTest() {
     List<String> channelNames =
-        Arrays.asList(populateService.getChannelList().toArray(new String[0]));
+        Arrays.asList(populateDBConfiguration.getChannelList().toArray(new String[0]));
 
     MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
     // logger.log(Level.INFO, "Search for a single unique channel " + channelNames.get(0));

@@ -12,10 +12,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.phoebus.channelfinder.configuration.ElasticConfig;
+import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
-import org.phoebus.channelfinder.example.PopulateService;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
@@ -57,7 +58,7 @@ class MetricsServiceIT {
 
   @Autowired ElasticConfig esService;
 
-  @Autowired PopulateService populateService;
+  @Autowired PopulateDBConfiguration populateDBConfiguration;
 
   @Autowired MetricsService metricsService;
 

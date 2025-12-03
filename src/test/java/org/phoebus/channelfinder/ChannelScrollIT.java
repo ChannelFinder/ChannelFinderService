@@ -5,9 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.*;
+import org.phoebus.channelfinder.configuration.ElasticConfig;
+import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
-import org.phoebus.channelfinder.example.PopulateService;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
@@ -32,17 +33,17 @@ class ChannelScrollIT {
 
   @Autowired ElasticConfig esService;
 
-  @Autowired PopulateService populateService;
+  @Autowired PopulateDBConfiguration populateDBConfiguration;
 
   @BeforeEach
   public void setup() throws InterruptedException {
-    populateService.createDB(1);
+    populateDBConfiguration.createDB(1);
     Thread.sleep(10000);
   }
 
   @AfterEach
   public void cleanup() throws InterruptedException {
-    populateService.cleanupDB();
+    populateDBConfiguration.cleanupDB();
   }
 
   @BeforeAll
@@ -66,9 +67,9 @@ class ChannelScrollIT {
   void searchNameTest() throws InterruptedException {
     List<String> channelNames =
         Arrays.asList(
-            populateService
+            populateDBConfiguration
                 .getChannelList()
-                .toArray(new String[populateService.getChannelList().size()]));
+                .toArray(new String[populateDBConfiguration.getChannelList().size()]));
 
     MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<String, String>();
     // Search for a single unique channel

@@ -1,5 +1,5 @@
 /** */
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.configuration;
 
 /*
  * #%L
@@ -41,6 +41,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
+import org.phoebus.channelfinder.TextUtil;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Value;
@@ -215,7 +216,7 @@ public class ElasticConfig implements ServletContextListener {
    *
    * @param client client connected to elasticsearch
    */
-  void elasticIndexValidation(ElasticsearchClient client) {
+  public void elasticIndexValidation(ElasticsearchClient client) {
     validateIndex(client, ES_CHANNEL_INDEX, "/channel_mapping.json");
     validateIndex(client, ES_TAG_INDEX, "/tag_mapping.json");
     validateIndex(client, ES_PROPERTY_INDEX, "/properties_mapping.json");

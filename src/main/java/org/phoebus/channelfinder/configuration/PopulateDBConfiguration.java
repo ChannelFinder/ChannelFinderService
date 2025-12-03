@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.example;
+package org.phoebus.channelfinder.configuration;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.Refresh;
@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.phoebus.channelfinder.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
@@ -56,9 +55,9 @@ import org.springframework.context.annotation.Configuration;
  * @author Kunal Shroff
  */
 @Configuration
-public class PopulateService {
+public class PopulateDBConfiguration {
 
-  private static final Logger logger = Logger.getLogger(PopulateService.class.getName());
+  private static final Logger logger = Logger.getLogger(PopulateDBConfiguration.class.getName());
   public static final String DEVICE_POWER_SUPPLY = "power supply";
   public static final String DEVICE_MAGNET = "magnet";
   public static final String UNIT_TEMP = "temperature";
@@ -843,7 +842,7 @@ public class PopulateService {
             "{" + "GV" + "}Opn-Sw",
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "valve",
             "position",
             SIGTYPE_SWITCH));
@@ -857,7 +856,7 @@ public class PopulateService {
             "{" + "GV" + "}Opn-St",
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "valve",
             "position",
             SIGTYPE_STATUS));
@@ -883,7 +882,7 @@ public class PopulateService {
             "{" + dev + "}P-RB",
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "gauge",
             "pressure",
             SIGTYPE_READBACK));
@@ -897,7 +896,7 @@ public class PopulateService {
             "{" + dev + OK_ST,
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "gauge",
             "error",
             SIGTYPE_STATUS));
@@ -922,7 +921,7 @@ public class PopulateService {
             "{" + dev + "}I-RB",
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "pump",
             UNIT_CURRENT,
             SIGTYPE_READBACK));
@@ -936,7 +935,7 @@ public class PopulateService {
             "{" + dev + "}P-RB",
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "pump",
             "pressure",
             SIGTYPE_READBACK));
@@ -950,7 +949,7 @@ public class PopulateService {
             "{" + dev + "}On-Sw",
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "pump",
             UNIT_POWER,
             SIGTYPE_SWITCH));
@@ -964,7 +963,7 @@ public class PopulateService {
             "{" + dev + OK_ST,
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "pump",
             "error",
             SIGTYPE_STATUS));
@@ -978,7 +977,7 @@ public class PopulateService {
             "{" + dev + ON_ST,
             loc,
             cell,
-            PopulateService.ELEMENT_VACUUM,
+            PopulateDBConfiguration.ELEMENT_VACUUM,
             "pump",
             UNIT_POWER,
             SIGTYPE_STATUS));

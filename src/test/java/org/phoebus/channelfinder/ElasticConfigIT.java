@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder;
 
 import java.io.IOException;
+import org.phoebus.channelfinder.configuration.ElasticConfig;
 
 public class ElasticConfigIT {
 
