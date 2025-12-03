@@ -21,12 +21,15 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.servlet.ServletContext;
-import org.phoebus.channelfinder.service.AuthorizationService;
-import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.respository.ChannelRepository;
+import org.phoebus.channelfinder.respository.PropertyRepository;
+import org.phoebus.channelfinder.respository.TagRepository;
+import org.phoebus.channelfinder.service.AuthorizationService;
+import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.service.ChannelProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -63,8 +66,7 @@ public class ChannelManager {
 
   @Autowired ChannelRepository channelRepository;
 
-  @Autowired
-  AuthorizationService authorizationService;
+  @Autowired AuthorizationService authorizationService;
 
   @Autowired ChannelProcessorService channelProcessorService;
 

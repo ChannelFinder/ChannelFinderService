@@ -16,6 +16,9 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.example.PopulateService;
+import org.phoebus.channelfinder.respository.ChannelRepository;
+import org.phoebus.channelfinder.respository.PropertyRepository;
+import org.phoebus.channelfinder.respository.TagRepository;
 import org.phoebus.channelfinder.service.MetricsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -56,8 +59,7 @@ class MetricsServiceIT {
 
   @Autowired PopulateService populateService;
 
-  @Autowired
-  MetricsService metricsService;
+  @Autowired MetricsService metricsService;
 
   @Autowired private MockMvc mockMvc;
 

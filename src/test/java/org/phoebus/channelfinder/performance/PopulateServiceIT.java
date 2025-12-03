@@ -2,8 +2,8 @@ package org.phoebus.channelfinder.performance;
 
 import java.net.URL;
 import org.junit.jupiter.api.Test;
-import org.phoebus.channelfinder.service.AuthorizationService;
 import org.phoebus.channelfinder.example.PopulateService;
+import org.phoebus.channelfinder.service.AuthorizationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;

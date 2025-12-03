@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.example.PopulateService;
+import org.phoebus.channelfinder.respository.PropertyRepository;
+import org.phoebus.channelfinder.respository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;

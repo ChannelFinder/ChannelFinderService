@@ -13,10 +13,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.service.AuthorizationService;
 import org.phoebus.channelfinder.ChannelScroll;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
+import org.phoebus.channelfinder.service.AuthorizationService;
 import org.phoebus.channelfinder.service.ChannelProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,8 +40,7 @@ public class ChannelProcessorManager {
 
   private static final Logger logger = Logger.getLogger(ChannelProcessorManager.class.getName());
 
-  @Autowired
-  ChannelProcessorService channelProcessorService;
+  @Autowired ChannelProcessorService channelProcessorService;
   @Autowired AuthorizationService authorizationService;
 
   // TODO replace with PIT and search_after

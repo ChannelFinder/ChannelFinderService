@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.respository;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
@@ -15,9 +15,9 @@ import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.ExistsRequest;
 import co.elastic.clients.elasticsearch.core.GetResponse;
-import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchRequest.Builder;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -26,14 +26,17 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
+import org.phoebus.channelfinder.ElasticConfig;
+import org.phoebus.channelfinder.TextUtil;
 import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.entity.Property.OnlyNameOwnerProperty;
+import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.entity.Tag.OnlyTag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
@@ -46,136 +49,48 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Repository
 @Configuration
-public class PropertyRepository implements CrudRepository<Property, String> {
+public class TagRepository implements CrudRepository<Tag, String> {
 
-  private static final Logger logger = Logger.getLogger(PropertyRepository.class.getName());
+  private static final Logger logger = Logger.getLogger(TagRepository.class.getName());
+
+  @Autowired ElasticConfig esService;
 
   @Autowired
   @Qualifier("indexClient")
   ElasticsearchClient client;
 
-  @Autowired ElasticConfig esService;
-
   @Autowired ChannelRepository channelRepository;
 
-  ObjectMapper objectMapper =
-      new ObjectMapper().addMixIn(Property.class, OnlyNameOwnerProperty.class);
+  ObjectMapper objectMapper = new ObjectMapper().addMixIn(Tag.class, OnlyTag.class);
 
   /**
-   * create a new property using the given Property
+   * create a new tag using the given Tag
    *
-   * @param property - property to be created
-   * @return the created property
+   * @param <S> extends Tag
+   * @param tag - tag to be created
+   * @return the created tag
    */
-  public Property index(Property property) {
-    return save(property.getName(), property);
+  public <S extends Tag> S index(S tag) {
+    return save(tag.getName(), tag);
   }
 
   /**
-   * create new properties using the given XmlProperties
+   * create new tags using the given XmlTags
    *
-   * @param properties - properties to be created
-   * @return the created properties
+   * @param tags - tags to be created
+   * @return the created tags
    */
-  public List<Property> indexAll(List<Property> properties) {
+  public List<Tag> indexAll(List<Tag> tags) {
     BulkRequest.Builder br = new BulkRequest.Builder();
-    for (Property property : properties) {
+    for (Tag tag : tags) {
       br.operations(
           op ->
               op.index(
                   idx ->
-                      idx.index(esService.getES_PROPERTY_INDEX())
-                          .id(property.getName())
-                          .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))));
+                      idx.index(esService.getES_TAG_INDEX())
+                          .id(tag.getName())
+                          .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))));
     }
-    try {
-      BulkResponse result = client.bulk(br.refresh(Refresh.True).build());
-      // Log errors, if any
-      if (result.errors()) {
-        logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-        for (BulkResponseItem item : result.items()) {
-          if (item.error() != null) {
-            logger.log(Level.SEVERE, () -> item.error().reason());
-          }
-        }
-      } else {
-        return findAllById(properties.stream().map(Property::getName).toList());
-      }
-    } catch (IOException e) {
-      String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_PROPERTIES, properties);
-      logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
-    }
-    return null;
-  }
-
-  /**
-   * update/save property using the given Property
-   *
-   * @param <S> extends Property
-   * @param propertyName - name of property to be created
-   * @param property - property to be created
-   * @return the updated/saved property
-   */
-  @SuppressWarnings("unchecked")
-  public <S extends Property> S save(String propertyName, S property) {
-    try {
-      IndexRequest request =
-          IndexRequest.of(
-              i ->
-                  i.index(esService.getES_PROPERTY_INDEX())
-                      .id(propertyName)
-                      .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))
-                      .refresh(Refresh.True));
-
-      IndexResponse response = client.index(request);
-      // verify the creation of the tag
-      if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
-        logger.log(
-            Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_PROPERTY, property.toLog()));
-        return (S) findById(propertyName).get();
-      }
-    } catch (Exception e) {
-      String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_PROPERTY, property.toLog());
-      logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
-    }
-    return null;
-  }
-
-  /**
-   * @param <S> extends Property
-   */
-  @Override
-  public <S extends Property> S save(S property) {
-    return save(property.getName(), property);
-  }
-
-  /**
-   * update/save properties using the given XmlProperties
-   *
-   * @param <S> extends Property
-   * @param properties - properties to be created
-   * @return the updated/saved properties
-   */
-  @SuppressWarnings("unchecked")
-  @Override
-  public <S extends Property> Iterable<S> saveAll(Iterable<S> properties) {
-    List<String> ids =
-        StreamSupport.stream(properties.spliterator(), false).map(Property::getName).toList();
-
-    BulkRequest.Builder br = new BulkRequest.Builder();
-
-    for (Property property : properties) {
-      br.operations(
-          op ->
-              op.index(
-                  i ->
-                      i.index(esService.getES_PROPERTY_INDEX())
-                          .id(property.getName())
-                          .document(JsonData.of(property, new JacksonJsonpMapper(objectMapper)))));
-    }
-
     try {
       BulkResponse result = client.bulk(br.refresh(Refresh.True).build());
       // Log errors, if any
@@ -188,10 +103,92 @@ public class PropertyRepository implements CrudRepository<Property, String> {
         }
         // TODO cleanup? or throw exception?
       } else {
-        return (Iterable<S>) findAllById(ids);
+        return findAllById(tags.stream().map(Tag::getName).toList());
       }
     } catch (IOException e) {
-      String message = MessageFormat.format(TextUtil.FAILED_TO_UPDATE_SAVE_PROPERTIES, properties);
+      String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
+      logger.log(Level.SEVERE, message, e);
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+    }
+    return Collections.emptyList();
+  }
+
+  /**
+   * update/save tag using the given Tag
+   *
+   * @param <S> extends Tag
+   * @param tagName - name of tag to be created
+   * @param tag - tag to be created
+   * @return the updated/saved tag
+   */
+  @SuppressWarnings("unchecked")
+  public <S extends Tag> S save(String tagName, S tag) {
+    try {
+      IndexResponse response =
+          client.index(
+              i ->
+                  i.index(esService.getES_TAG_INDEX())
+                      .id(tagName)
+                      .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))
+                      .refresh(Refresh.True));
+      // verify the creation of the tag
+      if (response.result().equals(Result.Created) || response.result().equals(Result.Updated)) {
+        logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_TAG, tag.toLog()));
+        return (S) findById(tagName).get();
+      }
+    } catch (ElasticsearchException | IOException e) {
+      String message = MessageFormat.format(TextUtil.FAILED_TO_UPDATE_SAVE_TAG, tag.toLog());
+      logger.log(Level.SEVERE, message, e);
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+    }
+    return null;
+  }
+
+  @Override
+  public <S extends Tag> S save(S tag) {
+    return save(tag.getName(), tag);
+  }
+
+  /**
+   * update/save tags using the given XmlTags
+   *
+   * @param <S> extends Tag
+   * @param tags - tags to be created
+   * @return the updated/saved tags
+   */
+  @SuppressWarnings("unchecked")
+  @Override
+  public <S extends Tag> Iterable<S> saveAll(Iterable<S> tags) {
+
+    BulkRequest.Builder br = new BulkRequest.Builder();
+    for (Tag tag : tags) {
+      br.operations(
+          op ->
+              op.index(
+                  idx ->
+                      idx.index(esService.getES_TAG_INDEX())
+                          .id(tag.getName())
+                          .document(JsonData.of(tag, new JacksonJsonpMapper(objectMapper)))));
+    }
+
+    BulkResponse result = null;
+    try {
+      result = client.bulk(br.refresh(Refresh.True).build());
+      // Log errors, if any
+      if (result.errors()) {
+        logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+        for (BulkResponseItem item : result.items()) {
+          if (item.error() != null) {
+            logger.log(Level.SEVERE, () -> item.error().reason());
+          }
+        }
+        // TODO cleanup? or throw exception?
+      } else {
+        return (Iterable<S>)
+            findAllById(StreamSupport.stream(tags.spliterator(), false).map(Tag::getName).toList());
+      }
+    } catch (IOException e) {
+      String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
       logger.log(Level.SEVERE, message, e);
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
     }
@@ -199,47 +196,43 @@ public class PropertyRepository implements CrudRepository<Property, String> {
   }
 
   /**
-   * find property using the given property id
+   * find tag using the given tag id
    *
-   * @param propertyId - id of property to be found
-   * @return the found property
+   * @param tagId - id of tag to be found
+   * @return the found tag
    */
   @Override
-  public Optional<Property> findById(String propertyId) {
-    return findById(propertyId, false);
+  public Optional<Tag> findById(String tagId) {
+    return findById(tagId, false);
   }
 
   /**
-   * find property using the given property id
+   * find tag using the given tag id
    *
-   * @param propertyName - id of property to be found
+   * @param tagId - id of tag to be found
    * @param withChannels - whether channels should be included
-   * @return the found property
+   * @return the found tag
    */
-  public Optional<Property> findById(String propertyName, boolean withChannels) {
-    GetResponse<Property> response;
+  public Optional<Tag> findById(String tagId, boolean withChannels) {
+    GetResponse<Tag> response;
     try {
-      response =
-          client.get(
-              g -> g.index(esService.getES_PROPERTY_INDEX()).id(propertyName), Property.class);
+      response = client.get(g -> g.index(esService.getES_TAG_INDEX()).id(tagId), Tag.class);
 
       if (response.found()) {
-        Property property = response.source();
-        logger.log(
-            Level.CONFIG, () -> MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
+        Tag tag = response.source();
+        logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
         if (withChannels) {
           MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-          params.add(property.getName(), "*");
-          property.setChannels(channelRepository.search(params).channels());
+          params.add("~tag", tag.getName());
+          tag.setChannels(channelRepository.search(params).channels());
         }
-        return Optional.of(property);
+        return Optional.of(tag);
       } else {
-        logger.log(
-            Level.CONFIG, () -> MessageFormat.format(TextUtil.PROPERTY_NOT_FOUND, propertyName));
+        logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.TAG_NOT_FOUND, tagId));
         return Optional.empty();
       }
     } catch (ElasticsearchException | IOException e) {
-      String message = MessageFormat.format(TextUtil.FAILED_TO_FIND_PROPERTY, propertyName);
+      String message = MessageFormat.format(TextUtil.FAILED_TO_FIND_TAG, tagId);
       logger.log(Level.SEVERE, message, e);
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, message, null);
     }
@@ -249,61 +242,60 @@ public class PropertyRepository implements CrudRepository<Property, String> {
   public boolean existsById(String id) {
     try {
       ExistsRequest.Builder builder = new ExistsRequest.Builder();
-      builder.index(esService.getES_PROPERTY_INDEX()).id(id);
+      builder.index(esService.getES_TAG_INDEX()).id(id);
       return client.exists(builder.build()).value();
     } catch (ElasticsearchException | IOException e) {
-      String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_PROPERTY_EXISTS, id);
+      String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_TAG_EXISTS, id);
       logger.log(Level.SEVERE, message, e);
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
     }
   }
 
   /**
-   * find all properties
+   * find all tags
    *
-   * @return the found properties
+   * @return the found tags
    */
   @Override
-  public Iterable<Property> findAll() {
+  public Iterable<Tag> findAll() {
     try {
       SearchRequest.Builder searchBuilder =
-          new SearchRequest.Builder()
-              .index(esService.getES_PROPERTY_INDEX())
+          new Builder()
+              .index(esService.getES_TAG_INDEX())
               .query(new MatchAllQuery.Builder().build()._toQuery())
               .size(esService.getES_QUERY_SIZE())
               .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-      SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
+      SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
       return response.hits().hits().stream().map(Hit::source).toList();
     } catch (ElasticsearchException | IOException e) {
-      logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
+      logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
       throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, null);
+          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
     }
   }
 
   /**
-   * find properties using the given property ids
+   * find tags using the given tags ids
    *
-   * @param propertyIds - ids of properties to be found
-   * @return the found properties
+   * @param tagIds - ids of tags to be found
+   * @return the found tags
    */
   @Override
-  public List<Property> findAllById(Iterable<String> propertyIds) {
+  public List<Tag> findAllById(Iterable<String> tagIds) {
     try {
-      List<String> ids = StreamSupport.stream(propertyIds.spliterator(), false).toList();
-
+      List<String> ids = StreamSupport.stream(tagIds.spliterator(), false).toList();
       SearchRequest.Builder searchBuilder =
-          new SearchRequest.Builder()
-              .index(esService.getES_PROPERTY_INDEX())
+          new Builder()
+              .index(esService.getES_TAG_INDEX())
               .query(IdsQuery.of(q -> q.values(ids))._toQuery())
               .size(esService.getES_QUERY_SIZE())
               .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-      SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
+      SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
       return response.hits().hits().stream().map(Hit::source).toList();
     } catch (ElasticsearchException | IOException e) {
-      logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
+      logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
       throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, null);
+          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
     }
   }
 
@@ -311,7 +303,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
   public long count() {
     try {
       CountRequest countRequest =
-          new CountRequest.Builder().index(esService.getES_PROPERTY_INDEX()).build();
+          new CountRequest.Builder().index(esService.getES_TAG_INDEX()).build();
       CountResponse countResponse = client.count(countRequest);
       return countResponse.count();
     } catch (ElasticsearchException | IOException e) {
@@ -323,33 +315,32 @@ public class PropertyRepository implements CrudRepository<Property, String> {
   }
 
   /**
-   * delete the given property by property name
+   * delete the given tag by tag name
    *
-   * @param propertyName - name of property to be deleted
+   * @param tagName - tag to be deleted
    */
   @Override
-  public void deleteById(String propertyName) {
+  public void deleteById(String tagName) {
     try {
+
       DeleteResponse response =
           client.delete(
-              i ->
-                  i.index(esService.getES_PROPERTY_INDEX()).id(propertyName).refresh(Refresh.True));
-      // verify the deletion of the property
+              i -> i.index(esService.getES_TAG_INDEX()).id(tagName).refresh(Refresh.True));
+      // verify the deletion of the tag
       if (response.result().equals(Result.Deleted)) {
-        logger.log(
-            Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_PROPERTY, propertyName));
+        logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_TAG, tagName));
       }
-
-      // Remove the Property from Channels
       BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
       MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-      params.add(propertyName, "*");
+      params.add("~tag", tagName);
       List<Channel> channels = channelRepository.search(params).channels();
-      while (channels.size() > 0) {
+      while (!channels.isEmpty()) {
+
         for (Channel channel : channels) {
-          channel.removeProperty(
-              channel.getProperties().stream()
-                  .filter(prop -> propertyName.equalsIgnoreCase(prop.getName()))
+          // Or
+          channel.removeTag(
+              channel.getTags().stream()
+                  .filter(tag -> tagName.equalsIgnoreCase(tag.getName()))
                   .findAny()
                   .get());
           br.operations(
@@ -361,7 +352,6 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                               .action(a -> a.doc(channel))));
         }
         try {
-          br.refresh(Refresh.True);
           BulkResponse result = client.bulk(br.build());
           // Log errors, if any
           if (result.errors()) {
@@ -371,35 +361,35 @@ public class PropertyRepository implements CrudRepository<Property, String> {
                 logger.log(Level.SEVERE, () -> item.error().reason());
               }
             }
-          } else {
           }
         } catch (IOException e) {
-          String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_PROPERTY, propertyName);
+          String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_TAG, tagName);
           logger.log(Level.SEVERE, message, e);
           throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
         }
         params.set("~search_after", channels.get(channels.size() - 1).getName());
         channels = channelRepository.search(params).channels();
       }
+
     } catch (ElasticsearchException | IOException e) {
-      String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_PROPERTY, propertyName);
+      String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_TAG, tagName);
       logger.log(Level.SEVERE, message, e);
       throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
     }
   }
 
   /**
-   * delete the given property
+   * delete the given tag
    *
-   * @param property - property to be deleted
+   * @param tag - tag to be deleted
    */
   @Override
-  public void delete(Property property) {
-    deleteById(property.getName());
+  public void delete(Tag tag) {
+    deleteById(tag.getName());
   }
 
   @Override
-  public void deleteAll(Iterable<? extends Property> entities) {
+  public void deleteAll(Iterable<? extends Tag> entities) {
     throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
   }
 
@@ -410,6 +400,6 @@ public class PropertyRepository implements CrudRepository<Property, String> {
 
   @Override
   public void deleteAllById(Iterable<? extends String> ids) {
-    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException(TextUtil.DELETE_ALL_NOT_SUPPORTED);
   }
 }
