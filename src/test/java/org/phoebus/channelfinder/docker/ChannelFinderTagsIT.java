@@ -26,6 +26,7 @@ import java.net.HttpURLConnection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
@@ -36,7 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on usage of {@link
- * org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}.
+ * CFResourceDescriptors#TAG_RESOURCE_URI}.
  *
  * @author Lars Johansson
  * @see TagManager
@@ -152,7 +153,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTagRetrieveCheck() {
     // what
@@ -163,7 +164,7 @@ class ChannelFinderTagsIT {
     ITUtilTags.assertRetrieveTag("/t11", HttpURLConnection.HTTP_NOT_FOUND);
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTagRemoveCheck() {
     // what
@@ -187,7 +188,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTagCreateUpdateCheckJson() {
     // what
@@ -293,7 +294,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTagCreateUpdateCheck() {
     // what
@@ -361,7 +362,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTag() {
     // what
@@ -392,7 +393,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTag2() {
     // what
@@ -424,7 +425,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTag3RenameOwner() {
     // what
@@ -452,7 +453,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTag4ReplaceNonExisting() {
     // what
@@ -476,7 +477,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleTag5SingleChannel() {
     // what
@@ -570,7 +571,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleTag6MultipleChannels() {
     // what
@@ -665,7 +666,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTagsCreateUpdateCheck() {
     // what
@@ -783,7 +784,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTags() {
     // what
@@ -854,7 +855,7 @@ class ChannelFinderTagsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleTags2ReplaceNonExisting() {
     // what

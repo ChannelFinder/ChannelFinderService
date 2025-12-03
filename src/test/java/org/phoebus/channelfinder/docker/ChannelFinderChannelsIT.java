@@ -26,6 +26,7 @@ import java.net.HttpURLConnection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.rest.controller.ChannelManager;
@@ -35,7 +36,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on usage of {@link
- * org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}.
+ * CFResourceDescriptors#CHANNEL_RESOURCE_URI}.
  *
  * @author Lars Johansson
  * @see ChannelManager
@@ -162,7 +163,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannelRetrieveCheck() {
     // what
@@ -173,7 +174,7 @@ public class ChannelFinderChannelsIT {
     ITUtilChannels.assertRetrieveChannel("/c11", HttpURLConnection.HTTP_NOT_FOUND);
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#TAG_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#TAG_RESOURCE_URI}. */
   @Test
   void handleChannelDeleteCheck() {
     // what
@@ -197,7 +198,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannelCreateUpdateCheckJson() {
     // what
@@ -293,7 +294,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannelCreateUpdateCheck() {
     // what
@@ -376,7 +377,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannel() {
     // what
@@ -409,7 +410,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannel2() {
     // what
@@ -446,7 +447,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannel3RenameOwner() {
     // what
@@ -477,7 +478,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannel4ReplaceNonExisting() {
     // what
@@ -504,7 +505,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannelsCreateUpdateCheck() {
     // what
@@ -625,7 +626,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannels() {
     // what
@@ -694,7 +695,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannels2ReplaceNonExisting() {
     // what
@@ -763,7 +764,7 @@ public class ChannelFinderChannelsIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#CHANNEL_RESOURCE_URI}. */
   @Test
   void handleChannels3QueryByPattern() {
     // what

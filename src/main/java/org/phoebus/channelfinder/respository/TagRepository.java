@@ -32,7 +32,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
-import org.phoebus.channelfinder.TextUtil;
+import org.phoebus.channelfinder.common.TextUtil;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;

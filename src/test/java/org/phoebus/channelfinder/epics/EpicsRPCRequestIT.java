@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.phoebus.channelfinder.common.NTXmlUtil;
 import org.phoebus.channelfinder.rest.controller.ChannelManager;
 import org.phoebus.channelfinder.rest.controller.PropertyManager;
 import org.phoebus.channelfinder.rest.controller.TagManager;

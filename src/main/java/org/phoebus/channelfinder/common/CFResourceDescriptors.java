@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.common;
 
 public class CFResourceDescriptors {
 

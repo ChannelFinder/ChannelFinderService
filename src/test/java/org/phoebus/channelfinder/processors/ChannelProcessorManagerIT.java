@@ -9,7 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.phoebus.channelfinder.CFResourceDescriptors;
+import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.rest.controller.ChannelProcessorManager;
 import org.phoebus.channelfinder.rest.controller.ChannelScroll;
 import org.phoebus.channelfinder.entity.Scroll;

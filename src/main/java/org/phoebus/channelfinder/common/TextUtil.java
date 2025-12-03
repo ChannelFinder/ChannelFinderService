@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.common;
 
 /**
  * Utility class to assist in handling of text.

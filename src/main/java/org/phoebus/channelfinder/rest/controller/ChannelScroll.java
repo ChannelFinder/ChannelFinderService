@@ -1,6 +1,6 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.CFResourceDescriptors.SCROLL_RESOURCE_URI;
+import static org.phoebus.channelfinder.common.CFResourceDescriptors.SCROLL_RESOURCE_URI;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldSort;
@@ -24,8 +24,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.phoebus.channelfinder.CFResourceDescriptors;
-import org.phoebus.channelfinder.TextUtil;
+import org.phoebus.channelfinder.common.CFResourceDescriptors;
+import org.phoebus.channelfinder.common.TextUtil;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;

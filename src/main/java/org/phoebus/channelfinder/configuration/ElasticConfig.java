@@ -41,7 +41,7 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
-import org.phoebus.channelfinder.TextUtil;
+import org.phoebus.channelfinder.common.TextUtil;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Value;

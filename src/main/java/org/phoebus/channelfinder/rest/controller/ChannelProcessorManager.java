@@ -1,7 +1,7 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.CFResourceDescriptors.CHANNEL_PROCESSOR_RESOURCE_URI;
-import static org.phoebus.channelfinder.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
+import static org.phoebus.channelfinder.common.CFResourceDescriptors.CHANNEL_PROCESSOR_RESOURCE_URI;
+import static org.phoebus.channelfinder.common.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

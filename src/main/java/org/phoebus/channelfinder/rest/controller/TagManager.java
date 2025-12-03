@@ -1,6 +1,6 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.CFResourceDescriptors.TAG_RESOURCE_URI;
+import static org.phoebus.channelfinder.common.CFResourceDescriptors.TAG_RESOURCE_URI;
 
 import com.google.common.collect.Lists;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.phoebus.channelfinder.TextUtil;
+import org.phoebus.channelfinder.common.TextUtil;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;

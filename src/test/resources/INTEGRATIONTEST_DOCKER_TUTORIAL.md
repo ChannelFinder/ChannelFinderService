@@ -140,7 +140,7 @@ class ChannelFinderPropertiesIT {
     }
 
     /**
-     * Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}.
+     * Test {@link org.phoebus.channelfinder.common.CFResourceDescriptors#PROPERTY_RESOURCE_URI}.
      */
     @Test
     void handleProperty() {

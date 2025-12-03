@@ -1,6 +1,6 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.CFResourceDescriptors.CF_SERVICE_INFO;
+import static org.phoebus.channelfinder.common.CFResourceDescriptors.CF_SERVICE_INFO;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchVersionInfo;

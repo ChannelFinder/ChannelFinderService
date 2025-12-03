@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.epics;
+package org.phoebus.channelfinder.common;
 
 import static org.phoebus.channelfinder.service.ChannelFinderEpicsService.COLUMN_CHANNEL_NAME;
 import static org.phoebus.channelfinder.service.ChannelFinderEpicsService.COLUMN_OWNER;

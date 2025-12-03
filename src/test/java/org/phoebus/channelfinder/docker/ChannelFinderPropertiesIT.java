@@ -26,6 +26,7 @@ import java.net.HttpURLConnection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
@@ -36,7 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on usage of {@link
- * org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}.
+ * CFResourceDescriptors#PROPERTY_RESOURCE_URI}.
  *
  * @author Lars Johansson
  * @see PropertyManager
@@ -167,7 +168,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handlePropertyRetrieveCheck() {
     // what
@@ -178,7 +179,7 @@ class ChannelFinderPropertiesIT {
     ITUtilProperties.assertRetrieveProperty("/p11", HttpURLConnection.HTTP_NOT_FOUND);
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handlePropertyRemoveCheck() {
     // what
@@ -202,7 +203,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handlePropertyCreateUpdateCheckJson() {
     // what
@@ -310,7 +311,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handlePropertyCreateUpdateCheck() {
     // what
@@ -390,7 +391,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperty() {
     // what
@@ -423,7 +424,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperty2() {
     // what
@@ -456,7 +457,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperty3RenameOwner() {
     // what
@@ -484,7 +485,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperty4ReplaceNonExisting() {
     // what
@@ -508,7 +509,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperty5SingleChannel() {
     // what
@@ -604,7 +605,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperty6MultipleChannels() {
     // what
@@ -706,7 +707,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handlePropertiesCreateUpdateCheck() {
     // what
@@ -827,7 +828,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperties() {
     // what
@@ -903,7 +904,7 @@ class ChannelFinderPropertiesIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#PROPERTY_RESOURCE_URI}. */
   @Test
   void handleProperties2ReplaceNonExisting() {
     // what
