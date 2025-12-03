@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.processors;
+package org.phoebus.channelfinder.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +9,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.processors.ChannelProcessor;
+import org.phoebus.channelfinder.processors.ChannelProcessorInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.TaskExecutor;
@@ -34,15 +36,15 @@ public class ChannelProcessorService {
     this.chunkSize = chunkSize;
   }
 
-  long getProcessorCount() {
+  public long getProcessorCount() {
     return channelProcessors.size();
   }
 
-  List<ChannelProcessorInfo> getProcessorsInfo() {
+  public List<ChannelProcessorInfo> getProcessorsInfo() {
     return channelProcessors.stream().map(ChannelProcessor::processorInfo).toList();
   }
 
-  void setProcessorEnabled(String name, boolean enabled) {
+  public void setProcessorEnabled(String name, boolean enabled) {
     Optional<ChannelProcessor> processor =
         channelProcessors.stream()
             .filter(p -> Objects.equals(p.processorInfo().name(), name))

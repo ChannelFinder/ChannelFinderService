@@ -19,7 +19,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.AuthorizationService.ROLES;
+import org.phoebus.channelfinder.service.AuthorizationService;
+import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,7 +55,8 @@ public class PropertyManager {
 
   @Autowired ChannelRepository channelRepository;
 
-  @Autowired AuthorizationService authorizationService;
+  @Autowired
+  AuthorizationService authorizationService;
 
   @Operation(
       summary = "List all properties",

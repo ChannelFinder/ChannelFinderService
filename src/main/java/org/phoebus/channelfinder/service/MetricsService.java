@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.service;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -13,6 +13,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import org.phoebus.channelfinder.ChannelRepository;
+import org.phoebus.channelfinder.PropertyRepository;
+import org.phoebus.channelfinder.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;

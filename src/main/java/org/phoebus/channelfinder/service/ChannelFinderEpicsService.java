@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.epics;
+package org.phoebus.channelfinder.service;
 
 import java.util.Arrays;
 import java.util.HashMap;

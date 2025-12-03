@@ -20,7 +20,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import org.phoebus.channelfinder.AuthorizationService.ROLES;
+import org.phoebus.channelfinder.service.AuthorizationService;
+import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +54,8 @@ public class TagManager {
 
   @Autowired ChannelRepository channelRepository;
 
-  @Autowired AuthorizationService authorizationService;
+  @Autowired
+  AuthorizationService authorizationService;
 
   @Operation(
       summary = "List all tags",

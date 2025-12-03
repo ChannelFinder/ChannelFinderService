@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder;
+package org.phoebus.channelfinder.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;

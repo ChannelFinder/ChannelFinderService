@@ -1,7 +1,7 @@
 package org.phoebus.channelfinder.epics;
 
-import static org.phoebus.channelfinder.epics.ChannelFinderEpicsService.COLUMN_CHANNEL_NAME;
-import static org.phoebus.channelfinder.epics.ChannelFinderEpicsService.COLUMN_OWNER;
+import static org.phoebus.channelfinder.service.ChannelFinderEpicsService.COLUMN_CHANNEL_NAME;
+import static org.phoebus.channelfinder.service.ChannelFinderEpicsService.COLUMN_OWNER;
 
 import java.util.ArrayList;
 import java.util.Arrays;

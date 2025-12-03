@@ -2,7 +2,8 @@ package org.phoebus.channelfinder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.phoebus.channelfinder.AuthorizationService.ROLES;
+import org.phoebus.channelfinder.service.AuthorizationService;
+import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
