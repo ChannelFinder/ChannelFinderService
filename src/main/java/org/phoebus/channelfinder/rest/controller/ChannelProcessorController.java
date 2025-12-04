@@ -27,8 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @EnableAutoConfiguration
-public class ChannelProcessorController
-    implements IChannelProcessor {
+public class ChannelProcessorController implements IChannelProcessor {
 
   private static final Logger logger = Logger.getLogger(ChannelProcessorController.class.getName());
 

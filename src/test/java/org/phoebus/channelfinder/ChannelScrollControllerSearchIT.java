@@ -27,7 +27,8 @@ import org.springframework.util.MultiValueMap;
 @TestPropertySource(value = "classpath:application_test.properties")
 class ChannelScrollControllerSearchIT {
 
-  private static final Logger logger = Logger.getLogger(ChannelScrollControllerSearchIT.class.getName());
+  private static final Logger logger =
+      Logger.getLogger(ChannelScrollControllerSearchIT.class.getName());
 
   @Autowired IChannelScroll channelScroll;
 

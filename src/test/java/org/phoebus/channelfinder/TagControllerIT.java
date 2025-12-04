@@ -39,8 +39,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestPropertySource(value = "classpath:application_test.properties")
 class TagControllerIT {
 
-  @Autowired
-  ITag tagManager;
+  @Autowired ITag tagManager;
 
   @Autowired TagRepository tagRepository;
 

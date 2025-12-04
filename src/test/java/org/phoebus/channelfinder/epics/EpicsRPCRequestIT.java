@@ -61,14 +61,11 @@ class EpicsRPCRequestIT {
       pvaClient.getChannel(ChannelFinderEpicsService.SERVICE_DESC);
   ;
 
-  @Autowired
-  IChannel channelManager;
+  @Autowired IChannel channelManager;
 
-  @Autowired
-  IProperty propertyManager;
+  @Autowired IProperty propertyManager;
 
-  @Autowired
-  ITag tagManager;
+  @Autowired ITag tagManager;
 
   @Test
   void testRPCService() throws ExecutionException, InterruptedException, TimeoutException {

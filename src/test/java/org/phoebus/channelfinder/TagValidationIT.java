@@ -27,8 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestPropertySource(value = "classpath:application_test.properties")
 class TagValidationIT {
 
-  @Autowired
-  ITag tagManager;
+  @Autowired ITag tagManager;
 
   @Autowired ElasticConfig esService;
   @Autowired ChannelRepository channelRepository;

@@ -34,8 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestPropertySource(value = "classpath:application_test.properties")
 class ChannelControllerIT {
 
-  @Autowired
-  IChannel channelManager;
+  @Autowired IChannel channelManager;
 
   @Autowired TagRepository tagRepository;
 

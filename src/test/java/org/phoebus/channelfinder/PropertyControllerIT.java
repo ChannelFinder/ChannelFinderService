@@ -37,8 +37,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestPropertySource(value = "classpath:application_test.properties")
 class PropertyControllerIT {
 
-  @Autowired
-  IProperty propertyManager;
+  @Autowired IProperty propertyManager;
 
   @Autowired PropertyRepository propertyRepository;
 

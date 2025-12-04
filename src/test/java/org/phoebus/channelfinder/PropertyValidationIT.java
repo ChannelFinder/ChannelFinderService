@@ -28,8 +28,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestPropertySource(value = "classpath:application_test.properties")
 class PropertyValidationIT {
 
-  @Autowired
-  IProperty propertyManager;
+  @Autowired IProperty propertyManager;
 
   @Autowired ChannelRepository channelRepository;
 
