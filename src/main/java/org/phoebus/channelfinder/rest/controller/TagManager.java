@@ -1,14 +1,6 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.common.CFResourceDescriptors.TAG_RESOURCE_URI;
-
 import com.google.common.collect.Lists;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,22 +24,16 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @CrossOrigin
 @RestController
-@RequestMapping(TAG_RESOURCE_URI)
 @EnableAutoConfiguration
-public class TagManager {
+public class TagManager implements org.phoebus.channelfinder.rest.api.ITagManager {
 
   private static final Logger tagManagerAudit =
       Logger.getLogger(TagManager.class.getName() + ".audit");
@@ -59,44 +45,12 @@ public class TagManager {
 
   @Autowired AuthorizationService authorizationService;
 
-  @Operation(
-      summary = "List all tags",
-      description = "Retrieve the list of all tags in the database.",
-      operationId = "listTags",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "List all Tags",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tag.class)))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to list all Tags",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping
+  @Override
   public Iterable<Tag> list() {
     return tagRepository.findAll();
   }
 
-  @Operation(
-      summary = "Get tag by name",
-      description = "Retrieve a tag by its name. Optionally include its channels.",
-      operationId = "getTagByName",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Finding Tag by tagName",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping("/{tagName}")
+  @Override
   public Tag read(
       @PathVariable("tagName") String tagName,
       @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
@@ -123,35 +77,7 @@ public class TagManager {
     }
   }
 
-  @Operation(
-      summary = "Create or update a tag",
-      description = "Create and exclusively update the tag identified by the path parameter.",
-      operationId = "createOrUpdateTag",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Tag created and updated",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag-, or Channel-name does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to create/update Tag",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping("/{tagName}")
+  @Override
   public Tag create(@PathVariable("tagName") String tagName, @RequestBody Tag tag) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -207,35 +133,7 @@ public class TagManager {
     }
   }
 
-  @Operation(
-      summary = "Create multiple tags",
-      description = "Create multiple tags in a single request.",
-      operationId = "createMultipleTags",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Tags created",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tag.class)))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag-, or Channel-name does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to create Tags",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping()
+  @Override
   public Iterable<Tag> create(@RequestBody Iterable<Tag> tags) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -311,35 +209,7 @@ public class TagManager {
     }
   }
 
-  @Operation(
-      summary = "Add tag to a single channel",
-      description = "Add the tag identified by tagName to the channel identified by channelName.",
-      operationId = "addTagToChannel",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Tags added to a single channel",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag-, or Channel-name does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Tag creational error",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping("/{tagName}/{channelName}")
+  @Override
   public Tag addSingle(
       @PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName) {
     // check if authorized role
@@ -384,36 +254,7 @@ public class TagManager {
     }
   }
 
-  @Operation(
-      summary = "Update a tag",
-      description =
-          "Update the tag identified by the path parameter, adding it to all channels in the payload.",
-      operationId = "updateTag",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Tag updated",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag name does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Tag update error",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PostMapping("/{tagName}")
+  @Override
   public Tag update(@PathVariable("tagName") String tagName, @RequestBody Tag tag) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -489,36 +330,7 @@ public class TagManager {
     }
   }
 
-  @Operation(
-      summary = "Update multiple tags",
-      description =
-          "Update multiple tags and all appropriate channels. The operation will fail if any of the specified channels do not exist.",
-      operationId = "updateMultipleTags",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Tags updated",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tag.class)))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag-, or Channel-name does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while updating tags",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PostMapping()
+  @Override
   public Iterable<Tag> update(@RequestBody Iterable<Tag> tags) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -587,32 +399,7 @@ public class TagManager {
     }
   }
 
-  @Operation(
-      summary = "Delete a tag",
-      description = "Delete the tag identified by the path parameter from all channels.",
-      operationId = "deleteTag",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Tag deleted"),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Tag creational error",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @DeleteMapping("/{tagName}")
+  @Override
   public void remove(@PathVariable("tagName") String tagName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -641,33 +428,7 @@ public class TagManager {
     }
   }
 
-  @Operation(
-      summary = "Delete tag from a channel",
-      description =
-          "Delete the tag identified by tagName from the channel identified by channelName.",
-      operationId = "deleteTagFromChannel",
-      tags = {"Tag"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Tag deleted from the desired channel"),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Tag creational error",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @DeleteMapping("/{tagName}/{channelName}")
+  @Override
   public void removeSingle(
       @PathVariable("tagName") final String tagName,
       @PathVariable("channelName") String channelName) {
@@ -719,6 +480,7 @@ public class TagManager {
    *
    * @param tags the list of tags to be validated
    */
+  @Override
   public void validateTagRequest(Iterable<Tag> tags) {
     for (Tag tag : tags) {
       validateTagRequest(tag);
@@ -736,6 +498,7 @@ public class TagManager {
    *
    * @param tag the tag to be validates
    */
+  @Override
   public void validateTagRequest(Tag tag) {
     // 1
     if (tag.getName() == null || tag.getName().isEmpty()) {
@@ -767,6 +530,7 @@ public class TagManager {
    *
    * @param channelName check channel exists
    */
+  @Override
   public void validateTagWithChannelRequest(String channelName) {
     if (!channelRepository.existsById(channelName)) {
       String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);

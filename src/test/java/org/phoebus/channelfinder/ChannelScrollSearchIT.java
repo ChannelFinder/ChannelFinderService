@@ -14,6 +14,7 @@ import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
+import org.phoebus.channelfinder.rest.api.IChannelScroll;
 import org.phoebus.channelfinder.rest.controller.ChannelScroll;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -28,7 +29,7 @@ class ChannelScrollSearchIT {
 
   private static final Logger logger = Logger.getLogger(ChannelScrollSearchIT.class.getName());
 
-  @Autowired ChannelScroll channelScroll;
+  @Autowired IChannelScroll channelScroll;
 
   @Autowired TagRepository tagRepository;
   @Autowired PropertyRepository propertyRepository;

@@ -20,6 +20,7 @@ import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
+import org.phoebus.channelfinder.rest.api.IChannelManager;
 import org.phoebus.channelfinder.rest.controller.ChannelManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -33,7 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestPropertySource(value = "classpath:application_test.properties")
 class ChannelManagerIT {
 
-  @Autowired ChannelManager channelManager;
+  @Autowired IChannelManager channelManager;
 
   @Autowired TagRepository tagRepository;
 

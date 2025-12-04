@@ -1,7 +1,5 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.common.CFResourceDescriptors.SCROLL_RESOURCE_URI;
-
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldSort;
 import co.elastic.clients.elasticsearch._types.FieldValue;
@@ -10,12 +8,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
@@ -35,18 +28,15 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @CrossOrigin
 @RestController
-@RequestMapping(SCROLL_RESOURCE_URI)
 @EnableAutoConfiguration
-public class ChannelScroll {
+public class ChannelScroll implements org.phoebus.channelfinder.rest.api.IChannelScroll {
 
   private static final Logger logger = Logger.getLogger(ChannelScroll.class.getName());
 
@@ -56,47 +46,14 @@ public class ChannelScroll {
   @Qualifier("indexClient")
   ElasticsearchClient client;
 
-  @Operation(
-      summary = "Scroll query for channels",
-      description = "Retrieve a collection of Channel instances based on multi-parameter search.",
-      operationId = "scrollQueryChannels",
-      tags = {"ChannelScroll"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Scroll that contains a collection of channel instances",
-            content = @Content(schema = @Schema(implementation = Scroll.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to list channels",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping
+  @Override
   public Scroll query(
       @Parameter(description = CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION) @RequestParam
           MultiValueMap<String, String> allRequestParams) {
     return search(null, allRequestParams);
   }
 
-  @Operation(
-      summary = "Scroll query by scrollId",
-      description =
-          "Retrieve a collection of Channel instances using a scrollId and search parameters.",
-      operationId = "scrollQueryById",
-      tags = {"ChannelScroll"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Scroll List of channels",
-            content = @Content(schema = @Schema(implementation = Scroll.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to list channels",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping("/{scrollId}")
+  @Override
   public Scroll query(
       @Parameter(description = "Scroll ID from previous query") @PathVariable("scrollId")
           String scrollId,
@@ -119,6 +76,7 @@ public class ChannelScroll {
    * @param searchParameters - search parameters for scrolling searches
    * @return search scroll
    */
+  @Override
   public Scroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
     BoolQuery.Builder boolQuery = new BoolQuery.Builder();
     int size = esService.getES_QUERY_SIZE();

@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.phoebus.channelfinder.common.CFResourceDescriptors;
-import org.phoebus.channelfinder.rest.controller.ChannelProcessorManager;
-import org.phoebus.channelfinder.rest.controller.ChannelScroll;
 import org.phoebus.channelfinder.entity.Scroll;
+import org.phoebus.channelfinder.rest.api.IChannelScroll;
+import org.phoebus.channelfinder.rest.controller.ChannelProcessorManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -34,7 +34,7 @@ class ChannelProcessorManagerIT {
       "Basic " + Base64Utils.encodeToString("admin:adminPass".getBytes());
 
   @Autowired protected MockMvc mockMvc;
-  @MockBean ChannelScroll channelScroll;
+  @MockBean IChannelScroll channelScroll;
 
   @Test
   void testProcessorCount() throws Exception {

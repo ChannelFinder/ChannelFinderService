@@ -1,14 +1,6 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.common.CFResourceDescriptors.PROPERTY_RESOURCE_URI;
-
 import com.google.common.collect.Lists;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,22 +24,16 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @CrossOrigin
 @RestController
-@RequestMapping(PROPERTY_RESOURCE_URI)
 @EnableAutoConfiguration
-public class PropertyManager {
+public class PropertyManager implements org.phoebus.channelfinder.rest.api.IPropertyManager {
 
   private static final Logger propertyManagerAudit =
       Logger.getLogger(PropertyManager.class.getName() + ".audit");
@@ -61,45 +47,12 @@ public class PropertyManager {
 
   @Autowired AuthorizationService authorizationService;
 
-  @Operation(
-      summary = "List all properties",
-      description = "Retrieve the list of all properties in the database.",
-      operationId = "listProperties",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "List of properties",
-            content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Property.class)))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while listing properties",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping
+  @Override
   public Iterable<Property> list() {
     return propertyRepository.findAll();
   }
 
-  @Operation(
-      summary = "Get property by name",
-      description = "Retrieve a property by its name. Optionally include its channels.",
-      operationId = "getPropertyByName",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Fetch property by propertyName",
-            content = @Content(schema = @Schema(implementation = Property.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Property not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping("/{propertyName}")
+  @Override
   public Property read(
       @PathVariable("propertyName") String propertyName,
       @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
@@ -121,31 +74,7 @@ public class PropertyManager {
     }
   }
 
-  @Operation(
-      summary = "Create or update a property",
-      description = "Create and exclusively update the property identified by the path parameter.",
-      operationId = "createOrUpdateProperty",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Property created",
-            content = @Content(schema = @Schema(implementation = Property.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Property not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to create property",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping("/{propertyName}")
+  @Override
   public Property create(
       @PathVariable("propertyName") String propertyName, @RequestBody Property property) {
     // check if authorized role
@@ -197,27 +126,7 @@ public class PropertyManager {
     }
   }
 
-  @Operation(
-      summary = "Create multiple properties",
-      description = "Create multiple properties in a single request.",
-      operationId = "createMultipleProperties",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Properties created",
-            content = @Content(schema = @Schema(implementation = Property.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to create properties",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping()
+  @Override
   public Iterable<Property> create(@RequestBody Iterable<Property> properties) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -272,36 +181,7 @@ public class PropertyManager {
     }
   }
 
-  @Operation(
-      summary = "Add property to a single channel",
-      description =
-          "Add the property identified by propertyName to the channel identified by channelName.",
-      operationId = "addPropertyToChannel",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Property added to the channel",
-            content = @Content(schema = @Schema(implementation = Property.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Property-, or Channel-name does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to add property",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping("/{propertyName}/{channelName}")
+  @Override
   public Property addSingle(
       @PathVariable("propertyName") String propertyName,
       @PathVariable("channelName") String channelName,
@@ -354,36 +234,7 @@ public class PropertyManager {
     }
   }
 
-  @Operation(
-      summary = "Update a property",
-      description =
-          "Update the property identified by the path parameter, adding it to all channels in the payload.",
-      operationId = "updateProperty",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Property updated",
-            content = @Content(schema = @Schema(implementation = Property.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Property does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to update property",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PostMapping("/{propertyName}")
+  @Override
   public Property update(
       @PathVariable("propertyName") String propertyName, @RequestBody Property property) {
     // check if authorized role
@@ -476,36 +327,7 @@ public class PropertyManager {
     return updatedProperty;
   }
 
-  @Operation(
-      summary = "Update multiple properties",
-      description = "Update multiple properties and all appropriate channels.",
-      operationId = "updateMultipleProperties",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Properties updated",
-            content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Property.class)))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Property does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to update properties",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PostMapping()
+  @Override
   public Iterable<Property> update(@RequestBody Iterable<Property> properties) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -601,28 +423,7 @@ public class PropertyManager {
     }
   }
 
-  @Operation(
-      summary = "Delete a property",
-      description = "Delete the property identified by the path parameter from all channels.",
-      operationId = "deleteProperty",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Property deleted"),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Property does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to delete property",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @DeleteMapping("/{propertyName}")
+  @Override
   public void remove(@PathVariable("propertyName") String propertyName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -652,29 +453,7 @@ public class PropertyManager {
     }
   }
 
-  @Operation(
-      summary = "Delete property from a channel",
-      description =
-          "Delete the property identified by propertyName from the channel identified by channelName.",
-      operationId = "deletePropertyFromChannel",
-      tags = {"Property"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Property deleted from the channel"),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Property does not exist",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to delete property from a channel",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @DeleteMapping("/{propertyName}/{channelName}")
+  @Override
   public void removeSingle(
       @PathVariable("propertyName") final String propertyName,
       @PathVariable("channelName") String channelName) {
@@ -723,6 +502,7 @@ public class PropertyManager {
    *
    * @param property validate property
    */
+  @Override
   public void validatePropertyRequest(Property property) {
     // 1
     if (property.getName() == null || property.getName().isEmpty()) {
@@ -777,6 +557,7 @@ public class PropertyManager {
    *
    * @param properties properties to be validated
    */
+  @Override
   public void validatePropertyRequest(Iterable<Property> properties) {
     for (Property property : properties) {
       validatePropertyRequest(property);
@@ -788,6 +569,7 @@ public class PropertyManager {
    *
    * @param channelName check channel exists
    */
+  @Override
   public void validatePropertyRequest(String channelName) {
     if (!channelRepository.existsById(channelName)) {
       String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);

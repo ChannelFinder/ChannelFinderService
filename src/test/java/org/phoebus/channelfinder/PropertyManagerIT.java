@@ -21,6 +21,7 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
+import org.phoebus.channelfinder.rest.api.IPropertyManager;
 import org.phoebus.channelfinder.rest.controller.PropertyManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -36,7 +37,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestPropertySource(value = "classpath:application_test.properties")
 class PropertyManagerIT {
 
-  @Autowired PropertyManager propertyManager;
+  @Autowired IPropertyManager propertyManager;
 
   @Autowired PropertyRepository propertyRepository;
 

@@ -1,17 +1,10 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.common.CFResourceDescriptors.CHANNEL_RESOURCE_URI;
 import static org.phoebus.channelfinder.common.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
@@ -38,22 +31,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @CrossOrigin
 @RestController
-@RequestMapping(CHANNEL_RESOURCE_URI)
 @EnableAutoConfiguration
-public class ChannelManager {
+public class ChannelManager implements org.phoebus.channelfinder.rest.api.IChannelManager {
 
   private static final Logger channelManagerAudit =
       Logger.getLogger(ChannelManager.class.getName() + ".audit");
@@ -71,105 +58,28 @@ public class ChannelManager {
 
   @Autowired ChannelProcessorService channelProcessorService;
 
-  @Operation(
-      summary = "Query channels",
-      description =
-          "Query a collection of Channel instances based on tags, property values, and channel names.",
-      operationId = "queryChannels",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "List of channels",
-            content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Channel.class)))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to find all channels",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping
+  @Override
   public List<Channel> query(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
           MultiValueMap<String, String> allRequestParams) {
     return channelRepository.search(allRequestParams).channels();
   }
 
-  @Operation(
-      summary = "Combined query for channels",
-      description =
-          "Query for a collection of Channel instances and get a count and the first 10k hits.",
-      operationId = "combinedQueryChannels",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "The number of matches for the query, and the first 10k channels",
-            content =
-                @Content(
-                    array = @ArraySchema(schema = @Schema(implementation = SearchResult.class)))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request - response size exceeded",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to find all channels",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping("/combined")
+  @Override
   public SearchResult combinedQuery(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
           MultiValueMap<String, String> allRequestParams) {
     return channelRepository.search(allRequestParams);
   }
 
-  @Operation(
-      summary = "Count channels matching query",
-      description = "Get the number of channels matching the given query parameters.",
-      operationId = "countChannels",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "The number of channels matching the query",
-            content = @Content(schema = @Schema(implementation = Long.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to count the result for channel-query",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping("/count")
+  @Override
   public long queryCount(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
           MultiValueMap<String, String> allRequestParams) {
     return channelRepository.count(allRequestParams);
   }
 
-  @Operation(
-      summary = "Get channel by name",
-      description = "Retrieve a Channel instance by its name.",
-      operationId = "getChannelByName",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Channel with the specified name",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Channel not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @GetMapping("/{channelName}")
+  @Override
   public Channel read(@PathVariable("channelName") String channelName) {
     channelManagerAudit.log(
         Level.INFO, () -> MessageFormat.format(TextUtil.FIND_CHANNEL, channelName));
@@ -183,35 +93,7 @@ public class ChannelManager {
     }
   }
 
-  @Operation(
-      summary = "Create or replace a channel",
-      description = "Create or replace a channel instance identified by the payload.",
-      operationId = "createOrReplaceChannel",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "The created/replaced channel",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Channel, Tag, or property not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to create channel",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping("/{channelName}")
+  @Override
   public Channel create(
       @PathVariable("channelName") String channelName, @RequestBody Channel channel) {
     // check if authorized role
@@ -263,36 +145,7 @@ public class ChannelManager {
     }
   }
 
-  @Operation(
-      summary = "Create or replace multiple channels",
-      description = "Create or replace multiple channel instances.",
-      operationId = "createOrReplaceChannels",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "The created/replaced channels",
-            content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Channel.class)))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Tag, or property not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to create channels",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PutMapping
+  @Override
   public Iterable<Channel> create(@RequestBody Iterable<Channel> channels) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -383,36 +236,7 @@ public class ChannelManager {
     }
   }
 
-  @Operation(
-      summary = "Update a channel",
-      description =
-          "Merge properties and tags of the channel identified by the payload into an existing channel.",
-      operationId = "updateChannel",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "The updated channel",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Channel, Tag, or property not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to update channel",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PostMapping("/{channelName}")
+  @Override
   public Channel update(
       @PathVariable("channelName") String channelName, @RequestBody Channel channel) {
     if (authorizationService.isAuthorizedRole(
@@ -482,36 +306,7 @@ public class ChannelManager {
     }
   }
 
-  @Operation(
-      summary = "Update multiple channels",
-      description =
-          "Merge properties and tags of the channels identified by the payload into existing channels.",
-      operationId = "updateChannels",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "The updated channels",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid request",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Channel not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to update channels",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @PostMapping()
+  @Override
   public Iterable<Channel> update(@RequestBody Iterable<Channel> channels) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -571,28 +366,7 @@ public class ChannelManager {
     }
   }
 
-  @Operation(
-      summary = "Delete a channel",
-      description = "Delete a channel instance identified by its name.",
-      operationId = "deleteChannel",
-      tags = {"Channel"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(responseCode = "200", description = "Channel deleted"),
-        @ApiResponse(
-            responseCode = "401",
-            description = "Unauthorized",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Channel not found",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
-        @ApiResponse(
-            responseCode = "500",
-            description = "Error while trying to delete channel",
-            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
-      })
-  @DeleteMapping("/{channelName}")
+  @Override
   public void remove(@PathVariable("channelName") String channelName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
@@ -630,6 +404,7 @@ public class ChannelManager {
    *
    * @param channel channel to be validated
    */
+  @Override
   public void validateChannelRequest(Channel channel) {
     // 1
     checkAndThrow(
@@ -705,6 +480,7 @@ public class ChannelManager {
    *
    * @param channels list of channels to be validated
    */
+  @Override
   public void validateChannelRequest(Iterable<Channel> channels) {
     List<String> existingProperties =
         StreamSupport.stream(propertyRepository.findAll().spliterator(), true)

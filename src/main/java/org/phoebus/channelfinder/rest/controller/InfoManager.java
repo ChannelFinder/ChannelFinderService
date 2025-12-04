@@ -1,18 +1,11 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.common.CFResourceDescriptors.CF_SERVICE_INFO;
-
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchVersionInfo;
 import co.elastic.clients.elasticsearch.core.InfoResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,15 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @CrossOrigin
 @RestController
-@RequestMapping(CF_SERVICE_INFO)
 @EnableAutoConfiguration
-public class InfoManager {
+public class InfoManager implements org.phoebus.channelfinder.rest.api.IInfoManager {
 
   @Value("${channelfinder.version:4.7.0}")
   private String version;
@@ -41,20 +31,7 @@ public class InfoManager {
   private static final ObjectMapper objectMapper =
       new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
 
-  @Operation(
-      summary = "Get ChannelFinder service info",
-      description =
-          "Returns information about the ChannelFinder service and its Elasticsearch backend.",
-      operationId = "getServiceInfo",
-      tags = {"Info"})
-  @ApiResponses(
-      value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "ChannelFinder info",
-            content = @Content(schema = @Schema(implementation = String.class)))
-      })
-  @GetMapping
+  @Override
   public String info() {
 
     Map<String, Object> cfServiceInfo = new LinkedHashMap<>();
