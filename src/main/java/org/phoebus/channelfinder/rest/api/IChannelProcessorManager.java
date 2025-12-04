@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
 import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.processors.ChannelProcessorInfo;
+import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

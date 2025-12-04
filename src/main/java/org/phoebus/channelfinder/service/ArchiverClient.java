@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.processors.aa;
+package org.phoebus.channelfinder.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
+import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -50,7 +52,7 @@ public class ArchiverClient {
         .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
   }
 
-  List<Map<String, String>> getStatuses(
+  public List<Map<String, String>> getStatuses(
       Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverAlias) {
     Set<String> pvs = archivePVS.keySet();
     Boolean postSupportOverride = postSupportArchivers.contains(archiverAlias);
@@ -158,7 +160,7 @@ public class ArchiverClient {
     }
   }
 
-  long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL)
+  public long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL)
       throws JsonProcessingException {
     logger.log(
         Level.INFO, () -> String.format("Configure PVs %s in %s", archivePVS.toString(), aaURL));
@@ -207,7 +209,7 @@ public class ArchiverClient {
     return count;
   }
 
-  List<String> getAAPolicies(String aaURL) {
+  public List<String> getAAPolicies(String aaURL) {
     if (StringUtils.isEmpty(aaURL)) {
       return List.of();
     }
@@ -231,7 +233,7 @@ public class ArchiverClient {
     }
   }
 
-  String getVersion(String archiverURL) {
+  public String getVersion(String archiverURL) {
     try {
       String uriString = archiverURL + ARCHIVER_VERSIONS_RESOURCE;
       String response =

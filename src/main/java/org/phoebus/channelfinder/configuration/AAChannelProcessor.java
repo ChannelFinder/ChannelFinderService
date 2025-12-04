@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.processors.aa;
+package org.phoebus.channelfinder.configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
@@ -14,8 +14,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.processors.ChannelProcessor;
-import org.phoebus.channelfinder.processors.ChannelProcessorInfo;
+import org.phoebus.channelfinder.service.ArchiverClient;
+import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
+import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
+import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
+import org.phoebus.channelfinder.service.model.archiver.aa.ArchiverInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

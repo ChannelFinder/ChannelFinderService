@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.processors.aa;
+package org.phoebus.channelfinder.service.model.archiver.aa;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
