@@ -15,7 +15,7 @@ import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
 import org.phoebus.channelfinder.rest.api.IChannelScroll;
-import org.phoebus.channelfinder.rest.controller.ChannelScroll;
+import org.phoebus.channelfinder.rest.controller.ChannelScrollController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
@@ -23,11 +23,11 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@WebMvcTest(ChannelScroll.class)
+@WebMvcTest(ChannelScrollController.class)
 @TestPropertySource(value = "classpath:application_test.properties")
-class ChannelScrollSearchIT {
+class ChannelScrollControllerSearchIT {
 
-  private static final Logger logger = Logger.getLogger(ChannelScrollSearchIT.class.getName());
+  private static final Logger logger = Logger.getLogger(ChannelScrollControllerSearchIT.class.getName());
 
   @Autowired IChannelScroll channelScroll;
 

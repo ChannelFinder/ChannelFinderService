@@ -19,9 +19,9 @@ import org.phoebus.channelfinder.common.NTXmlUtil;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
-import org.phoebus.channelfinder.rest.api.IChannelManager;
-import org.phoebus.channelfinder.rest.api.IPropertyManager;
-import org.phoebus.channelfinder.rest.api.ITagManager;
+import org.phoebus.channelfinder.rest.api.IChannel;
+import org.phoebus.channelfinder.rest.api.IProperty;
+import org.phoebus.channelfinder.rest.api.ITag;
 import org.phoebus.channelfinder.service.ChannelFinderEpicsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -61,11 +61,14 @@ class EpicsRPCRequestIT {
       pvaClient.getChannel(ChannelFinderEpicsService.SERVICE_DESC);
   ;
 
-  @Autowired IChannelManager channelManager;
+  @Autowired
+  IChannel channelManager;
 
-  @Autowired IPropertyManager propertyManager;
+  @Autowired
+  IProperty propertyManager;
 
-  @Autowired ITagManager tagManager;
+  @Autowired
+  ITag tagManager;
 
   @Test
   void testRPCService() throws ExecutionException, InterruptedException, TimeoutException {

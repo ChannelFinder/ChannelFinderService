@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 @RequestMapping(TAG_RESOURCE_URI)
-public interface ITagManager {
+public interface ITag {
 
   @Operation(
       summary = "List all tags",

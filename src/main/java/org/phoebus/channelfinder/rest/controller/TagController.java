@@ -17,6 +17,7 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
+import org.phoebus.channelfinder.rest.api.ITag;
 import org.phoebus.channelfinder.service.AuthorizationService;
 import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +34,11 @@ import org.springframework.web.server.ResponseStatusException;
 @CrossOrigin
 @RestController
 @EnableAutoConfiguration
-public class TagManager implements org.phoebus.channelfinder.rest.api.ITagManager {
+public class TagController implements ITag {
 
   private static final Logger tagManagerAudit =
-      Logger.getLogger(TagManager.class.getName() + ".audit");
-  private static final Logger logger = Logger.getLogger(TagManager.class.getName());
+      Logger.getLogger(TagController.class.getName() + ".audit");
+  private static final Logger logger = Logger.getLogger(TagController.class.getName());
 
   @Autowired TagRepository tagRepository;
 

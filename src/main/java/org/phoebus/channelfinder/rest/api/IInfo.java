@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @RequestMapping(CF_SERVICE_INFO)
-public interface IInfoManager {
+public interface IInfo {
 
   @Operation(
       summary = "Get ChannelFinder service info",

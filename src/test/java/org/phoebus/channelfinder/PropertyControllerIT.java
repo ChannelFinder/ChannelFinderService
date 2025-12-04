@@ -21,8 +21,8 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
-import org.phoebus.channelfinder.rest.api.IPropertyManager;
-import org.phoebus.channelfinder.rest.controller.PropertyManager;
+import org.phoebus.channelfinder.rest.api.IProperty;
+import org.phoebus.channelfinder.rest.controller.PropertyController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -32,12 +32,13 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@WebMvcTest(PropertyManager.class) // TODO Somehow creating one
+@WebMvcTest(PropertyController.class) // TODO Somehow creating one
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
-class PropertyManagerIT {
+class PropertyControllerIT {
 
-  @Autowired IPropertyManager propertyManager;
+  @Autowired
+  IProperty propertyManager;
 
   @Autowired PropertyRepository propertyRepository;
 

@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 @RequestMapping(CHANNEL_RESOURCE_URI)
-public interface IChannelManager {
+public interface IChannel {
 
   @Operation(
       summary = "Query channels",

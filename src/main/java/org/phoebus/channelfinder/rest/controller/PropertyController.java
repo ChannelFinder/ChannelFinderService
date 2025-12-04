@@ -17,6 +17,7 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
+import org.phoebus.channelfinder.rest.api.IProperty;
 import org.phoebus.channelfinder.service.AuthorizationService;
 import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +34,11 @@ import org.springframework.web.server.ResponseStatusException;
 @CrossOrigin
 @RestController
 @EnableAutoConfiguration
-public class PropertyManager implements org.phoebus.channelfinder.rest.api.IPropertyManager {
+public class PropertyController implements IProperty {
 
   private static final Logger propertyManagerAudit =
-      Logger.getLogger(PropertyManager.class.getName() + ".audit");
-  private static final Logger logger = Logger.getLogger(PropertyManager.class.getName());
+      Logger.getLogger(PropertyController.class.getName() + ".audit");
+  private static final Logger logger = Logger.getLogger(PropertyController.class.getName());
 
   @Autowired TagRepository tagRepository;
 

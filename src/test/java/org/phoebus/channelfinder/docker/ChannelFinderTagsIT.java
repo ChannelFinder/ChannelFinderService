@@ -30,7 +30,7 @@ import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
-import org.phoebus.channelfinder.rest.controller.TagManager;
+import org.phoebus.channelfinder.rest.controller.TagController;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -40,7 +40,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * CFResourceDescriptors#TAG_RESOURCE_URI}.
  *
  * @author Lars Johansson
- * @see TagManager
+ * @see TagController
  * @see org.phoebus.channelfinder.docker.ITUtil
  * @see org.phoebus.channelfinder.docker.ITUtilTags
  */

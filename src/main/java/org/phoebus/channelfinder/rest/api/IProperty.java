@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 @RequestMapping(PROPERTY_RESOURCE_URI)
-public interface IPropertyManager {
+public interface IProperty {
 
   @Operation(
       summary = "List all properties",

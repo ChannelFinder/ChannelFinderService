@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import org.phoebus.channelfinder.Application;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
+import org.phoebus.channelfinder.rest.api.IInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin
 @RestController
 @EnableAutoConfiguration
-public class InfoManager implements org.phoebus.channelfinder.rest.api.IInfoManager {
+public class InfoController implements IInfo {
 
   @Value("${channelfinder.version:4.7.0}")
   private String version;

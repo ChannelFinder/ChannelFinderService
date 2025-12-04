@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 @RequestMapping(CHANNEL_PROCESSOR_RESOURCE_URI)
-public interface IChannelProcessorManager {
+public interface IChannelProcessor {
 
   @Operation(
       summary = "Get processor count",

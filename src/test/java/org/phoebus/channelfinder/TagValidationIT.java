@@ -13,8 +13,8 @@ import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;
-import org.phoebus.channelfinder.rest.api.ITagManager;
-import org.phoebus.channelfinder.rest.controller.TagManager;
+import org.phoebus.channelfinder.rest.api.ITag;
+import org.phoebus.channelfinder.rest.controller.TagController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -22,12 +22,13 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.server.ResponseStatusException;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@WebMvcTest(TagManager.class)
+@WebMvcTest(TagController.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
 class TagValidationIT {
 
-  @Autowired ITagManager tagManager;
+  @Autowired
+  ITag tagManager;
 
   @Autowired ElasticConfig esService;
   @Autowired ChannelRepository channelRepository;

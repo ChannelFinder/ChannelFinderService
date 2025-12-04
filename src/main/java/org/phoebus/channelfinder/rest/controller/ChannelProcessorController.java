@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
+import org.phoebus.channelfinder.rest.api.IChannelProcessor;
 import org.phoebus.channelfinder.rest.api.IChannelScroll;
 import org.phoebus.channelfinder.service.AuthorizationService;
 import org.phoebus.channelfinder.service.ChannelProcessorService;
@@ -26,10 +27,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @EnableAutoConfiguration
-public class ChannelProcessorManager
-    implements org.phoebus.channelfinder.rest.api.IChannelProcessorManager {
+public class ChannelProcessorController
+    implements IChannelProcessor {
 
-  private static final Logger logger = Logger.getLogger(ChannelProcessorManager.class.getName());
+  private static final Logger logger = Logger.getLogger(ChannelProcessorController.class.getName());
 
   @Autowired ChannelProcessorService channelProcessorService;
   @Autowired AuthorizationService authorizationService;

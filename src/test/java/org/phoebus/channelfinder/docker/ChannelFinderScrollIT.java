@@ -26,7 +26,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.entity.Scroll;
-import org.phoebus.channelfinder.rest.controller.ChannelScroll;
+import org.phoebus.channelfinder.rest.controller.ChannelScrollController;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -36,7 +36,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * CFResourceDescriptors#SCROLL_RESOURCE_URI}.
  *
  * @author Lars Johansson
- * @see ChannelScroll
+ * @see ChannelScrollController
  * @see org.phoebus.channelfinder.docker.ITUtil
  * @see org.phoebus.channelfinder.docker.ITUtilScroll
  */

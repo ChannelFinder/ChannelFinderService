@@ -12,7 +12,7 @@ import org.mockito.Mockito;
 import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.rest.api.IChannelScroll;
-import org.phoebus.channelfinder.rest.controller.ChannelProcessorManager;
+import org.phoebus.channelfinder.rest.controller.ChannelProcessorController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -24,11 +24,11 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.util.Base64Utils;
 
 @ExtendWith(SpringExtension.class)
-@WebMvcTest(ChannelProcessorManager.class)
+@WebMvcTest(ChannelProcessorController.class)
 @TestPropertySource(
     value = "classpath:application_test.properties",
     properties = {"elasticsearch.create.indices = false"})
-class ChannelProcessorManagerIT {
+class ChannelProcessorControllerIT {
 
   protected static final String AUTHORIZATION =
       "Basic " + Base64Utils.encodeToString("admin:adminPass".getBytes());

@@ -36,9 +36,9 @@ import org.springframework.web.server.ResponseStatusException;
 @CrossOrigin
 @RestController
 @EnableAutoConfiguration
-public class ChannelScroll implements org.phoebus.channelfinder.rest.api.IChannelScroll {
+public class ChannelScrollController implements org.phoebus.channelfinder.rest.api.IChannelScroll {
 
-  private static final Logger logger = Logger.getLogger(ChannelScroll.class.getName());
+  private static final Logger logger = Logger.getLogger(ChannelScrollController.class.getName());
 
   @Autowired ElasticConfig esService;
 

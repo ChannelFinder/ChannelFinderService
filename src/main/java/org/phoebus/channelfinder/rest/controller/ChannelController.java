@@ -22,6 +22,7 @@ import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.respository.ChannelRepository;
 import org.phoebus.channelfinder.respository.PropertyRepository;
 import org.phoebus.channelfinder.respository.TagRepository;
+import org.phoebus.channelfinder.rest.api.IChannel;
 import org.phoebus.channelfinder.service.AuthorizationService;
 import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.phoebus.channelfinder.service.ChannelProcessorService;
@@ -40,11 +41,11 @@ import org.springframework.web.server.ResponseStatusException;
 @CrossOrigin
 @RestController
 @EnableAutoConfiguration
-public class ChannelManager implements org.phoebus.channelfinder.rest.api.IChannelManager {
+public class ChannelController implements IChannel {
 
   private static final Logger channelManagerAudit =
-      Logger.getLogger(ChannelManager.class.getName() + ".audit");
-  private static final Logger logger = Logger.getLogger(ChannelManager.class.getName());
+      Logger.getLogger(ChannelController.class.getName() + ".audit");
+  private static final Logger logger = Logger.getLogger(ChannelController.class.getName());
 
   @Autowired private ServletContext servletContext;
 
