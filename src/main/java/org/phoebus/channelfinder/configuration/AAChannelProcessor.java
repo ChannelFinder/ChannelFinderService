@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.service.ArchiverClient;
+import org.phoebus.channelfinder.service.external.ArchiverClient;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;

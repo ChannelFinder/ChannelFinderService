@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.service;
+package org.phoebus.channelfinder.service.external;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
