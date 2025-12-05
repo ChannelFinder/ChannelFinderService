@@ -25,9 +25,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -54,9 +51,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public Property read(
-      @PathVariable("propertyName") String propertyName,
-      @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
+  public Property read(String propertyName, boolean withChannels) {
     propertyManagerAudit.log(
         Level.INFO, () -> MessageFormat.format(TextUtil.FIND_PROPERTY, propertyName));
 
@@ -76,8 +71,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public Property create(
-      @PathVariable("propertyName") String propertyName, @RequestBody Property property) {
+  public Property create(String propertyName, Property property) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
@@ -128,7 +122,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public Iterable<Property> create(@RequestBody Iterable<Property> properties) {
+  public Iterable<Property> create(Iterable<Property> properties) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
@@ -183,10 +177,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public Property addSingle(
-      @PathVariable("propertyName") String propertyName,
-      @PathVariable("channelName") String channelName,
-      @RequestBody Property property) {
+  public Property addSingle(String propertyName, String channelName, Property property) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
@@ -236,8 +227,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public Property update(
-      @PathVariable("propertyName") String propertyName, @RequestBody Property property) {
+  public Property update(String propertyName, Property property) {
     // check if authorized role
     if (!authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
@@ -329,7 +319,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public Iterable<Property> update(@RequestBody Iterable<Property> properties) {
+  public Iterable<Property> update(Iterable<Property> properties) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
@@ -425,7 +415,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public void remove(@PathVariable("propertyName") String propertyName) {
+  public void remove(String propertyName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {
@@ -455,9 +445,7 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public void removeSingle(
-      @PathVariable("propertyName") final String propertyName,
-      @PathVariable("channelName") String channelName) {
+  public void removeSingle(final String propertyName, String channelName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_PROPERTY)) {

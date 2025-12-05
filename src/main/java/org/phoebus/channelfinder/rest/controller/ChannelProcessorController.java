@@ -1,8 +1,5 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.common.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
-
-import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,8 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -72,9 +67,7 @@ public class ChannelProcessorController implements IChannelProcessor {
   }
 
   @Override
-  public long processChannels(
-      @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams) {
+  public long processChannels(MultiValueMap<String, String> allRequestParams) {
     long channelCount = 0;
     Scroll scrollResult = channelScroll.query(allRequestParams);
     channelCount += scrollResult.getChannels().size();
@@ -93,11 +86,7 @@ public class ChannelProcessorController implements IChannelProcessor {
   }
 
   @Override
-  public void setProcessorEnabled(
-      @PathVariable("processorName") String processorName,
-      @Parameter(description = "Value of enabled to set, default value: true")
-          @RequestParam(required = false, name = "enabled", defaultValue = "true")
-          Boolean enabled) {
+  public void setProcessorEnabled(String processorName, Boolean enabled) {
     channelProcessorService.setProcessorEnabled(processorName, enabled);
   }
 }

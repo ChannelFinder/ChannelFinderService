@@ -8,7 +8,6 @@ import co.elastic.clients.elasticsearch._types.query_dsl.*;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import io.swagger.v3.oas.annotations.Parameter;
 import java.text.MessageFormat;
 import java.util.Comparator;
 import java.util.List;
@@ -17,7 +16,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.common.TextUtil;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
@@ -28,8 +26,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -47,18 +43,12 @@ public class ChannelScrollController implements org.phoebus.channelfinder.rest.a
   ElasticsearchClient client;
 
   @Override
-  public Scroll query(
-      @Parameter(description = CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams) {
+  public Scroll query(MultiValueMap<String, String> allRequestParams) {
     return search(null, allRequestParams);
   }
 
   @Override
-  public Scroll query(
-      @Parameter(description = "Scroll ID from previous query") @PathVariable("scrollId")
-          String scrollId,
-      @Parameter(description = CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> searchParameters) {
+  public Scroll query(String scrollId, MultiValueMap<String, String> searchParameters) {
     return search(scrollId, searchParameters);
   }
 

@@ -1,10 +1,7 @@
 package org.phoebus.channelfinder.rest.controller;
 
-import static org.phoebus.channelfinder.common.CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION;
-
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
-import io.swagger.v3.oas.annotations.Parameter;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
@@ -32,9 +29,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -60,28 +54,22 @@ public class ChannelController implements IChannel {
   @Autowired ChannelProcessorService channelProcessorService;
 
   @Override
-  public List<Channel> query(
-      @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams) {
+  public List<Channel> query(MultiValueMap<String, String> allRequestParams) {
     return channelRepository.search(allRequestParams).channels();
   }
 
   @Override
-  public SearchResult combinedQuery(
-      @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams) {
+  public SearchResult combinedQuery(MultiValueMap<String, String> allRequestParams) {
     return channelRepository.search(allRequestParams);
   }
 
   @Override
-  public long queryCount(
-      @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams) {
+  public long queryCount(MultiValueMap<String, String> allRequestParams) {
     return channelRepository.count(allRequestParams);
   }
 
   @Override
-  public Channel read(@PathVariable("channelName") String channelName) {
+  public Channel read(String channelName) {
     channelManagerAudit.log(
         Level.INFO, () -> MessageFormat.format(TextUtil.FIND_CHANNEL, channelName));
 
@@ -95,8 +83,7 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public Channel create(
-      @PathVariable("channelName") String channelName, @RequestBody Channel channel) {
+  public Channel create(String channelName, Channel channel) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
@@ -147,7 +134,7 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public Iterable<Channel> create(@RequestBody Iterable<Channel> channels) {
+  public Iterable<Channel> create(Iterable<Channel> channels) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
@@ -238,8 +225,7 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public Channel update(
-      @PathVariable("channelName") String channelName, @RequestBody Channel channel) {
+  public Channel update(String channelName, Channel channel) {
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
       long start = System.currentTimeMillis();
@@ -308,7 +294,7 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public Iterable<Channel> update(@RequestBody Iterable<Channel> channels) {
+  public Iterable<Channel> update(Iterable<Channel> channels) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {
@@ -368,7 +354,7 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public void remove(@PathVariable("channelName") String channelName) {
+  public void remove(String channelName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_CHANNEL)) {

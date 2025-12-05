@@ -25,9 +25,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -52,9 +49,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public Tag read(
-      @PathVariable("tagName") String tagName,
-      @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels) {
+  public Tag read(String tagName, boolean withChannels) {
     tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_TAG, tagName));
 
     if (withChannels) {
@@ -79,7 +74,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public Tag create(@PathVariable("tagName") String tagName, @RequestBody Tag tag) {
+  public Tag create(String tagName, Tag tag) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -135,7 +130,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public Iterable<Tag> create(@RequestBody Iterable<Tag> tags) {
+  public Iterable<Tag> create(Iterable<Tag> tags) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -211,8 +206,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public Tag addSingle(
-      @PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName) {
+  public Tag addSingle(String tagName, String channelName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -256,7 +250,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public Tag update(@PathVariable("tagName") String tagName, @RequestBody Tag tag) {
+  public Tag update(String tagName, Tag tag) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -332,7 +326,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public Iterable<Tag> update(@RequestBody Iterable<Tag> tags) {
+  public Iterable<Tag> update(Iterable<Tag> tags) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -401,7 +395,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public void remove(@PathVariable("tagName") String tagName) {
+  public void remove(String tagName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
@@ -430,9 +424,7 @@ public class TagController implements ITag {
   }
 
   @Override
-  public void removeSingle(
-      @PathVariable("tagName") final String tagName,
-      @PathVariable("channelName") String channelName) {
+  public void removeSingle(final String tagName, String channelName) {
     // check if authorized role
     if (authorizationService.isAuthorizedRole(
         SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
