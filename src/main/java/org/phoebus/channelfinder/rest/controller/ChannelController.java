@@ -2,6 +2,7 @@ package org.phoebus.channelfinder.rest.controller;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
+import jakarta.servlet.ServletContext;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +11,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import javax.servlet.ServletContext;
 import org.phoebus.channelfinder.common.TextUtil;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;

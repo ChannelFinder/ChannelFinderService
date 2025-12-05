@@ -1,34 +1,52 @@
 package org.phoebus.channelfinder.configuration;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
+import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.*;
+import org.springframework.core.env.Environment;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
+import org.springframework.security.ldap.authentication.BindAuthenticator;
+import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class WebSecurityConfig {
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception {
-    http.csrf().disable();
-    http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-    http.authorizeRequests().anyRequest().authenticated();
-    http.httpBasic();
+  @Bean
+  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http.csrf(AbstractHttpConfigurer::disable)
+        .sessionManagement(
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+        .httpBasic(withDefaults());
+
+    return http.build();
   }
 
-  @Override
-  public void configure(WebSecurity web) throws Exception {
+  @Bean
+  public WebSecurityCustomizer ignoringCustomizer() {
     // Authentication and Authorization is only needed for non search/query operations
-    web.ignoring().antMatchers(HttpMethod.GET, "/**");
+    return web -> web.ignoring().requestMatchers(HttpMethod.GET, "/**");
   }
 
   /** External LDAP configuration properties */
@@ -83,71 +101,113 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   @Value("${file.auth.enabled:true}")
   boolean file_enabled;
 
-  @Override
-  public void configure(AuthenticationManagerBuilder auth) throws Exception {
+  @Bean
+  public AuthenticationManager authenticationManager(
+      AuthenticationConfiguration configuration, List<AuthenticationProvider> providers) {
+    return new ProviderManager(providers);
+  }
 
-    if (ldap_enabled) {
-      DefaultSpringSecurityContextSource contextSource =
-          new DefaultSpringSecurityContextSource(ldap_url);
-      contextSource.afterPropertiesSet();
+  @Bean
+  @ConditionalOnProperty(name = "ldap.enabled", havingValue = "true")
+  public AuthenticationProvider ldapAuthProvider() {
 
-      DefaultLdapAuthoritiesPopulator myAuthPopulator =
-          new DefaultLdapAuthoritiesPopulator(contextSource, ldap_groups_search_base);
-      myAuthPopulator.setGroupSearchFilter(ldap_groups_search_pattern);
-      myAuthPopulator.setSearchSubtree(true);
-      myAuthPopulator.setIgnorePartialResultException(true);
+    DefaultSpringSecurityContextSource contextSource =
+        new DefaultSpringSecurityContextSource(ldap_url);
+    contextSource.afterPropertiesSet();
 
-      auth.ldapAuthentication()
-          .userDnPatterns(ldap_user_dn_pattern)
-          .ldapAuthoritiesPopulator(myAuthPopulator)
-          .contextSource(contextSource);
+    DefaultLdapAuthoritiesPopulator authPopulator =
+        new DefaultLdapAuthoritiesPopulator(contextSource, ldap_groups_search_base);
+    authPopulator.setGroupSearchFilter(ldap_groups_search_pattern);
+    authPopulator.setSearchSubtree(true);
+    authPopulator.setIgnorePartialResultException(true);
+
+    LdapAuthenticationProvider provider =
+        new LdapAuthenticationProvider(
+            new BindAuthenticator(contextSource) {
+              {
+                setUserDnPatterns(new String[] {ldap_user_dn_pattern});
+              }
+            },
+            authPopulator);
+
+    return provider;
+  }
+
+  @Bean
+  @ConditionalOnProperty(name = "embedded_ldap.enabled", havingValue = "true")
+  public AuthenticationProvider embeddedLdapAuthProvider() {
+
+    DefaultSpringSecurityContextSource contextSource =
+        new DefaultSpringSecurityContextSource(embedded_ldap_url);
+    contextSource.afterPropertiesSet();
+
+    DefaultLdapAuthoritiesPopulator authPopulator =
+        new DefaultLdapAuthoritiesPopulator(contextSource, embedded_ldap_groups_search_base);
+    authPopulator.setGroupSearchFilter(embedded_ldap_groups_search_pattern);
+    authPopulator.setSearchSubtree(true);
+    authPopulator.setIgnorePartialResultException(true);
+
+    LdapAuthenticationProvider provider =
+        new LdapAuthenticationProvider(
+            new BindAuthenticator(contextSource) {
+              {
+                setUserDnPatterns(new String[] {embedded_ldap_user_dn_pattern});
+              }
+            },
+            authPopulator);
+
+    return provider;
+  }
+
+  @Bean
+  @Conditional(EmbeddedLdapCondition.class)
+  public AuthenticationProvider demoAuthProvider() {
+
+    InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
+    PasswordEncoder encoder = encoder();
+
+    for (int i = 0; i < demo_auth_users.length; i++) {
+      String[] userroles = demo_auth_roles[i].split(demo_auth_delimiter_roles);
+
+      manager.createUser(
+          User.withUsername(demo_auth_users[i])
+              .password(encoder.encode(demo_auth_pwds[i]))
+              .roles(userroles)
+              .build());
     }
 
-    if (embedded_ldap_enabled) {
-      DefaultSpringSecurityContextSource contextSource =
-          new DefaultSpringSecurityContextSource(embedded_ldap_url);
-      contextSource.afterPropertiesSet();
-
-      DefaultLdapAuthoritiesPopulator myAuthPopulator =
-          new DefaultLdapAuthoritiesPopulator(contextSource, embedded_ldap_groups_search_base);
-      myAuthPopulator.setGroupSearchFilter(embedded_ldap_groups_search_pattern);
-      myAuthPopulator.setSearchSubtree(true);
-      myAuthPopulator.setIgnorePartialResultException(true);
-
-      auth.ldapAuthentication()
-          .userDnPatterns(embedded_ldap_user_dn_pattern)
-          .ldapAuthoritiesPopulator(myAuthPopulator)
-          .groupSearchBase("ou=Group")
-          .contextSource(contextSource);
-    }
-
-    if (demo_auth_enabled) {
-      // read from configuration, no default content
-      //     interpret users, pwds, roles
-      //     user may have multiple roles
-
-      if (demo_auth_users != null
-          && demo_auth_pwds != null
-          && demo_auth_roles != null
-          && demo_auth_users.length > 0
-          && demo_auth_users.length == demo_auth_pwds.length
-          && demo_auth_pwds.length == demo_auth_roles.length) {
-
-        for (int i = 0; i < demo_auth_users.length; i++) {
-          String[] userroles = demo_auth_roles[i].split(demo_auth_delimiter_roles);
-          if (userroles != null && userroles.length > 0) {
-            auth.inMemoryAuthentication()
-                .withUser(demo_auth_users[i])
-                .password(encoder().encode(demo_auth_pwds[i]))
-                .roles(userroles);
-          }
-        }
+    return new DaoAuthenticationProvider() {
+      {
+        setUserDetailsService(manager);
+        setPasswordEncoder(encoder);
       }
-    }
+    };
   }
 
   @Bean
   public PasswordEncoder encoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  private static class EmbeddedLdapCondition implements Condition {
+
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+
+      Environment environment = context.getEnvironment();
+
+      Boolean isEmbeddedLdapEnabled =
+          environment.getProperty("embedded_ldap.enabled", Boolean.class, false);
+      String[] demoAuthPwds = environment.getProperty("demo_auth.pwds", String[].class);
+      String[] demoAuthRoles = environment.getProperty("demo_auth.roles", String[].class);
+      String[] demoAuthUsers = environment.getProperty("demo_auth.users", String[].class);
+
+      return isEmbeddedLdapEnabled
+          && !ArrayUtils.isEmpty(demoAuthUsers)
+          && !ArrayUtils.isEmpty(demoAuthPwds)
+          && !ArrayUtils.isEmpty(demoAuthRoles)
+          && demoAuthUsers.length == demoAuthPwds.length
+          && demoAuthPwds.length == demoAuthRoles.length;
+    }
   }
 }
