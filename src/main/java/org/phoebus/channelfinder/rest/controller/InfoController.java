@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import org.phoebus.channelfinder.Application;
+import java.util.logging.Logger;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.rest.api.IInfo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @EnableAutoConfiguration
 public class InfoController implements IInfo {
+
+  private static final Logger logger = Logger.getLogger(InfoController.class.getName());
 
   @Value("${channelfinder.version:4.7.0}")
   private String version;
@@ -51,16 +53,14 @@ public class InfoController implements IInfo {
       ElasticsearchVersionInfo elasticVersion = response.version();
       elasticInfo.put("version", elasticVersion.number());
     } catch (IOException e) {
-      Application.logger.log(
-          Level.WARNING, "Failed to create ChannelFinder service info resource.", e);
+      logger.log(Level.WARNING, "Failed to create ChannelFinder service info resource.", e);
       elasticInfo.put("status", "Failed to connect to elastic " + e.getLocalizedMessage());
     }
     cfServiceInfo.put("elastic", elasticInfo);
     try {
       return objectMapper.writeValueAsString(cfServiceInfo);
     } catch (JsonProcessingException e) {
-      Application.logger.log(
-          Level.WARNING, "Failed to create ChannelFinder service info resource.", e);
+      logger.log(Level.WARNING, "Failed to create ChannelFinder service info resource.", e);
       return "Failed to gather ChannelFinder service info";
     }
   }
