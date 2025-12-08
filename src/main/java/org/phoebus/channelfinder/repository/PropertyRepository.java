@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.respository;
+package org.phoebus.channelfinder.repository;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;

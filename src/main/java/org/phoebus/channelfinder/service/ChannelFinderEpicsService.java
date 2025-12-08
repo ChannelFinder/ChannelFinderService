@@ -20,7 +20,7 @@ import org.epics.pva.server.PVAServer;
 import org.epics.pva.server.RPCService;
 import org.epics.pva.server.ServerPV;
 import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.respository.ChannelRepository;
+import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;

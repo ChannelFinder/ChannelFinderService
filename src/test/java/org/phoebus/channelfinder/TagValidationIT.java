@@ -12,7 +12,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
-import org.phoebus.channelfinder.respository.ChannelRepository;
+import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.phoebus.channelfinder.rest.api.ITag;
 import org.phoebus.channelfinder.rest.controller.TagController;
 import org.springframework.beans.factory.annotation.Autowired;

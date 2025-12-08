@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
-import org.phoebus.channelfinder.respository.ChannelRepository;
+import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
