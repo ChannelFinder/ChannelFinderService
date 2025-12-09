@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.example.PopulateService;
-import org.phoebus.channelfinder.processors.ChannelProcessor;
+import org.phoebus.channelfinder.configuration.ChannelProcessor;
+import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -43,7 +43,7 @@ import org.springframework.util.FileCopyUtils;
 @SpringBootApplication
 public class Application implements ApplicationRunner {
 
-  static final Logger logger = Logger.getLogger(Application.class.getName());
+  private static final Logger logger = Logger.getLogger(Application.class.getName());
 
   public static void main(String[] args) {
     // Set the java truststore used by channelfinder
@@ -72,7 +72,7 @@ public class Application implements ApplicationRunner {
     }
   }
 
-  @Autowired PopulateService service;
+  @Autowired PopulateDBConfiguration service;
 
   public void run(ApplicationArguments args) throws Exception {
     if (args.containsOption("demo-data")) {

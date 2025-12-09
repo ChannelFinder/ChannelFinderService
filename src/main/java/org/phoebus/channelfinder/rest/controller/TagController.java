@@ -1,0 +1,534 @@
+package org.phoebus.channelfinder.rest.controller;
+
+import com.google.common.collect.Lists;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import org.phoebus.channelfinder.common.TextUtil;
+import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.repository.ChannelRepository;
+import org.phoebus.channelfinder.repository.TagRepository;
+import org.phoebus.channelfinder.rest.api.ITag;
+import org.phoebus.channelfinder.service.AuthorizationService;
+import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+@CrossOrigin
+@RestController
+@EnableAutoConfiguration
+public class TagController implements ITag {
+
+  private static final Logger tagManagerAudit =
+      Logger.getLogger(TagController.class.getName() + ".audit");
+  private static final Logger logger = Logger.getLogger(TagController.class.getName());
+
+  @Autowired TagRepository tagRepository;
+
+  @Autowired ChannelRepository channelRepository;
+
+  @Autowired AuthorizationService authorizationService;
+
+  @Override
+  public Iterable<Tag> list() {
+    return tagRepository.findAll();
+  }
+
+  @Override
+  public Tag read(String tagName, boolean withChannels) {
+    tagManagerAudit.log(Level.INFO, () -> MessageFormat.format(TextUtil.FIND_TAG, tagName));
+
+    if (withChannels) {
+      Optional<Tag> foundTag = tagRepository.findById(tagName, true);
+      if (foundTag.isPresent()) {
+        return foundTag.get();
+      } else {
+        String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+      }
+    } else {
+      Optional<Tag> foundTag = tagRepository.findById(tagName);
+      if (foundTag.isPresent()) {
+        return foundTag.get();
+      } else {
+        String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+      }
+    }
+  }
+
+  @Override
+  public Tag create(String tagName, Tag tag) {
+    // check if authorized role
+    if (authorizationService.isAuthorizedRole(
+        SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+      long start = System.currentTimeMillis();
+      tagManagerAudit.log(
+          Level.INFO,
+          () ->
+              MessageFormat.format(
+                  TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+      // Validate request parameters
+      validateTagRequest(tag);
+
+      // check if authorized owner
+      if (!authorizationService.isAuthorizedOwner(
+          SecurityContextHolder.getContext().getAuthentication(), tag)) {
+        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+      }
+      Optional<Tag> existingTag = tagRepository.findById(tagName);
+      boolean present = existingTag.isPresent();
+      if (present) {
+        if (!authorizationService.isAuthorizedOwner(
+            SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+          String message =
+              MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+          logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+          throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
+        // delete existing tag
+        tagRepository.deleteById(tagName);
+      }
+
+      // create new tag
+      Tag createdTag = tagRepository.index(tag);
+
+      if (!tag.getChannels().isEmpty()) {
+        tag.getChannels().forEach(chan -> chan.addTag(createdTag));
+        // update the listed channels in the tag's payloads with the new tag
+        Iterable<Channel> chans = channelRepository.saveAll(tag.getChannels());
+        List<Channel> chanList = new ArrayList<>();
+        for (Channel chan : chans) {
+          chanList.add(chan);
+        }
+        createdTag.setChannels(chanList);
+      }
+      return createdTag;
+    } else {
+      String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+    }
+  }
+
+  @Override
+  public Iterable<Tag> create(Iterable<Tag> tags) {
+    // check if authorized role
+    if (authorizationService.isAuthorizedRole(
+        SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+      long start = System.currentTimeMillis();
+      tagManagerAudit.log(
+          Level.INFO,
+          () ->
+              MessageFormat.format(
+                  TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+
+      // check if authorized owner
+      for (Tag tag : tags) {
+        Optional<Tag> existingTag = tagRepository.findById(tag.getName());
+        boolean present = existingTag.isPresent();
+        if (present) {
+          if (!authorizationService.isAuthorizedOwner(
+              SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+            String message =
+                MessageFormat.format(
+                    TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+          }
+          tag.setOwner(existingTag.get().getOwner());
+        } else {
+          if (!authorizationService.isAuthorizedOwner(
+              SecurityContextHolder.getContext().getAuthentication(), tag)) {
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+          }
+        }
+      }
+
+      // Validate request parameters
+      validateTagRequest(tags);
+
+      // delete existing tags
+      for (Tag tag : tags) {
+        if (tagRepository.existsById(tag.getName())) {
+          // delete existing tag
+          tagRepository.deleteById(tag.getName());
+        }
+      }
+
+      // create new tags
+      Iterable<Tag> createdTags = tagRepository.indexAll(Lists.newArrayList(tags));
+
+      // update the listed channels in the tags' payloads with new tags
+      Map<String, Channel> channels = new HashMap<>();
+      for (Tag tag : tags) {
+        for (Channel channel : tag.getChannels()) {
+          if (channels.get(channel.getName()) != null) {
+            channels.get(channel.getName()).addTag(new Tag(tag.getName(), tag.getOwner()));
+          } else {
+            channel.addTag(new Tag(tag.getName(), tag.getOwner()));
+            channels.put(channel.getName(), channel);
+          }
+        }
+      }
+
+      if (!channels.isEmpty()) {
+        Iterable<Channel> chans = channelRepository.saveAll(channels.values());
+      }
+      // TODO should return created tags with properly organized saved channels, but it would be
+      // very complicated...
+      return tags;
+    } else {
+      String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAGS, tags);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+    }
+  }
+
+  @Override
+  public Tag addSingle(String tagName, String channelName) {
+    // check if authorized role
+    if (authorizationService.isAuthorizedRole(
+        SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+      long start = System.currentTimeMillis();
+      tagManagerAudit.log(
+          Level.INFO,
+          () ->
+              MessageFormat.format(
+                  TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+      // Validate request parameters
+      validateTagWithChannelRequest(channelName);
+
+      // check if authorized owner
+      Optional<Tag> existingTag = tagRepository.findById(tagName);
+      boolean present = existingTag.isPresent();
+      if (present) {
+        if (!authorizationService.isAuthorizedOwner(
+            SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+          String message =
+              MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+          logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+          throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
+        // add tag to channel
+        Channel channel = channelRepository.findById(channelName).get();
+        channel.addTag(existingTag.get());
+        Channel taggedChannel = channelRepository.save(channel);
+        Tag addedTag = existingTag.get();
+        addedTag.setChannels(Arrays.asList(taggedChannel));
+        return addedTag;
+      } else {
+        String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+      }
+    } else {
+      String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+    }
+  }
+
+  @Override
+  public Tag update(String tagName, Tag tag) {
+    // check if authorized role
+    if (authorizationService.isAuthorizedRole(
+        SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+      long start = System.currentTimeMillis();
+      tagManagerAudit.log(
+          Level.INFO,
+          () ->
+              MessageFormat.format(
+                  TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+      // Validate request parameters
+      validateTagRequest(tag);
+
+      // check if authorized owner
+      if (!authorizationService.isAuthorizedOwner(
+          SecurityContextHolder.getContext().getAuthentication(), tag)) {
+        String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+      }
+      List<Channel> channels = new ArrayList<>();
+      Optional<Tag> existingTag = tagRepository.findById(tagName, true);
+
+      Tag newTag;
+      if (existingTag.isPresent()) {
+        if (!authorizationService.isAuthorizedOwner(
+            SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+          String message =
+              MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+          logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+          throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
+        channels = existingTag.get().getChannels();
+        newTag = existingTag.get();
+        newTag.setOwner(tag.getOwner());
+        // Is an existing tag being renamed
+        if (!tag.getName().equalsIgnoreCase(existingTag.get().getName())) {
+          // Since this is a rename operation we will need to remove the old channel.
+          tagRepository.deleteById(existingTag.get().getName());
+          newTag.setName(tag.getName());
+        }
+      } else {
+        newTag = tag;
+      }
+
+      // update tag
+      Tag updatedTag = tagRepository.save(newTag);
+
+      // update channels of existing tag
+      if (!channels.isEmpty()) {
+        channels.forEach(chan -> chan.addTag(updatedTag));
+      }
+
+      // update the listed channels in the tag's payload with the updated tag
+      if (!tag.getChannels().isEmpty()) {
+        tag.getChannels().forEach(c -> c.addTag(updatedTag));
+        // update the listed channels in the tag's payloads with the new tag
+        channels.addAll(tag.getChannels());
+      }
+
+      if (!channels.isEmpty()) {
+        Iterable<Channel> updatedChannels = channelRepository.saveAll(channels);
+        updatedTag.setChannels(
+            StreamSupport.stream(updatedChannels.spliterator(), false)
+                .collect(Collectors.toList()));
+      }
+
+      return updatedTag;
+    } else {
+      String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+    }
+  }
+
+  @Override
+  public Iterable<Tag> update(Iterable<Tag> tags) {
+    // check if authorized role
+    if (authorizationService.isAuthorizedRole(
+        SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+      long start = System.currentTimeMillis();
+      tagManagerAudit.log(
+          Level.INFO,
+          () ->
+              MessageFormat.format(
+                  TextUtil.CLIENT_INITIALIZATION, (System.currentTimeMillis() - start)));
+
+      // check if authorized owner
+      for (Tag tag : tags) {
+        Optional<Tag> existingTag = tagRepository.findById(tag.getName());
+        boolean present = existingTag.isPresent();
+        if (present) {
+          if (!authorizationService.isAuthorizedOwner(
+              SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+            String message =
+                MessageFormat.format(
+                    TextUtil.USER_NOT_AUTHORIZED_ON_TAG, existingTag.get().toLog());
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+          }
+          tag.setOwner(existingTag.get().getOwner());
+        } else {
+          if (!authorizationService.isAuthorizedOwner(
+              SecurityContextHolder.getContext().getAuthentication(), tag)) {
+            String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tag.toLog());
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+          }
+        }
+      }
+
+      // Validate request parameters
+      validateTagRequest(tags);
+
+      // update the listed channels in the tags' payloads with new tags
+      Map<String, Channel> channels = new HashMap<>();
+      for (Tag tag : tags) {
+        for (Channel channel : tag.getChannels()) {
+          if (channels.get(channel.getName()) != null) {
+            channels.get(channel.getName()).addTag(new Tag(tag.getName(), tag.getOwner()));
+          } else {
+            channel.addTag(new Tag(tag.getName(), tag.getOwner()));
+            channels.put(channel.getName(), channel);
+          }
+        }
+      }
+
+      // update tags
+      Iterable<Tag> updatedTags = tagRepository.saveAll(tags);
+
+      // update channels
+      if (!channels.isEmpty()) {
+        channelRepository.saveAll(channels.values());
+      }
+      // TODO should return updated tags with properly organized saved channels, but it would be
+      // very complicated...
+      return tags;
+    } else {
+      String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAGS, tags);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+    }
+  }
+
+  @Override
+  public void remove(String tagName) {
+    // check if authorized role
+    if (authorizationService.isAuthorizedRole(
+        SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+      Optional<Tag> existingTag = tagRepository.findById(tagName);
+      if (existingTag.isPresent()) {
+        // check if authorized owner
+        if (authorizationService.isAuthorizedOwner(
+            SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+          // delete tag
+          tagRepository.deleteById(tagName);
+        } else {
+          String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+          logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+          throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
+      } else {
+        String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+      }
+    } else {
+      String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+    }
+  }
+
+  @Override
+  public void removeSingle(final String tagName, String channelName) {
+    // check if authorized role
+    if (authorizationService.isAuthorizedRole(
+        SecurityContextHolder.getContext().getAuthentication(), ROLES.CF_TAG)) {
+      Optional<Tag> existingTag = tagRepository.findById(tagName);
+      if (existingTag.isPresent()) {
+        // check if authorized owner
+        if (authorizationService.isAuthorizedOwner(
+            SecurityContextHolder.getContext().getAuthentication(), existingTag.get())) {
+          Optional<Channel> ch = channelRepository.findById(channelName);
+          if (ch.isPresent()) {
+            // remove tag from channel
+            Channel channel = ch.get();
+            channel.removeTag(new Tag(tagName, ""));
+            channelRepository.index(channel);
+          } else {
+            String message =
+                MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
+            logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+          }
+        } else {
+          String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+          logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+          throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+        }
+      } else {
+        String message = MessageFormat.format(TextUtil.TAG_NAME_DOES_NOT_EXIST, tagName);
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+      }
+    } else {
+      String message = MessageFormat.format(TextUtil.USER_NOT_AUTHORIZED_ON_TAG, tagName);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, message, null);
+    }
+  }
+
+  /**
+   * Checks if all the tags included satisfy the following conditions
+   *
+   * <ol>
+   *   <li>the tag names are not null or empty and matches the names in the bodies
+   *   <li>the tag owners are not null or empty
+   *   <li>all the channels exist
+   * </ol>
+   *
+   * @param tags the list of tags to be validated
+   */
+  @Override
+  public void validateTagRequest(Iterable<Tag> tags) {
+    for (Tag tag : tags) {
+      validateTagRequest(tag);
+    }
+  }
+
+  /**
+   * Checks if tag satisfies the following conditions
+   *
+   * <ol>
+   *   <li>the tag name is not null or empty and matches the name in the body
+   *   <li>the tag owner is not null or empty
+   *   <li>all the listed channels exist
+   * </ol>
+   *
+   * @param tag the tag to be validates
+   */
+  @Override
+  public void validateTagRequest(Tag tag) {
+    // 1
+    if (tag.getName() == null || tag.getName().isEmpty()) {
+      String message = MessageFormat.format(TextUtil.TAG_NAME_CANNOT_BE_NULL_OR_EMPTY, tag.toLog());
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
+    }
+    // 2
+    if (tag.getOwner() == null || tag.getOwner().isEmpty()) {
+      String message =
+          MessageFormat.format(TextUtil.TAG_OWNER_CANNOT_BE_NULL_OR_EMPTY, tag.toLog());
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.BAD_REQUEST));
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message, null);
+    }
+    // 3
+    List<String> channelNames =
+        tag.getChannels().stream().map(Channel::getName).collect(Collectors.toList());
+    for (String channelName : channelNames) {
+      if (!channelRepository.existsById(channelName)) {
+        String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
+        logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+      }
+    }
+  }
+
+  /**
+   * Checks if channel with name "channelName" exists
+   *
+   * @param channelName check channel exists
+   */
+  @Override
+  public void validateTagWithChannelRequest(String channelName) {
+    if (!channelRepository.existsById(channelName)) {
+      String message = MessageFormat.format(TextUtil.CHANNEL_NAME_DOES_NOT_EXIST, channelName);
+      logger.log(Level.SEVERE, message, new ResponseStatusException(HttpStatus.NOT_FOUND));
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, message);
+    }
+  }
+}

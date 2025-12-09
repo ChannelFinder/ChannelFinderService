@@ -15,12 +15,14 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
-import org.phoebus.channelfinder.ChannelManager;
-import org.phoebus.channelfinder.PropertyManager;
-import org.phoebus.channelfinder.TagManager;
+import org.phoebus.channelfinder.common.NTXmlUtil;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.rest.api.IChannel;
+import org.phoebus.channelfinder.rest.api.IProperty;
+import org.phoebus.channelfinder.rest.api.ITag;
+import org.phoebus.channelfinder.service.ChannelFinderEpicsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -59,11 +61,11 @@ class EpicsRPCRequestIT {
       pvaClient.getChannel(ChannelFinderEpicsService.SERVICE_DESC);
   ;
 
-  @Autowired ChannelManager channelManager;
+  @Autowired IChannel channelManager;
 
-  @Autowired PropertyManager propertyManager;
+  @Autowired IProperty propertyManager;
 
-  @Autowired TagManager tagManager;
+  @Autowired ITag tagManager;
 
   @Test
   void testRPCService() throws ExecutionException, InterruptedException, TimeoutException {

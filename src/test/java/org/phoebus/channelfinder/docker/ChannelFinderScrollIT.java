@@ -24,17 +24,19 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.net.HttpURLConnection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.entity.Scroll;
+import org.phoebus.channelfinder.rest.controller.ChannelScrollController;
 import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for ChannelFinder and Elasticsearch with focus on usage of {@link
- * org.phoebus.channelfinder.CFResourceDescriptors#SCROLL_RESOURCE_URI}.
+ * CFResourceDescriptors#SCROLL_RESOURCE_URI}.
  *
  * @author Lars Johansson
- * @see org.phoebus.channelfinder.ChannelScroll
+ * @see ChannelScrollController
  * @see org.phoebus.channelfinder.docker.ITUtil
  * @see org.phoebus.channelfinder.docker.ITUtilScroll
  */
@@ -85,7 +87,7 @@ class ChannelFinderScrollIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#SCROLL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#SCROLL_RESOURCE_URI}. */
   @Test
   void handleScrollQueryChannels() {
     // what
@@ -101,7 +103,7 @@ class ChannelFinderScrollIT {
     }
   }
 
-  /** Test {@link org.phoebus.channelfinder.CFResourceDescriptors#SCROLL_RESOURCE_URI}. */
+  /** Test {@link CFResourceDescriptors#SCROLL_RESOURCE_URI}. */
   @Test
   void handleScrollContinueChannelsQuery() {
     // what
@@ -116,7 +118,7 @@ class ChannelFinderScrollIT {
   }
 
   /**
-   * Test {@link org.phoebus.channelfinder.CFResourceDescriptors#SCROLL_RESOURCE_URI}.
+   * Test {@link CFResourceDescriptors#SCROLL_RESOURCE_URI}.
    *
    * @see ChannelFinderChannelsIT#handleChannels3QueryByPattern()
    * @see ITTestFixture
