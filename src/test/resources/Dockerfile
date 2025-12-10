@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # ------------------------------------------------------------------------------
 
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:21-jre
 
 # deployment unit
 COPY ../../../target/ChannelFinder-*.jar /channelfinder/ChannelFinder-*.jar

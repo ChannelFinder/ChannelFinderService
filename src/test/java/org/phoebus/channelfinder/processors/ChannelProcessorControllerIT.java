@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.Base64;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +22,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.util.Base64Utils;
 
 @ExtendWith(SpringExtension.class)
 @WebMvcTest(ChannelProcessorController.class)
@@ -31,7 +31,7 @@ import org.springframework.util.Base64Utils;
 class ChannelProcessorControllerIT {
 
   protected static final String AUTHORIZATION =
-      "Basic " + Base64Utils.encodeToString("admin:adminPass".getBytes());
+      "Basic " + Base64.getEncoder().encodeToString("admin:adminPass".getBytes());
 
   @Autowired protected MockMvc mockMvc;
   @MockBean IChannelScroll channelScroll;
