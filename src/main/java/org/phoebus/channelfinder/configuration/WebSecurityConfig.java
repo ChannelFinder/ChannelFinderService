@@ -196,13 +196,13 @@ public class WebSecurityConfig {
 
       Environment environment = context.getEnvironment();
 
-      Boolean isEmbeddedLdapEnabled =
-          environment.getProperty("embedded_ldap.enabled", Boolean.class, false);
+      Boolean isDemoAuthEnabled =
+          environment.getProperty("demo_auth.enabled", Boolean.class, false);
       String[] demoAuthPwds = environment.getProperty("demo_auth.pwds", String[].class);
       String[] demoAuthRoles = environment.getProperty("demo_auth.roles", String[].class);
       String[] demoAuthUsers = environment.getProperty("demo_auth.users", String[].class);
 
-      return isEmbeddedLdapEnabled
+      return isDemoAuthEnabled
           && !ArrayUtils.isEmpty(demoAuthUsers)
           && !ArrayUtils.isEmpty(demoAuthPwds)
           && !ArrayUtils.isEmpty(demoAuthRoles)
