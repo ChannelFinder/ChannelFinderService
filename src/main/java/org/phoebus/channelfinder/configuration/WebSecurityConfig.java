@@ -17,7 +17,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -34,13 +33,12 @@ public class WebSecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http.csrf(AbstractHttpConfigurer::disable)
+    return http.csrf(csrf -> csrf.disable())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-        .httpBasic(withDefaults());
-
-    return http.build();
+        .httpBasic(withDefaults())
+        .build();
   }
 
   @Bean
@@ -121,16 +119,10 @@ public class WebSecurityConfig {
     authPopulator.setSearchSubtree(true);
     authPopulator.setIgnorePartialResultException(true);
 
-    LdapAuthenticationProvider provider =
-        new LdapAuthenticationProvider(
-            new BindAuthenticator(contextSource) {
-              {
-                setUserDnPatterns(new String[] {ldap_user_dn_pattern});
-              }
-            },
-            authPopulator);
+    BindAuthenticator bindAuthenticator = new BindAuthenticator(contextSource);
+    bindAuthenticator.setUserDnPatterns(new String[] {ldap_user_dn_pattern});
 
-    return provider;
+    return new LdapAuthenticationProvider(bindAuthenticator, authPopulator);
   }
 
   @Bean
@@ -147,16 +139,10 @@ public class WebSecurityConfig {
     authPopulator.setSearchSubtree(true);
     authPopulator.setIgnorePartialResultException(true);
 
-    LdapAuthenticationProvider provider =
-        new LdapAuthenticationProvider(
-            new BindAuthenticator(contextSource) {
-              {
-                setUserDnPatterns(new String[] {embedded_ldap_user_dn_pattern});
-              }
-            },
-            authPopulator);
+    BindAuthenticator bindAuthenticator = new BindAuthenticator(contextSource);
+    bindAuthenticator.setUserDnPatterns(new String[] {embedded_ldap_user_dn_pattern});
 
-    return provider;
+    return new LdapAuthenticationProvider(bindAuthenticator, authPopulator);
   }
 
   @Bean
@@ -176,12 +162,10 @@ public class WebSecurityConfig {
               .build());
     }
 
-    return new DaoAuthenticationProvider() {
-      {
-        setUserDetailsService(manager);
-        setPasswordEncoder(encoder);
-      }
-    };
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+    provider.setUserDetailsService(manager);
+    provider.setPasswordEncoder(encoder);
+    return provider;
   }
 
   @Bean
