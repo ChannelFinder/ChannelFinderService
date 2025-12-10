@@ -46,7 +46,7 @@ For using docker containers there is a barebones [docker compose file](./compose
 * Prerequisites
 
     * JDK 21
-    * Elastic version 8.18.x
+    * Elastic version 8.11.x
     * **For authN/authZ using LDAP:** LDAP server, e.g. OpenLDAP
 
 #### Setup Elasticsearch
