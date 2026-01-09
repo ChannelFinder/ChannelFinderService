@@ -119,7 +119,7 @@ public class Application implements ApplicationRunner {
    *
    * @return A {@link TaskExecutor}
    */
-  @Bean
+  @Bean("channelFinderTaskExecutor")
   public TaskExecutor taskExecutor() {
     ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
     taskExecutor.setCorePoolSize(3);
