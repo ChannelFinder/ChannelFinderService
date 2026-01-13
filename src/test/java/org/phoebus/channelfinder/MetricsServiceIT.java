@@ -43,7 +43,7 @@ import org.springframework.util.MultiValueMap;
     })
 class MetricsServiceIT {
 
-  public static final String METRICS_ENDPOINT = "/actuator/metrics/";
+  public static final String METRICS_ENDPOINT = "/actuator/metrics";
   public static final String PROPERTY_NAME = "testProperty";
   public static final String OWNER = "testOwner";
   public static final String TAG_NAME = "testTag";
