@@ -89,13 +89,13 @@ class MetricsServiceIT {
   private void getAndExpectMetric(String paramValue, String endpoint, int expectedValue)
       throws Exception {
     mockMvc
-        .perform(get(METRICS_ENDPOINT + endpoint).param(METRICS_PARAM_KEY, paramValue))
+        .perform(get(METRICS_ENDPOINT + "/" + endpoint).param(METRICS_PARAM_KEY, paramValue))
         .andExpect(jsonPath("$.measurements[0].value").value(expectedValue));
   }
 
   private void getAndExpectMetricParent(String endpoint, int expectedValue) throws Exception {
     mockMvc
-        .perform(get(METRICS_ENDPOINT + endpoint))
+        .perform(get(METRICS_ENDPOINT + "/" + endpoint))
         .andExpect(jsonPath("$.measurements[0].value").value(expectedValue));
   }
 
