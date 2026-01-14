@@ -33,6 +33,8 @@ public class WebSecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    // CSRF disabled: application is a stateless REST API using HTTP Basic auth.
+    // No session or cookie-based authentication is used, so CSRF attacks are not applicable.
     return http.csrf(csrf -> csrf.disable())
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
