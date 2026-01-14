@@ -148,7 +148,7 @@ public class WebSecurityConfig {
   }
 
   @Bean
-  @Conditional(EmbeddedLdapCondition.class)
+  @Conditional(DemoAuthCondition.class)
   public AuthenticationProvider demoAuthProvider() {
 
     InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
@@ -175,7 +175,7 @@ public class WebSecurityConfig {
     return new BCryptPasswordEncoder();
   }
 
-  private static class EmbeddedLdapCondition implements Condition {
+  private static class DemoAuthCondition implements Condition {
 
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
