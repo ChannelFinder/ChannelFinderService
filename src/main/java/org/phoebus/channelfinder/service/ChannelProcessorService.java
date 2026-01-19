@@ -12,6 +12,7 @@ import org.phoebus.channelfinder.configuration.ChannelProcessor;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Service;
@@ -23,16 +24,16 @@ public class ChannelProcessorService {
 
   private final List<ChannelProcessor> channelProcessors;
 
-  private final TaskExecutor taskExecutor;
+  private final TaskExecutor channelFinderTaskExecutor;
 
   private final int chunkSize;
 
   public ChannelProcessorService(
       @Autowired List<ChannelProcessor> channelProcessors,
-      @Autowired TaskExecutor taskExecutor,
+      @Autowired @Qualifier("channelFinderTaskExecutor") TaskExecutor channelFinderTaskExecutor,
       @Value("${processors.chunking.size:10000}") int chunkSize) {
     this.channelProcessors = channelProcessors;
-    this.taskExecutor = taskExecutor;
+    this.channelFinderTaskExecutor = channelFinderTaskExecutor;
     this.chunkSize = chunkSize;
   }
 
@@ -66,7 +67,7 @@ public class ChannelProcessorService {
     if (channelProcessors.isEmpty()) {
       return;
     }
-    taskExecutor.execute(
+    channelFinderTaskExecutor.execute(
         () ->
             channelProcessors.stream()
                 .filter(ChannelProcessor::enabled)
