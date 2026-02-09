@@ -164,8 +164,7 @@ public class WebSecurityConfig {
               .build());
     }
 
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-    provider.setUserDetailsService(manager);
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(manager);
     provider.setPasswordEncoder(encoder);
     return provider;
   }
