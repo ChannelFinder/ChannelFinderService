@@ -11,6 +11,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -275,9 +277,14 @@ public class PopulateDBConfiguration {
 
   public void createTagsAndProperties(URL tagResource, URL propertyResource) {
     // Setup the default tags
-    String tagsURL;
-    tagsURL = tagResource.toExternalForm();
-    try (InputStream input = new URL(tagsURL).openStream()) {
+    URI tagsURI;
+    try {
+      tagsURI = new URI(tagResource.toExternalForm());
+    } catch (URISyntaxException ex) {
+      logger.log(Level.SEVERE, "Cannot parse URL:", tagResource.toExternalForm());
+      return;
+    }
+    try (InputStream input = tagsURI.toURL().openStream()) {
       List<Tag> jsonTag = mapper.readValue(input, new TypeReference<List<Tag>>() {});
 
       jsonTag.forEach(
@@ -304,9 +311,14 @@ public class PopulateDBConfiguration {
     }
 
     // Setup the default properties
-    String propertiesURL;
-    propertiesURL = propertyResource.toExternalForm();
-    try (InputStream input = new URL(propertiesURL).openStream()) {
+    URI propertiesURI;
+    try {
+      propertiesURI = new URI(propertyResource.toExternalForm());
+    } catch (URISyntaxException ex) {
+      logger.log(Level.SEVERE, "Cannot parse URL:", propertyResource.toExternalForm());
+      return;
+    }
+    try (InputStream input = propertiesURI.toURL().openStream()) {
       List<Property> jsonTag = mapper.readValue(input, new TypeReference<>() {});
 
       jsonTag.forEach(
