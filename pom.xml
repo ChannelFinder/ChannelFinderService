@@ -42,7 +42,9 @@
         <skipITs>true</skipITs>
         <skipITCoverage>true</skipITCoverage>
         <jacoco.skip>true</jacoco.skip>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
         <!--suppress UnresolvedMavenProperty -->
         <project.build.outputTimestamp>${git.commit.time}</project.build.outputTimestamp>
     </properties>
