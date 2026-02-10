@@ -19,10 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -107,33 +109,17 @@ public class ArchiverClient {
   private List<Map<String, String>> getStatusesFromPvListBody(
       String archiverURL, List<String> pvs) {
     String uriString = archiverURL + PV_STATUS_RESOURCE;
-    String response =
-        client
-            .post()
-            .uri(URI.create(uriString))
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(pvs)
-            .retrieve()
-            .bodyToMono(String.class)
-            .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
-            .onErrorResume(e -> showError(uriString, e))
-            .block();
-
-    // Structure of response is
-    // [{"pvName":"PV:1", "status":"Paused", ... }, {"pvName": "PV:2"}, {"status": "Being
-    // archived"}, ...}, ...
-    // ]
-
-    try {
-      return objectMapper.readValue(response, new TypeReference<>() {});
-    } catch (JsonProcessingException e) {
-      logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
-    } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format("Error when trying to get status from pv list body: %s", e.getMessage()));
-    }
-    return List.of();
+    return client
+        .post()
+        .uri(URI.create(uriString))
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(pvs)
+        .retrieve()
+        .bodyToFlux(new ParameterizedTypeReference<Map<String, String>>() {})
+        .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
+        .onErrorResume(e -> showError(uriString, e).thenMany(Flux.empty()))
+        .collectList()
+        .block();
   }
 
   private void submitAction(String values, String endpoint, String aaURL) {
