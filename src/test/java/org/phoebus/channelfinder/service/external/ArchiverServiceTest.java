@@ -108,7 +108,7 @@ class ArchiverServiceTest {
             .addHeader("Content-Type", "application/json"));
 
     List<String> successfulPvs =
-        archiverService.submitAction(pvs, pvs, "/test-endpoint", archiverUrl);
+        archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl);
     assertEquals(1, successfulPvs.size());
     assertEquals("pv1", successfulPvs.get(0));
   }
@@ -124,7 +124,7 @@ class ArchiverServiceTest {
             .addHeader("Content-Type", "application/json"));
 
     List<String> successfulPvs =
-        archiverService.submitAction(pvs, pvs, "/test-endpoint", archiverUrl);
+        archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl);
     assertTrue(successfulPvs.isEmpty());
   }
 
@@ -140,7 +140,7 @@ class ArchiverServiceTest {
             .addHeader("Content-Type", "application/json"));
 
     List<String> successfulPvs =
-        archiverService.submitAction(pvs, pvs, "/test-endpoint", archiverUrl);
+        archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl);
     assertEquals(1, successfulPvs.size());
     assertEquals("pv1", successfulPvs.get(0));
   }
@@ -154,7 +154,7 @@ class ArchiverServiceTest {
 
     assertThrows(
         ArchiverServiceException.class,
-        () -> archiverService.submitAction(pvs, pvs, "/test-endpoint", archiverUrl));
+        () -> archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl));
   }
 
   @Test
@@ -168,7 +168,8 @@ class ArchiverServiceTest {
             ArchiveAction.PAUSE, List.of(),
             ArchiveAction.RESUME, List.of());
 
-    List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "ok"));
+    List<Map<String, String>> expectedResponse =
+        List.of(Map.of("pv", "pv1", "status", "Archive request submitted"));
     mockWebServer.enqueue(
         new MockResponse()
             .setBody(objectMapper.writeValueAsString(expectedResponse))
@@ -292,5 +293,4 @@ class ArchiverServiceTest {
 
     assertTrue(result.isEmpty());
   }
-
 }
