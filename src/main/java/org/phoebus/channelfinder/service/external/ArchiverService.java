@@ -95,26 +95,15 @@ public class ArchiverService {
             .build()
             .toUri();
 
-    String response =
-        client
-            .get()
-            .uri(pvStatusURI)
-            .retrieve()
-            .bodyToMono(String.class)
-            .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
-            .onErrorResume(e -> showError(uriString, e))
-            .block();
-
-    try {
-      return objectMapper.readValue(response, new TypeReference<>() {});
-    } catch (JsonProcessingException e) {
-      logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
-    } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
-    }
-    return List.of();
+    return client
+        .get()
+        .uri(pvStatusURI)
+        .retrieve()
+        .bodyToFlux(new ParameterizedTypeReference<Map<String, String>>() {})
+        .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
+        .onErrorResume(e -> showError(uriString, e).thenMany(Flux.empty()))
+        .collectList()
+        .block();
   }
 
   private List<Map<String, String>> getStatusesFromPvListBody(
