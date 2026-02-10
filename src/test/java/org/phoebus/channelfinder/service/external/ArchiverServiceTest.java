@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
@@ -15,6 +16,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
@@ -43,8 +47,9 @@ class ArchiverServiceTest {
     mockWebServer.shutdown();
   }
 
-  @Test
-  void testGetStatusesQuery() throws JsonProcessingException {
+  @ParameterizedTest
+  @ValueSource(strings = {"other-archiver", "test-archiver"})
+  void testGetStatuses(String archiverAlias) throws JsonProcessingException {
     String archiverUrl = mockWebServer.url("/").toString();
     Map<String, ArchivePVOptions> pvs = Map.of("pv1", new ArchivePVOptions());
 
@@ -55,28 +60,7 @@ class ArchiverServiceTest {
             .setBody(objectMapper.writeValueAsString(expectedResponse))
             .addHeader("Content-Type", "application/json"));
 
-    List<Map<String, String>> result =
-        archiverService.getStatuses(pvs, archiverUrl, "other-archiver");
-
-    assertEquals(1, result.size());
-    assertEquals("pv1", result.get(0).get("pv"));
-    assertEquals("Being archived", result.get(0).get("status"));
-  }
-
-  @Test
-  void testGetStatusesPost() throws JsonProcessingException {
-    String archiverUrl = mockWebServer.url("/").toString();
-    Map<String, ArchivePVOptions> pvs = Map.of("pv1", new ArchivePVOptions());
-
-    List<Map<String, String>> expectedResponse =
-        List.of(Map.of("pv", "pv1", "status", "Being archived"));
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setBody(objectMapper.writeValueAsString(expectedResponse))
-            .addHeader("Content-Type", "application/json"));
-
-    List<Map<String, String>> result =
-        archiverService.getStatuses(pvs, archiverUrl, "test-archiver");
+    List<Map<String, String>> result = archiverService.getStatuses(pvs, archiverUrl, archiverAlias);
 
     assertEquals(1, result.size());
     assertEquals("pv1", result.get(0).get("pv"));
@@ -157,65 +141,21 @@ class ArchiverServiceTest {
         () -> archiverService.submitBasicAction(pvs, ArchiveAction.NONE, archiverUrl));
   }
 
-  @Test
-  void testConfigureAAArchive() throws JsonProcessingException {
+  @ParameterizedTest
+  @EnumSource(ArchiveAction.class)
+  void testConfigureAA(ArchiveAction action) throws JsonProcessingException {
     String archiverUrl = mockWebServer.url("/").toString();
     ArchivePVOptions options = new ArchivePVOptions();
     options.setPv("pv1");
-    Map<ArchiveAction, List<ArchivePVOptions>> archivePVS =
-        Map.of(
-            ArchiveAction.ARCHIVE, List.of(options),
-            ArchiveAction.PAUSE, List.of(),
-            ArchiveAction.RESUME, List.of());
 
-    List<Map<String, String>> expectedResponse =
-        List.of(Map.of("pv", "pv1", "status", "Archive request submitted"));
-    List<Map<String, String>> expectedResponse =
-        List.of(Map.of("pv", "pv1", "status", "Archive request submitted"));
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setBody(objectMapper.writeValueAsString(expectedResponse))
-            .addHeader("Content-Type", "application/json"));
+    Map<ArchiveAction, List<ArchivePVOptions>> archivePVS = new HashMap<>();
+    archivePVS.put(ArchiveAction.ARCHIVE, List.of());
+    archivePVS.put(ArchiveAction.PAUSE, List.of());
+    archivePVS.put(ArchiveAction.RESUME, List.of());
+    archivePVS.put(action, List.of(options));
 
-    long count = archiverService.configureAA(archivePVS, archiverUrl);
-
-    assertEquals(1, count);
-  }
-
-  @Test
-  void testConfigureAAPause() throws JsonProcessingException {
-    String archiverUrl = mockWebServer.url("/").toString();
-    ArchivePVOptions options = new ArchivePVOptions();
-    options.setPv("pv1");
-    Map<ArchiveAction, List<ArchivePVOptions>> archivePVS =
-        Map.of(
-            ArchiveAction.ARCHIVE, List.of(),
-            ArchiveAction.PAUSE, List.of(options),
-            ArchiveAction.RESUME, List.of());
-
-    List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "ok"));
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setBody(objectMapper.writeValueAsString(expectedResponse))
-            .addHeader("Content-Type", "application/json"));
-
-    long count = archiverService.configureAA(archivePVS, archiverUrl);
-
-    assertEquals(1, count);
-  }
-
-  @Test
-  void testConfigureAAResume() throws JsonProcessingException {
-    String archiverUrl = mockWebServer.url("/").toString();
-    ArchivePVOptions options = new ArchivePVOptions();
-    options.setPv("pv1");
-    Map<ArchiveAction, List<ArchivePVOptions>> archivePVS =
-        Map.of(
-            ArchiveAction.ARCHIVE, List.of(),
-            ArchiveAction.PAUSE, List.of(),
-            ArchiveAction.RESUME, List.of(options));
-
-    List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "ok"));
+    String status = action == ArchiveAction.ARCHIVE ? "Archive request submitted" : "ok";
+    List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", status));
     mockWebServer.enqueue(
         new MockResponse()
             .setBody(objectMapper.writeValueAsString(expectedResponse))
