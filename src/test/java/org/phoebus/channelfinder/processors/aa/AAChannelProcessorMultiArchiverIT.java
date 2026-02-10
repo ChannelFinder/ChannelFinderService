@@ -123,14 +123,6 @@ class AAChannelProcessorMultiArchiverIT {
       int expectedProcessedChannels)
       throws JsonProcessingException, InterruptedException {
 
-    // Request to version
-    Map<String, String> queryVersions =
-        Map.of("mgmt_version", "Archiver Appliance Version 1.1.0 Query Support");
-    mockQueryArchiverAppliance.enqueue(
-        new MockResponse()
-            .setBody(objectMapper.writeValueAsString(queryVersions))
-            .addHeader("Content-Type", "application/json"));
-
     // Request to policies
     Map<String, String> policyList = Map.of("policy", "description");
     mockQueryArchiverAppliance.enqueue(
@@ -165,14 +157,6 @@ class AAChannelProcessorMultiArchiverIT {
           }
         });
 
-    // Request to query version
-    Map<String, String> postVersions =
-        Map.of("mgmt_version", "Archiver Appliance Version 1.1.0 Post Support");
-    mockPostArchiverAppliance.enqueue(
-        new MockResponse()
-            .setBody(objectMapper.writeValueAsString(postVersions))
-            .addHeader("Content-Type", "application/json"));
-
     // Request to policies
     mockPostArchiverAppliance.enqueue(
         new MockResponse()
@@ -205,12 +189,6 @@ class AAChannelProcessorMultiArchiverIT {
     aaChannelProcessor.process(channels);
 
     AtomicInteger expectedQueryRequests = new AtomicInteger(1);
-    RecordedRequest requestQueryVersion =
-        mockQueryArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-    assert requestQueryVersion != null;
-    assertEquals("/mgmt/bpl/getVersions", requestQueryVersion.getPath());
-
-    expectedQueryRequests.addAndGet(1);
     RecordedRequest requestQueryPolicy =
         mockQueryArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
     assert requestQueryPolicy != null;
@@ -224,11 +202,6 @@ class AAChannelProcessorMultiArchiverIT {
     assertEquals("/mgmt/bpl/getPVStatus", requestQueryStatus.getRequestUrl().encodedPath());
 
     AtomicInteger expectedPostRequests = new AtomicInteger(1);
-    RecordedRequest requestPostVersion = mockPostArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-    assert requestPostVersion != null;
-    assertEquals("/mgmt/bpl/getVersions", requestPostVersion.getPath());
-
-    expectedPostRequests.addAndGet(1);
     RecordedRequest requestPostPolicy = mockPostArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
     assert requestPostPolicy != null;
     assertEquals("/mgmt/bpl/getPolicyList", requestPostPolicy.getPath());

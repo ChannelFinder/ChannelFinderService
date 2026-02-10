@@ -37,7 +37,6 @@ public class ArchiverService {
   private static final String MGMT_RESOURCE = "/mgmt/bpl";
   private static final String POLICY_RESOURCE = MGMT_RESOURCE + "/getPolicyList";
   private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
-  private static final String ARCHIVER_VERSIONS_RESOURCE = MGMT_RESOURCE + "/getVersions";
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Value("${aa.timeout_seconds:15}")
@@ -231,31 +230,6 @@ public class ArchiverService {
       logger.log(Level.WARNING, "Could not get AA policies list from: " + aaURL, e);
       return List.of();
     }
-  }
-
-  public String getVersion(String archiverURL) {
-    try {
-      String uriString = archiverURL + ARCHIVER_VERSIONS_RESOURCE;
-      String response =
-          client
-              .get()
-              .uri(URI.create(uriString))
-              .retrieve()
-              .bodyToMono(String.class)
-              .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
-              .onErrorResume(e -> showError(uriString, e))
-              .block();
-      Map<String, String> versionMap = objectMapper.readValue(response, Map.class);
-      String[] mgmtVersion = versionMap.get("mgmt_version").split("Archiver Appliance Version ");
-      if (mgmtVersion.length > 1) {
-        return mgmtVersion[1];
-      }
-
-    } catch (Exception e) {
-      logger.log(Level.WARNING, "Could not get version from: " + archiverURL, e);
-      return "";
-    }
-    return "";
   }
 
   private Mono<String> showError(String uriString, Throwable error) {
