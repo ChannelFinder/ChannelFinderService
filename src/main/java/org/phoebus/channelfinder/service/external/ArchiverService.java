@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder.service.external;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Duration;
@@ -15,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.springframework.beans.factory.annotation.Value;
@@ -120,32 +120,56 @@ public class ArchiverService {
         .block();
   }
 
-  private void submitAction(String values, String endpoint, String aaURL) {
+  List<String> submitAction(List<String> pvs, Object payload, String endpoint, String aaURL) {
     String uriString = aaURL + MGMT_RESOURCE + endpoint;
+    List<Map<String, String>> response;
     try {
-      String response =
+      String values = objectMapper.writeValueAsString(payload);
+      response =
           client
               .post()
               .uri(URI.create(uriString))
               .contentType(MediaType.APPLICATION_JSON)
               .bodyValue(values)
               .retrieve()
-              .bodyToMono(String.class)
+              .bodyToFlux(new ParameterizedTypeReference<Map<String, String>>() {})
               .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
-              .onErrorResume(e -> showError(uriString, e))
+              .collectList()
               .block();
-      logger.log(Level.FINE, () -> response);
-
     } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format("Failed to submit %s to %s on %s", values, endpoint, aaURL),
-          e);
+      throw new ArchiverServiceException(
+          String.format("Failed to submit %s to %s on %s", payload, endpoint, aaURL), e);
     }
+
+    if (response == null) {
+      throw new ArchiverServiceException("No response from " + uriString);
+    }
+
+    return validateSubmitActionResponse(pvs, endpoint, response);
   }
 
-  public long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL)
-      throws JsonProcessingException {
+  private static List<String> validateSubmitActionResponse(
+      List<String> pvs, String endpoint, List<Map<String, String>> response) {
+    List<String> successfulPvs = new ArrayList<>();
+    List<String> failedPvs = new ArrayList<>();
+    for (int i = 0; i < response.size(); i++) {
+      Map<String, String> result = response.get(i);
+      String pv = (i < pvs.size()) ? pvs.get(i) : "UNKNOWN_PV";
+      String status = result.get("status");
+      if (!"ok".equalsIgnoreCase(status)) {
+        failedPvs.add(pv);
+      } else {
+        logger.log(Level.FINE, "Successfully submitted " + endpoint + " for PV " + pv);
+        successfulPvs.add(pv);
+      }
+    }
+    if (!failedPvs.isEmpty()) {
+      logger.log(Level.WARNING, "Failed to submit " + endpoint + " for PVs: " + failedPvs);
+    }
+    return successfulPvs;
+  }
+
+  public long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL) {
     logger.log(
         Level.INFO, () -> String.format("Configure PVs %s in %s", archivePVS.toString(), aaURL));
     long count = 0;
@@ -154,41 +178,43 @@ public class ArchiverService {
       return count;
     }
     if (!archivePVS.get(ArchiveAction.ARCHIVE).isEmpty()) {
-      logger.log(
-          Level.INFO,
-          () ->
-              "Submitting to be archived " + archivePVS.get(ArchiveAction.ARCHIVE).size() + " pvs");
-      submitAction(
-          objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.ARCHIVE)),
-          ArchiveAction.ARCHIVE.getEndpoint(),
-          aaURL);
-      count += archivePVS.get(ArchiveAction.ARCHIVE).size();
+      List<ArchivePVOptions> archiveOptions = archivePVS.get(ArchiveAction.ARCHIVE);
+      logger.log(Level.INFO, () -> "Submitting to be archived " + archiveOptions.size() + " pvs");
+      List<String> pvs =
+          archiveOptions.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
+      try {
+        List<String> successfulPvs =
+            submitAction(pvs, archiveOptions, ArchiveAction.ARCHIVE.getEndpoint(), aaURL);
+        count += successfulPvs.size();
+      } catch (ArchiverServiceException e) {
+        logger.log(Level.WARNING, "Failed to submit archive request", e);
+      }
     }
     if (!archivePVS.get(ArchiveAction.PAUSE).isEmpty()) {
-      logger.log(
-          Level.INFO,
-          () -> "Submitting to be paused " + archivePVS.get(ArchiveAction.PAUSE).size() + " pvs");
-      submitAction(
-          objectMapper.writeValueAsString(
-              archivePVS.get(ArchiveAction.PAUSE).stream()
-                  .map(ArchivePVOptions::getPv)
-                  .collect(Collectors.toList())),
-          ArchiveAction.PAUSE.getEndpoint(),
-          aaURL);
-      count += archivePVS.get(ArchiveAction.PAUSE).size();
+      List<ArchivePVOptions> pauseOptions = archivePVS.get(ArchiveAction.PAUSE);
+      logger.log(Level.INFO, () -> "Submitting to be paused " + pauseOptions.size() + " pvs");
+      List<String> pvs =
+          pauseOptions.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
+      try {
+        List<String> successfulPvs =
+            submitAction(pvs, pvs, ArchiveAction.PAUSE.getEndpoint(), aaURL);
+        count += successfulPvs.size();
+      } catch (ArchiverServiceException e) {
+        logger.log(Level.WARNING, "Failed to submit pause request", e);
+      }
     }
     if (!archivePVS.get(ArchiveAction.RESUME).isEmpty()) {
-      logger.log(
-          Level.INFO,
-          () -> "Submitting to be resumed " + archivePVS.get(ArchiveAction.RESUME).size() + " pvs");
-      submitAction(
-          objectMapper.writeValueAsString(
-              archivePVS.get(ArchiveAction.RESUME).stream()
-                  .map(ArchivePVOptions::getPv)
-                  .collect(Collectors.toList())),
-          ArchiveAction.RESUME.getEndpoint(),
-          aaURL);
-      count += archivePVS.get(ArchiveAction.RESUME).size();
+      List<ArchivePVOptions> resumeOptions = archivePVS.get(ArchiveAction.RESUME);
+      logger.log(Level.INFO, () -> "Submitting to be resumed " + resumeOptions.size() + " pvs");
+      List<String> pvs =
+          resumeOptions.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
+      try {
+        List<String> successfulPvs =
+            submitAction(pvs, pvs, ArchiveAction.RESUME.getEndpoint(), aaURL);
+        count += successfulPvs.size();
+      } catch (ArchiverServiceException e) {
+        logger.log(Level.WARNING, "Failed to submit resume request", e);
+      }
     }
     return count;
   }
