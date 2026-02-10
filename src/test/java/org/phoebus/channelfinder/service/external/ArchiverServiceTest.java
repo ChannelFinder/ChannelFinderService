@@ -7,11 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,7 +50,7 @@ class ArchiverServiceTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"other-archiver", "test-archiver"})
-  void testGetStatuses(String archiverAlias) throws JsonProcessingException {
+  void testGetStatuses(String archiverAlias) throws JsonProcessingException, InterruptedException {
     String archiverUrl = mockWebServer.url("/").toString();
     Map<String, ArchivePVOptions> pvs = Map.of("pv1", new ArchivePVOptions());
 
@@ -63,8 +64,18 @@ class ArchiverServiceTest {
     List<Map<String, String>> result = archiverService.getStatuses(pvs, archiverUrl, archiverAlias);
 
     assertEquals(1, result.size());
-    assertEquals("pv1", result.get(0).get("pv"));
-    assertEquals("Being archived", result.get(0).get("status"));
+    assertEquals("pv1", result.getFirst().get("pv"));
+    assertEquals("Being archived", result.getFirst().get("status"));
+
+    RecordedRequest request = mockWebServer.takeRequest();
+    if ("test-archiver".equals(archiverAlias)) {
+      assertEquals("POST", request.getMethod());
+      assertEquals("//mgmt/bpl/getPVStatus", request.getPath());
+      assertEquals("[\"pv1\"]", request.getBody().readUtf8());
+    } else {
+      assertEquals("GET", request.getMethod());
+      assertTrue(request.getPath().startsWith("/mgmt/bpl/getPVStatus?pv=pv1"));
+    }
   }
 
   @Test
@@ -82,7 +93,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testSubmitBasicAction() throws JsonProcessingException {
+  void testSubmitBasicAction() throws JsonProcessingException, InterruptedException {
     String archiverUrl = mockWebServer.url("/").toString();
     List<String> pvs = List.of("pv1");
     List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "ok"));
@@ -94,7 +105,12 @@ class ArchiverServiceTest {
     List<String> successfulPvs =
         archiverService.submitBasicAction(pvs, ArchiveAction.NONE, archiverUrl);
     assertEquals(1, successfulPvs.size());
-    assertEquals("pv1", successfulPvs.get(0));
+    assertEquals("pv1", successfulPvs.getFirst());
+
+    RecordedRequest request = mockWebServer.takeRequest();
+    assertEquals("POST", request.getMethod());
+    assertEquals("//mgmt/bpl", request.getPath());
+    assertEquals("[\"pv1\"]", request.getBody().readUtf8());
   }
 
   @Test
@@ -126,7 +142,7 @@ class ArchiverServiceTest {
     List<String> successfulPvs =
         archiverService.submitBasicAction(pvs, ArchiveAction.NONE, archiverUrl);
     assertEquals(1, successfulPvs.size());
-    assertEquals("pv1", successfulPvs.get(0));
+    assertEquals("pv1", successfulPvs.getFirst());
   }
 
   @Test
@@ -143,12 +159,12 @@ class ArchiverServiceTest {
 
   @ParameterizedTest
   @EnumSource(ArchiveAction.class)
-  void testConfigureAA(ArchiveAction action) throws JsonProcessingException {
+  void testConfigureAA(ArchiveAction action) throws JsonProcessingException, InterruptedException {
     String archiverUrl = mockWebServer.url("/").toString();
     ArchivePVOptions options = new ArchivePVOptions();
     options.setPv("pv1");
 
-    Map<ArchiveAction, List<ArchivePVOptions>> archivePVS = new HashMap<>();
+    Map<ArchiveAction, List<ArchivePVOptions>> archivePVS = new EnumMap<>(ArchiveAction.class);
     archivePVS.put(ArchiveAction.ARCHIVE, List.of());
     archivePVS.put(ArchiveAction.PAUSE, List.of());
     archivePVS.put(ArchiveAction.RESUME, List.of());
@@ -163,7 +179,25 @@ class ArchiverServiceTest {
 
     long count = archiverService.configureAA(archivePVS, archiverUrl);
 
-    assertEquals(1, count);
+    assertEquals(action != ArchiveAction.NONE ? 1 : 0, count);
+
+    if (action == ArchiveAction.NONE) {
+      assertEquals(0, mockWebServer.getRequestCount());
+      return;
+    }
+
+    RecordedRequest request = mockWebServer.takeRequest();
+    assertEquals("POST", request.getMethod());
+    assertEquals("//mgmt/bpl" + action.getEndpoint(), request.getPath());
+
+    if (action == ArchiveAction.ARCHIVE) {
+      // For archive, we send the list of ArchivePVOptions objects
+      String expectedBody = objectMapper.writeValueAsString(List.of(options));
+      assertEquals(expectedBody, request.getBody().readUtf8());
+    } else {
+      // For pause/resume, we send the list of PV names
+      assertEquals("[\"pv1\"]", request.getBody().readUtf8());
+    }
   }
 
   @Test
@@ -208,7 +242,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testGetAAPolicies() throws JsonProcessingException {
+  void testGetAAPolicies() throws JsonProcessingException, InterruptedException {
     String archiverUrl = mockWebServer.url("/").toString();
     Map<String, String> policies = Map.of("policy1", "desc1", "policy2", "desc2");
 
@@ -222,6 +256,10 @@ class ArchiverServiceTest {
     assertEquals(2, result.size());
     assertTrue(result.contains("policy1"));
     assertTrue(result.contains("policy2"));
+
+    RecordedRequest request = mockWebServer.takeRequest();
+    assertEquals("GET", request.getMethod());
+    assertEquals("//mgmt/bpl/getPolicyList", request.getPath());
   }
 
   @Test
