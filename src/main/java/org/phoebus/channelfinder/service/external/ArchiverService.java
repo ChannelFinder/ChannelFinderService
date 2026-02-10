@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.util.unit.DataSize;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
@@ -34,7 +36,7 @@ public class ArchiverService {
       100; // Limit comes from tomcat server maxHttpHeaderSize which by default is a header of size
   // 8k
 
-  private final WebClient client = WebClient.create();
+  private final WebClient client = webClient();
 
   private static final String MGMT_RESOURCE = "/mgmt/bpl";
   private static final String POLICY_RESOURCE = MGMT_RESOURCE + "/getPolicyList";
@@ -47,6 +49,15 @@ public class ArchiverService {
 
   @Value("${aa.post_support:}")
   private List<String> postSupportArchivers;
+
+  private static WebClient webClient() {
+    final int size = (int) DataSize.ofMegabytes(16).toBytes();
+    final ExchangeStrategies strategies =
+        ExchangeStrategies.builder()
+            .codecs(codecs -> codecs.defaultCodecs().maxInMemorySize(size))
+            .build();
+    return WebClient.builder().exchangeStrategies(strategies).build();
+  }
 
   private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
     List<String> list = new ArrayList<>(pvSet);
