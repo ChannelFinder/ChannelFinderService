@@ -47,7 +47,8 @@ public class ArchiverService {
 
   private enum StatusResponseKey {
     PV("pv"),
-    STATUS("status");
+    STATUS("status"),
+    PV_NAME("pvName");
     private final String key;
 
     StatusResponseKey(String key) {
@@ -137,12 +138,10 @@ public class ArchiverService {
         .block();
   }
 
-  List<String> submitAction(List<String> pvs, Object payload, ArchiveAction action, String aaURL) {
-    String uriString = aaURL + MGMT_RESOURCE + action.getEndpoint();
-    List<Map<String, String>> response;
+  private List<Map<String, String>> sendRequest(Object payload, String uriString) {
     try {
       String values = objectMapper.writeValueAsString(payload);
-      response =
+      List<Map<String, String>> response =
           client
               .post()
               .uri(URI.create(uriString))
@@ -153,15 +152,27 @@ public class ArchiverService {
               .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
               .collectList()
               .block();
+      if (response == null) {
+        throw new ArchiverServiceException("No response from " + uriString);
+      }
+      return response;
     } catch (Exception e) {
       throw new ArchiverServiceException(
-          String.format("Failed to submit %s to %s on %s", payload, action, aaURL), e);
+          String.format("Failed to submit %s to %s", payload, uriString), e);
     }
+  }
 
-    if (response == null) {
-      throw new ArchiverServiceException("No response from " + uriString);
-    }
+  List<String> submitArchiveAction(List<String> pvs, List<ArchivePVOptions> payload, String aaURL) {
+    String endpoint = ArchiveAction.ARCHIVE.getEndpoint();
+    String uriString = aaURL + MGMT_RESOURCE + endpoint;
+    List<Map<String, String>> response = sendRequest(payload, uriString);
+    return validateSubmitActionResponse(pvs, ArchiveAction.ARCHIVE, response);
+  }
 
+  List<String> submitBasicAction(List<String> pvs, ArchiveAction action, String aaURL) {
+    String endpoint = action.getEndpoint();
+    String uriString = aaURL + MGMT_RESOURCE + endpoint;
+    List<Map<String, String>> response = sendRequest(pvs, uriString);
     return validateSubmitActionResponse(pvs, action, response);
   }
 
@@ -171,7 +182,13 @@ public class ArchiverService {
     List<String> failedPvs = new ArrayList<>();
     for (int i = 0; i < response.size(); i++) {
       Map<String, String> result = response.get(i);
-      String pv = (i < pvs.size()) ? pvs.get(i) : "UNKNOWN_PV";
+      String pv = result.get(StatusResponseKey.PV_NAME.key());
+      if (pv == null) {
+        pv = result.get(StatusResponseKey.PV.key());
+      }
+      if (pv == null) {
+        pv = (i < pvs.size()) ? pvs.get(i) : "UNKNOWN_PV";
+      }
       String status = result.get(StatusResponseKey.STATUS.key());
       if (!action.getSuccessfulStatus().equalsIgnoreCase(status)) {
         failedPvs.add(pv);
@@ -194,44 +211,34 @@ public class ArchiverService {
     if (archivePVS.isEmpty()) {
       return count;
     }
-    if (!archivePVS.get(ArchiveAction.ARCHIVE).isEmpty()) {
-      List<ArchivePVOptions> archiveOptions = archivePVS.get(ArchiveAction.ARCHIVE);
-      logger.log(Level.INFO, () -> "Submitting to be archived " + archiveOptions.size() + " pvs");
-      List<String> pvs =
-          archiveOptions.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
-      try {
-        List<String> successfulPvs =
-            submitAction(pvs, archiveOptions, ArchiveAction.ARCHIVE, aaURL);
-        count += successfulPvs.size();
-      } catch (ArchiverServiceException e) {
-        logger.log(Level.WARNING, "Failed to submit archive request", e);
-      }
-    }
-    if (!archivePVS.get(ArchiveAction.PAUSE).isEmpty()) {
-      List<ArchivePVOptions> pauseOptions = archivePVS.get(ArchiveAction.PAUSE);
-      logger.log(Level.INFO, () -> "Submitting to be paused " + pauseOptions.size() + " pvs");
-      List<String> pvs =
-          pauseOptions.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
-      try {
-        List<String> successfulPvs = submitAction(pvs, pvs, ArchiveAction.PAUSE, aaURL);
-        count += successfulPvs.size();
-      } catch (ArchiverServiceException e) {
-        logger.log(Level.WARNING, "Failed to submit pause request", e);
-      }
-    }
-    if (!archivePVS.get(ArchiveAction.RESUME).isEmpty()) {
-      List<ArchivePVOptions> resumeOptions = archivePVS.get(ArchiveAction.RESUME);
-      logger.log(Level.INFO, () -> "Submitting to be resumed " + resumeOptions.size() + " pvs");
-      List<String> pvs =
-          resumeOptions.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
-      try {
-        List<String> successfulPvs = submitAction(pvs, pvs, ArchiveAction.RESUME, aaURL);
-        count += successfulPvs.size();
-      } catch (ArchiverServiceException e) {
-        logger.log(Level.WARNING, "Failed to submit resume request", e);
-      }
-    }
+
+    count += processAction(ArchiveAction.ARCHIVE, archivePVS.get(ArchiveAction.ARCHIVE), aaURL);
+    count += processAction(ArchiveAction.PAUSE, archivePVS.get(ArchiveAction.PAUSE), aaURL);
+    count += processAction(ArchiveAction.RESUME, archivePVS.get(ArchiveAction.RESUME), aaURL);
+
     return count;
+  }
+
+  private long processAction(ArchiveAction action, List<ArchivePVOptions> options, String aaURL) {
+    if (options.isEmpty()) {
+      return 0;
+    }
+    logger.log(
+        Level.INFO,
+        () -> "Submitting to be " + action.name().toLowerCase() + "d " + options.size() + " pvs");
+    List<String> pvs = options.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
+    try {
+      List<String> successfulPvs;
+      if (action == ArchiveAction.ARCHIVE) {
+        successfulPvs = submitArchiveAction(pvs, options, aaURL);
+      } else {
+        successfulPvs = submitBasicAction(pvs, action, aaURL);
+      }
+      return successfulPvs.size();
+    } catch (ArchiverServiceException e) {
+      logger.log(Level.WARNING, "Failed to submit " + action.name().toLowerCase() + " request", e);
+      return 0;
+    }
   }
 
   public List<String> getAAPolicies(String aaURL) {

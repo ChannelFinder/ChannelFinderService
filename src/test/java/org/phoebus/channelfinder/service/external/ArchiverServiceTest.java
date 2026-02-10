@@ -98,7 +98,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testSubmitAction() throws JsonProcessingException {
+  void testSubmitBasicAction() throws JsonProcessingException {
     String archiverUrl = mockWebServer.url("/").toString();
     List<String> pvs = List.of("pv1");
     List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "ok"));
@@ -108,13 +108,13 @@ class ArchiverServiceTest {
             .addHeader("Content-Type", "application/json"));
 
     List<String> successfulPvs =
-        archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl);
+        archiverService.submitBasicAction(pvs, ArchiveAction.NONE, archiverUrl);
     assertEquals(1, successfulPvs.size());
     assertEquals("pv1", successfulPvs.get(0));
   }
 
   @Test
-  void testSubmitActionStatusNotOk() throws JsonProcessingException {
+  void testSubmitBasicActionStatusNotOk() throws JsonProcessingException {
     String archiverUrl = mockWebServer.url("/").toString();
     List<String> pvs = List.of("pv1");
     List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "failed"));
@@ -124,12 +124,12 @@ class ArchiverServiceTest {
             .addHeader("Content-Type", "application/json"));
 
     List<String> successfulPvs =
-        archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl);
+        archiverService.submitBasicAction(pvs, ArchiveAction.NONE, archiverUrl);
     assertTrue(successfulPvs.isEmpty());
   }
 
   @Test
-  void testSubmitActionPartialFailure() throws JsonProcessingException {
+  void testSubmitBasicActionPartialFailure() throws JsonProcessingException {
     String archiverUrl = mockWebServer.url("/").toString();
     List<String> pvs = List.of("pv1", "pv2");
     List<Map<String, String>> expectedResponse =
@@ -140,13 +140,13 @@ class ArchiverServiceTest {
             .addHeader("Content-Type", "application/json"));
 
     List<String> successfulPvs =
-        archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl);
+        archiverService.submitBasicAction(pvs, ArchiveAction.NONE, archiverUrl);
     assertEquals(1, successfulPvs.size());
     assertEquals("pv1", successfulPvs.get(0));
   }
 
   @Test
-  void testSubmitActionInvalidResponse() {
+  void testSubmitBasicActionInvalidResponse() {
     String archiverUrl = mockWebServer.url("/").toString();
     List<String> pvs = List.of("pv1");
     mockWebServer.enqueue(
@@ -154,7 +154,7 @@ class ArchiverServiceTest {
 
     assertThrows(
         ArchiverServiceException.class,
-        () -> archiverService.submitAction(pvs, pvs, ArchiveAction.NONE, archiverUrl));
+        () -> archiverService.submitBasicAction(pvs, ArchiveAction.NONE, archiverUrl));
   }
 
   @Test
@@ -168,6 +168,8 @@ class ArchiverServiceTest {
             ArchiveAction.PAUSE, List.of(),
             ArchiveAction.RESUME, List.of());
 
+    List<Map<String, String>> expectedResponse =
+        List.of(Map.of("pv", "pv1", "status", "Archive request submitted"));
     List<Map<String, String>> expectedResponse =
         List.of(Map.of("pv", "pv1", "status", "Archive request submitted"));
     mockWebServer.enqueue(
@@ -292,5 +294,55 @@ class ArchiverServiceTest {
     List<String> result = archiverService.getAAPolicies(archiverUrl);
 
     assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void testSubmitActionWithRealResponseResume() {
+    String archiverUrl = mockWebServer.url("/").toString();
+    List<String> pvs = List.of("PV1", "PV2");
+    String responseBody =
+        "[{\"pvName\":\"PV1\",\"engine_desc\":\"Successfully resumed the archiving of PV PV1\",\"engine_pvName\":\"PV1\",\"engine_status\":\"ok\",\"status\":\"ok\"},{\"pvName\":\"PV2\",\"engine_desc\":\"Successfully resumed the archiving of PV PV2\",\"engine_pvName\":\"PV2\",\"engine_status\":\"ok\",\"status\":\"ok\"}]";
+
+    mockWebServer.enqueue(
+        new MockResponse().setBody(responseBody).addHeader("Content-Type", "application/json"));
+
+    List<String> successfulPvs =
+        archiverService.submitBasicAction(pvs, ArchiveAction.RESUME, archiverUrl);
+    assertEquals(2, successfulPvs.size());
+    assertTrue(successfulPvs.contains("PV1"));
+    assertTrue(successfulPvs.contains("PV2"));
+  }
+
+  @Test
+  void testSubmitActionWithRealResponsePause() {
+    String archiverUrl = mockWebServer.url("/").toString();
+    List<String> pvs = List.of("PV1");
+    String responseBody =
+        "[{\"pvName\":\"PV1\",\"engine_desc\":\"Successfully paused the archiving of PV PV1\",\"engine_pvName\":\"PV1\",\"engine_status\":\"ok\",\"etl_status\":\"ok\",\"etl_desc\":\"Successfully removed PV PV1 from the cluster\",\"etl_pvName\":\"PV1\",\"status\":\"ok\"}]";
+
+    mockWebServer.enqueue(
+        new MockResponse().setBody(responseBody).addHeader("Content-Type", "application/json"));
+
+    List<String> successfulPvs =
+        archiverService.submitBasicAction(pvs, ArchiveAction.PAUSE, archiverUrl);
+    assertEquals(1, successfulPvs.size());
+    assertTrue(successfulPvs.contains("PV1"));
+  }
+
+  @Test
+  void testSubmitActionWithRealResponseArchive() {
+    String archiverUrl = mockWebServer.url("/").toString();
+    List<String> pvs = List.of("PV1");
+    ArchivePVOptions options = new ArchivePVOptions();
+    options.setPv("PV1");
+    List<ArchivePVOptions> payload = List.of(options);
+    String responseBody = "[{ \"pvName\": \"PV1\", \"status\": \"Archive request submitted\" }]";
+
+    mockWebServer.enqueue(
+        new MockResponse().setBody(responseBody).addHeader("Content-Type", "application/json"));
+
+    List<String> successfulPvs = archiverService.submitArchiveAction(pvs, payload, archiverUrl);
+    assertEquals(1, successfulPvs.size());
+    assertTrue(successfulPvs.contains("PV1"));
   }
 }
