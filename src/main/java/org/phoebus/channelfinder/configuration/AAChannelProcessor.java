@@ -290,9 +290,8 @@ public class AAChannelProcessor implements ChannelProcessor {
         // Empty archiver tagged
         continue;
       }
-      String version = archiverService.getVersion(aa.getValue());
       List<String> policies = archiverService.getAAPolicies(aa.getValue());
-      result.put(aa.getKey(), new ArchiverInfo(aa.getKey(), aa.getValue(), version, policies));
+      result.put(aa.getKey(), new ArchiverInfo(aa.getKey(), aa.getValue(), policies));
     }
     return result;
   }
