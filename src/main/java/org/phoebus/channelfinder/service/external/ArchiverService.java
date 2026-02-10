@@ -1,7 +1,6 @@
 package org.phoebus.channelfinder.service.external;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Duration;
@@ -201,16 +200,19 @@ public class ArchiverService {
     }
     try {
       String uriString = aaURL + POLICY_RESOURCE;
-      String response =
+      Map<String, String> policyMap =
           client
               .get()
               .uri(URI.create(uriString))
               .retrieve()
-              .bodyToMono(String.class)
+              .bodyToFlux(new ParameterizedTypeReference<Map<String, String>>() {})
               .timeout(Duration.of(10, ChronoUnit.SECONDS))
-              .onErrorResume(e -> showError(uriString, e))
+              .onErrorResume(e -> showError(uriString, e).thenMany(Flux.empty()))
+              .next()
               .block();
-      Map<String, String> policyMap = objectMapper.readValue(response, Map.class);
+      if (policyMap == null) {
+        return List.of();
+      }
       return new ArrayList<>(policyMap.keySet());
     } catch (Exception e) {
       // problem collecting policies from AA, so warn and return empty list
