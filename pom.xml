@@ -37,7 +37,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.boot-version>3.5.7</spring.boot-version>
         <jackson.version>3.0.1</jackson.version>
-        <elasticsearch.version>8.18.0</elasticsearch.version>
+        <elasticsearch.version>8.11.2</elasticsearch.version>
         <junit-jupiter.version>5.10.0</junit-jupiter.version>
         <skipITs>true</skipITs>
         <skipITCoverage>true</skipITCoverage>
