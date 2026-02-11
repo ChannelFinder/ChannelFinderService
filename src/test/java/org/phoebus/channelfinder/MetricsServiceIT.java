@@ -71,11 +71,6 @@ class MetricsServiceIT {
     ElasticConfigIT.setUp(esService);
   }
 
-  @AfterAll
-  void tearDown() throws IOException {
-    ElasticConfigIT.teardown(esService);
-  }
-
   @AfterEach
   public void cleanup() {
     MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
