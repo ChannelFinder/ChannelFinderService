@@ -45,7 +45,7 @@ For using docker containers there is a barebones [docker compose file](./compose
 
 * Prerequisites
 
-    * JDK 21
+    * JDK 25
     * Elastic version 8.11.x
     * **For authN/authZ using LDAP:** LDAP server, e.g. OpenLDAP
 
@@ -62,7 +62,7 @@ Options:
 #### Running
 
 ```bash
-sudo apt-get install openjdk-21-jre git curl wget
+sudo apt-get install openjdk-25-jre git curl wget
 sudo systemctl start elasticsearch # Or other command to run elastic search
 
 # Replace verison with the release you want
@@ -98,7 +98,7 @@ and [Eclipse](https://eclipseide.org/).
 
 * Prerequisites
 
-    * JDK 21
+    * JDK 25
     * Maven (via package manager or via the wrapper `./mvnw`) (version specified
       in [the wrapper properties](./.mvn/wrapper/maven-wrapper.properties))
 
