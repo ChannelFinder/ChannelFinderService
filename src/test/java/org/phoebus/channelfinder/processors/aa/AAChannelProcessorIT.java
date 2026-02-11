@@ -28,7 +28,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 
 @WebMvcTest(AAChannelProcessor.class)
-@TestPropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_aa_proc_test.properties")
 class AAChannelProcessorIT {
 
   protected static Property archiveProperty = new Property("archive", "owner", "default");

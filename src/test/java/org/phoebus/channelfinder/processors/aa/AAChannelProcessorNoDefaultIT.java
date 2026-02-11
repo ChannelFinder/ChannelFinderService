@@ -24,7 +24,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(
-    locations = "classpath:application_test.properties",
+    locations = "classpath:application_aa_proc_test.properties",
     properties = "aa.urls:{'default': '','aa': 'http://localhost:17665'}")
 class AAChannelProcessorNoDefaultIT {
   protected static Property archiverProperty = new Property("archiver", "owner", "aa");
