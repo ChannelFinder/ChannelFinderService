@@ -18,6 +18,7 @@ import org.phoebus.channelfinder.rest.controller.TagController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 @WebMvcTest(TagController.class)
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
+@ContextConfiguration(classes = {TagController.class, ElasticConfig.class})
 class TagValidationIT {
 
   @Autowired ITag tagManager;

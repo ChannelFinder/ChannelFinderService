@@ -67,7 +67,7 @@ class MetricsServiceTest {
     List<MultiValueMap<String, String>> allMaps =
         MetricsService.generateAllMultiValueMaps(properties);
 
-    assertEquals(1, allMaps.size());
+    assertEquals(0, allMaps.size());
   }
 
   // Helper method to create a MultiValueMap for easier assertion

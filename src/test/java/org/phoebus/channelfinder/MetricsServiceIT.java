@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.util.LinkedMultiValueMap;
@@ -41,6 +42,7 @@ import org.springframework.util.MultiValueMap;
       "metrics.properties=testProperty0: value0, value1; testProperty1: value0, !*",
       "metrics.updateInterval=1"
     })
+@ContextConfiguration(classes = {ElasticConfig.class, MetricsService.class})
 class MetricsServiceIT {
 
   public static final String METRICS_ENDPOINT = "/actuator/metrics";
@@ -67,11 +69,6 @@ class MetricsServiceIT {
   @BeforeAll
   void setupAll() {
     ElasticConfigIT.setUp(esService);
-  }
-
-  @AfterAll
-  void tearDown() throws IOException {
-    ElasticConfigIT.teardown(esService);
   }
 
   @AfterEach

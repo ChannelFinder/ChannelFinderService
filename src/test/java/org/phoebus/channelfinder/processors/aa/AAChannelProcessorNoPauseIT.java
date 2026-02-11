@@ -23,7 +23,7 @@ import org.springframework.test.context.TestPropertySource;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(
-    locations = "classpath:application_test.properties",
+    locations = "classpath:application_aa_proc_test.properties",
     properties = "aa.auto_pause=none")
 class AAChannelProcessorNoPauseIT {
 

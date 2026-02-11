@@ -32,7 +32,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 
 @WebMvcTest(AAChannelProcessor.class)
-@TestPropertySource(value = "classpath:application_test.properties")
+@TestPropertySource(value = "classpath:application_aa_proc_test.properties")
 class AAChannelProcessorMultiIT {
 
   public static final String BEING_ARCHIVED = "Being archived";

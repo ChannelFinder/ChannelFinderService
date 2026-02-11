@@ -12,22 +12,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.phoebus.channelfinder.repository.PropertyRepository;
 import org.phoebus.channelfinder.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 @Service
-@PropertySource(value = "classpath:application.properties")
 public class MetricsService {
-
   public static final String CF_TOTAL_CHANNEL_COUNT = "cf.total.channel.count";
   public static final String CF_PROPERTY_COUNT = "cf.property.count";
   public static final String CF_TAG_COUNT = "cf.tag.count";
@@ -60,7 +58,7 @@ public class MetricsService {
 
   Map<String, List<String>> parseProperties() {
     if (metricProperties == null || metricProperties.isEmpty()) {
-      return new LinkedMultiValueMap<>();
+      return Map.of();
     }
     return Arrays.stream(metricProperties.split(";"))
         .map(
@@ -121,9 +119,7 @@ public class MetricsService {
     List<MultiValueMap<String, String>> allMultiValueMaps = new ArrayList<>();
 
     if (properties.isEmpty()) {
-      allMultiValueMaps.add(
-          new LinkedMultiValueMap<>()); // Add an empty map for the case where all are null
-      return allMultiValueMaps;
+      return List.of();
     }
 
     List<Entry<String, List<String>>> entries = new ArrayList<>(properties.entrySet());
@@ -211,7 +207,11 @@ public class MetricsService {
 
   @Scheduled(fixedRateString = "${metrics.updateInterval}", timeUnit = TimeUnit.SECONDS)
   public void updateMetrics() {
-    updateTagMetrics();
-    updatePropertyMetrics();
+    if (tagMetrics != null && !tagMetrics.isEmpty()) {
+      updateTagMetrics();
+    }
+    if (propertyMetrics != null && !propertyMetrics.isEmpty()) {
+      updatePropertyMetrics();
+    }
   }
 }
