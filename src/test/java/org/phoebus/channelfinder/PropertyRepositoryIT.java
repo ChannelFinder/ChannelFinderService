@@ -21,6 +21,7 @@ import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.phoebus.channelfinder.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -29,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(PropertyRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
+@ContextConfiguration(classes = {PropertyRepository.class, ElasticConfig.class})
 class PropertyRepositoryIT {
   public static final String TEST_PROPERTY_NAME = "testProperty";
 

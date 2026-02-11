@@ -18,6 +18,7 @@ import org.phoebus.channelfinder.rest.api.IChannelScroll;
 import org.phoebus.channelfinder.rest.controller.ChannelScrollController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -25,6 +26,7 @@ import org.springframework.util.MultiValueMap;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelScrollController.class)
 @TestPropertySource(value = "classpath:application_test.properties")
+@ContextConfiguration(classes = {ChannelScrollController.class, ElasticConfig.class})
 class ChannelScrollControllerSearchIT {
 
   private static final Logger logger =

@@ -25,6 +25,7 @@ import org.phoebus.channelfinder.repository.TagRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -32,6 +33,7 @@ import org.springframework.util.MultiValueMap;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @WebMvcTest(ChannelRepository.class)
 @TestPropertySource(locations = "classpath:application_test.properties")
+@ContextConfiguration(classes = {ChannelRepository.class, ElasticConfig.class})
 class ChannelRepositorySearchIT {
   private static final Logger logger = Logger.getLogger(ChannelRepositorySearchIT.class.getName());
 
