@@ -18,6 +18,9 @@
 
 FROM eclipse-temurin:25-jre
 
+# Install curl, which we use for health check and is not included in temurin:25
+RUN apt-get update && apt-get install -y curl
+
 # deployment unit
 COPY ../../../target/ChannelFinder-*.jar /channelfinder/ChannelFinder-*.jar
 
