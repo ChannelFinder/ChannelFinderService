@@ -2,34 +2,33 @@ package org.phoebus.channelfinder.processors.aa;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activeProperty;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.inactiveProperty;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.phoebus.channelfinder.configuration.AAChannelProcessor;
 import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
+import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(value = "classpath:application_aa_proc_test.properties")
@@ -40,22 +39,7 @@ class AAChannelProcessorMultiIT {
   public static final String NOT_BEING_ARCHIVED = "Not being archived";
   public static final String OWNER = "owner";
   @Autowired AAChannelProcessor aaChannelProcessor;
-
-  MockWebServer mockArchiverAppliance;
-  ObjectMapper objectMapper;
-
-  @BeforeEach
-  void setUp() throws IOException {
-    mockArchiverAppliance = new MockWebServer();
-    mockArchiverAppliance.start(17665);
-
-    objectMapper = new ObjectMapper();
-  }
-
-  @AfterEach
-  void teardown() throws IOException {
-    mockArchiverAppliance.shutdown();
-  }
+  @MockitoBean ArchiverService archiverService;
 
   static Stream<Arguments> provideArguments() {
     List<Channel> channels =
@@ -117,92 +101,46 @@ class AAChannelProcessorMultiIT {
       Map<String, String> namesToStatuses,
       Map<ArchiveAction, List<String>> actionsToNames,
       int expectedProcessedChannels)
-      throws JsonProcessingException, InterruptedException {
+      throws JsonProcessingException {
 
-    // Request to policies
-    Map<String, String> policyList = Map.of("policy", "description");
-    mockArchiverAppliance.enqueue(
-        new MockResponse()
-            .setBody(objectMapper.writeValueAsString(policyList))
-            .addHeader("Content-Type", "application/json"));
+    // Mock getAAPolicies
+    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
 
-    // Request to archiver status
+    // Mock getStatuses
     List<Map<String, String>> archivePVStatuses =
         namesToStatuses.entrySet().stream()
             .map(entry -> Map.of("pvName", entry.getKey(), "status", entry.getValue()))
             .toList();
-    mockArchiverAppliance.enqueue(
-        new MockResponse()
-            .setBody(objectMapper.writeValueAsString(archivePVStatuses))
-            .addHeader("Content-Type", "application/json"));
+    when(archiverService.getStatuses(anyMap(), anyString(), anyString()))
+        .thenReturn(archivePVStatuses);
 
-    // Requests to archiver
-    actionsToNames.forEach(
-        (key, value) -> {
-          List<Map<String, String>> archiverResponse =
-              value.stream()
-                  .map(channel -> Map.of("pvName", channel, "status", key + " request submitted"))
-                  .toList();
-          try {
-            mockArchiverAppliance.enqueue(
-                new MockResponse()
-                    .setBody(objectMapper.writeValueAsString(archiverResponse))
-                    .addHeader("Content-Type", "application/json"));
-          } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-          }
-        });
+    // Mock configureAA
+    when(archiverService.configureAA(anyMap(), anyString()))
+        .thenReturn((long) expectedProcessedChannels);
 
     long count = aaChannelProcessor.process(channels);
-    assertEquals(count, expectedProcessedChannels);
+    assertEquals(expectedProcessedChannels, count);
 
-    AtomicInteger expectedRequests = new AtomicInteger(1);
-    RecordedRequest requestPolicy = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-    assert requestPolicy != null;
-    assertEquals("/mgmt/bpl/getPolicyList", requestPolicy.getPath());
+    verify(archiverService).getAAPolicies(anyString());
+    verify(archiverService).getStatuses(anyMap(), anyString(), anyString());
 
-    expectedRequests.addAndGet(1);
-    RecordedRequest requestStatus = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-    assert requestStatus != null;
-    assert requestStatus.getRequestUrl() != null;
-    assertEquals("/mgmt/bpl/getPVStatus", requestStatus.getRequestUrl().encodedPath());
-    String pvStatusRequestParameter = requestStatus.getRequestUrl().queryParameter("pv");
-    namesToStatuses
-        .keySet()
-        .forEach(
-            name -> {
-              assert pvStatusRequestParameter != null;
-              assertTrue(pvStatusRequestParameter.contains(name));
-            });
+    ArgumentCaptor<Map<ArchiveAction, List<ArchivePVOptions>>> captor =
+        ArgumentCaptor.forClass(Map.class);
+    verify(archiverService).configureAA(captor.capture(), anyString());
+    Map<ArchiveAction, List<ArchivePVOptions>> capturedMap = captor.getValue();
 
-    while (mockArchiverAppliance.getRequestCount() > 0) {
-      RecordedRequest requestAction = null;
-      try {
-        requestAction = mockArchiverAppliance.takeRequest(2, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-      if (requestAction == null) {
-        break;
-      }
-      expectedRequests.addAndGet(1);
-      assert requestAction.getPath() != null;
-      assertTrue(requestAction.getPath().startsWith("/mgmt/bpl"));
-      ArchiveAction key =
-          actionFromEndpoint(requestAction.getPath().substring("/mgmt/bpl".length()));
-      String body = requestAction.getBody().readUtf8();
-      actionsToNames.get(key).forEach(pv -> assertTrue(body.contains(pv)));
-    }
-
-    assertEquals(mockArchiverAppliance.getRequestCount(), expectedRequests.get());
-  }
-
-  public ArchiveAction actionFromEndpoint(final String endpoint) {
-    for (ArchiveAction action : ArchiveAction.values()) {
-      if (action.getEndpoint().equals(endpoint)) {
-        return action;
-      }
-    }
-    return null;
+    actionsToNames.forEach(
+        (action, names) -> {
+          if (names.isEmpty()) {
+            return;
+          }
+          assertTrue(capturedMap.containsKey(action));
+          List<String> capturedNames =
+              capturedMap.get(action).stream()
+                  .map(ArchivePVOptions::getPv)
+                  .collect(Collectors.toList());
+          assertTrue(capturedNames.containsAll(names));
+          assertTrue(names.containsAll(capturedNames));
+        });
   }
 }
