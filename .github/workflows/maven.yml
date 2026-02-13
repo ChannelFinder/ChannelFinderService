@@ -68,7 +68,7 @@ jobs:
     - name: Runs Elasticsearch
       uses: elastic/elastic-github-actions/elasticsearch@master
       with:
-        stack-version: 8.11.2
+        stack-version: 8.18.0
         security-enabled: false
     - name: Clear existing docker image cache
       shell: bash
