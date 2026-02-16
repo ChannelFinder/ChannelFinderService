@@ -26,8 +26,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 @Component
-public class ArchiverClient {
-  private static final Logger logger = Logger.getLogger(ArchiverClient.class.getName());
+public class ArchiverService {
+  private static final Logger logger = Logger.getLogger(ArchiverService.class.getName());
   private static final int STATUS_BATCH_SIZE =
       100; // Limit comes from tomcat server maxHttpHeaderSize which by default is a header of size
   // 8k
