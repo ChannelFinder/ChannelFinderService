@@ -14,11 +14,13 @@ import org.phoebus.channelfinder.common.CFResourceDescriptors;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.rest.api.IChannelScroll;
 import org.phoebus.channelfinder.rest.controller.ChannelProcessorController;
+import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -27,7 +29,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 @WebMvcTest(ChannelProcessorController.class)
 @TestPropertySource(
     value = "classpath:application_test.properties",
-    properties = {"elasticsearch.create.indices = false"})
+    properties = {"elasticsearch.create.indices = false", "aa.enabled=true"})
 class ChannelProcessorControllerIT {
 
   protected static final String AUTHORIZATION =
@@ -35,6 +37,7 @@ class ChannelProcessorControllerIT {
 
   @Autowired protected MockMvc mockMvc;
   @MockBean IChannelScroll channelScroll;
+  @MockitoBean ArchiverService archiverService;
 
   @Test
   void testProcessorCount() throws Exception {
