@@ -1,11 +1,7 @@
 package org.phoebus.channelfinder.service.external;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,14 +12,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
-import reactor.core.publisher.Mono;
 
 @Component
 public class ArchiverService {
@@ -32,18 +31,44 @@ public class ArchiverService {
       100; // Limit comes from tomcat server maxHttpHeaderSize which by default is a header of size
   // 8k
 
-  private final WebClient client = WebClient.create();
+  private final RestClient client;
 
   private static final String MGMT_RESOURCE = "/mgmt/bpl";
   private static final String POLICY_RESOURCE = MGMT_RESOURCE + "/getPolicyList";
   private static final String PV_STATUS_RESOURCE = MGMT_RESOURCE + "/getPVStatus";
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
-  @Value("${aa.timeout_seconds:15}")
-  private int timeoutSeconds;
+  private static final MediaType CONTENT_TYPE = MediaType.APPLICATION_JSON;
+
+  private enum StatusResponseKey {
+    PV("pv"),
+    STATUS("status"),
+    PV_NAME("pvName");
+    private final String key;
+
+    StatusResponseKey(String key) {
+      this.key = key;
+    }
+
+    String key() {
+      return this.key;
+    }
+  }
 
   @Value("${aa.post_support:}")
   private List<String> postSupportArchivers;
+
+  @Autowired
+  public ArchiverService(
+      RestClient.Builder builder, @Value("${aa.timeout_seconds:15}") int timeoutSeconds) {
+    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+    factory.setReadTimeout(timeoutSeconds * 1000);
+    this.client = builder.requestFactory(factory).build();
+  }
+
+  ArchiverService(RestClient.Builder builder) {
+    this.client = builder.build();
+  }
 
   private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
     List<String> list = new ArrayList<>(pvSet);
@@ -54,11 +79,11 @@ public class ArchiverService {
   public List<Map<String, String>> getStatuses(
       Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverAlias) {
     Set<String> pvs = archivePVS.keySet();
-    Boolean postSupportOverride = postSupportArchivers.contains(archiverAlias);
+    boolean postSupportOverride = postSupportArchivers.contains(archiverAlias);
     logger.log(Level.INFO, "Archiver Alias: {0}", archiverAlias);
     logger.log(Level.INFO, "Post Support Override Archivers: {0}", postSupportArchivers);
 
-    if (Boolean.TRUE.equals(postSupportOverride)) {
+    if (postSupportOverride) {
       logger.log(Level.INFO, "Post Support");
       return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
     } else {
@@ -77,90 +102,110 @@ public class ArchiverService {
     String uriString = archiverURL + PV_STATUS_RESOURCE;
     URI pvStatusURI =
         UriComponentsBuilder.fromUri(URI.create(uriString))
-            .queryParam("pv", String.join(",", pvs))
+            .queryParam(StatusResponseKey.PV.key(), String.join(",", pvs))
             .build()
             .toUri();
 
-    String response =
-        client
-            .get()
-            .uri(pvStatusURI)
-            .retrieve()
-            .bodyToMono(String.class)
-            .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
-            .onErrorResume(e -> showError(uriString, e))
-            .block();
-
     try {
-      return objectMapper.readValue(response, new TypeReference<>() {});
-    } catch (JsonProcessingException e) {
-      logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
+      List<Map<String, String>> result =
+          client.get().uri(pvStatusURI).retrieve().body(new ParameterizedTypeReference<>() {});
+      return result != null ? result : List.of();
     } catch (Exception e) {
       logger.log(
           Level.WARNING,
-          String.format("Error when trying to get status from pv list query: %s", e.getMessage()));
+          String.format(
+              "There was an error getting a response with URI: %s. Error: %s",
+              uriString, e.getMessage()));
+      return List.of();
     }
-    return List.of();
   }
 
   private List<Map<String, String>> getStatusesFromPvListBody(
       String archiverURL, List<String> pvs) {
     String uriString = archiverURL + PV_STATUS_RESOURCE;
-    String response =
-        client
-            .post()
-            .uri(URI.create(uriString))
-            .contentType(MediaType.APPLICATION_JSON)
-            .bodyValue(pvs)
-            .retrieve()
-            .bodyToMono(String.class)
-            .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
-            .onErrorResume(e -> showError(uriString, e))
-            .block();
-
-    // Structure of response is
-    // [{"pvName":"PV:1", "status":"Paused", ... }, {"pvName": "PV:2"}, {"status": "Being
-    // archived"}, ...}, ...
-    // ]
-
     try {
-      return objectMapper.readValue(response, new TypeReference<>() {});
-    } catch (JsonProcessingException e) {
-      logger.log(Level.WARNING, "Could not parse pv status response: " + e.getMessage());
-    } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format("Error when trying to get status from pv list body: %s", e.getMessage()));
-    }
-    return List.of();
-  }
-
-  private void submitAction(String values, String endpoint, String aaURL) {
-    String uriString = aaURL + MGMT_RESOURCE + endpoint;
-    try {
-      String response =
+      List<Map<String, String>> result =
           client
               .post()
               .uri(URI.create(uriString))
-              .contentType(MediaType.APPLICATION_JSON)
-              .bodyValue(values)
+              .contentType(CONTENT_TYPE)
+              .body(pvs)
               .retrieve()
-              .bodyToMono(String.class)
-              .timeout(Duration.of(timeoutSeconds, ChronoUnit.SECONDS))
-              .onErrorResume(e -> showError(uriString, e))
-              .block();
-      logger.log(Level.FINE, () -> response);
-
+              .body(new ParameterizedTypeReference<>() {});
+      return result != null ? result : List.of();
     } catch (Exception e) {
       logger.log(
           Level.WARNING,
-          String.format("Failed to submit %s to %s on %s", values, endpoint, aaURL),
-          e);
+          String.format(
+              "There was an error getting a response with URI: %s. Error: %s",
+              uriString, e.getMessage()));
+      return List.of();
     }
   }
 
-  public long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL)
-      throws JsonProcessingException {
+  private List<Map<String, String>> sendRequest(Object payload, String uriString) {
+    try {
+      String values = objectMapper.writeValueAsString(payload);
+      List<Map<String, String>> response =
+          client
+              .post()
+              .uri(URI.create(uriString))
+              .contentType(CONTENT_TYPE)
+              .body(values)
+              .retrieve()
+              .body(new ParameterizedTypeReference<>() {});
+      if (response == null) {
+        throw new ArchiverServiceException("No response from " + uriString);
+      }
+      return response;
+    } catch (Exception e) {
+      throw new ArchiverServiceException(
+          String.format("Failed to submit %s to %s", payload, uriString), e);
+    }
+  }
+
+  List<String> submitArchiveAction(List<String> pvs, List<ArchivePVOptions> payload, String aaURL) {
+    String endpoint = ArchiveAction.ARCHIVE.getEndpoint();
+    String uriString = aaURL + MGMT_RESOURCE + endpoint;
+    List<Map<String, String>> response = sendRequest(payload, uriString);
+    return validateSubmitActionResponse(pvs, ArchiveAction.ARCHIVE, response);
+  }
+
+  List<String> submitBasicAction(List<String> pvs, ArchiveAction action, String aaURL) {
+    String endpoint = action.getEndpoint();
+    String uriString = aaURL + MGMT_RESOURCE + endpoint;
+    List<Map<String, String>> response = sendRequest(pvs, uriString);
+    return validateSubmitActionResponse(pvs, action, response);
+  }
+
+  private static List<String> validateSubmitActionResponse(
+      List<String> pvs, ArchiveAction action, List<Map<String, String>> response) {
+    List<String> successfulPvs = new ArrayList<>();
+    List<String> failedPvs = new ArrayList<>();
+    for (int i = 0; i < response.size(); i++) {
+      Map<String, String> result = response.get(i);
+      String pv = result.get(StatusResponseKey.PV_NAME.key());
+      if (pv == null) {
+        pv = result.get(StatusResponseKey.PV.key());
+      }
+      if (pv == null) {
+        pv = (i < pvs.size()) ? pvs.get(i) : "UNKNOWN_PV";
+      }
+      String status = result.get(StatusResponseKey.STATUS.key());
+      if (!action.getSuccessfulStatus().equalsIgnoreCase(status)) {
+        failedPvs.add(pv);
+      } else {
+        logger.log(Level.FINE, "Successfully submitted " + action + " for PV " + pv);
+        successfulPvs.add(pv);
+      }
+    }
+    if (!failedPvs.isEmpty()) {
+      logger.log(Level.WARNING, "Failed to submit " + action + " for PVs: " + failedPvs);
+    }
+    return successfulPvs;
+  }
+
+  public long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL) {
     logger.log(
         Level.INFO, () -> String.format("Configure PVs %s in %s", archivePVS.toString(), aaURL));
     long count = 0;
@@ -168,44 +213,34 @@ public class ArchiverService {
     if (archivePVS.isEmpty()) {
       return count;
     }
-    if (!archivePVS.get(ArchiveAction.ARCHIVE).isEmpty()) {
-      logger.log(
-          Level.INFO,
-          () ->
-              "Submitting to be archived " + archivePVS.get(ArchiveAction.ARCHIVE).size() + " pvs");
-      submitAction(
-          objectMapper.writeValueAsString(archivePVS.get(ArchiveAction.ARCHIVE)),
-          ArchiveAction.ARCHIVE.getEndpoint(),
-          aaURL);
-      count += archivePVS.get(ArchiveAction.ARCHIVE).size();
-    }
-    if (!archivePVS.get(ArchiveAction.PAUSE).isEmpty()) {
-      logger.log(
-          Level.INFO,
-          () -> "Submitting to be paused " + archivePVS.get(ArchiveAction.PAUSE).size() + " pvs");
-      submitAction(
-          objectMapper.writeValueAsString(
-              archivePVS.get(ArchiveAction.PAUSE).stream()
-                  .map(ArchivePVOptions::getPv)
-                  .collect(Collectors.toList())),
-          ArchiveAction.PAUSE.getEndpoint(),
-          aaURL);
-      count += archivePVS.get(ArchiveAction.PAUSE).size();
-    }
-    if (!archivePVS.get(ArchiveAction.RESUME).isEmpty()) {
-      logger.log(
-          Level.INFO,
-          () -> "Submitting to be resumed " + archivePVS.get(ArchiveAction.RESUME).size() + " pvs");
-      submitAction(
-          objectMapper.writeValueAsString(
-              archivePVS.get(ArchiveAction.RESUME).stream()
-                  .map(ArchivePVOptions::getPv)
-                  .collect(Collectors.toList())),
-          ArchiveAction.RESUME.getEndpoint(),
-          aaURL);
-      count += archivePVS.get(ArchiveAction.RESUME).size();
-    }
+
+    count += processAction(ArchiveAction.ARCHIVE, archivePVS.get(ArchiveAction.ARCHIVE), aaURL);
+    count += processAction(ArchiveAction.PAUSE, archivePVS.get(ArchiveAction.PAUSE), aaURL);
+    count += processAction(ArchiveAction.RESUME, archivePVS.get(ArchiveAction.RESUME), aaURL);
+
     return count;
+  }
+
+  private long processAction(ArchiveAction action, List<ArchivePVOptions> options, String aaURL) {
+    if (options.isEmpty()) {
+      return 0;
+    }
+    logger.log(
+        Level.INFO,
+        () -> "Submitting to be " + action.name().toLowerCase() + "d " + options.size() + " pvs");
+    List<String> pvs = options.stream().map(ArchivePVOptions::getPv).collect(Collectors.toList());
+    try {
+      List<String> successfulPvs;
+      if (action == ArchiveAction.ARCHIVE) {
+        successfulPvs = submitArchiveAction(pvs, options, aaURL);
+      } else {
+        successfulPvs = submitBasicAction(pvs, action, aaURL);
+      }
+      return successfulPvs.size();
+    } catch (ArchiverServiceException e) {
+      logger.log(Level.WARNING, "Failed to submit " + action.name().toLowerCase() + " request", e);
+      return 0;
+    }
   }
 
   public List<String> getAAPolicies(String aaURL) {
@@ -214,30 +249,20 @@ public class ArchiverService {
     }
     try {
       String uriString = aaURL + POLICY_RESOURCE;
-      String response =
+      Map<String, String> policyMap =
           client
               .get()
               .uri(URI.create(uriString))
               .retrieve()
-              .bodyToMono(String.class)
-              .timeout(Duration.of(10, ChronoUnit.SECONDS))
-              .onErrorResume(e -> showError(uriString, e))
-              .block();
-      Map<String, String> policyMap = objectMapper.readValue(response, Map.class);
+              .body(new ParameterizedTypeReference<>() {});
+      if (policyMap == null) {
+        return List.of();
+      }
       return new ArrayList<>(policyMap.keySet());
     } catch (Exception e) {
       // problem collecting policies from AA, so warn and return empty list
       logger.log(Level.WARNING, "Could not get AA policies list from: " + aaURL, e);
       return List.of();
     }
-  }
-
-  private Mono<String> showError(String uriString, Throwable error) {
-    logger.log(
-        Level.WARNING,
-        String.format(
-            "There was an error getting a response with URI: %s. Error: %s",
-            uriString, error.getMessage()));
-    return Mono.empty();
   }
 }

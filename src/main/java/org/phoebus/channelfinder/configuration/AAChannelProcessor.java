@@ -60,7 +60,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   @Value("${aa.auto_pause:}")
   private List<String> autoPauseOptions;
 
-  @Autowired private final ArchiverService archiverService = new ArchiverService();
+  @Autowired private ArchiverService archiverService;
 
   @Override
   public boolean enabled() {
