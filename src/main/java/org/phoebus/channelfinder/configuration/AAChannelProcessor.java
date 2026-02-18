@@ -14,13 +14,14 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.service.external.ArchiverClient;
+import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiverInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -31,6 +32,7 @@ import org.springframework.context.annotation.Configuration;
  * <p>e.g. archive=monitor@1.0
  */
 @Configuration
+@ConditionalOnProperty(name = "aa.enabled", havingValue = "true")
 public class AAChannelProcessor implements ChannelProcessor {
 
   private static final Logger logger = Logger.getLogger(AAChannelProcessor.class.getName());
@@ -60,7 +62,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   @Value("${aa.auto_pause:}")
   private List<String> autoPauseOptions;
 
-  @Autowired private final ArchiverClient archiverClient = new ArchiverClient();
+  @Autowired private ArchiverService archiverService;
 
   @Override
   public boolean enabled() {
@@ -180,7 +182,7 @@ public class AAChannelProcessor implements ChannelProcessor {
                   Collectors.toMap(ArchivePVOptions::getPv, archivePVOptions -> archivePVOptions));
       Map<ArchiveAction, List<ArchivePVOptions>> archiveActionArchivePVMap =
           getArchiveActions(archivePVSList, archiverInfo);
-      count += archiverClient.configureAA(archiveActionArchivePVMap, archiverInfo.url());
+      count += archiverService.configureAA(archiveActionArchivePVMap, archiverInfo.url());
     }
     long finalCount = count;
     logger.log(Level.INFO, () -> String.format("Configured %s channels.", finalCount));
@@ -240,7 +242,7 @@ public class AAChannelProcessor implements ChannelProcessor {
       return result;
     }
     List<Map<String, String>> statuses =
-        archiverClient.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
+        archiverService.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
     logger.log(Level.FINER, "Statuses {0}", statuses);
     statuses.forEach(
         archivePVStatusJsonMap -> {
@@ -290,9 +292,8 @@ public class AAChannelProcessor implements ChannelProcessor {
         // Empty archiver tagged
         continue;
       }
-      String version = archiverClient.getVersion(aa.getValue());
-      List<String> policies = archiverClient.getAAPolicies(aa.getValue());
-      result.put(aa.getKey(), new ArchiverInfo(aa.getKey(), aa.getValue(), version, policies));
+      List<String> policies = archiverService.getAAPolicies(aa.getValue());
+      result.put(aa.getKey(), new ArchiverInfo(aa.getKey(), aa.getValue(), policies));
     }
     return result;
   }
