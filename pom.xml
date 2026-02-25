@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>ChannelFinder</artifactId>
-	<groupId>org.phoebus</groupId>
-	<version>5.0.1-SNAPSHOT</version>
-	<name>ChannelFinder Service</name>
+    <artifactId>ChannelFinder</artifactId>
+    <groupId>org.phoebus</groupId>
+    <version>5.0.1-SNAPSHOT</version>
+    <name>ChannelFinder Service</name>
 
     <description>A RESTful directory services for a list channels</description>
     <url>https://channelfinder.readthedocs.io/</url>
@@ -155,8 +156,8 @@
         </dependency>
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.7.0</version>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.8.5</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -185,11 +186,6 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger.core.v3</groupId>
-            <artifactId>swagger-core</artifactId>
-            <version>2.2.20</version>
         </dependency>
     </dependencies>
     <build>
@@ -303,7 +299,7 @@
                         <id>merge</id>
                         <phase>verify</phase>
                         <goals>
-                          <goal>merge</goal>
+                            <goal>merge</goal>
                         </goals>
                         <configuration>
                             <fileSets>
@@ -373,7 +369,8 @@
                     <prefix>git</prefix>
                     <verbose>false</verbose>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties
+                    </generateGitPropertiesFilename>
                     <format>json</format>
                     <excludeProperties>
                         <excludeProperty>^git.build.*$</excludeProperty>
