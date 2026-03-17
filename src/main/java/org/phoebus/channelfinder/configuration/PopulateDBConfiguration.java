@@ -31,7 +31,6 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -113,9 +112,7 @@ public class PopulateDBConfiguration {
 
   @Autowired ElasticConfig esService;
 
-  @Autowired
-  @Qualifier("indexClient")
-  ElasticsearchClient client;
+  @Autowired ElasticsearchClient client;
 
   public static final ObjectMapper mapper = new ObjectMapper();
 

@@ -20,8 +20,8 @@ public class ElasticConfigIT {
           elasticConfig.getES_TAG_INDEX()
         };
     for (String index : indexes) {
-      if (elasticConfig.getSearchClient().indices().exists(b -> b.index(index)).value()) {
-        elasticConfig.getSearchClient().indices().delete(b -> b.index(index));
+      if (elasticConfig.getElasticsearchClient().indices().exists(b -> b.index(index)).value()) {
+        elasticConfig.getElasticsearchClient().indices().delete(b -> b.index(index));
       }
     }
   }
@@ -35,6 +35,6 @@ public class ElasticConfigIT {
    * @param elasticConfig Bean with configuration
    */
   static void setUp(ElasticConfig elasticConfig) {
-    elasticConfig.elasticIndexValidation(elasticConfig.getSearchClient());
+    elasticConfig.elasticIndexValidation(elasticConfig.getElasticsearchClient());
   }
 }

@@ -57,7 +57,6 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
@@ -75,9 +74,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
   @Autowired ElasticConfig esService;
 
-  @Autowired
-  @Qualifier("indexClient")
-  ElasticsearchClient client;
+  @Autowired ElasticsearchClient client;
 
   @Value("${repository.chunk.size:10000}")
   private int chunkSize;
