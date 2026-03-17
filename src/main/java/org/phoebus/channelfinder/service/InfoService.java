@@ -5,7 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.configuration.ElasticConfig;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
@@ -21,13 +22,13 @@ public class InfoService {
   private static final ObjectMapper objectMapper =
       JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
 
-  private final ElasticConfig esService;
+  private final ElasticsearchClient elasticsearchClient;
 
   @Value("${channelfinder.version:unknown}")
   private String version;
 
-  public InfoService(ElasticConfig esService) {
-    this.esService = esService;
+  public InfoService(ElasticsearchClient elasticsearchClient) {
+    this.elasticsearchClient = elasticsearchClient;
   }
 
   public String info() {
@@ -37,8 +38,7 @@ public class InfoService {
 
     Map<String, String> elasticInfo = new LinkedHashMap<>();
     try {
-      var client = esService.getSearchClient();
-      var response = client.info();
+      var response = elasticsearchClient.info();
       elasticInfo.put("status", "Connected");
       elasticInfo.put("clusterName", response.clusterName());
       elasticInfo.put("clusterUuid", response.clusterUuid());
