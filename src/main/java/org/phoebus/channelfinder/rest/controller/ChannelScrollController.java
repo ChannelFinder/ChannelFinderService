@@ -21,7 +21,6 @@ import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.MultiValueMap;
@@ -38,9 +37,7 @@ public class ChannelScrollController implements org.phoebus.channelfinder.rest.a
 
   @Autowired ElasticConfig esService;
 
-  @Autowired
-  @Qualifier("indexClient")
-  ElasticsearchClient client;
+  @Autowired ElasticsearchClient client;
 
   @Override
   public Scroll query(MultiValueMap<String, String> allRequestParams) {

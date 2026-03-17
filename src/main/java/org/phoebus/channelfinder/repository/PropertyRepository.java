@@ -37,7 +37,6 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Property.OnlyNameOwnerProperty;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.http.HttpStatus;
@@ -52,9 +51,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
 
   private static final Logger logger = Logger.getLogger(PropertyRepository.class.getName());
 
-  @Autowired
-  @Qualifier("indexClient")
-  ElasticsearchClient client;
+  @Autowired ElasticsearchClient client;
 
   @Autowired ElasticConfig esService;
 

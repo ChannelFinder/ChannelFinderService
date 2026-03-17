@@ -19,13 +19,8 @@ import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import co.elastic.clients.elasticsearch.indices.IndexSettings;
 import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsRequest;
 import co.elastic.clients.elasticsearch.indices.PutIndicesSettingsResponse;
-import co.elastic.clients.json.jackson.JacksonJsonpMapper;
-import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
-import co.elastic.clients.transport.rest_client.RestClientTransport;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.ServletContextEvent;
-import jakarta.servlet.ServletContextListener;
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
@@ -42,10 +37,9 @@ import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.phoebus.channelfinder.common.TextUtil;
-import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.entity.Tag;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -55,15 +49,16 @@ import org.springframework.context.annotation.PropertySource;
  * @author Kunal Shroff {@literal <shroffk@bnl.gov>}
  */
 @Configuration
-@ConfigurationProperties(prefix = "elasticsearch")
 @ComponentScan(basePackages = {"org.phoebus.channelfinder"})
 @PropertySource(value = "classpath:application.properties")
-public class ElasticConfig implements ServletContextListener {
+public class ElasticConfig {
 
   private static final Logger logger = Logger.getLogger(ElasticConfig.class.getName());
 
-  private ElasticsearchClient searchClient;
-  private ElasticsearchClient indexClient;
+  // Used to retrieve the auto-configured ElasticsearchClient lazily in @PostConstruct,
+  // avoiding a circular dependency (this bean provides RestClient → auto-config builds
+  // ElasticsearchClient from it).
+  @Autowired private ApplicationContext applicationContext;
 
   @Value("${elasticsearch.network.host:localhost}")
   private String host;
@@ -118,51 +113,37 @@ public class ElasticConfig implements ServletContextListener {
     return ES_QUERY_SIZE;
   }
 
-  ObjectMapper objectMapper =
-      new ObjectMapper()
-          .addMixIn(Tag.class, Tag.OnlyTag.class)
-          .addMixIn(Property.class, Property.OnlyProperty.class);
+  public ElasticsearchClient getElasticsearchClient() {
+    return applicationContext.getBean(ElasticsearchClient.class);
+  }
 
-  private static ElasticsearchClient createClient(
-      ElasticsearchClient currentClient,
-      ObjectMapper objectMapper,
-      HttpHost[] httpHosts,
-      String createIndices,
-      ElasticConfig config) {
-    ElasticsearchClient client;
-    if (currentClient == null) {
-      // Create the low-level client
-      RestClientBuilder clientBuilder = RestClient.builder(httpHosts);
-      // Configure authentication
-      if (!config.authorizationHeader.isEmpty()) {
-        clientBuilder.setDefaultHeaders(
-            new Header[] {new BasicHeader("Authorization", config.authorizationHeader)});
-        if (!config.username.isEmpty() || !config.password.isEmpty()) {
-          logger.warning(
-              "elasticsearch.authorization_header is set, ignoring elasticsearch.username and elasticsearch.password.");
-        }
-      } else if (!config.username.isEmpty() || !config.password.isEmpty()) {
-        final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(
-            AuthScope.ANY, new UsernamePasswordCredentials(config.username, config.password));
-        clientBuilder.setHttpClientConfigCallback(
-            httpClientBuilder ->
-                httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
+  /**
+   * Provides the low-level Elasticsearch {@link RestClient} built from the {@code elasticsearch.*}
+   * connection properties. Spring Boot's {@code ElasticsearchClientAutoConfiguration} detects this
+   * bean and uses it to auto-configure {@code ElasticsearchTransport} and {@code
+   * ElasticsearchClient}, which in turn activates the {@code /actuator/health} Elasticsearch
+   * indicator.
+   */
+  @Bean
+  public RestClient restClient() {
+    RestClientBuilder clientBuilder = RestClient.builder(getHttpHosts());
+    if (!authorizationHeader.isEmpty()) {
+      clientBuilder.setDefaultHeaders(
+          new Header[] {new BasicHeader("Authorization", authorizationHeader)});
+      if (!username.isEmpty() || !password.isEmpty()) {
+        logger.warning(
+            "elasticsearch.authorization.header is set, ignoring"
+                + " elasticsearch.authorization.username and elasticsearch.authorization.password.");
       }
-      RestClient httpClient = clientBuilder.build();
-
-      // Create the Java API Client with the same low level client
-      ElasticsearchTransport transport =
-          new RestClientTransport(httpClient, new JacksonJsonpMapper(objectMapper));
-
-      client = new ElasticsearchClient(transport);
-    } else {
-      client = currentClient;
+    } else if (!username.isEmpty() || !password.isEmpty()) {
+      final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+      credentialsProvider.setCredentials(
+          AuthScope.ANY, new UsernamePasswordCredentials(username, password));
+      clientBuilder.setHttpClientConfigCallback(
+          httpClientBuilder ->
+              httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
     }
-    if (Boolean.parseBoolean(createIndices)) {
-      config.elasticIndexValidation(client);
-    }
-    return client;
+    return clientBuilder.build();
   }
 
   private HttpHost[] getHttpHosts() {
@@ -172,47 +153,33 @@ public class ElasticConfig implements ServletContextListener {
     boolean portIsDefault = (port == 9200);
     if (hostUrlsIsDefault && (!hostIsDefault || !portIsDefault)) {
       logger.warning(
-          "Specifying elasticsearch.network.host and elasticsearch.http.port is deprecated, please consider using elasticsearch.host_urls instead.");
+          "Specifying elasticsearch.network.host and elasticsearch.http.port is deprecated,"
+              + " please consider using elasticsearch.host_urls instead.");
       return new HttpHost[] {new HttpHost(host, port)};
     } else {
       if (!hostIsDefault) {
         logger.warning(
-            "Only one of elasticsearch.host_urls and elasticsearch.network.host can be set, ignoring elasticsearch.network.host.");
+            "Only one of elasticsearch.host_urls and elasticsearch.network.host can be set,"
+                + " ignoring elasticsearch.network.host.");
       }
       if (!portIsDefault) {
         logger.warning(
-            "Only one of elasticsearch.host_urls and elasticsearch.http.port can be set, ignoring elasticsearch.http.port.");
+            "Only one of elasticsearch.host_urls and elasticsearch.http.port can be set,"
+                + " ignoring elasticsearch.http.port.");
       }
       return Arrays.stream(httpHostUrls).map(HttpHost::create).toArray(HttpHost[]::new);
     }
   }
 
-  @Bean({"searchClient"})
-  public ElasticsearchClient getSearchClient() {
-    searchClient = createClient(searchClient, objectMapper, getHttpHosts(), createIndices, this);
-    return searchClient;
-  }
-
-  @Bean({"indexClient"})
-  public ElasticsearchClient getIndexClient() {
-    indexClient = createClient(indexClient, objectMapper, getHttpHosts(), createIndices, this);
-    return indexClient;
-  }
-
-  @Override
-  public void contextInitialized(ServletContextEvent sce) {
-    logger.log(Level.INFO, "Initializing a new Transport clients.");
-  }
-
-  @Override
-  public void contextDestroyed(ServletContextEvent sce) {
-    logger.log(Level.INFO, "Closing the default Transport clients.");
-    if (searchClient != null) searchClient.shutdown();
-    if (indexClient != null) indexClient.shutdown();
+  @PostConstruct
+  public void init() {
+    if (Boolean.parseBoolean(createIndices)) {
+      elasticIndexValidation(applicationContext.getBean(ElasticsearchClient.class));
+    }
   }
 
   /**
-   * Create the olog indices and templates if they don't exist
+   * Create the ChannelFinder indices and templates if they don't exist
    *
    * @param client client connected to elasticsearch
    */

@@ -11,7 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.rest.api.IInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +28,7 @@ public class InfoController implements IInfo {
   @Value("${channelfinder.version:4.7.0}")
   private String version;
 
-  @Autowired private ElasticConfig esService;
+  @Autowired private ElasticsearchClient elasticsearchClient;
 
   private static final ObjectMapper objectMapper =
       new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
@@ -44,8 +43,7 @@ public class InfoController implements IInfo {
     Map<String, String> elasticInfo = new LinkedHashMap<>();
     try {
 
-      ElasticsearchClient client = esService.getSearchClient();
-      InfoResponse response = client.info();
+      InfoResponse response = elasticsearchClient.info();
 
       elasticInfo.put("status", "Connected");
       elasticInfo.put("clusterName", response.clusterName());
