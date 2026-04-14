@@ -8,8 +8,6 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +27,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @ExtendWith(MockitoExtension.class)
 class ArchiverServiceTest {
@@ -56,7 +56,7 @@ class ArchiverServiceTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"other-archiver", "test-archiver"})
-  void testGetStatuses(String archiverAlias) throws JsonProcessingException {
+  void testGetStatuses(String archiverAlias) throws JacksonException {
 
     Map<String, ArchivePVOptions> pvs = Map.of("pv1", new ArchivePVOptions());
 
@@ -105,7 +105,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testSubmitBasicAction() throws JsonProcessingException {
+  void testSubmitBasicAction() throws JacksonException {
 
     List<String> pvs = List.of("pv1");
     List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "ok"));
@@ -125,7 +125,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testSubmitBasicActionStatusNotOk() throws JsonProcessingException {
+  void testSubmitBasicActionStatusNotOk() throws JacksonException {
 
     List<String> pvs = List.of("pv1");
     List<Map<String, String>> expectedResponse = List.of(Map.of("pv", "pv1", "status", "failed"));
@@ -143,7 +143,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testSubmitBasicActionPartialFailure() throws JsonProcessingException {
+  void testSubmitBasicActionPartialFailure() throws JacksonException {
 
     List<String> pvs = List.of("pv1", "pv2");
     List<Map<String, String>> expectedResponse =
@@ -179,7 +179,7 @@ class ArchiverServiceTest {
 
   @ParameterizedTest
   @EnumSource(ArchiveAction.class)
-  void testConfigureAA(ArchiveAction action) throws JsonProcessingException {
+  void testConfigureAA(ArchiveAction action) throws JacksonException {
 
     ArchivePVOptions options = new ArchivePVOptions();
     options.setPv("pv1");
@@ -217,7 +217,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testConfigureAAStatusNotOk() throws JsonProcessingException {
+  void testConfigureAAStatusNotOk() throws JacksonException {
 
     ArchivePVOptions options = new ArchivePVOptions();
     options.setPv("pv1");
@@ -263,7 +263,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testGetAAPolicies() throws JsonProcessingException {
+  void testGetAAPolicies() throws JacksonException {
 
     Map<String, String> policies = Map.of("policy1", "desc1", "policy2", "desc2");
 
@@ -333,7 +333,7 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testSubmitActionWithRealResponseArchive() throws JsonProcessingException {
+  void testSubmitActionWithRealResponseArchive() throws JacksonException {
 
     List<String> pvs = List.of("PV1");
     ArchivePVOptions options = new ArchivePVOptions();

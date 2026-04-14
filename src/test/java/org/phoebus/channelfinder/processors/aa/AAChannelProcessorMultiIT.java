@@ -10,7 +10,6 @@ import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activ
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.inactiveProperty;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,6 +28,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import tools.jackson.core.JacksonException;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(value = "classpath:application_aa_proc_test.properties")
@@ -101,7 +101,7 @@ class AAChannelProcessorMultiIT {
       Map<String, String> namesToStatuses,
       Map<ArchiveAction, List<String>> actionsToNames,
       int expectedProcessedChannels)
-      throws JsonProcessingException {
+      throws JacksonException {
 
     // Mock getAAPolicies
     when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));

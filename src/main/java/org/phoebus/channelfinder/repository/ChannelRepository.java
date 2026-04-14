@@ -67,6 +67,8 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.server.ResponseStatusException;
 
+// Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
+
 @Repository
 @Configuration
 public class ChannelRepository implements CrudRepository<Channel, String> {

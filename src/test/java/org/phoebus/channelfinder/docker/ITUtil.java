@@ -21,7 +21,6 @@ package org.phoebus.channelfinder.docker;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +38,7 @@ import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch with focus

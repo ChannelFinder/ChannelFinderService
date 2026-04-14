@@ -1,8 +1,5 @@
 package org.phoebus.channelfinder.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -11,6 +8,10 @@ import java.util.logging.Logger;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 @Service
 public class InfoService {
@@ -18,7 +19,7 @@ public class InfoService {
   private static final Logger logger = Logger.getLogger(InfoService.class.getName());
 
   private static final ObjectMapper objectMapper =
-      new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+      JsonMapper.builder().enable(SerializationFeature.INDENT_OUTPUT).build();
 
   private final ElasticConfig esService;
 
@@ -50,7 +51,7 @@ public class InfoService {
 
     try {
       return objectMapper.writeValueAsString(cfServiceInfo);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       logger.log(Level.WARNING, "Failed to serialize ChannelFinder service info", e);
       return "Failed to gather ChannelFinder service info";
     }
