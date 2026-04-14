@@ -129,7 +129,7 @@
         <dependency>
             <groupId>org.phoebus</groupId>
             <artifactId>core-pva</artifactId>
-            <version>4.7.3</version>
+            <version>5.0.2</version>
         </dependency>
 
         <dependency>
