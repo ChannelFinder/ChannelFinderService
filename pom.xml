@@ -36,10 +36,8 @@
     </developers>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.boot-version>3.5.7</spring.boot-version>
-        <jackson.version>3.0.1</jackson.version>
+        <spring.boot-version>4.0.5</spring.boot-version>
         <elasticsearch.version>8.18.0</elasticsearch.version>
-        <junit-jupiter.version>5.10.0</junit-jupiter.version>
         <skipITs>true</skipITs>
         <skipITCoverage>true</skipITCoverage>
         <jacoco.skip>true</jacoco.skip>
@@ -58,6 +56,12 @@
                 <version>${spring.boot-version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Keep testcontainers on 1.x until a dedicated TC 2 migration; prevents SB4 BOM from pulling in 2.0.4 -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>1.19.3</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -78,7 +82,6 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -89,7 +92,6 @@
         <dependency>
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.json</groupId>
