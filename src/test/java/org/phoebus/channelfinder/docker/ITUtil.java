@@ -31,6 +31,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Optional;
 import org.springframework.http.HttpHeaders;
@@ -104,7 +105,8 @@ public class ITUtil {
     return new ComposeContainer(new File(ITUtil.INTEGRATIONTEST_DOCKER_COMPOSE))
         .withEnv(ITUtil.JACOCO_SKIPITCOVERAGE, System.getProperty(ITUtil.JACOCO_SKIPITCOVERAGE))
         .withLocalCompose(true)
-        .waitingFor(ITUtil.CHANNELFINDER, Wait.forHealthcheck());
+        .waitingFor(
+            ITUtil.CHANNELFINDER, Wait.forHealthcheck().withStartupTimeout(Duration.ofMinutes(3)));
   }
 
   /**
