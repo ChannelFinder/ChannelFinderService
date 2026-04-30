@@ -1,7 +1,5 @@
 package org.phoebus.channelfinder.processors.aa;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -12,6 +10,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 class AAChannelProcessorTest {
 
@@ -101,7 +101,7 @@ class AAChannelProcessorTest {
   }
 
   @Test
-  void archivePVJson() throws JsonProcessingException {
+  void archivePVJson() throws JacksonException {
     ArchivePVOptions ar1 = new ArchivePVOptions();
     ar1.setPv("sim://testing1");
     ar1.setSamplingParameters("monitor@1.0", new ArrayList<>());
@@ -134,7 +134,7 @@ class AAChannelProcessorTest {
     ar4.setSamplingParameters("Fast", testPolicyList);
     str = objectMapper.writeValueAsString(List.of(ar4));
 
-    expectedString = "[{\"pv\":\"sim://testing4\",\"policy\":\"Fast\"}]";
+    expectedString = "[{\"policy\":\"Fast\",\"pv\":\"sim://testing4\"}]";
     Assertions.assertEquals(str, expectedString);
 
     // Invalid policy

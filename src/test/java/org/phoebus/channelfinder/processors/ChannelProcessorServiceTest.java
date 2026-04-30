@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder.processors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.TestPropertySource;
+import tools.jackson.core.JacksonException;
 
 @SpringBootTest()
 @TestPropertySource(value = "classpath:application_test.properties")
@@ -54,7 +54,7 @@ class ChannelProcessorServiceTest {
     }
 
     @Override
-    public long process(List<Channel> channels) throws JsonProcessingException {
+    public long process(List<Channel> channels) throws JacksonException {
       processed.set(true);
       return channels.size();
     }

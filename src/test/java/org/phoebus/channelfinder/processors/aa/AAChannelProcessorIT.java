@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -28,9 +27,10 @@ import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import tools.jackson.core.JacksonException;
 
 @WebMvcTest(AAChannelProcessor.class)
 @ExtendWith(MockitoExtension.class)
@@ -99,7 +99,7 @@ class AAChannelProcessorIT {
       List<Channel> channels,
       String archiveStatus,
       String archiverEndpoint)
-      throws JsonProcessingException {
+      throws JacksonException {
     // Mock getAAPolicies
     when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
 
@@ -156,7 +156,7 @@ class AAChannelProcessorIT {
   }
 
   @Test
-  void testProcessNoPVs() throws JsonProcessingException {
+  void testProcessNoPVs() throws JacksonException {
     aaChannelProcessor.process(List.of());
 
     // verify interactions are minimal or none if empty
@@ -166,7 +166,7 @@ class AAChannelProcessorIT {
   @ParameterizedTest
   @MethodSource("processSource")
   void testProcessNotArchivedActive(Channel channel, String archiveStatus, String archiverEndpoint)
-      throws JsonProcessingException {
+      throws JacksonException {
     paramableAAChannelProcessorTest(
         archiverService, aaChannelProcessor, List.of(channel), archiveStatus, archiverEndpoint);
   }

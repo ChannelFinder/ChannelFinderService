@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder.configuration;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -23,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
+import tools.jackson.core.JacksonException;
 
 /**
  * A post processor which uses the channel property *archive* to add pv's to the archiver appliance
@@ -98,10 +98,10 @@ public class AAChannelProcessor implements ChannelProcessor {
    *
    * @param channels List of channels
    * @return Return number of channels processed
-   * @throws JsonProcessingException If processing archiver responses fail.
+   * @throws JacksonException If processing archiver responses fail.
    */
   @Override
-  public long process(List<Channel> channels) throws JsonProcessingException {
+  public long process(List<Channel> channels) throws JacksonException {
     if (channels.isEmpty()) {
       return 0;
     }

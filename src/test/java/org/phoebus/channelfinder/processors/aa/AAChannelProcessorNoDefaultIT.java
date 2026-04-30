@@ -4,7 +4,6 @@ import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activ
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.paramableAAChannelProcessorTest;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,9 +14,10 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import tools.jackson.core.JacksonException;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(
@@ -54,7 +54,7 @@ class AAChannelProcessorNoDefaultIT {
   @MethodSource("processNoPauseSource")
   void testProcessNotArchivedActive(
       Channel channel, String archiveStatus, String archiverEndpoint, String submissionBody)
-      throws JsonProcessingException {
+      throws JacksonException {
     paramableAAChannelProcessorTest(
         archiverService, aaChannelProcessor, List.of(channel), archiveStatus, archiverEndpoint);
   }

@@ -21,7 +21,6 @@ package org.phoebus.channelfinder.docker;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.dockerjava.api.DockerClient;
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +31,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Optional;
 import org.springframework.http.HttpHeaders;
@@ -39,6 +39,7 @@ import org.testcontainers.containers.ComposeContainer;
 import org.testcontainers.containers.ContainerState;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.shaded.org.apache.commons.lang3.StringUtils;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch with focus
@@ -104,7 +105,8 @@ public class ITUtil {
     return new ComposeContainer(new File(ITUtil.INTEGRATIONTEST_DOCKER_COMPOSE))
         .withEnv(ITUtil.JACOCO_SKIPITCOVERAGE, System.getProperty(ITUtil.JACOCO_SKIPITCOVERAGE))
         .withLocalCompose(true)
-        .waitingFor(ITUtil.CHANNELFINDER, Wait.forHealthcheck());
+        .waitingFor(
+            ITUtil.CHANNELFINDER, Wait.forHealthcheck().withStartupTimeout(Duration.ofMinutes(3)));
   }
 
   /**

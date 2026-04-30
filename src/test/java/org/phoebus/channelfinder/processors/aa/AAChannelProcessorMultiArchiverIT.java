@@ -9,7 +9,6 @@ import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activ
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.inactiveProperty;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,9 +22,10 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import tools.jackson.core.JacksonException;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(value = "classpath:application_test_multi.properties")
@@ -97,7 +97,7 @@ class AAChannelProcessorMultiArchiverIT {
       List<Channel> channels,
       Map<String, String> namesToStatuses,
       Map<ArchiveAction, List<String>> actionsToNames)
-      throws JsonProcessingException {
+      throws JacksonException {
     when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
 
     // Request to archiver status

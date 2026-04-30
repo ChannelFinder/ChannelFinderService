@@ -24,12 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.HttpURLConnection;
 import org.phoebus.channelfinder.docker.ITUtil.AuthorizationChoice;
 import org.phoebus.channelfinder.docker.ITUtil.EndpointChoice;
 import org.phoebus.channelfinder.docker.ITUtil.MethodChoice;
 import org.phoebus.channelfinder.entity.Property;
+import tools.jackson.core.JacksonException;
 
 /**
  * Utility class to help (Docker) integration tests for ChannelFinder and Elasticsearch with focus
@@ -89,7 +89,7 @@ public class ITUtilProperties {
   static String object2Json(Property value) {
     try {
       return ITUtil.MAPPER.writeValueAsString(value);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       fail();
     }
     return null;
@@ -104,7 +104,7 @@ public class ITUtilProperties {
   static String object2Json(Property[] value) {
     try {
       return ITUtil.MAPPER.writeValueAsString(value);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       fail();
     }
     return null;

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
 
 /**
