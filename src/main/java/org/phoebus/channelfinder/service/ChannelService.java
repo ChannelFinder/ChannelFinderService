@@ -94,14 +94,10 @@ public class ChannelService {
   public Iterable<Channel> create(Iterable<Channel> channels) {
     requireRole(ROLES.CF_CHANNEL, "channels batch");
 
-    Map<String, Channel> existing =
-        channelRepository
-            .findAllById(
-                StreamSupport.stream(channels.spliterator(), true).map(Channel::getName).toList())
-            .stream()
-            .collect(Collectors.toMap(Channel::getName, c -> c));
+    List<Channel> channelList = Lists.newArrayList(channels);
+    Map<String, Channel> existing = findExistingChannels(channelList);
 
-    for (Channel channel : channels) {
+    for (Channel channel : channelList) {
       if (existing.containsKey(channel.getName())) {
         requireOwner(existing.get(channel.getName()));
         channel.setOwner(existing.get(channel.getName()).getOwner());
@@ -110,11 +106,11 @@ public class ChannelService {
       }
     }
 
-    validateChannels(channels);
-    channelRepository.deleteAll(channels);
-    resetOwnersToExisting(channels);
+    validateChannels(channelList);
+    channelRepository.deleteAll(channelList);
+    resetOwnersToExisting(channelList);
 
-    List<Channel> created = channelRepository.indexAll(Lists.newArrayList(channels));
+    List<Channel> created = channelRepository.indexAll(channelList);
     channelProcessorService.sendToProcessors(created);
     return created;
   }
@@ -151,20 +147,22 @@ public class ChannelService {
   public Iterable<Channel> update(Iterable<Channel> channels) {
     requireRole(ROLES.CF_CHANNEL, "channels batch");
 
-    for (Channel channel : channels) {
-      Optional<Channel> existing = channelRepository.findById(channel.getName());
-      if (existing.isPresent()) {
-        requireOwner(existing.get());
-        channel.setOwner(existing.get().getOwner());
+    List<Channel> channelList = Lists.newArrayList(channels);
+    Map<String, Channel> existing = findExistingChannels(channelList);
+
+    for (Channel channel : channelList) {
+      if (existing.containsKey(channel.getName())) {
+        requireOwner(existing.get(channel.getName()));
+        channel.setOwner(existing.get(channel.getName()).getOwner());
       } else {
         requireOwner(channel);
       }
     }
 
-    validateChannels(channels);
-    resetOwnersToExisting(channels);
+    validateChannels(channelList);
+    resetOwnersToExisting(channelList);
 
-    List<Channel> updated = Lists.newArrayList(channelRepository.saveAll(channels));
+    List<Channel> updated = Lists.newArrayList(channelRepository.saveAll(channelList));
     channelProcessorService.sendToProcessors(updated);
     return updated;
   }
@@ -179,6 +177,11 @@ public class ChannelService {
             .orElseThrow(() -> new ChannelNotFoundException(channelName));
     requireOwner(existing);
     channelRepository.deleteById(channelName);
+  }
+
+  private Map<String, Channel> findExistingChannels(List<Channel> channels) {
+    return channelRepository.findAllById(channels.stream().map(Channel::getName).toList()).stream()
+        .collect(Collectors.toMap(Channel::getName, c -> c));
   }
 
   private void validateChannel(Channel channel) {
