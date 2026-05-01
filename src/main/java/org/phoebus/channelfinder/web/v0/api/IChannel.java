@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
+import java.util.Map;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.springframework.util.MultiValueMap;
@@ -27,7 +28,10 @@ public interface IChannel {
   @Operation(
       summary = "Query channels",
       description =
-          "Query a collection of Channel instances based on tags, property values, and channel names.",
+          "Query a collection of Channel instances based on tags, property values, and channel names. "
+              + "Search parameters can be provided via URL query string or JSON request body, or both. "
+              + "URL parameters take precedence for control parameters (~size, ~from, ~search_after, ~track_total_hits). "
+              + "Regular search parameters from URL and body are combined as separate values in the query.",
       operationId = "queryChannels",
       tags = {"Channel"})
   @ApiResponses(
@@ -49,12 +53,25 @@ public interface IChannel {
   @GetMapping
   List<Channel> query(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams);
+          MultiValueMap<String, String> allRequestParams,
+      @Parameter(
+              description =
+                  "Optional JSON request body containing search parameters. Used to bypass URL length limitations.")
+      @RequestBody(required = false)
+          Map<String, String> searchParamsBody);
+
+  // Backward-compatible overload when no request body is provided.
+  default List<Channel> query(MultiValueMap<String, String> allRequestParams) {
+    return query(allRequestParams, null);
+  }
 
   @Operation(
       summary = "Combined query for channels",
       description =
-          "Query for a collection of Channel instances and get a count and the first 10k hits.",
+          "Query for a collection of Channel instances and get a count and the first 10k hits. "
+              + "Search parameters can be provided via URL query string or JSON request body, or both. "
+              + "URL parameters take precedence for control parameters (~size, ~from, ~search_after, ~track_total_hits). "
+              + "Regular search parameters from URL and body are combined as separate values in the query.",
       operationId = "combinedQueryChannels",
       tags = {"Channel"})
   @ApiResponses(
@@ -77,11 +94,25 @@ public interface IChannel {
   @GetMapping("/combined")
   SearchResult combinedQuery(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams);
+          MultiValueMap<String, String> allRequestParams,
+      @Parameter(
+              description =
+                  "Optional JSON request body containing search parameters. Used to bypass URL length limitations.")
+      @RequestBody(required = false)
+          Map<String, String> searchParamsBody);
+
+  // Backward-compatible overload when no request body is provided.
+  default SearchResult combinedQuery(MultiValueMap<String, String> allRequestParams) {
+    return combinedQuery(allRequestParams, null);
+  }
 
   @Operation(
       summary = "Count channels matching query",
-      description = "Get the number of channels matching the given query parameters.",
+      description =
+          "Get the number of channels matching the given query parameters. "
+              + "Search parameters can be provided via URL query string or JSON request body, or both. "
+              + "URL parameters take precedence for control parameters (~size, ~from, ~search_after, ~track_total_hits). "
+              + "Regular search parameters from URL and body are combined as separate values in the query.",
       operationId = "countChannels",
       tags = {"Channel"})
   @ApiResponses(
@@ -98,7 +129,17 @@ public interface IChannel {
   @GetMapping("/count")
   long queryCount(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
-          MultiValueMap<String, String> allRequestParams);
+          MultiValueMap<String, String> allRequestParams,
+      @Parameter(
+              description =
+                  "Optional JSON request body containing search parameters. Used to bypass URL length limitations.")
+      @RequestBody(required = false)
+          Map<String, String> searchParamsBody);
+
+  // Backward-compatible overload when no request body is provided.
+  default long queryCount(MultiValueMap<String, String> allRequestParams) {
+    return queryCount(allRequestParams, null);
+  }
 
   @Operation(
       summary = "Get channel by name",

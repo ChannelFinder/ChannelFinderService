@@ -1,6 +1,8 @@
 package org.phoebus.channelfinder.web.v0.controller;
 
 import java.util.List;
+import java.util.Map;
+import org.phoebus.channelfinder.common.SearchParameterMergerUtil;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.service.ChannelService;
@@ -22,18 +24,27 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public List<Channel> query(MultiValueMap<String, String> allRequestParams) {
-    return channelService.query(allRequestParams);
+  public List<Channel> query(
+      MultiValueMap<String, String> allRequestParams, Map<String, String> searchParamsBody) {
+    MultiValueMap<String, String> mergedParams =
+        SearchParameterMergerUtil.mergeParameters(allRequestParams, searchParamsBody);
+    return channelService.query(mergedParams);
   }
 
   @Override
-  public SearchResult combinedQuery(MultiValueMap<String, String> allRequestParams) {
-    return channelService.combinedQuery(allRequestParams);
+  public SearchResult combinedQuery(
+      MultiValueMap<String, String> allRequestParams, Map<String, String> searchParamsBody) {
+    MultiValueMap<String, String> mergedParams =
+        SearchParameterMergerUtil.mergeParameters(allRequestParams, searchParamsBody);
+    return channelService.combinedQuery(mergedParams);
   }
 
   @Override
-  public long queryCount(MultiValueMap<String, String> allRequestParams) {
-    return channelService.queryCount(allRequestParams);
+  public long queryCount(
+      MultiValueMap<String, String> allRequestParams, Map<String, String> searchParamsBody) {
+    MultiValueMap<String, String> mergedParams =
+        SearchParameterMergerUtil.mergeParameters(allRequestParams, searchParamsBody);
+    return channelService.queryCount(mergedParams);
   }
 
   @Override

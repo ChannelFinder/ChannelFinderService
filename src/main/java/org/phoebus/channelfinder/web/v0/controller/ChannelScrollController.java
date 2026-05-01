@@ -1,5 +1,7 @@
 package org.phoebus.channelfinder.web.v0.controller;
 
+import java.util.Map;
+import org.phoebus.channelfinder.common.SearchParameterMergerUtil;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.service.ChannelScrollService;
 import org.phoebus.channelfinder.web.v0.api.IChannelScroll;
@@ -20,12 +22,20 @@ public class ChannelScrollController implements IChannelScroll {
   }
 
   @Override
-  public Scroll query(MultiValueMap<String, String> allRequestParams) {
-    return channelScrollService.search(null, allRequestParams);
+  public Scroll query(
+      MultiValueMap<String, String> allRequestParams, Map<String, String> searchParamsBody) {
+    MultiValueMap<String, String> mergedParams =
+        SearchParameterMergerUtil.mergeParameters(allRequestParams, searchParamsBody);
+    return channelScrollService.search(null, mergedParams);
   }
 
   @Override
-  public Scroll query(String scrollId, MultiValueMap<String, String> searchParameters) {
-    return channelScrollService.search(scrollId, searchParameters);
+  public Scroll query(
+      String scrollId,
+      MultiValueMap<String, String> searchParameters,
+      Map<String, String> searchParamsBody) {
+    MultiValueMap<String, String> mergedParams =
+        SearchParameterMergerUtil.mergeParameters(searchParameters, searchParamsBody);
+    return channelScrollService.search(scrollId, mergedParams);
   }
 }
