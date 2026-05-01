@@ -12,8 +12,8 @@ import org.springframework.util.MultiValueMap;
  * <p>Merging strategy:
  *
  * <ul>
- *   <li>For regular search parameters (e.g., ~name, property names, ~tag): values from both URL and
- *       body are added as separate entries in the MultiValueMap.
+ *   <li>For regular search parameters (e.g., ~name, property names, ~tag): values from both URL
+ *       and body are added as separate values under the same key in the MultiValueMap.
  *   <li>For control parameters (~size, ~from, ~search_after, ~track_total_hits): URL values take
  *       precedence over body values (body values ignored if URL value exists).
  * </ul>
@@ -40,8 +40,7 @@ public final class SearchParameterMergerUtil {
    * Merges URL request parameters with body parameters.
    *
    * <p>URL parameters take precedence for control keys. For regular search parameters, body values
-   * are added as additional entries to the MultiValueMap, allowing the search layer to handle
-   * multiple values for the same parameter.
+   * are added as additional values for the same key in the MultiValueMap.
    *
    * @param urlParams URL query parameters (may be null or empty)
    * @param bodyParams JSON request body as a map (may be null or empty)
@@ -82,7 +81,7 @@ public final class SearchParameterMergerUtil {
           merged.set(key, bodyValue);
         }
       } else {
-        // For regular search parameters, add the body value to the list
+        // For regular search parameters, add the body value to the same key.
         merged.add(key, bodyValue);
       }
     }
