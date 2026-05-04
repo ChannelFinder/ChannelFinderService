@@ -2,6 +2,7 @@ package org.phoebus.channelfinder.service;
 
 import com.google.common.collect.Lists;
 import java.text.MessageFormat;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -177,6 +178,37 @@ public class ChannelService {
             .orElseThrow(() -> new ChannelNotFoundException(channelName));
     requireOwner(existing);
     channelRepository.deleteById(channelName);
+  }
+
+  public long remove(Iterable<String> channelNames) {
+    requireRole(ROLES.CF_CHANNEL, "channels batch");
+
+    List<String> distinctChannelNames =
+        StreamSupport.stream(channelNames.spliterator(), false)
+            .filter(name -> name != null && !name.isBlank())
+            .collect(Collectors.toCollection(LinkedHashSet::new))
+            .stream()
+            .toList();
+
+    if (distinctChannelNames.isEmpty()) {
+      return 0;
+    }
+
+    Map<String, Channel> existingChannels =
+        channelRepository.findAllById(distinctChannelNames).stream()
+            .collect(Collectors.toMap(Channel::getName, c -> c));
+
+    for (String channelName : distinctChannelNames) {
+      Channel existing = existingChannels.get(channelName);
+      if (existing == null) {
+        throw new ChannelNotFoundException(channelName);
+      }
+      requireOwner(existing);
+      audit.log(Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
+    }
+
+    channelRepository.deleteAllById(distinctChannelNames);
+    return distinctChannelNames.size();
   }
 
   private Map<String, Channel> findExistingChannels(List<Channel> channels) {
