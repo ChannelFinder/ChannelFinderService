@@ -1,9 +1,14 @@
 package org.phoebus.channelfinder.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -16,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.exceptions.ChannelNotFoundException;
 import org.phoebus.channelfinder.exceptions.ChannelValidationException;
 import org.phoebus.channelfinder.exceptions.PropertyNotFoundException;
 import org.phoebus.channelfinder.exceptions.TagNotFoundException;
@@ -137,5 +143,35 @@ class ChannelServiceTest {
     when(tagRepository.findAll()).thenReturn(List.of(tag));
 
     assertDoesNotThrow(() -> channelService.create("ch", channel));
+  }
+
+  @Test
+  void removeMultipleChannels_validChannels_returnsDeletedCount() {
+    when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
+    when(channelRepository.findAllById(any()))
+        .thenReturn(
+            List.of(
+                new Channel("ch1", "owner"),
+                new Channel("ch2", "owner"),
+                new Channel("ch3", "owner")));
+
+    long deleted = channelService.remove(List.of("ch1", "ch2", "ch3"));
+
+    assertEquals(3L, deleted);
+    verify(channelRepository, times(1)).deleteAllById(any());
+    verify(channelRepository, never()).deleteById(anyString());
+  }
+
+  @Test
+  void removeMultipleChannels_whenOneMissing_throwsAndStopsFurtherDeletes() {
+    when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
+    when(channelRepository.findAllById(any())).thenReturn(List.of(new Channel("ch1", "owner")));
+
+    assertThrows(
+        ChannelNotFoundException.class,
+        () -> channelService.remove(List.of("ch1", "missing", "ch3")));
+
+    verify(channelRepository, never()).deleteById(anyString());
+    verify(channelRepository, never()).deleteAllById(any());
   }
 }

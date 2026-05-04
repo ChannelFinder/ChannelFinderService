@@ -57,7 +57,7 @@ public interface IChannel {
       @Parameter(
               description =
                   "Optional JSON request body containing search parameters. Used to bypass URL length limitations.")
-      @RequestBody(required = false)
+          @RequestBody(required = false)
           Map<String, String> searchParamsBody);
 
   // Backward-compatible overload when no request body is provided.
@@ -98,7 +98,7 @@ public interface IChannel {
       @Parameter(
               description =
                   "Optional JSON request body containing search parameters. Used to bypass URL length limitations.")
-      @RequestBody(required = false)
+          @RequestBody(required = false)
           Map<String, String> searchParamsBody);
 
   // Backward-compatible overload when no request body is provided.
@@ -133,7 +133,7 @@ public interface IChannel {
       @Parameter(
               description =
                   "Optional JSON request body containing search parameters. Used to bypass URL length limitations.")
-      @RequestBody(required = false)
+          @RequestBody(required = false)
           Map<String, String> searchParamsBody);
 
   // Backward-compatible overload when no request body is provided.
@@ -310,4 +310,28 @@ public interface IChannel {
       })
   @DeleteMapping("/{channelName}")
   void remove(@PathVariable("channelName") String channelName);
+
+  @Operation(
+      summary = "Delete multiple channels",
+      description = "Delete multiple channel instances identified by a request-body list of names.",
+      operationId = "deleteChannels",
+      tags = {"Channel"})
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Number of channels deleted"),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Channel not found",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error while trying to delete channels",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+      })
+  @DeleteMapping
+  long remove(@RequestBody List<String> channelNames);
 }
