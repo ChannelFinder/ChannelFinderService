@@ -65,4 +65,9 @@ public class ChannelController implements IChannel {
   public void remove(String channelName) {
     channelService.remove(channelName);
   }
+
+  @Override
+  public long remove(List<String> channelNames) {
+    return channelService.remove(channelNames);
+  }
 }
