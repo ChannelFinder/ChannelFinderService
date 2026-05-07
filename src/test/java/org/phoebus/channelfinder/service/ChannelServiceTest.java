@@ -21,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
-import org.phoebus.channelfinder.exceptions.ChannelNotFoundException;
 import org.phoebus.channelfinder.exceptions.ChannelValidationException;
 import org.phoebus.channelfinder.exceptions.PropertyNotFoundException;
 import org.phoebus.channelfinder.exceptions.TagNotFoundException;
@@ -154,24 +153,28 @@ class ChannelServiceTest {
                 new Channel("ch1", "owner"),
                 new Channel("ch2", "owner"),
                 new Channel("ch3", "owner")));
+    when(channelRepository.deleteAllByIdBestEffort(any())).thenReturn(3L);
 
     long deleted = channelService.remove(List.of("ch1", "ch2", "ch3"));
 
     assertEquals(3L, deleted);
-    verify(channelRepository, times(1)).deleteAllById(any());
+    verify(channelRepository, times(1)).deleteAllByIdBestEffort(any());
+    verify(channelRepository, never()).deleteAllById(any());
     verify(channelRepository, never()).deleteById(anyString());
   }
 
   @Test
-  void removeMultipleChannels_whenOneMissing_throwsAndStopsFurtherDeletes() {
+  void removeMultipleChannels_whenOneMissing_deletesExistingAndReturnsDeletedCount() {
     when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
-    when(channelRepository.findAllById(any())).thenReturn(List.of(new Channel("ch1", "owner")));
+    when(channelRepository.findAllById(any()))
+        .thenReturn(List.of(new Channel("ch1", "owner"), new Channel("ch3", "owner")));
+    when(channelRepository.deleteAllByIdBestEffort(eq(List.of("ch1", "ch3")))).thenReturn(2L);
 
-    assertThrows(
-        ChannelNotFoundException.class,
-        () -> channelService.remove(List.of("ch1", "missing", "ch3")));
+    long deleted = channelService.remove(List.of("ch1", "missing", "ch3"));
 
-    verify(channelRepository, never()).deleteById(anyString());
+    assertEquals(2L, deleted);
+    verify(channelRepository, times(1)).deleteAllByIdBestEffort(eq(List.of("ch1", "ch3")));
     verify(channelRepository, never()).deleteAllById(any());
+    verify(channelRepository, never()).deleteById(anyString());
   }
 }

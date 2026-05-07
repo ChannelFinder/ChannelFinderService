@@ -198,7 +198,8 @@ public class ChannelService {
 
     for (Channel existing : existingChannels) {
       requireOwner(existing);
-      audit.log(Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, existing.getName()));
+      audit.log(
+          Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, existing.getName()));
     }
 
     if (existingChannels.isEmpty()) {
