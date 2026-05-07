@@ -66,8 +66,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 // Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
 
@@ -462,7 +460,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
   @Override
   public long count() {
-    return this.count(new LinkedMultiValueMap<>());
+    return this.count(Map.of());
   }
 
   /**
@@ -531,7 +529,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @param searchParameters channel search parameters
    * @return matching channels
    */
-  public SearchResult search(MultiValueMap<String, String> searchParameters) {
+  public SearchResult search(Map<String, List<String>> searchParameters) {
     BuiltQuery builtQuery = getBuiltQuery(searchParameters);
     Integer finalSize = builtQuery.size;
     Integer finalFrom = builtQuery.from;
@@ -573,7 +571,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     }
   }
 
-  private BuiltQuery getBuiltQuery(MultiValueMap<String, String> searchParameters) {
+  private BuiltQuery getBuiltQuery(Map<String, List<String>> searchParameters) {
     BoolQuery.Builder boolQuery = new BoolQuery.Builder();
     int size = esService.getES_QUERY_SIZE();
     int from = 0;
@@ -741,7 +739,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @param searchParameters channel search parameters
    * @return count of the number of matches to the provided query
    */
-  public long count(MultiValueMap<String, String> searchParameters) {
+  public long count(Map<String, List<String>> searchParameters) {
     BuiltQuery builtQuery = getBuiltQuery(searchParameters);
 
     try {
@@ -769,9 +767,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @return count of the number of matches to the provided query
    */
   public long countByProperty(String propertyName, String propertyValue) {
-    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-    params.add(propertyName, propertyValue == null ? "*" : propertyValue);
-    return this.count(params);
+    return this.count(Map.of(propertyName, List.of(propertyValue == null ? "*" : propertyValue)));
   }
 
   /**
@@ -781,9 +777,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @return count of the number of matches to the provided query
    */
   public long countByTag(String tagName) {
-    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-    params.add("~tag", tagName);
-    return this.count(params);
+    return this.count(Map.of("~tag", List.of(tagName)));
   }
 
   /**
@@ -794,7 +788,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @param searchParameters channel search parameters
    * @return next page with its cursor
    */
-  public Scroll scroll(String scrollId, MultiValueMap<String, String> searchParameters) {
+  public Scroll scroll(String scrollId, Map<String, List<String>> searchParameters) {
     BuiltQuery builtQuery = getBuiltQuery(searchParameters);
     try {
       SearchRequest.Builder builder =

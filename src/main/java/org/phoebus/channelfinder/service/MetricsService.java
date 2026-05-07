@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.Tag;
 import jakarta.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,8 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 @Service
 public class MetricsService {
@@ -46,7 +45,7 @@ public class MetricsService {
   private final TagRepository tagRepository;
   private final MeterRegistry meterRegistry;
 
-  private Map<MultiValueMap<String, String>, AtomicLong> propertyMetrics;
+  private Map<Map<String, List<String>>, AtomicLong> propertyMetrics;
   private Map<String, AtomicLong> tagMetrics;
 
   @Value("${metrics.tags}")
@@ -84,8 +83,7 @@ public class MetricsService {
 
   @PostConstruct
   private void registerGaugeMetrics() {
-    Gauge.builder(
-            CF_TOTAL_CHANNEL_COUNT, () -> channelRepository.count(new LinkedMultiValueMap<>()))
+    Gauge.builder(CF_TOTAL_CHANNEL_COUNT, () -> channelRepository.count(Map.of()))
         .description(METRIC_DESCRIPTION_TOTAL_CHANNEL_COUNT)
         .register(meterRegistry);
     Gauge.builder(CF_PROPERTY_COUNT, propertyRepository::count)
@@ -113,28 +111,28 @@ public class MetricsService {
     }
   }
 
-  public static List<MultiValueMap<String, String>> generateAllMultiValueMaps(
+  public static List<Map<String, List<String>>> generateAllMultiValueMaps(
       Map<String, List<String>> properties) {
-    List<MultiValueMap<String, String>> allMultiValueMaps = new ArrayList<>();
+    List<Map<String, List<String>>> allQueryParams = new ArrayList<>();
 
     if (properties.isEmpty()) {
       return List.of();
     }
 
     List<Entry<String, List<String>>> entries = new ArrayList<>(properties.entrySet());
-    generateCombinations(entries, 0, new LinkedMultiValueMap<>(), allMultiValueMaps);
+    generateCombinations(entries, 0, new LinkedHashMap<>(), allQueryParams);
 
-    return allMultiValueMaps;
+    return allQueryParams;
   }
 
   private static void generateCombinations(
       List<Entry<String, List<String>>> entries,
       int index,
-      MultiValueMap<String, String> currentMap,
-      List<MultiValueMap<String, String>> allMultiValueMaps) {
+      Map<String, List<String>> currentMap,
+      List<Map<String, List<String>>> allQueryParams) {
 
     if (index == entries.size()) {
-      allMultiValueMaps.add(new LinkedMultiValueMap<>(currentMap));
+      allQueryParams.add(new LinkedHashMap<>(currentMap));
       return;
     }
 
@@ -142,33 +140,27 @@ public class MetricsService {
     String key = currentEntry.getKey();
     List<String> values = currentEntry.getValue();
 
-    // Add the other options
     for (String value : values) {
-      LinkedMultiValueMap<String, String> nextMapWithValue = new LinkedMultiValueMap<>(currentMap);
+      Map<String, List<String>> nextMap = new LinkedHashMap<>(currentMap);
       if (value.startsWith(NEGATE)) {
-        nextMapWithValue.add(key + NEGATE, value.substring(1));
+        nextMap.computeIfAbsent(key + NEGATE, k -> new ArrayList<>()).add(value.substring(1));
       } else {
-        nextMapWithValue.add(key, value);
+        nextMap.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
       }
-      generateCombinations(entries, index + 1, nextMapWithValue, allMultiValueMaps);
+      generateCombinations(entries, index + 1, nextMap, allQueryParams);
     }
   }
 
-  private List<Tag> metricTagsFromMultiValueMap(MultiValueMap<String, String> multiValueMap) {
+  private List<Tag> metricTagsFrom(Map<String, List<String>> queryParams) {
     List<Tag> metricTags = new ArrayList<>();
-    for (Map.Entry<String, String> entry : multiValueMap.toSingleValueMap().entrySet()) {
+    for (Map.Entry<String, List<String>> entry : queryParams.entrySet()) {
+      String firstValue = entry.getValue().isEmpty() ? "" : entry.getValue().get(0);
       if (entry.getKey().endsWith(NEGATE)) {
-        if (entry.getValue().equals("*")) {
-          metricTags.add(
-              new ImmutableTag(entry.getKey().substring(0, entry.getKey().length() - 1), NOT_SET));
-        } else {
-          metricTags.add(
-              new ImmutableTag(
-                  entry.getKey().substring(0, entry.getKey().length() - 1),
-                  NEGATE + entry.getValue()));
-        }
+        String tagKey = entry.getKey().substring(0, entry.getKey().length() - 1);
+        metricTags.add(
+            new ImmutableTag(tagKey, firstValue.equals("*") ? NOT_SET : NEGATE + firstValue));
       } else {
-        metricTags.add(new ImmutableTag(entry.getKey(), entry.getValue()));
+        metricTags.add(new ImmutableTag(entry.getKey(), firstValue));
       }
     }
     return metricTags;
@@ -177,7 +169,7 @@ public class MetricsService {
   private void registerPropertyMetrics() {
     Map<String, List<String>> properties = parseProperties();
 
-    List<MultiValueMap<String, String>> combinations = generateAllMultiValueMaps(properties);
+    List<Map<String, List<String>>> combinations = generateAllMultiValueMaps(properties);
 
     propertyMetrics =
         combinations.stream()
@@ -187,7 +179,7 @@ public class MetricsService {
         map ->
             Gauge.builder(CF_CHANNEL_COUNT, propertyMetrics, m -> m.get(map).doubleValue())
                 .description(METRIC_DESCRIPTION_CHANNEL_COUNT)
-                .tags(metricTagsFromMultiValueMap(map))
+                .tags(metricTagsFrom(map))
                 .register(meterRegistry));
   }
 
@@ -198,7 +190,7 @@ public class MetricsService {
   }
 
   private void updatePropertyMetrics() {
-    for (Map.Entry<MultiValueMap<String, String>, AtomicLong> propertyMetricEntry :
+    for (Map.Entry<Map<String, List<String>>, AtomicLong> propertyMetricEntry :
         propertyMetrics.entrySet()) {
       propertyMetricEntry.getValue().set(channelRepository.count(propertyMetricEntry.getKey()));
     }

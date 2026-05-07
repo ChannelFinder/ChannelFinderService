@@ -1,9 +1,10 @@
 package org.phoebus.channelfinder.service;
 
+import java.util.List;
+import java.util.Map;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.util.MultiValueMap;
 
 @Service
 public class ChannelScrollService {
@@ -14,7 +15,7 @@ public class ChannelScrollService {
     this.channelRepository = channelRepository;
   }
 
-  public Scroll search(String scrollId, MultiValueMap<String, String> searchParameters) {
+  public Scroll search(String scrollId, Map<String, List<String>> searchParameters) {
     return channelRepository.scroll(scrollId, searchParameters);
   }
 }

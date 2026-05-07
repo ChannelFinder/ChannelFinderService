@@ -26,7 +26,9 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,8 +44,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 // Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
 
@@ -231,9 +231,8 @@ public class PropertyRepository implements CrudRepository<Property, String> {
         logger.log(
             Level.CONFIG, () -> MessageFormat.format(TextUtil.PROPERTY_FOUND, property.getName()));
         if (withChannels) {
-          MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-          params.add(property.getName(), "*");
-          property.setChannels(channelRepository.search(params).channels());
+          property.setChannels(
+              channelRepository.search(Map.of(property.getName(), List.of("*"))).channels());
         }
         return Optional.of(property);
       } else {
@@ -343,8 +342,8 @@ public class PropertyRepository implements CrudRepository<Property, String> {
 
       // Remove the Property from Channels
       BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
-      MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-      params.add(propertyName, "*");
+      Map<String, List<String>> params = new LinkedHashMap<>();
+      params.put(propertyName, List.of("*"));
       List<Channel> channels = channelRepository.search(params).channels();
       while (channels.size() > 0) {
         for (Channel channel : channels) {
@@ -379,7 +378,7 @@ public class PropertyRepository implements CrudRepository<Property, String> {
           logger.log(Level.SEVERE, message, e);
           throw new RepositoryException(message);
         }
-        params.set("~search_after", channels.get(channels.size() - 1).getName());
+        params.put("~search_after", List.of(channels.get(channels.size() - 1).getName()));
         channels = channelRepository.search(params).channels();
       }
     } catch (ElasticsearchException | IOException e) {

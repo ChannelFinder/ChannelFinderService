@@ -1,7 +1,9 @@
 package org.phoebus.channelfinder.service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -20,8 +22,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 @Service
 public class ChannelProcessorService {
@@ -57,12 +57,12 @@ public class ChannelProcessorService {
           "User does not have the proper authorization to perform this operation: /process/all");
     }
     logger.log(Level.INFO, "Calling processor on ALL channels in ChannelFinder");
-    MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
-    searchParameters.add("~name", "*");
+    Map<String, List<String>> searchParameters = new LinkedHashMap<>();
+    searchParameters.put("~name", List.of("*"));
     return processChannelsByQuery(searchParameters);
   }
 
-  public long processChannelsByQuery(MultiValueMap<String, String> allRequestParams) {
+  public long processChannelsByQuery(Map<String, List<String>> allRequestParams) {
     long channelCount = 0;
     Scroll scrollResult = channelScrollService.search(null, allRequestParams);
     channelCount += scrollResult.getChannels().size();
