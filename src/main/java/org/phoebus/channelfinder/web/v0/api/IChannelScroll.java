@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.phoebus.channelfinder.common.CFResourceDescriptors;
-import org.phoebus.channelfinder.entity.Scroll;
+import org.phoebus.channelfinder.web.v0.dto.ScrollDto;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,14 +26,14 @@ public interface IChannelScroll {
         @ApiResponse(
             responseCode = "200",
             description = "Scroll that contains a collection of channel instances",
-            content = @Content(schema = @Schema(implementation = Scroll.class))),
+            content = @Content(schema = @Schema(implementation = ScrollDto.class))),
         @ApiResponse(
             responseCode = "500",
             description = "Error while trying to list channels",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping
-  Scroll query(
+  ScrollDto query(
       @Parameter(description = CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION) @RequestParam
           MultiValueMap<String, String> allRequestParams);
 
@@ -48,14 +48,14 @@ public interface IChannelScroll {
         @ApiResponse(
             responseCode = "200",
             description = "Scroll List of channels",
-            content = @Content(schema = @Schema(implementation = Scroll.class))),
+            content = @Content(schema = @Schema(implementation = ScrollDto.class))),
         @ApiResponse(
             responseCode = "500",
             description = "Error while trying to list channels",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping("/{scrollId}")
-  Scroll query(
+  ScrollDto query(
       @Parameter(description = "Scroll ID from previous query") @PathVariable("scrollId")
           String scrollId,
       @Parameter(description = CFResourceDescriptors.SEARCH_PARAM_DESCRIPTION) @RequestParam

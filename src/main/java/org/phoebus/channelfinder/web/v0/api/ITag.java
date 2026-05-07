@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.web.v0.dto.TagDto;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,14 +28,15 @@ public interface ITag {
         @ApiResponse(
             responseCode = "200",
             description = "List all Tags",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tag.class)))),
+            content =
+                @Content(array = @ArraySchema(schema = @Schema(implementation = TagDto.class)))),
         @ApiResponse(
             responseCode = "500",
             description = "Error while trying to list all Tags",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping
-  Iterable<Tag> list();
+  Iterable<TagDto> list();
 
   @Operation(
       summary = "Get tag by name",
@@ -47,14 +48,14 @@ public interface ITag {
         @ApiResponse(
             responseCode = "200",
             description = "Finding Tag by tagName",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
+            content = @Content(schema = @Schema(implementation = TagDto.class))),
         @ApiResponse(
             responseCode = "404",
             description = "Tag not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping("/{tagName}")
-  Tag read(
+  TagDto read(
       @PathVariable("tagName") String tagName,
       @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels);
 
@@ -68,7 +69,7 @@ public interface ITag {
         @ApiResponse(
             responseCode = "200",
             description = "Tag created and updated",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
+            content = @Content(schema = @Schema(implementation = TagDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -87,7 +88,7 @@ public interface ITag {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping("/{tagName}")
-  Tag create(@PathVariable("tagName") String tagName, @RequestBody Tag tag);
+  TagDto create(@PathVariable("tagName") String tagName, @RequestBody TagDto tag);
 
   @Operation(
       summary = "Create multiple tags",
@@ -99,7 +100,8 @@ public interface ITag {
         @ApiResponse(
             responseCode = "200",
             description = "Tags created",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tag.class)))),
+            content =
+                @Content(array = @ArraySchema(schema = @Schema(implementation = TagDto.class)))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -118,7 +120,7 @@ public interface ITag {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping()
-  Iterable<Tag> create(@RequestBody Iterable<Tag> tags);
+  Iterable<TagDto> create(@RequestBody Iterable<TagDto> tags);
 
   @Operation(
       summary = "Add tag to a single channel",
@@ -130,7 +132,7 @@ public interface ITag {
         @ApiResponse(
             responseCode = "200",
             description = "Tags added to a single channel",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
+            content = @Content(schema = @Schema(implementation = TagDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -149,7 +151,7 @@ public interface ITag {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping("/{tagName}/{channelName}")
-  Tag addSingle(
+  TagDto addSingle(
       @PathVariable("tagName") String tagName, @PathVariable("channelName") String channelName);
 
   @Operation(
@@ -163,7 +165,7 @@ public interface ITag {
         @ApiResponse(
             responseCode = "200",
             description = "Tag updated",
-            content = @Content(schema = @Schema(implementation = Tag.class))),
+            content = @Content(schema = @Schema(implementation = TagDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -182,7 +184,7 @@ public interface ITag {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PostMapping("/{tagName}")
-  Tag update(@PathVariable("tagName") String tagName, @RequestBody Tag tag);
+  TagDto update(@PathVariable("tagName") String tagName, @RequestBody TagDto tag);
 
   @Operation(
       summary = "Update multiple tags",
@@ -195,7 +197,8 @@ public interface ITag {
         @ApiResponse(
             responseCode = "200",
             description = "Tags updated",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = Tag.class)))),
+            content =
+                @Content(array = @ArraySchema(schema = @Schema(implementation = TagDto.class)))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -214,7 +217,7 @@ public interface ITag {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PostMapping()
-  Iterable<Tag> update(@RequestBody Iterable<Tag> tags);
+  Iterable<TagDto> update(@RequestBody Iterable<TagDto> tags);
 
   @Operation(
       summary = "Delete a tag",

@@ -10,8 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
-import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
+import org.phoebus.channelfinder.web.v0.dto.ChannelDto;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -92,7 +92,7 @@ public interface IChannelProcessor {
           MultiValueMap<String, String> allRequestParams);
 
   @PutMapping("/process/channels")
-  void processChannels(List<Channel> channels);
+  void processChannels(List<ChannelDto> channels);
 
   @Operation(summary = "Set if the processor is enabled or not")
   @PutMapping(

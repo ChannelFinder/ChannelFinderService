@@ -1,10 +1,11 @@
 package org.phoebus.channelfinder.web.v0.controller;
 
 import java.util.List;
-import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.service.ChannelService;
 import org.phoebus.channelfinder.web.v0.api.IChannel;
+import org.phoebus.channelfinder.web.v0.dto.ChannelDto;
+import org.phoebus.channelfinder.web.v0.dto.SearchResultDto;
+import org.phoebus.channelfinder.web.v0.mapper.ChannelMapper;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,13 +23,15 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public List<Channel> query(MultiValueMap<String, String> allRequestParams) {
-    return channelService.query(allRequestParams);
+  public List<ChannelDto> query(MultiValueMap<String, String> allRequestParams) {
+    return channelService.query(allRequestParams).stream().map(ChannelMapper::toDto).toList();
   }
 
   @Override
-  public SearchResult combinedQuery(MultiValueMap<String, String> allRequestParams) {
-    return channelService.combinedQuery(allRequestParams);
+  public SearchResultDto combinedQuery(MultiValueMap<String, String> allRequestParams) {
+    var result = channelService.combinedQuery(allRequestParams);
+    return new SearchResultDto(
+        result.channels().stream().map(ChannelMapper::toDto).toList(), result.count());
   }
 
   @Override
@@ -37,28 +40,28 @@ public class ChannelController implements IChannel {
   }
 
   @Override
-  public Channel read(String channelName) {
-    return channelService.read(channelName);
+  public ChannelDto read(String channelName) {
+    return ChannelMapper.toDto(channelService.read(channelName));
   }
 
   @Override
-  public Channel create(String channelName, Channel channel) {
-    return channelService.create(channelName, channel);
+  public ChannelDto create(String channelName, ChannelDto channel) {
+    return ChannelMapper.toDto(channelService.create(channelName, ChannelMapper.toDomain(channel)));
   }
 
   @Override
-  public Iterable<Channel> create(Iterable<Channel> channels) {
-    return channelService.create(channels);
+  public Iterable<ChannelDto> create(Iterable<ChannelDto> channels) {
+    return ChannelMapper.toDtos(channelService.create(ChannelMapper.toDomains(channels)));
   }
 
   @Override
-  public Channel update(String channelName, Channel channel) {
-    return channelService.update(channelName, channel);
+  public ChannelDto update(String channelName, ChannelDto channel) {
+    return ChannelMapper.toDto(channelService.update(channelName, ChannelMapper.toDomain(channel)));
   }
 
   @Override
-  public Iterable<Channel> update(Iterable<Channel> channels) {
-    return channelService.update(channels);
+  public Iterable<ChannelDto> update(Iterable<ChannelDto> channels) {
+    return ChannelMapper.toDtos(channelService.update(ChannelMapper.toDomains(channels)));
   }
 
   @Override

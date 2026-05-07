@@ -39,6 +39,8 @@ class ChannelControllerIT {
 
   @Autowired IChannel channelManager;
 
+  private ChannelControllerHelper helper;
+
   @Autowired TagRepository tagRepository;
 
   @Autowired PropertyRepository propertyRepository;
@@ -52,9 +54,9 @@ class ChannelControllerIT {
     Channel testChannel0 = new Channel("testChannel0", "testOwner", testProperties, testTags);
     cleanupTestChannels = Arrays.asList(testChannel0);
 
-    Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+    Channel createdChannel = helper.apiCreate(testChannel0.getName(), testChannel0);
 
-    Channel readChannel = channelManager.read(createdChannel.getName());
+    Channel readChannel = helper.apiRead(createdChannel.getName());
     // verify the channel was read as expected
     Assertions.assertEquals(createdChannel, readChannel, "Failed to read the channel");
   }
@@ -74,7 +76,7 @@ class ChannelControllerIT {
     cleanupTestChannels = Arrays.asList(testChannel0);
 
     // Create a simple channel
-    Channel createdChannel0 = channelManager.create(testChannel0.getName(), testChannel0);
+    Channel createdChannel0 = helper.apiCreate(testChannel0.getName(), testChannel0);
     // verify the channel was created as expected
     Assertions.assertEquals(testChannel0, createdChannel0, "Failed to create the channel");
 
@@ -84,7 +86,7 @@ class ChannelControllerIT {
 
     // Update the test channel with a new owner
     testChannel0.setOwner("updateTestOwner");
-    Channel updatedChannel0 = channelManager.create(testChannel0.getName(), testChannel0);
+    Channel updatedChannel0 = helper.apiCreate(testChannel0.getName(), testChannel0);
     // verify the channel was created as expected
     Assertions.assertEquals(testChannel0, updatedChannel0, "Failed to create the channel");
   }
@@ -96,8 +98,8 @@ class ChannelControllerIT {
     Channel testChannel1 = new Channel("testChannel1", "testOwner");
     cleanupTestChannels = Arrays.asList(testChannel0, testChannel1);
 
-    Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
-    createdChannel = channelManager.create(testChannel0.getName(), testChannel1);
+    Channel createdChannel = helper.apiCreate(testChannel0.getName(), testChannel0);
+    createdChannel = helper.apiCreate(testChannel0.getName(), testChannel1);
     // verify that the old channel "testChannel0" was replaced with the new "testChannel1"
     Assertions.assertEquals(testChannel1, createdChannel, "Failed to create the channel");
     // verify that the old channel is no longer present
@@ -112,7 +114,7 @@ class ChannelControllerIT {
     Channel testChannel0 = new Channel("testChannel0", "testOwner", testProperties, testTags);
     cleanupTestChannels = Arrays.asList(testChannel0);
 
-    Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+    helper.apiCreate(testChannel0.getName(), testChannel0);
     try {
       Channel foundChannel = channelRepository.findById(testChannel0.getName()).get();
       Assertions.assertEquals(
@@ -132,7 +134,7 @@ class ChannelControllerIT {
 
     // Update the test channel with a new owner
     testChannel0.setOwner("updateTestOwner");
-    createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+    helper.apiCreate(testChannel0.getName(), testChannel0);
     try {
       Channel foundChannel = channelRepository.findById(testChannel0.getName()).get();
       Assertions.assertEquals(
@@ -156,9 +158,9 @@ class ChannelControllerIT {
     cleanupTestChannels = Arrays.asList(testChannel0, testChannel1);
 
     // Create the testChannel0
-    Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+    helper.apiCreate(testChannel0.getName(), testChannel0);
     // update the testChannel0 with testChannel1
-    createdChannel = channelManager.create(testChannel0.getName(), testChannel1);
+    helper.apiCreate(testChannel0.getName(), testChannel1);
     // verify that the old channel "testChannel0" was replaced with the new "testChannel1"
     try {
       Channel foundChannel = channelRepository.findById(testChannel1.getName()).get();
@@ -181,7 +183,7 @@ class ChannelControllerIT {
     List<Channel> testChannels = Arrays.asList(testChannel0, testChannel1, testChannel2);
     cleanupTestChannels = testChannels;
 
-    Iterable<Channel> createdChannels = channelManager.create(testChannels);
+    helper.apiCreate(testChannels);
     List<Channel> foundChannels = new ArrayList<Channel>();
     testChannels.forEach(
         chan -> foundChannels.add(channelRepository.findById(chan.getName()).get()));
@@ -200,14 +202,16 @@ class ChannelControllerIT {
     cleanupTestChannels = testChannels;
 
     // Create a set of original channels to be overriden
-    channelManager.create(testChannels);
+    helper.apiCreate(testChannels);
     // Now update the test channels
     testChannel0.setOwner("testOwner-updated");
     testChannel1.setTags(Collections.emptyList());
     testChannel1.setProperties(Collections.emptyList());
 
     List<Channel> updatedTestChannels = Arrays.asList(testChannel0, testChannel1);
-    channelManager.create(updatedTestChannels);
+    helper.apiCreate(updatedTestChannels);
+    // Owner does not change for existing channels on create-override
+    testChannel0.setOwner("testOwner");
     List<Channel> foundChannels = new ArrayList<Channel>();
     testChannels.forEach(
         chan -> foundChannels.add(channelRepository.findById(chan.getName()).get()));
@@ -229,7 +233,7 @@ class ChannelControllerIT {
 
     // Update on a non-existing channel should result in the creation of that channel
     // 1. Test a simple channel
-    Channel returnedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+    Channel returnedChannel = helper.apiUpdate(testChannel0.getName(), testChannel0);
     Assertions.assertEquals(
         testChannel0, returnedChannel, "Failed to update channel " + testChannel0);
     Assertions.assertEquals(
@@ -237,7 +241,7 @@ class ChannelControllerIT {
         channelRepository.findById(testChannel0.getName()).get(),
         "Failed to update channel " + testChannel0);
     // 2. Test a channel with tags and props
-    returnedChannel = channelManager.update(testChannel1.getName(), testChannel1);
+    returnedChannel = helper.apiUpdate(testChannel1.getName(), testChannel1);
     Assertions.assertEquals(
         testChannel1, returnedChannel, "Failed to update channel " + testChannel1);
     Assertions.assertEquals(
@@ -247,7 +251,7 @@ class ChannelControllerIT {
 
     // Update the channel owner
     testChannel0.setOwner("newTestOwner");
-    returnedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+    returnedChannel = helper.apiUpdate(testChannel0.getName(), testChannel0);
     Assertions.assertEquals(
         testChannel0, returnedChannel, "Failed to update channel " + testChannel0);
     Assertions.assertEquals(
@@ -255,7 +259,7 @@ class ChannelControllerIT {
         channelRepository.findById(testChannel0.getName()).get(),
         "Failed to update channel " + testChannel0);
     testChannel1.setOwner("newTestOwner");
-    returnedChannel = channelManager.update(testChannel1.getName(), testChannel1);
+    returnedChannel = helper.apiUpdate(testChannel1.getName(), testChannel1);
     Assertions.assertEquals(
         testChannel1, returnedChannel, "Failed to update channel " + testChannel1);
     Assertions.assertEquals(
@@ -275,11 +279,11 @@ class ChannelControllerIT {
     cleanupTestChannels = Arrays.asList(testChannel0, testChannel1, testChannel2, testChannel3);
 
     // Create the testChannels
-    Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
-    Channel createdChannelWithItems = channelManager.create(testChannel2.getName(), testChannel2);
+    helper.apiCreate(testChannel0.getName(), testChannel0);
+    helper.apiCreate(testChannel2.getName(), testChannel2);
     // update the testChannels
-    Channel renamedChannel = channelManager.update(testChannel0.getName(), testChannel1);
-    Channel renamedChannelWithItems = channelManager.update(testChannel2.getName(), testChannel3);
+    helper.apiUpdate(testChannel0.getName(), testChannel1);
+    helper.apiUpdate(testChannel2.getName(), testChannel3);
 
     // verify that the old channels were replaced by the new ones
     try {
@@ -318,7 +322,7 @@ class ChannelControllerIT {
     cleanupTestChannels = Arrays.asList(testChannel0);
 
     // Create the testChannel
-    Channel createdChannel = channelManager.create(testChannel0.getName(), testChannel0);
+    helper.apiCreate(testChannel0.getName(), testChannel0);
 
     // set up the new testChannel
     testProperties.get(1).setValue("newValue");
@@ -330,7 +334,7 @@ class ChannelControllerIT {
             Arrays.asList(testTags.get(1), testTags.get(2)));
 
     // update the testChannel
-    Channel updatedChannel = channelManager.update(testChannel0.getName(), testChannel0);
+    helper.apiUpdate(testChannel0.getName(), testChannel0);
 
     Channel expectedChannel = new Channel("testChannel0", "testOwner", testProperties, testTags);
     Channel foundChannel = channelRepository.findById("testChannel0").get();
@@ -370,7 +374,7 @@ class ChannelControllerIT {
     cleanupTestChannels = testChannels;
 
     // Update on non-existing channels should result in the creation of those channels
-    Iterable<Channel> returnedChannels = channelManager.update(testChannels);
+    helper.apiUpdate(testChannels);
     // 1. Test a simple channel
     Assertions.assertEquals(
         testChannel0,
@@ -382,10 +386,12 @@ class ChannelControllerIT {
         channelRepository.findById(testChannel1.getName()).get(),
         "Failed to update channel " + testChannel1);
 
-    // Update the channel owner
+    // Owner does not change for existing channels on batch update
     testChannel0.setOwner("newTestOwner");
     testChannel1.setOwner("newTestOwner");
-    returnedChannels = channelManager.update(testChannels);
+    helper.apiUpdate(testChannels);
+    testChannel0.setOwner("testOwner");
+    testChannel1.setOwner("testOwner");
     Assertions.assertEquals(
         testChannel0,
         channelRepository.findById(testChannel0.getName()).get(),
@@ -416,7 +422,7 @@ class ChannelControllerIT {
     cleanupTestChannels = testChannels;
 
     // Create the testChannel
-    Iterable<Channel> createdChannels = channelManager.create(testChannels);
+    helper.apiCreate(testChannels);
 
     // set up the new testChannel
     testProperties.forEach(prop -> prop.setValue("newValue"));
@@ -435,7 +441,7 @@ class ChannelControllerIT {
     testChannels = Arrays.asList(testChannel0, testChannel1);
 
     // update the testChannel
-    Iterable<Channel> updatedChannels = channelManager.update(testChannels);
+    helper.apiUpdate(testChannels);
 
     // set up the expected testChannels
     testChannel0 =
@@ -494,7 +500,7 @@ class ChannelControllerIT {
     Channel testChannel0 = new Channel("testChannel0", "testOwner");
     cleanupTestChannels = Arrays.asList(testChannel0);
 
-    channelManager.create(testChannel0.getName(), testChannel0);
+    helper.apiCreate(testChannel0.getName(), testChannel0);
     channelManager.remove(testChannel0.getName());
     // verify the channel was deleted as expected
     Assertions.assertFalse(
@@ -520,6 +526,7 @@ class ChannelControllerIT {
 
   @BeforeEach
   public void setup() {
+    helper = new ChannelControllerHelper(channelManager);
     tagRepository.indexAll(testTags);
     propertyRepository.indexAll(testProperties);
   }
