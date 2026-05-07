@@ -41,14 +41,12 @@ import org.phoebus.channelfinder.entity.Property.OnlyNameOwnerProperty;
 import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 // Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
 
 @Repository
-@Configuration
 public class PropertyRepository implements CrudRepository<Property, String> {
 
   private static final Logger logger = Logger.getLogger(PropertyRepository.class.getName());

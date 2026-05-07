@@ -42,14 +42,12 @@ import org.phoebus.channelfinder.entity.Tag.OnlyTag;
 import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 // Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
 
 @Repository
-@Configuration
 public class TagRepository implements CrudRepository<Tag, String> {
 
   private static final Logger logger = Logger.getLogger(TagRepository.class.getName());
