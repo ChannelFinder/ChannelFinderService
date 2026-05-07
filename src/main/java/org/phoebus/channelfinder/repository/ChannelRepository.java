@@ -428,16 +428,33 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   public List<Channel> findAllById(Iterable<String> channelIds) {
     try {
       List<String> ids =
-          StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
+          StreamSupport.stream(channelIds.spliterator(), false)
+              .filter(id -> id != null && !id.isBlank())
+              .collect(Collectors.toCollection(LinkedHashSet::new))
+              .stream()
+              .toList();
 
-      SearchRequest.Builder searchBuilder =
-          new SearchRequest.Builder()
-              .index(esService.getES_CHANNEL_INDEX())
-              .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-              .size(esService.getES_QUERY_SIZE())
-              .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-      SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
-      return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+      if (ids.isEmpty()) {
+        return Collections.emptyList();
+      }
+
+      int lookupBatchSize = Math.max(1, Math.min(chunkSize, esService.getES_QUERY_SIZE()));
+      List<Channel> result = new ArrayList<>();
+
+      for (int i = 0; i < ids.size(); i += lookupBatchSize) {
+        List<String> chunk = ids.subList(i, Math.min(i + lookupBatchSize, ids.size()));
+        SearchRequest.Builder searchBuilder =
+            new SearchRequest.Builder()
+                .index(esService.getES_CHANNEL_INDEX())
+                .query(IdsQuery.of(q -> q.values(chunk))._toQuery())
+                .size(chunk.size())
+                .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+        SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
+        result.addAll(
+            response.hits().hits().stream().map(Hit::source).collect(Collectors.toList()));
+      }
+
+      return result;
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
       throw new ResponseStatusException(
@@ -812,9 +829,25 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             .map(String::valueOf)
             .distinct()
             .toList();
+    deleteAllByIdBestEffort(idList);
+  }
+
+  public long deleteAllByIdBestEffort(Iterable<String> ids) {
+    List<String> idList =
+        StreamSupport.stream(ids.spliterator(), false)
+            .filter(id -> id != null && !id.isBlank())
+            .map(String::valueOf)
+            .distinct()
+            .toList();
+
+    if (idList.isEmpty()) {
+      return 0;
+    }
+
+    long deletedCount = 0;
 
     for (int i = 0; i < idList.size(); i += chunkSize) {
-      List<String> chunk = idList.stream().skip(i).limit(chunkSize).toList();
+      List<String> chunk = idList.subList(i, Math.min(i + chunkSize, idList.size()));
       BulkRequest.Builder br = new BulkRequest.Builder();
       for (String id : chunk) {
         br.operations(op -> op.delete(del -> del.index(esService.getES_CHANNEL_INDEX()).id(id)));
@@ -823,22 +856,30 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
       try {
         BulkResponse result = client.bulk(br.build());
-        if (result.errors()) {
-          String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_CHANNEL, chunk);
-          logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-          for (BulkResponseItem item : result.items()) {
-            if (item.error() != null) {
-              logger.log(Level.SEVERE, () -> item.error().reason());
-            }
+        for (BulkResponseItem item : result.items()) {
+          if (item.error() != null) {
+            logger.log(
+                Level.SEVERE,
+                () ->
+                    MessageFormat.format(
+                        "Failed to delete channel id {0}: {1}", item.id(), item.error().reason()));
+            continue;
           }
-          throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+          if (Integer.valueOf(200).equals(item.status())) {
+            deletedCount++;
+          }
         }
       } catch (IOException e) {
-        String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_CHANNEL, chunk);
-        logger.log(Level.SEVERE, message, e);
-        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+        logger.log(
+            Level.SEVERE,
+            MessageFormat.format(
+                "Bulk delete failed for chunk starting at index {0} with size {1}",
+                i, chunk.size()),
+            e);
       }
     }
+
+    return deletedCount;
   }
 
   @PreDestroy

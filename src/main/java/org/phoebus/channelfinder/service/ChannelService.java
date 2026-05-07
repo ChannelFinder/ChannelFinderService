@@ -194,21 +194,19 @@ public class ChannelService {
       return 0;
     }
 
-    Map<String, Channel> existingChannels =
-        channelRepository.findAllById(distinctChannelNames).stream()
-            .collect(Collectors.toMap(Channel::getName, c -> c));
+    List<Channel> existingChannels = channelRepository.findAllById(distinctChannelNames);
 
-    for (String channelName : distinctChannelNames) {
-      Channel existing = existingChannels.get(channelName);
-      if (existing == null) {
-        throw new ChannelNotFoundException(channelName);
-      }
+    for (Channel existing : existingChannels) {
       requireOwner(existing);
-      audit.log(Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, channelName));
+      audit.log(Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, existing.getName()));
     }
 
-    channelRepository.deleteAllById(distinctChannelNames);
-    return distinctChannelNames.size();
+    if (existingChannels.isEmpty()) {
+      return 0;
+    }
+
+    return channelRepository.deleteAllByIdBestEffort(
+        existingChannels.stream().map(Channel::getName).toList());
   }
 
   private Map<String, Channel> findExistingChannels(List<Channel> channels) {

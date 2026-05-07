@@ -269,4 +269,24 @@ public interface IChannel {
       })
   @DeleteMapping("/{channelName}")
   void remove(@PathVariable("channelName") String channelName);
+
+  @Operation(
+      summary = "Delete multiple channels",
+      description = "Delete multiple channel instances identified by a request-body list of names.",
+      operationId = "deleteChannels",
+      tags = {"Channel"})
+  @ApiResponses(
+      value = {
+        @ApiResponse(responseCode = "200", description = "Number of channels deleted"),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error while trying to delete channels",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+      })
+  @DeleteMapping
+  long remove(@RequestBody List<String> channelNames);
 }
