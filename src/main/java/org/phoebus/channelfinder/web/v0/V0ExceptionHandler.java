@@ -33,21 +33,21 @@ public class V0ExceptionHandler {
   @ExceptionHandler(ChannelNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public ResponseStatusException handleChannelNotFound(ChannelNotFoundException ex) {
-    logger.log(Level.WARNING, ex.getMessage(), ex);
+    logger.log(Level.FINE, ex::getMessage);
     return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
   }
 
   @ExceptionHandler(TagNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public ResponseStatusException handleTagNotFound(TagNotFoundException ex) {
-    logger.log(Level.WARNING, ex.getMessage(), ex);
+    logger.log(Level.FINE, ex::getMessage);
     return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
   }
 
   @ExceptionHandler(PropertyNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public ResponseStatusException handlePropertyNotFound(PropertyNotFoundException ex) {
-    logger.log(Level.WARNING, ex.getMessage(), ex);
+    logger.log(Level.FINE, ex::getMessage);
     return new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
   }
 
