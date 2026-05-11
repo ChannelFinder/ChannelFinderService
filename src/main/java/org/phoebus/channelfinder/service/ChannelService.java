@@ -185,7 +185,6 @@ public class ChannelService {
 
     List<String> distinctChannelNames =
         StreamSupport.stream(channelNames.spliterator(), false)
-            .filter(name -> name != null && !name.isBlank())
             .collect(Collectors.toCollection(LinkedHashSet::new))
             .stream()
             .toList();

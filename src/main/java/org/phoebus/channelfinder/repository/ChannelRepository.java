@@ -427,12 +427,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   @Override
   public List<Channel> findAllById(Iterable<String> channelIds) {
     try {
-      List<String> ids =
-          StreamSupport.stream(channelIds.spliterator(), false)
-              .filter(id -> id != null && !id.isBlank())
-              .collect(Collectors.toCollection(LinkedHashSet::new))
-              .stream()
-              .toList();
+      List<String> ids = normalizeIds(channelIds);
 
       if (ids.isEmpty()) {
         return Collections.emptyList();
@@ -822,23 +817,13 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void deleteAllById(Iterable<? extends String> ids) {
-    List<String> idList =
-        StreamSupport.stream(ids.spliterator(), false)
-            .filter(id -> id != null && !id.isBlank())
-            .map(String::valueOf)
-            .distinct()
-            .toList();
-    deleteAllByIdBestEffort(idList);
+    deleteAllByIdBestEffort((Iterable<String>) ids);
   }
 
   public long deleteAllByIdBestEffort(Iterable<String> ids) {
-    List<String> idList =
-        StreamSupport.stream(ids.spliterator(), false)
-            .filter(id -> id != null && !id.isBlank())
-            .map(String::valueOf)
-            .distinct()
-            .toList();
+    List<String> idList = normalizeIds(ids);
 
     if (idList.isEmpty()) {
       return 0;
@@ -880,6 +865,22 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     }
 
     return deletedCount;
+  }
+
+  /**
+   * Normalizes channel IDs by dropping null/blank values and removing duplicates while preserving
+   * encounter order.
+   *
+   * @param ids raw channel IDs from request/repository callers
+   * @return distinct, non-blank channel IDs in encounter order
+   */
+  private static List<String> normalizeIds(Iterable<String> ids) {
+    // TODO: Consider rejecting blank/whitespace-only IDs with 400 at the API boundary.
+    return StreamSupport.stream(ids.spliterator(), false)
+        .filter(id -> id != null && !id.isBlank())
+        .collect(Collectors.toCollection(LinkedHashSet::new))
+        .stream()
+        .toList();
   }
 
   @PreDestroy
