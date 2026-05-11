@@ -182,18 +182,7 @@ public class ChannelService {
 
   public long remove(Iterable<String> channelNames) {
     requireRole(ROLES.CF_CHANNEL, "channels batch");
-
-    List<String> distinctChannelNames =
-        StreamSupport.stream(channelNames.spliterator(), false)
-            .collect(Collectors.toCollection(LinkedHashSet::new))
-            .stream()
-            .toList();
-
-    if (distinctChannelNames.isEmpty()) {
-      return 0;
-    }
-
-    List<Channel> existingChannels = channelRepository.findAllById(distinctChannelNames);
+    List<Channel> existingChannels = channelRepository.findAllById(channelNames);
 
     for (Channel existing : existingChannels) {
       requireOwner(existing);
