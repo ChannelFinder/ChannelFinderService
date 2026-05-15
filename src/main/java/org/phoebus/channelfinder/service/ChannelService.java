@@ -2,7 +2,6 @@ package org.phoebus.channelfinder.service;
 
 import com.google.common.collect.Lists;
 import java.text.MessageFormat;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

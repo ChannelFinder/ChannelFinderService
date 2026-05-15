@@ -380,6 +380,28 @@ class ChannelRepositoryIT {
         "Failed to delete the channel");
   }
 
+  /** delete multiple channels */
+  @Test
+  void deleteXmlChannels() {
+    Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
+    Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
+    List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
+    Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
+    // Start with all created channels in cleanup list in case deleteAll fails
+    cleanupTestChannels = new ArrayList<>(Lists.newArrayList(createdChannels));
+
+    channelRepository.deleteAll(testChannels);
+    // verify the channels were deleted as expected
+    Assertions.assertFalse(
+        channelRepository.existsById(testChannel.getName()),
+        "Failed to delete the channel " + testChannel.getName());
+    cleanupTestChannels.removeIf(ch -> ch.getName().equals(testChannel.getName()));
+    Assertions.assertFalse(
+        channelRepository.existsById(testChannel1.getName()),
+        "Failed to delete the channel " + testChannel1.getName());
+    cleanupTestChannels.removeIf(ch -> ch.getName().equals(testChannel1.getName()));
+  }
+
   /**
    * Update a channel with 1. additional list of tags and properties 2. update the values of
    * existing properties
