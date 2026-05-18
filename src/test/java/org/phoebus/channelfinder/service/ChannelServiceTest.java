@@ -79,7 +79,7 @@ class ChannelServiceTest {
   void createChannel_nonExistentTag_throwsTagNotFoundException() {
     Tag tag = new Tag("missing-tag", "owner");
     Channel channel = new Channel("ch", "owner", List.of(), List.of(tag));
-    when(tagRepository.existsById("missing-tag")).thenReturn(false);
+    when(tagRepository.findAll()).thenReturn(List.of());
 
     assertThrows(TagNotFoundException.class, () -> channelService.create("ch", channel));
   }
@@ -88,7 +88,8 @@ class ChannelServiceTest {
   void createChannel_nonExistentProperty_throwsPropertyNotFoundException() {
     Property prop = new Property("missing-prop", "owner", "val");
     Channel channel = new Channel("ch", "owner", List.of(prop), List.of());
-    when(propertyRepository.existsById("missing-prop")).thenReturn(false);
+    when(tagRepository.findAll()).thenReturn(List.of());
+    when(propertyRepository.findAll()).thenReturn(List.of());
 
     assertThrows(PropertyNotFoundException.class, () -> channelService.create("ch", channel));
   }
@@ -97,7 +98,8 @@ class ChannelServiceTest {
   void createChannel_nullPropertyValue_throwsValidationException() {
     Property prop = new Property("prop1", "owner", null);
     Channel channel = new Channel("ch", "owner", List.of(prop), List.of());
-    when(propertyRepository.existsById("prop1")).thenReturn(true);
+    when(tagRepository.findAll()).thenReturn(List.of());
+    when(propertyRepository.findAll()).thenReturn(List.of(prop));
 
     assertThrows(ChannelValidationException.class, () -> channelService.create("ch", channel));
   }
@@ -106,7 +108,8 @@ class ChannelServiceTest {
   void createChannel_emptyPropertyValue_throwsValidationException() {
     Property prop = new Property("prop1", "owner", "");
     Channel channel = new Channel("ch", "owner", List.of(prop), List.of());
-    when(propertyRepository.existsById("prop1")).thenReturn(true);
+    when(tagRepository.findAll()).thenReturn(List.of());
+    when(propertyRepository.findAll()).thenReturn(List.of(prop));
 
     assertThrows(ChannelValidationException.class, () -> channelService.create("ch", channel));
   }
@@ -129,8 +132,6 @@ class ChannelServiceTest {
     Property prop = new Property("prop1", "owner", "value");
     Channel channel = new Channel("ch", "owner", List.of(prop), List.of(tag));
     when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
-    when(tagRepository.existsById("tag1")).thenReturn(true);
-    when(propertyRepository.existsById("prop1")).thenReturn(true);
     when(channelRepository.findById("ch")).thenReturn(Optional.empty());
     when(channelRepository.index(any())).thenReturn(channel);
     when(propertyRepository.findAll()).thenReturn(List.of(prop));
