@@ -433,7 +433,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         return Collections.emptyList();
       }
 
-      int lookupBatchSize = Math.max(1, Math.min(chunkSize, esService.getES_QUERY_SIZE()));
+      int lookupBatchSize = Math.clamp(chunkSize, 1, esService.getES_QUERY_SIZE());
       List<Channel> result = new ArrayList<>();
 
       for (int i = 0; i < ids.size(); i += lookupBatchSize) {
