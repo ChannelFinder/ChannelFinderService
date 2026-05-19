@@ -2,9 +2,11 @@ package org.phoebus.channelfinder.service;
 
 import com.google.common.collect.Lists;
 import java.text.MessageFormat;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -206,14 +208,15 @@ public class ChannelService {
    */
   private void validateChannels(Iterable<Channel> channels) {
     Iterable<Tag> existingTags = tagRepository.findAll();
-    List<String> existingTagNames =
-        StreamSupport.stream(existingTags.spliterator(), true).map(Tag::getName).toList();
+    Set<String> existingTagNames =
+            StreamSupport.stream(existingTags.spliterator(), true)
+                    .map(Tag::getName).collect(Collectors.toCollection(HashSet::new));
 
     Iterable<Property> existingProperties = propertyRepository.findAll();
-    List<String> existingPropertyNames =
-        StreamSupport.stream(existingProperties.spliterator(), true)
-            .map(Property::getName)
-            .toList();
+    Set<String> existingPropertyNames =
+            StreamSupport.stream(existingProperties.spliterator(), true)
+                    .map(Property::getName)
+                    .collect(Collectors.toCollection(HashSet::new));
 
     for (Channel channel : channels) {
       if (channel.getName() == null || channel.getName().isEmpty()) {
