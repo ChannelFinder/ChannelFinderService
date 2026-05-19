@@ -1,9 +1,14 @@
 package org.phoebus.channelfinder.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -138,5 +143,39 @@ class ChannelServiceTest {
     when(tagRepository.findAll()).thenReturn(List.of(tag));
 
     assertDoesNotThrow(() -> channelService.create("ch", channel));
+  }
+
+  @Test
+  void removeMultipleChannels_validChannels_returnsDeletedCount() {
+    when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
+    when(channelRepository.findAllById(any()))
+        .thenReturn(
+            List.of(
+                new Channel("ch1", "owner"),
+                new Channel("ch2", "owner"),
+                new Channel("ch3", "owner")));
+    when(channelRepository.deleteAllByIdBestEffort(any())).thenReturn(3L);
+
+    long deleted = channelService.remove(List.of("ch1", "ch2", "ch3"));
+
+    assertEquals(3L, deleted);
+    verify(channelRepository, times(1)).deleteAllByIdBestEffort(any());
+    verify(channelRepository, never()).deleteAllById(any());
+    verify(channelRepository, never()).deleteById(anyString());
+  }
+
+  @Test
+  void removeMultipleChannels_whenOneMissing_deletesExistingAndReturnsDeletedCount() {
+    when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
+    when(channelRepository.findAllById(any()))
+        .thenReturn(List.of(new Channel("ch1", "owner"), new Channel("ch3", "owner")));
+    when(channelRepository.deleteAllByIdBestEffort(eq(List.of("ch1", "ch3")))).thenReturn(2L);
+
+    long deleted = channelService.remove(List.of("ch1", "missing", "ch3"));
+
+    assertEquals(2L, deleted);
+    verify(channelRepository, times(1)).deleteAllByIdBestEffort(eq(List.of("ch1", "ch3")));
+    verify(channelRepository, never()).deleteAllById(any());
+    verify(channelRepository, never()).deleteById(anyString());
   }
 }

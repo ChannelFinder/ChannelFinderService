@@ -585,9 +585,9 @@ public class ChannelFinderChannelsIT {
               + "]";
 
       ITUtilChannels.assertCreateReplaceMultipleChannels(
-          AuthorizationChoice.ADMIN, "", json_multiple, HttpURLConnection.HTTP_INTERNAL_ERROR);
+          AuthorizationChoice.ADMIN, "", json_multiple, HttpURLConnection.HTTP_BAD_REQUEST);
 
-      ITUtilChannels.assertUpdateChannels("", json_multiple, HttpURLConnection.HTTP_INTERNAL_ERROR);
+      ITUtilChannels.assertUpdateChannels("", json_multiple, HttpURLConnection.HTTP_BAD_REQUEST);
 
       json_multiple =
           "["

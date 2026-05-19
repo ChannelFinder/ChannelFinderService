@@ -293,7 +293,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 }
                 BulkResponse result;
                 try {
-                  result = client.bulk(br.refresh(Refresh.True).build());
+                  result = client.bulk(br.refresh(Refresh.WaitFor).build());
                   // Log errors, if any
                   if (result.errors()) {
                     logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
@@ -427,17 +427,29 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   @Override
   public List<Channel> findAllById(Iterable<String> channelIds) {
     try {
-      List<String> ids =
-          StreamSupport.stream(channelIds.spliterator(), false).collect(Collectors.toList());
+      List<String> ids = normalizeIds(channelIds);
 
-      SearchRequest.Builder searchBuilder =
-          new SearchRequest.Builder()
-              .index(esService.getES_CHANNEL_INDEX())
-              .query(IdsQuery.of(q -> q.values(ids))._toQuery())
-              .size(esService.getES_QUERY_SIZE())
-              .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-      SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
-      return response.hits().hits().stream().map(Hit::source).collect(Collectors.toList());
+      if (ids.isEmpty()) {
+        return Collections.emptyList();
+      }
+
+      int lookupBatchSize = Math.clamp(chunkSize, 1, esService.getES_QUERY_SIZE());
+      List<Channel> result = new ArrayList<>();
+
+      for (int i = 0; i < ids.size(); i += lookupBatchSize) {
+        List<String> chunk = ids.subList(i, Math.min(i + lookupBatchSize, ids.size()));
+        SearchRequest.Builder searchBuilder =
+            new SearchRequest.Builder()
+                .index(esService.getES_CHANNEL_INDEX())
+                .query(IdsQuery.of(q -> q.values(chunk))._toQuery())
+                .size(chunk.size())
+                .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+        SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
+        result.addAll(
+            response.hits().hits().stream().map(Hit::source).collect(Collectors.toList()));
+      }
+
+      return result;
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
       throw new ResponseStatusException(
@@ -805,9 +817,69 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void deleteAllById(Iterable<? extends String> ids) {
-    // TODO Auto-generated method stub
+    deleteAllByIdBestEffort((Iterable<String>) ids);
+  }
 
+  public long deleteAllByIdBestEffort(Iterable<String> ids) {
+    List<String> idList = normalizeIds(ids);
+
+    if (idList.isEmpty()) {
+      return 0;
+    }
+
+    long deletedCount = 0;
+
+    for (int i = 0; i < idList.size(); i += chunkSize) {
+      List<String> chunk = idList.subList(i, Math.min(i + chunkSize, idList.size()));
+      BulkRequest.Builder br = new BulkRequest.Builder();
+      for (String id : chunk) {
+        br.operations(op -> op.delete(del -> del.index(esService.getES_CHANNEL_INDEX()).id(id)));
+      }
+      br.refresh(Refresh.True);
+
+      try {
+        BulkResponse result = client.bulk(br.build());
+        for (BulkResponseItem item : result.items()) {
+          if (item.error() != null) {
+            logger.log(
+                Level.SEVERE,
+                () ->
+                    MessageFormat.format(
+                        "Failed to delete channel id {0}: {1}", item.id(), item.error().reason()));
+            continue;
+          }
+          if (Integer.valueOf(200).equals(item.status())) {
+            deletedCount++;
+          }
+        }
+      } catch (IOException e) {
+        logger.log(
+            Level.SEVERE,
+            MessageFormat.format(
+                "Bulk delete failed for chunk starting at index {0} with size {1}",
+                i, chunk.size()),
+            e);
+      }
+    }
+
+    return deletedCount;
+  }
+
+  /**
+   * Normalizes channel IDs by dropping null/blank values and removing duplicates while preserving
+   * encounter order.
+   *
+   * @param ids raw channel IDs from request/repository callers
+   * @return distinct, non-blank channel IDs in encounter order
+   */
+  private static List<String> normalizeIds(Iterable<String> ids) {
+    return StreamSupport.stream(ids.spliterator(), false)
+        .filter(id -> id != null && !id.isBlank())
+        .collect(Collectors.toCollection(LinkedHashSet::new))
+        .stream()
+        .toList();
   }
 
   @PreDestroy

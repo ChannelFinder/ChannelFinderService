@@ -34,6 +34,7 @@ public class ChannelService {
 
   private static final Logger audit = Logger.getLogger(ChannelService.class.getName() + ".audit");
   private static final Logger logger = Logger.getLogger(ChannelService.class.getName());
+  private static final String BATCH_OPERATION_SUBJECT = "channels batch";
 
   private final ChannelRepository channelRepository;
   private final TagRepository tagRepository;
@@ -94,7 +95,7 @@ public class ChannelService {
   }
 
   public Iterable<Channel> create(Iterable<Channel> channels) {
-    requireRole(ROLES.CF_CHANNEL, "channels batch");
+    requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
 
     List<Channel> channelList = Lists.newArrayList(channels);
     Map<String, Channel> existing = findExistingChannels(channelList);
@@ -147,7 +148,7 @@ public class ChannelService {
   }
 
   public Iterable<Channel> update(Iterable<Channel> channels) {
-    requireRole(ROLES.CF_CHANNEL, "channels batch");
+    requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
 
     List<Channel> channelList = Lists.newArrayList(channels);
     Map<String, Channel> existing = findExistingChannels(channelList);
@@ -179,6 +180,24 @@ public class ChannelService {
             .orElseThrow(() -> new ChannelNotFoundException(channelName));
     requireOwner(existing);
     channelRepository.deleteById(channelName);
+  }
+
+  public long remove(Iterable<String> channelNames) {
+    requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
+    List<Channel> existingChannels = channelRepository.findAllById(channelNames);
+
+    for (Channel existing : existingChannels) {
+      requireOwner(existing);
+      audit.log(
+          Level.INFO, () -> MessageFormat.format(TextUtil.DELETE_CHANNEL, existing.getName()));
+    }
+
+    if (existingChannels.isEmpty()) {
+      return 0;
+    }
+
+    return channelRepository.deleteAllByIdBestEffort(
+        existingChannels.stream().map(Channel::getName).toList());
   }
 
   private Map<String, Channel> findExistingChannels(List<Channel> channels) {
