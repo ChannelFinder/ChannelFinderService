@@ -875,7 +875,6 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    * @return distinct, non-blank channel IDs in encounter order
    */
   private static List<String> normalizeIds(Iterable<String> ids) {
-    // TODO: Consider rejecting blank/whitespace-only IDs with 400 at the API boundary.
     return StreamSupport.stream(ids.spliterator(), false)
         .filter(id -> id != null && !id.isBlank())
         .collect(Collectors.toCollection(LinkedHashSet::new))
