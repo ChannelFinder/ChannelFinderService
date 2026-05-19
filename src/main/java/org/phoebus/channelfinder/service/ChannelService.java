@@ -32,6 +32,7 @@ public class ChannelService {
 
   private static final Logger audit = Logger.getLogger(ChannelService.class.getName() + ".audit");
   private static final Logger logger = Logger.getLogger(ChannelService.class.getName());
+  private static final String BATCH_OPERATION_SUBJECT = "channels batch";
 
   private final ChannelRepository channelRepository;
   private final TagRepository tagRepository;
@@ -92,7 +93,7 @@ public class ChannelService {
   }
 
   public Iterable<Channel> create(Iterable<Channel> channels) {
-    requireRole(ROLES.CF_CHANNEL, "channels batch");
+    requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
 
     List<Channel> channelList = Lists.newArrayList(channels);
     Map<String, Channel> existing = findExistingChannels(channelList);
@@ -145,7 +146,7 @@ public class ChannelService {
   }
 
   public Iterable<Channel> update(Iterable<Channel> channels) {
-    requireRole(ROLES.CF_CHANNEL, "channels batch");
+    requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
 
     List<Channel> channelList = Lists.newArrayList(channels);
     Map<String, Channel> existing = findExistingChannels(channelList);
@@ -180,7 +181,7 @@ public class ChannelService {
   }
 
   public long remove(Iterable<String> channelNames) {
-    requireRole(ROLES.CF_CHANNEL, "channels batch");
+    requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
     List<Channel> existingChannels = channelRepository.findAllById(channelNames);
 
     for (Channel existing : existingChannels) {
