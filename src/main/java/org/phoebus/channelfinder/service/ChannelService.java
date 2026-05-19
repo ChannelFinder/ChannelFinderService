@@ -208,42 +208,87 @@ public class ChannelService {
    */
   private void validateChannels(Iterable<Channel> channels) {
     Iterable<Tag> existingTags = tagRepository.findAll();
-    Set<String> existingTagNames =
-            StreamSupport.stream(existingTags.spliterator(), true)
-                    .map(Tag::getName).collect(Collectors.toCollection(HashSet::new));
-
     Iterable<Property> existingProperties = propertyRepository.findAll();
-    Set<String> existingPropertyNames =
-            StreamSupport.stream(existingProperties.spliterator(), true)
-                    .map(Property::getName)
-                    .collect(Collectors.toCollection(HashSet::new));
 
     for (Channel channel : channels) {
-      if (channel.getName() == null || channel.getName().isEmpty()) {
-        throw new ChannelValidationException(
-            MessageFormat.format(TextUtil.CHANNEL_NAME_CANNOT_BE_NULL_OR_EMPTY, channel.toLog()));
-      }
-      if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
-        throw new ChannelValidationException(
-            MessageFormat.format(TextUtil.CHANNEL_OWNER_CANNOT_BE_NULL_OR_EMPTY, channel.toLog()));
-      }
-      for (Tag tag : channel.getTags()) {
-        if (!existingTagNames.contains(tag.getName())) {
-          throw new TagNotFoundException(tag.getName());
-        }
-      }
-      List<String> propNames = channel.getProperties().stream().map(Property::getName).toList();
-      for (String propName : propNames) {
-        if (!existingPropertyNames.contains(propName)) {
-          throw new PropertyNotFoundException(propName);
-        }
-      }
-      List<String> propValues = channel.getProperties().stream().map(Property::getValue).toList();
-      checkPropertyValues(propNames, propValues);
+      validateNotEmpty(channel);
+      validateTagsExist(channel, existingTags);
+      validatePropertiesExist(channel, existingProperties);
+      validatePropertyValues(channel);
     }
   }
 
-  private void checkPropertyValues(List<String> propNames, List<String> propValues) {
+  /**
+   * Validates that channel name and owner are non-null and non-empty.
+   *
+   * @param channel the channel to validate
+   * @throws ChannelValidationException if name or owner is null or empty
+   */
+  private void validateNotEmpty(Channel channel) {
+    if (channel.getName() == null || channel.getName().isEmpty()) {
+      throw new ChannelValidationException(
+          MessageFormat.format(TextUtil.CHANNEL_NAME_CANNOT_BE_NULL_OR_EMPTY, channel.toLog()));
+    }
+    if (channel.getOwner() == null || channel.getOwner().isEmpty()) {
+      throw new ChannelValidationException(
+          MessageFormat.format(TextUtil.CHANNEL_OWNER_CANNOT_BE_NULL_OR_EMPTY, channel.toLog()));
+    }
+  }
+
+  /**
+   * Validates that all referenced tags in the channel exist in ChannelFinder.
+   *
+   * @param channel the channel to validate
+   * @param existingTags iterable of existing tags in ChannelFinder
+   * @throws TagNotFoundException if any referenced tag does not exist
+   */
+  private void validateTagsExist(Channel channel, Iterable<Tag> existingTags) {
+    Set<String> existingTagNames =
+        StreamSupport.stream(existingTags.spliterator(), false)
+            .map(Tag::getName)
+            .collect(Collectors.toCollection(HashSet::new));
+
+    for (Tag tag : channel.getTags()) {
+      if (!existingTagNames.contains(tag.getName())) {
+        throw new TagNotFoundException(tag.getName());
+      }
+    }
+  }
+
+  /**
+   * Validates that all referenced properties in the channel exist in ChannelFinder.
+   *
+   * @param channel the channel to validate
+   * @param existingProperties iterable of existing properties in ChannelFinder
+   * @throws PropertyNotFoundException if any referenced property does not exist
+   */
+  private void validatePropertiesExist(Channel channel, Iterable<Property> existingProperties) {
+    Set<String> existingPropertyNames =
+        StreamSupport.stream(existingProperties.spliterator(), false)
+            .map(Property::getName)
+            .collect(Collectors.toCollection(HashSet::new));
+
+    List<String> propNames =
+        channel.getProperties().stream().map(Property::getName).toList();
+    for (String propName : propNames) {
+      if (!existingPropertyNames.contains(propName)) {
+        throw new PropertyNotFoundException(propName);
+      }
+    }
+  }
+
+  /**
+   * Validates that all property values in the channel are non-null and non-empty.
+   *
+   * @param channel the channel to validate
+   * @throws ChannelValidationException if any property value is null or empty
+   */
+  private void validatePropertyValues(Channel channel) {
+    List<String> propNames =
+        channel.getProperties().stream().map(Property::getName).toList();
+    List<String> propValues =
+        channel.getProperties().stream().map(Property::getValue).toList();
+
     for (int i = 0; i < propValues.size(); i++) {
       String value = propValues.get(i);
       if (value == null || value.isEmpty()) {
