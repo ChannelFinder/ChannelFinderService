@@ -52,7 +52,7 @@ class ChannelRepositoryIT {
 
   /** index a single channel */
   @Test
-  void indexXmlChannel() {
+  void indexChannel() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     cleanupTestChannels = Arrays.asList(testChannel);
 
@@ -63,7 +63,7 @@ class ChannelRepositoryIT {
 
   /** index multiple channels */
   @Test
-  void indexXmlChannels() {
+  void indexChannels() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
     List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -77,7 +77,7 @@ class ChannelRepositoryIT {
 
   /** save a single channel */
   @Test
-  void saveXmlChannel() {
+  void saveChannel() {
     Channel testChannel = new Channel("testChannel", "testOwner");
     Channel updateTestChannel =
         new Channel(
@@ -111,7 +111,7 @@ class ChannelRepositoryIT {
 
   /** save multiple channels */
   @Test
-  void saveXmlChannels() {
+  void saveChannels() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
     Channel updateTestChannel =
@@ -137,7 +137,7 @@ class ChannelRepositoryIT {
 
   /** find a single channel */
   @Test
-  void findXmlChannel() {
+  void findChannel() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     cleanupTestChannels = Arrays.asList(testChannel);
 
@@ -194,7 +194,7 @@ class ChannelRepositoryIT {
 
   /** find multiple channels */
   @Test
-  void findXmlChannels() {
+  void findChannelsById() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
     List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -365,9 +365,9 @@ class ChannelRepositoryIT {
     }
   }
 
-  /** delete a single tag */
+  /** delete a single channel */
   @Test
-  void deleteXmlTag() {
+  void deleteChannel() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     Channel createdChannel = channelRepository.index(testChannel);
     cleanupTestChannels = Arrays.asList(testChannel);
@@ -382,7 +382,7 @@ class ChannelRepositoryIT {
 
   /** delete multiple channels */
   @Test
-  void deleteXmlChannels() {
+  void deleteChannels() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
     List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
@@ -402,7 +402,6 @@ class ChannelRepositoryIT {
     cleanupTestChannels.removeIf(ch -> ch.getName().equals(testChannel1.getName()));
   }
 
-
   /** Test best effort delete - should delete what it can, even when some channels don't exist */
   @Test
   void deleteChannelsBestEffort() {
@@ -414,11 +413,11 @@ class ChannelRepositoryIT {
 
     // Create a list with existing and non-existing channel IDs
     List<String> channelIdsToDelete =
-            Arrays.asList(
-                    testChannel.getName(), // exists
-                    "non-existent-channel-1", // doesn't exist
-                    testChannel1.getName(), // exists
-                    "non-existent-channel-2" // doesn't exist
+        Arrays.asList(
+            testChannel.getName(), // exists
+            "non-existent-channel-1", // doesn't exist
+            testChannel1.getName(), // exists
+            "non-existent-channel-2" // doesn't exist
             );
 
     // Delete using best effort - should succeed for existing channels
@@ -426,17 +425,17 @@ class ChannelRepositoryIT {
 
     // Verify that both existing channels were deleted (count should be 2)
     Assertions.assertEquals(
-            2, deletedCount, "Expected 2 channels to be deleted, but got " + deletedCount);
+        2, deletedCount, "Expected 2 channels to be deleted, but got " + deletedCount);
 
     // Verify the first channel was actually deleted
     Assertions.assertFalse(
-            channelRepository.existsById(testChannel.getName()),
-            "Failed to delete the channel " + testChannel.getName());
+        channelRepository.existsById(testChannel.getName()),
+        "Failed to delete the channel " + testChannel.getName());
 
     // Verify the second channel was actually deleted
     Assertions.assertFalse(
-            channelRepository.existsById(testChannel1.getName()),
-            "Failed to delete the channel " + testChannel1.getName());
+        channelRepository.existsById(testChannel1.getName()),
+        "Failed to delete the channel " + testChannel1.getName());
 
     cleanupTestChannels.clear();
   }
@@ -446,14 +445,14 @@ class ChannelRepositoryIT {
   void deleteChannelsBestEffortWithNoExistingChannels() {
     // Create a list with only non-existing channel IDs
     List<String> channelIdsToDelete =
-            Arrays.asList("non-existent-channel-1", "non-existent-channel-2", "non-existent-channel-3");
+        Arrays.asList("non-existent-channel-1", "non-existent-channel-2", "non-existent-channel-3");
 
     // Delete using best effort - should handle gracefully with no deletions
     long deletedCount = channelRepository.deleteAllByIdBestEffort(channelIdsToDelete);
 
     // Verify that no channels were deleted
     Assertions.assertEquals(
-            0, deletedCount, "Expected 0 channels to be deleted, but got " + deletedCount);
+        0, deletedCount, "Expected 0 channels to be deleted, but got " + deletedCount);
   }
 
   /** Test best effort delete with empty list - should return 0 deleted count */
@@ -464,9 +463,9 @@ class ChannelRepositoryIT {
 
     // Verify that no channels were deleted
     Assertions.assertEquals(
-            0,
-            deletedCount,
-            "Expected 0 channels to be deleted from empty list, but got " + deletedCount);
+        0,
+        deletedCount,
+        "Expected 0 channels to be deleted from empty list, but got " + deletedCount);
   }
 
   /** Test best effort delete with duplicate IDs - should handle duplicates correctly */
@@ -478,10 +477,10 @@ class ChannelRepositoryIT {
 
     // Create a list with duplicate IDs
     List<String> channelIdsToDelete =
-            Arrays.asList(
-                    testChannel.getName(), // first occurrence
-                    "non-existent-channel",
-                    testChannel.getName() // duplicate of existing channel
+        Arrays.asList(
+            testChannel.getName(), // first occurrence
+            "non-existent-channel",
+            testChannel.getName() // duplicate of existing channel
             );
 
     // Delete using best effort
@@ -489,14 +488,14 @@ class ChannelRepositoryIT {
 
     // Should delete the channel only once (duplicates are normalized)
     Assertions.assertEquals(
-            1,
-            deletedCount,
-            "Expected 1 channel to be deleted (duplicates should be normalized), but got "
-                    + deletedCount);
+        1,
+        deletedCount,
+        "Expected 1 channel to be deleted (duplicates should be normalized), but got "
+            + deletedCount);
 
     // Verify the channel was actually deleted
     Assertions.assertFalse(
-            channelRepository.existsById(testChannel.getName()), "Failed to delete the channel");
+        channelRepository.existsById(testChannel.getName()), "Failed to delete the channel");
 
     cleanupTestChannels.clear();
   }
@@ -675,5 +674,4 @@ class ChannelRepositoryIT {
   void tearDown() throws IOException {
     ElasticConfigIT.teardown(esService);
   }
-
 }
