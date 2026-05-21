@@ -107,19 +107,24 @@ public class AAChannelProcessor implements ChannelProcessor {
       return 0;
     }
 
-    // Get Info (policy and version) of each archiver
     Map<String, ArchiverInfo> archiversInfo = getArchiversInfo(aaURLs);
     if (archiversInfo.isEmpty()) {
       return 0;
     }
 
-    Map<String, List<ArchivePVOptions>> archiverAliasToArchivePVOptions =
-        new HashMap<>(); // AA identifier, ArchivePVOptions
-    for (String alias : archiversInfo.keySet()) {
-      archiverAliasToArchivePVOptions.put(alias, new ArrayList<>());
-    }
-
     logger.log(Level.INFO, "Get channelfinder properties for aa processor.");
+    Map<String, List<ArchivePVOptions>> pvsByArchiver = buildArchivePVMap(channels, archiversInfo);
+
+    long count = submitToArchivers(pvsByArchiver, archiversInfo);
+    logger.log(Level.INFO, () -> String.format("Configured %s channels.", count));
+    return count;
+  }
+
+  private Map<String, List<ArchivePVOptions>> buildArchivePVMap(
+      List<Channel> channels, Map<String, ArchiverInfo> archiversInfo) {
+    Map<String, List<ArchivePVOptions>> result = new HashMap<>();
+    archiversInfo.keySet().forEach(alias -> result.put(alias, new ArrayList<>()));
+
     channels.forEach(
         channel -> {
           Optional<Property> archiveProperty = findProperty(channel, archivePropertyName);
@@ -129,44 +134,41 @@ public class AAChannelProcessor implements ChannelProcessor {
                     archiverAlias -> {
                       try {
                         addChannelChange(
-                            channel,
-                            archiverAliasToArchivePVOptions,
-                            archiversInfo,
-                            archiveProperty,
-                            archiverAlias);
+                            channel, result, archiversInfo, archiveProperty, archiverAlias);
                       } catch (Exception e) {
                         logger.log(
                             Level.WARNING, String.format("Failed to process %s", channel), e);
                       }
                     });
           } else if (autoPauseOptions.contains(archivePropertyName)) {
-            aaURLs
+            archiversInfo
                 .keySet()
                 .forEach(
                     archiverAlias ->
-                        archiverAliasToArchivePVOptions
+                        result
                             .get(archiverAlias)
                             .add(createArchivePV(List.of(), channel, "", PV_STATUS_INACTIVE)));
           }
         });
+    return result;
+  }
+
+  private long submitToArchivers(
+      Map<String, List<ArchivePVOptions>> pvsByArchiver, Map<String, ArchiverInfo> archiversInfo)
+      throws JacksonException {
     long count = 0;
-    for (Map.Entry<String, List<ArchivePVOptions>> e : archiverAliasToArchivePVOptions.entrySet()) {
+    for (Map.Entry<String, List<ArchivePVOptions>> e : pvsByArchiver.entrySet()) {
       ArchiverInfo archiverInfo = archiversInfo.get(e.getKey());
       if (archiverInfo == null) {
         logger.log(Level.WARNING, String.format("Failed to process %s", e.getKey()));
         continue;
       }
-      Map<String, ArchivePVOptions> archivePVSList =
-          e.getValue().stream()
-              .collect(
-                  Collectors.toMap(ArchivePVOptions::getPv, archivePVOptions -> archivePVOptions));
-      Map<ArchiveAction, List<ArchivePVOptions>> archiveActionArchivePVMap =
-          getArchiveActions(archivePVSList, archiverInfo);
-      count += archiverService.configureAA(archiveActionArchivePVMap, archiverInfo.url());
+      Map<String, ArchivePVOptions> pvMap =
+          e.getValue().stream().collect(Collectors.toMap(ArchivePVOptions::getPv, pv -> pv));
+      count +=
+          archiverService.configureAA(getArchiveActions(pvMap, archiverInfo), archiverInfo.url());
     }
-    long finalCount = count;
-    logger.log(Level.INFO, () -> String.format("Configured %s channels.", finalCount));
-    return finalCount;
+    return count;
   }
 
   private Stream<String> resolveArchiverAliases(Channel channel) {
