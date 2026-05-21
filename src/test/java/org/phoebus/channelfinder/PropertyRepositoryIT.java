@@ -47,7 +47,7 @@ class PropertyRepositoryIT {
 
   /** index a single property */
   @Test
-  void indexXmlProperty() {
+  void indexProperty() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
 
     Property createdProperty = propertyRepository.index(testProperty);
@@ -57,7 +57,7 @@ class PropertyRepositoryIT {
 
   /** index multiple properties */
   @Test
-  void indexXmlProperties() {
+  void indexProperties() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
     Property testProperty1 = new Property(TEST_PROPERTY_NAME + 1, "testOwner1");
     List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
@@ -71,7 +71,7 @@ class PropertyRepositoryIT {
 
   /** save a single property */
   @Test
-  void saveXmlProperty() {
+  void saveProperty() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
     Property updateTestProperty = new Property(TEST_PROPERTY_NAME, "updateTestOwner");
     Property updateTestProperty1 = new Property(TEST_PROPERTY_NAME + 1, "updateTestOwner1");
@@ -95,7 +95,7 @@ class PropertyRepositoryIT {
 
   /** save multiple properties */
   @Test
-  void saveXmlProperties() {
+  void saveProperties() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
     Property updateTestProperty = new Property(TEST_PROPERTY_NAME, "updateTestOwner");
     Property testProperty1 = new Property(TEST_PROPERTY_NAME + 1, "testOwner1");
@@ -113,7 +113,7 @@ class PropertyRepositoryIT {
 
   /** find a single property */
   @Test
-  void findXmlProperty() {
+  void findProperty() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
 
     Optional<Property> notFoundProperty = propertyRepository.findById(testProperty.getName());
@@ -164,7 +164,7 @@ class PropertyRepositoryIT {
 
   /** find all properties */
   @Test
-  void findAllXmlProperties() {
+  void findAllProperties() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
     Property testProperty1 = new Property(TEST_PROPERTY_NAME + 1, "testOwner1");
     List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
@@ -183,7 +183,7 @@ class PropertyRepositoryIT {
 
   /** find all properties */
   @Test
-  void countXmlProperties() {
+  void countProperties() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
     Property testProperty1 = new Property(TEST_PROPERTY_NAME + 1, "testOwner1");
     List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
@@ -204,7 +204,7 @@ class PropertyRepositoryIT {
 
   /** find multiple properties */
   @Test
-  void findXmlProperties() {
+  void findProperties() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
     Property testProperty1 = new Property(TEST_PROPERTY_NAME + 1, "testOwner1");
     List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
@@ -233,7 +233,7 @@ class PropertyRepositoryIT {
 
   /** delete a single property */
   @Test
-  void deleteXmlProperty() {
+  void deleteProperty() {
     Property testProperty = new Property(TEST_PROPERTY_NAME, "testOwner");
     Optional<Property> notFoundProperty = propertyRepository.findById(testProperty.getName());
     Property createdProperty = propertyRepository.index(testProperty);
