@@ -102,9 +102,8 @@ class ArchiverServiceTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess("invalid-json", MediaType.APPLICATION_JSON));
 
-    List<Map<String, String>> result = archiverService.getStatusesViaGet(ARCHIVER_URL, pvs);
-
-    assertTrue(result.isEmpty());
+    assertThrows(
+        ArchiverServiceException.class, () -> archiverService.getStatusesViaGet(ARCHIVER_URL, pvs));
   }
 
   @Test
@@ -116,9 +115,9 @@ class ArchiverServiceTest {
         .andExpect(method(HttpMethod.POST))
         .andRespond(withSuccess("invalid-json", MediaType.APPLICATION_JSON));
 
-    List<Map<String, String>> result = archiverService.getStatusesViaPost(ARCHIVER_URL, pvs);
-
-    assertTrue(result.isEmpty());
+    assertThrows(
+        ArchiverServiceException.class,
+        () -> archiverService.getStatusesViaPost(ARCHIVER_URL, pvs));
   }
 
   @Test

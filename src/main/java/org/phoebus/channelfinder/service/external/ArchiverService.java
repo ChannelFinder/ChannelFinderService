@@ -87,18 +87,13 @@ public class ArchiverService {
             .queryParam(StatusResponseKey.PV.key(), String.join(",", pvs))
             .build()
             .toUri();
-
     try {
       List<Map<String, String>> result =
           client.get().uri(pvStatusURI).retrieve().body(new ParameterizedTypeReference<>() {});
       return result != null ? result : List.of();
     } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format(
-              "There was an error getting a response with URI: %s. Error: %s",
-              uriString, e.getMessage()));
-      return List.of();
+      throw new ArchiverServiceException(
+          String.format("Failed GET status query to %s: %s", uriString, e.getMessage()), e);
     }
   }
 
@@ -115,12 +110,8 @@ public class ArchiverService {
               .body(new ParameterizedTypeReference<>() {});
       return result != null ? result : List.of();
     } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format(
-              "There was an error getting a response with URI: %s. Error: %s",
-              uriString, e.getMessage()));
-      return List.of();
+      throw new ArchiverServiceException(
+          String.format("Failed POST status query to %s: %s", uriString, e.getMessage()), e);
     }
   }
 
