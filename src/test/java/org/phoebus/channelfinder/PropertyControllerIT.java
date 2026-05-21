@@ -1341,12 +1341,12 @@ class PropertyControllerIT {
 
     Iterable<Property> createdProperties = propertyManager.create(testProperties);
 
-    propertyManager.remove(testProperty0.getName());
+    propertyManager.removeBatch(testProperty0.getName());
     // verify the property was deleted as expected
     Assertions.assertFalse(
         propertyRepository.existsById(testProperty0.getName()), "Failed to delete the property");
 
-    propertyManager.remove(testProperty0WithChannels.getName());
+    propertyManager.removeBatch(testProperty0WithChannels.getName());
     MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
     params.add("testProperty0WithChannels", "*");
     // verify the property was deleted and removed from all associated channels
@@ -1394,5 +1394,127 @@ class PropertyControllerIT {
                   return ch.getName().equals(testChannel0.getName());
                 }),
         "Failed to delete the property from channel");
+  }
+
+  /** delete a property from multiple channels */
+  @Test
+  void deletePropertyFromMultipleChannels() {
+    Property testProperty = new Property("batchTestProperty", "testOwner");
+    testProperty.setChannels(
+        Arrays.asList(
+            new Channel(
+                testChannel0.getName(),
+                testChannel0.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value0")),
+                new ArrayList<Tag>()),
+            new Channel(
+                testChannel1.getName(),
+                testChannel1.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value1")),
+                new ArrayList<Tag>())));
+
+    propertyManager.create(testProperty.getName(), testProperty);
+
+    // Batch delete from both channels
+    long deletedCount =
+        propertyManager.removeBatch(
+            testProperty.getName(), Arrays.asList(testChannel0.getName(), testChannel1.getName()));
+
+    // Verify 2 channels had the property removed
+    Assertions.assertEquals(2, deletedCount, "Failed to remove property from 2 channels");
+
+    // Verify the property still exists globally
+    Assertions.assertTrue(
+        propertyRepository.existsById(testProperty.getName()),
+        "Property should still exist globally");
+
+    // Verify the property was removed from all channels
+    MultiValueMap<String, String> searchParams = new LinkedMultiValueMap<String, String>();
+    searchParams.add(testProperty.getName(), "*");
+    Assertions.assertEquals(
+        0,
+        channelRepository.search(searchParams).channels().size(),
+        "Failed to remove property from channels");
+  }
+
+  /** delete a property from multiple channels with mixed existing and non-existent channels */
+  @Test
+  void deletePropertyFromMixedChannels() {
+    Property testProperty = new Property("batchTestProperty2", "testOwner");
+    testProperty.setChannels(
+        Arrays.asList(
+            new Channel(
+                testChannel0.getName(),
+                testChannel0.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value")),
+                new ArrayList<Tag>())));
+
+    propertyManager.create(testProperty.getName(), testProperty);
+
+    // Batch delete from existing and non-existent channels
+    long deletedCount =
+        propertyManager.removeBatch(
+            testProperty.getName(),
+            Arrays.asList(testChannel0.getName(), "nonExistentChannel", "anotherFakeChannel"));
+
+    // Verify only 1 channel (testChannel0) had the property removed
+    Assertions.assertEquals(
+        1, deletedCount, "Should only count the property removed from existing channel");
+
+    // Verify the property still exists
+    Assertions.assertTrue(
+        propertyRepository.existsById(testProperty.getName()), "Property should still exist");
+  }
+
+  /** delete a property from multiple channels with duplicates */
+  @Test
+  void deletePropertyFromChannelsWithDuplicates() {
+    Property testProperty = new Property("batchTestProperty3", "testOwner");
+    testProperty.setChannels(
+        Arrays.asList(
+            new Channel(
+                testChannel0.getName(),
+                testChannel0.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value")),
+                new ArrayList<Tag>())));
+
+    propertyManager.create(testProperty.getName(), testProperty);
+
+    // Batch delete with duplicate channel names
+    long deletedCount =
+        propertyManager.removeBatch(
+            testProperty.getName(),
+            Arrays.asList(testChannel0.getName(), testChannel0.getName(), testChannel0.getName()));
+
+    // Verify only 1 channel processed (duplicates deduplicated)
+    Assertions.assertEquals(
+        1, deletedCount, "Should deduplicate and only remove from channel once");
+
+    // Verify the property is gone from the channel
+    Assertions.assertTrue(
+        channelRepository.findById(testChannel0.getName()).get().getProperties().stream()
+            .noneMatch(p -> p.getName().equals(testProperty.getName())),
+        "Property should be removed from channel");
+  }
+
+  /** delete a property from empty channel list returns 0 */
+  @Test
+  void deletePropertyFromEmptyChannelList() {
+    Property testProperty = new Property("batchTestProperty4", "testOwner");
+    propertyManager.create(testProperty.getName(), testProperty);
+
+    // Batch delete with empty channel list
+    long deletedCount = propertyManager.removeBatch(testProperty.getName(), List.of());
+
+    // Verify 0 channels affected
+    Assertions.assertEquals(0, deletedCount, "Should return 0 when channel list is empty");
+
+    // Verify the property still exists
+    Assertions.assertTrue(
+        propertyRepository.existsById(testProperty.getName()), "Property should still exist");
   }
 }
