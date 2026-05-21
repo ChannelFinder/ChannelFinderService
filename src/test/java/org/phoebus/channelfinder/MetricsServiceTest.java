@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.service.MetricsService;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 class MetricsServiceTest {
 
@@ -16,7 +18,8 @@ class MetricsServiceTest {
         Map.of(
             "a", List.of("b", "c"),
             "d", List.of("e", "!*"));
-    List<Map<String, List<String>>> allMaps = MetricsService.generateAllMultiValueMaps(properties);
+    List<MultiValueMap<String, String>> allMaps =
+        MetricsService.generateAllMultiValueMaps(properties);
 
     assertEquals(4, allMaps.size());
 
@@ -33,12 +36,14 @@ class MetricsServiceTest {
             "x", List.of("y", "z"),
             "p", List.of("q"),
             "r", List.of("s", "t"));
-    List<Map<String, List<String>>> allMaps = MetricsService.generateAllMultiValueMaps(properties);
+    List<MultiValueMap<String, String>> allMaps =
+        MetricsService.generateAllMultiValueMaps(properties);
 
-    assertEquals(2 * 2, allMaps.size());
+    assertEquals(2 * 2, allMaps.size()); // 2 options (value or null) for each of 2 keys
 
+    // Just a basic check, exhaustive check would be large
     boolean foundExpectedCombination = false;
-    for (Map<String, List<String>> map : allMaps) {
+    for (MultiValueMap<String, String> map : allMaps) {
       if (map.get("x").contains("y") && map.get("p").contains("q") && map.get("r").contains("s")) {
         foundExpectedCombination = true;
         break;
@@ -50,21 +55,39 @@ class MetricsServiceTest {
   @Test
   void testGenerateAllMultiValueMaps_emptyList() {
     Map<String, List<String>> properties = Map.of("m", List.of());
-    List<Map<String, List<String>>> allMaps = MetricsService.generateAllMultiValueMaps(properties);
+    List<MultiValueMap<String, String>> allMaps =
+        MetricsService.generateAllMultiValueMaps(properties);
 
-    assertEquals(0, allMaps.size());
+    assertEquals(0, allMaps.size()); // One with m=null, one with m implicitly null (not present)
   }
 
   @Test
   void testGenerateAllMultiValueMaps_emptyMap() {
     Map<String, List<String>> properties = Map.of();
-    List<Map<String, List<String>>> allMaps = MetricsService.generateAllMultiValueMaps(properties);
+    List<MultiValueMap<String, String>> allMaps =
+        MetricsService.generateAllMultiValueMaps(properties);
 
     assertEquals(0, allMaps.size());
   }
 
-  private Map<String, List<String>> createMap(
+  // Helper method to create a MultiValueMap for easier assertion
+  private MultiValueMap<String, String> createMap(
       String key1, String value1, String key2, String value2) {
-    return Map.of(key1, List.of(value1), key2, List.of(value2));
+    LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+    if (key1 != null) {
+      map.add(key1, value1);
+    }
+    if (key2 != null) {
+      map.add(key2, value2);
+    }
+    return map;
+  }
+
+  private MultiValueMap<String, String> createMap(String key, String value) {
+    LinkedMultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+    if (key != null) {
+      map.add(key, value);
+    }
+    return map;
   }
 }

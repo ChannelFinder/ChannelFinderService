@@ -4,7 +4,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,6 +24,8 @@ import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 /**
  * A pva RPC service for channelfinder
@@ -105,7 +106,7 @@ public class ChannelFinderEpicsService {
 
       public PVAStructure run() throws MustBeArrayException {
 
-        Map<String, List<String>> searchParameters = new LinkedHashMap<>();
+        MultiValueMap<String, String> searchParameters = new LinkedMultiValueMap<>();
         PVAURI uri = PVAURI.fromStructure(args);
         Map<String, String> query;
         try {

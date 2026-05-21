@@ -27,6 +27,7 @@ import org.phoebus.channelfinder.repository.TagRepository;
 import org.phoebus.channelfinder.service.AuthorizationService.ROLES;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.MultiValueMap;
 
 @Service
 public class ChannelService {
@@ -54,15 +55,15 @@ public class ChannelService {
     this.channelProcessorService = channelProcessorService;
   }
 
-  public List<Channel> query(Map<String, List<String>> allRequestParams) {
+  public List<Channel> query(MultiValueMap<String, String> allRequestParams) {
     return channelRepository.search(allRequestParams).channels();
   }
 
-  public SearchResult combinedQuery(Map<String, List<String>> allRequestParams) {
+  public SearchResult combinedQuery(MultiValueMap<String, String> allRequestParams) {
     return channelRepository.search(allRequestParams);
   }
 
-  public long queryCount(Map<String, List<String>> allRequestParams) {
+  public long queryCount(MultiValueMap<String, String> allRequestParams) {
     return channelRepository.count(allRequestParams);
   }
 

@@ -27,9 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -44,6 +42,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 // Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
 
@@ -221,8 +221,9 @@ public class TagRepository implements CrudRepository<Tag, String> {
         Tag tag = response.source();
         logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.TAG_FOUND, tag.getName()));
         if (withChannels) {
-          tag.setChannels(
-              channelRepository.search(Map.of("~tag", List.of(tag.getName()))).channels());
+          MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+          params.add("~tag", tag.getName());
+          tag.setChannels(channelRepository.search(params).channels());
         }
         return Optional.of(tag);
       } else {
@@ -327,8 +328,8 @@ public class TagRepository implements CrudRepository<Tag, String> {
         logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_TAG, tagName));
       }
       BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
-      Map<String, List<String>> params = new LinkedHashMap<>();
-      params.put("~tag", List.of(tagName));
+      MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+      params.add("~tag", tagName);
       List<Channel> channels = channelRepository.search(params).channels();
       while (!channels.isEmpty()) {
 
@@ -363,7 +364,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
           logger.log(Level.SEVERE, message, e);
           throw new RepositoryException(message);
         }
-        params.put("~search_after", List.of(channels.get(channels.size() - 1).getName()));
+        params.set("~search_after", channels.get(channels.size() - 1).getName());
         channels = channelRepository.search(params).channels();
       }
 
