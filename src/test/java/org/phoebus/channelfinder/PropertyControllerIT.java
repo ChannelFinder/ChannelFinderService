@@ -55,20 +55,23 @@ class PropertyControllerIT {
   // Helper operations to create and clean up the resources needed for successful
   // testing of the PropertyManager operations
 
-  private final Channel testChannel0 = new Channel("testChannel0", "testOwner");
-  private final Channel testChannel1 = new Channel("testChannel1", "testOwner");
-  private final Channel testChannelX = new Channel("testChannelX", "testOwner");
+  private Channel testChannel0;
+  private Channel testChannel1;
+  private Channel testChannelX;
 
-  private final List<Channel> testChannels =
-      Arrays.asList(testChannel0, testChannel1, testChannelX);
+  private List<Channel> testChannels;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
+    testChannel0 = new Channel("testChannel0", "testOwner");
+    testChannel1 = new Channel("testChannel1", "testOwner");
+    testChannelX = new Channel("testChannelX", "testOwner");
+    testChannels = Arrays.asList(testChannel0, testChannel1, testChannelX);
     channelRepository.indexAll(testChannels);
   }
 
   @AfterEach
-  public void cleanup() {
+  void cleanup() {
 
     MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
     map.set("~name", "*");
