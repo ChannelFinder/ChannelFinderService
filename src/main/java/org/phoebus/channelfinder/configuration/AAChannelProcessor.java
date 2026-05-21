@@ -121,11 +121,7 @@ public class AAChannelProcessor implements ChannelProcessor {
     logger.log(Level.INFO, "Get channelfinder properties for aa processor.");
     channels.forEach(
         channel -> {
-          Optional<Property> archiveProperty =
-              channel.getProperties().stream()
-                  .filter(
-                      xmlProperty -> archivePropertyName.equalsIgnoreCase(xmlProperty.getName()))
-                  .findFirst();
+          Optional<Property> archiveProperty = findProperty(channel, archivePropertyName);
           if (archiveProperty.isPresent()) {
             channel.getProperties().stream()
                 .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
@@ -189,18 +185,25 @@ public class AAChannelProcessor implements ChannelProcessor {
     return finalCount;
   }
 
+  private Optional<Property> findProperty(Channel channel, String propertyName) {
+    return channel.getProperties().stream()
+        .filter(p -> propertyName.equalsIgnoreCase(p.getName()))
+        .findFirst();
+  }
+
+  private Optional<String> findPropertyValue(Channel channel, String propertyName) {
+    return findProperty(channel, propertyName)
+        .map(Property::getValue)
+        .filter(v -> v != null && !v.isEmpty());
+  }
+
   private void addChannelChange(
       Channel channel,
       Map<String, List<ArchivePVOptions>> aaArchivePVS,
       Map<String, ArchiverInfo> archiversInfo,
       Optional<Property> archiveProperty,
       String archiverAlias) {
-    String pvStatus =
-        channel.getProperties().stream()
-            .filter(xmlProperty -> PV_STATUS_PROPERTY_NAME.equalsIgnoreCase(xmlProperty.getName()))
-            .findFirst()
-            .map(Property::getValue)
-            .orElse(PV_STATUS_INACTIVE);
+    String pvStatus = findPropertyValue(channel, PV_STATUS_PROPERTY_NAME).orElse(PV_STATUS_INACTIVE);
     if (aaArchivePVS.containsKey(archiverAlias) && archiveProperty.isPresent()) {
       ArchivePVOptions newArchiverPV =
           createArchivePV(
