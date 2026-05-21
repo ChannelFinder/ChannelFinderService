@@ -282,15 +282,13 @@ public class AAChannelProcessor implements ChannelProcessor {
   }
 
   private Map<String, ArchiverInfo> getArchiversInfo(Map<String, String> aaURLs) {
-    Map<String, ArchiverInfo> result = new HashMap<>();
-    for (Map.Entry<String, String> aa : aaURLs.entrySet()) {
-      if (StringUtils.isEmpty(aa.getValue())) {
-        // Empty archiver tagged
-        continue;
-      }
-      List<String> policies = archiverService.getAAPolicies(aa.getValue());
-      result.put(aa.getKey(), new ArchiverInfo(aa.getKey(), aa.getValue(), policies));
-    }
-    return result;
+    return aaURLs.entrySet().stream()
+        .filter(aa -> !StringUtils.isEmpty(aa.getValue()))
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                aa ->
+                    new ArchiverInfo(
+                        aa.getKey(), aa.getValue(), archiverService.getAAPolicies(aa.getValue()))));
   }
 }
