@@ -273,7 +273,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   }
 
   private ArchivePVOptions createArchivePV(
-      List<String> policyList, Channel channel, String archiveProperty, String pvStaus) {
+      List<String> policyList, Channel channel, String archiveProperty, String pvStatus) {
     ArchivePVOptions newArchiverPV = new ArchivePVOptions();
     if (aaPVA && !channel.getName().contains("://")) {
       newArchiverPV.setPv("pva://" + channel.getName());
@@ -281,7 +281,7 @@ public class AAChannelProcessor implements ChannelProcessor {
       newArchiverPV.setPv(channel.getName());
     }
     newArchiverPV.setSamplingParameters(archiveProperty, policyList);
-    newArchiverPV.setPvStatus(pvStaus);
+    newArchiverPV.setPvStatus(pvStatus);
     return newArchiverPV;
   }
 
