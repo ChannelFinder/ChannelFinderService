@@ -2,6 +2,7 @@ package org.phoebus.channelfinder.processors.aa;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -111,8 +112,7 @@ class AAChannelProcessorMultiIT {
         namesToStatuses.entrySet().stream()
             .map(entry -> Map.of("pvName", entry.getKey(), "status", entry.getValue()))
             .toList();
-    when(archiverService.getStatuses(anyMap(), anyString(), anyString()))
-        .thenReturn(archivePVStatuses);
+    when(archiverService.getStatusesViaGet(anyString(), anyList())).thenReturn(archivePVStatuses);
 
     // Mock configureAA
     when(archiverService.configureAA(anyMap(), anyString()))
@@ -122,7 +122,7 @@ class AAChannelProcessorMultiIT {
     assertEquals(expectedProcessedChannels, count);
 
     verify(archiverService).getAAPolicies(anyString());
-    verify(archiverService).getStatuses(anyMap(), anyString(), anyString());
+    verify(archiverService).getStatusesViaGet(anyString(), anyList());
 
     ArgumentCaptor<Map<ArchiveAction, List<ArchivePVOptions>>> captor =
         ArgumentCaptor.forClass(Map.class);

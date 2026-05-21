@@ -1,5 +1,6 @@
 package org.phoebus.channelfinder.processors.aa;
 
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -105,8 +106,7 @@ class AAChannelProcessorMultiArchiverIT {
         namesToStatuses.entrySet().stream()
             .map(entry -> Map.of("pvName", entry.getKey(), "status", entry.getValue()))
             .toList();
-    when(archiverService.getStatuses(anyMap(), anyString(), anyString()))
-        .thenReturn(archivePVStatuses);
+    when(archiverService.getStatusesViaGet(anyString(), anyList())).thenReturn(archivePVStatuses);
 
     // Requests to archiver
     actionsToNames.forEach(
@@ -118,8 +118,7 @@ class AAChannelProcessorMultiArchiverIT {
     when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
 
     // Request to archiver status
-    when(archiverService.getStatuses(anyMap(), anyString(), anyString()))
-        .thenReturn(archivePVStatuses);
+    when(archiverService.getStatusesViaGet(anyString(), anyList())).thenReturn(archivePVStatuses);
 
     // Requests to archiver
     actionsToNames.forEach(
@@ -133,7 +132,7 @@ class AAChannelProcessorMultiArchiverIT {
     verify(archiverService, times(2)).getAAPolicies(anyString());
 
     if (!namesToStatuses.isEmpty()) {
-      verify(archiverService, times(2)).getStatuses(anyMap(), anyString(), anyString());
+      verify(archiverService, times(1)).getStatusesViaGet(anyString(), anyList());
     }
   }
 }

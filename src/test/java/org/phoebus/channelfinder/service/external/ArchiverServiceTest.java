@@ -17,14 +17,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import tools.jackson.core.JacksonException;
@@ -45,8 +43,6 @@ class ArchiverServiceTest {
 
     archiverService = new ArchiverService(builder);
     objectMapper = new ObjectMapper();
-
-    ReflectionTestUtils.setField(archiverService, "postSupportArchivers", List.of("test-archiver"));
   }
 
   @AfterEach
@@ -54,34 +50,20 @@ class ArchiverServiceTest {
     mockServer.verify();
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"other-archiver", "test-archiver"})
-  void testGetStatuses(String archiverAlias) throws JacksonException {
-
-    Map<String, ArchivePVOptions> pvs = Map.of("pv1", new ArchivePVOptions());
-
+  @Test
+  void testGetStatusGet() throws JacksonException {
+    List<String> pvs = List.of("pv1");
     List<Map<String, String>> expectedResponse =
         List.of(Map.of("pv", "pv1", "status", "Being archived"));
 
-    if ("test-archiver".equals(archiverAlias)) {
-      mockServer
-          .expect(requestTo(ARCHIVER_URL + "/mgmt/bpl/getPVStatus"))
-          .andExpect(method(HttpMethod.POST))
-          .andExpect(content().json("[\"pv1\"]"))
-          .andRespond(
-              withSuccess(
-                  objectMapper.writeValueAsString(expectedResponse), MediaType.APPLICATION_JSON));
-    } else {
-      mockServer
-          .expect(requestTo(ARCHIVER_URL + "/mgmt/bpl/getPVStatus?pv=pv1"))
-          .andExpect(method(HttpMethod.GET))
-          .andRespond(
-              withSuccess(
-                  objectMapper.writeValueAsString(expectedResponse), MediaType.APPLICATION_JSON));
-    }
+    mockServer
+        .expect(requestTo(ARCHIVER_URL + "/mgmt/bpl/getPVStatus?pv=pv1"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            withSuccess(
+                objectMapper.writeValueAsString(expectedResponse), MediaType.APPLICATION_JSON));
 
-    List<Map<String, String>> result =
-        archiverService.getStatuses(pvs, ARCHIVER_URL, archiverAlias);
+    List<Map<String, String>> result = archiverService.getStatusesViaGet(ARCHIVER_URL, pvs);
 
     assertEquals(1, result.size());
     assertEquals("pv1", result.getFirst().get("pv"));
@@ -89,17 +71,52 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testGetStatusesInvalidResponse() {
+  void testGetStatusPost() throws JacksonException {
 
-    Map<String, ArchivePVOptions> pvs = Map.of("pv1", new ArchivePVOptions());
+    List<String> pvs = List.of("pv1");
+
+    List<Map<String, String>> expectedResponse =
+        List.of(Map.of("pv", "pv1", "status", "Being archived"));
+
+    mockServer
+        .expect(requestTo(ARCHIVER_URL + "/mgmt/bpl/getPVStatus"))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(content().json("[\"pv1\"]"))
+        .andRespond(
+            withSuccess(
+                objectMapper.writeValueAsString(expectedResponse), MediaType.APPLICATION_JSON));
+
+    List<Map<String, String>> result = archiverService.getStatusesViaPost(ARCHIVER_URL, pvs);
+
+    assertEquals(1, result.size());
+    assertEquals("pv1", result.getFirst().get("pv"));
+    assertEquals("Being archived", result.getFirst().get("status"));
+  }
+
+  @Test
+  void testGetStatusesGetInvalidResponse() {
+    List<String> pvs = List.of("pv1");
 
     mockServer
         .expect(requestTo(ARCHIVER_URL + "/mgmt/bpl/getPVStatus?pv=pv1"))
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess("invalid-json", MediaType.APPLICATION_JSON));
 
-    List<Map<String, String>> result =
-        archiverService.getStatuses(pvs, ARCHIVER_URL, "other-archiver");
+    List<Map<String, String>> result = archiverService.getStatusesViaGet(ARCHIVER_URL, pvs);
+
+    assertTrue(result.isEmpty());
+  }
+
+  @Test
+  void testGetStatusesPostInvalidResponse() {
+    List<String> pvs = List.of("pv1");
+
+    mockServer
+        .expect(requestTo(ARCHIVER_URL + "/mgmt/bpl/getPVStatus"))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess("invalid-json", MediaType.APPLICATION_JSON));
+
+    List<Map<String, String>> result = archiverService.getStatusesViaPost(ARCHIVER_URL, pvs);
 
     assertTrue(result.isEmpty());
   }
