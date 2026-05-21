@@ -240,7 +240,11 @@ public class ArchiverService {
       }
       return successfulPvs.size();
     } catch (ArchiverServiceException e) {
-      logger.log(Level.WARNING, "Failed to submit " + action.name().toLowerCase() + " request", e);
+      logger.log(
+          Level.WARNING,
+          () ->
+              String.format(
+                  "Failed to submit %s request: %s", action.name().toLowerCase(), e.getMessage()));
       return 0;
     }
   }
@@ -263,7 +267,9 @@ public class ArchiverService {
       return new ArrayList<>(policyMap.keySet());
     } catch (Exception e) {
       // problem collecting policies from AA, so warn and return empty list
-      logger.log(Level.WARNING, "Could not get AA policies list from: " + aaURL, e);
+      logger.log(
+          Level.WARNING,
+          () -> "Could not get AA policies list from " + aaURL + ": " + e.getMessage());
       return List.of();
     }
   }

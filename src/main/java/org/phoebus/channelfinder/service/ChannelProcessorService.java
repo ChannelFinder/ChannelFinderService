@@ -124,10 +124,11 @@ public class ChannelProcessorService {
                       } catch (Exception e) {
                         logger.log(
                             Level.WARNING,
-                            "ChannelProcessor "
-                                + channelProcessor.getClass().getName()
-                                + " throws exception",
-                            e);
+                            () ->
+                                "ChannelProcessor "
+                                    + channelProcessor.getClass().getName()
+                                    + " threw exception: "
+                                    + e.getMessage());
                       }
                     }));
   }

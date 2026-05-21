@@ -109,14 +109,19 @@ public class AAChannelProcessor implements ChannelProcessor {
 
     Map<String, ArchiverInfo> archiversInfo = getArchiversInfo(aaURLs);
     if (archiversInfo.isEmpty()) {
+      logger.log(
+          Level.WARNING,
+          () ->
+              String.format(
+                  "No reachable archivers configured; skipping %d channels.", channels.size()));
       return 0;
     }
 
-    logger.log(Level.INFO, "Get channelfinder properties for aa processor.");
+    logger.log(Level.INFO, () -> String.format("Processing %d channels.", channels.size()));
     Map<String, List<ArchivePVOptions>> pvsByArchiver = buildArchivePVMap(channels, archiversInfo);
 
     long count = submitToArchivers(pvsByArchiver, archiversInfo);
-    logger.log(Level.INFO, () -> String.format("Configured %s channels.", count));
+    logger.log(Level.INFO, () -> String.format("Configured %d channels.", count));
     return count;
   }
 
@@ -137,7 +142,11 @@ public class AAChannelProcessor implements ChannelProcessor {
                             channel, result, archiversInfo, archiveProperty, archiverAlias);
                       } catch (Exception e) {
                         logger.log(
-                            Level.WARNING, String.format("Failed to process %s", channel), e);
+                            Level.WARNING,
+                            () ->
+                                String.format(
+                                    "Failed to add channel '%s' to archiver '%s': %s",
+                                    channel.getName(), archiverAlias, e.getMessage()));
                       }
                     });
           } else if (autoPauseOptions.contains(archivePropertyName)) {
@@ -160,7 +169,12 @@ public class AAChannelProcessor implements ChannelProcessor {
     for (Map.Entry<String, List<ArchivePVOptions>> e : pvsByArchiver.entrySet()) {
       ArchiverInfo archiverInfo = archiversInfo.get(e.getKey());
       if (archiverInfo == null) {
-        logger.log(Level.WARNING, String.format("Failed to process %s", e.getKey()));
+        logger.log(
+            Level.WARNING,
+            () ->
+                String.format(
+                    "Archiver alias '%s' present in PV map but missing from archiver info; skipping.",
+                    e.getKey()));
         continue;
       }
       Map<String, ArchivePVOptions> pvMap =
@@ -228,7 +242,12 @@ public class AAChannelProcessor implements ChannelProcessor {
       return Map.of();
     }
 
-    logger.log(Level.INFO, () -> String.format("Get archiver status in archiver %s", archiverInfo));
+    logger.log(
+        Level.FINE,
+        () ->
+            String.format(
+                "Querying status of %d PVs from archiver '%s'.",
+                archivePVS.size(), archiverInfo.alias()));
 
     Map<ArchiveAction, List<ArchivePVOptions>> result = new EnumMap<>(ArchiveAction.class);
     Arrays.stream(ArchiveAction.values())
@@ -239,7 +258,11 @@ public class AAChannelProcessor implements ChannelProcessor {
     }
     List<Map<String, String>> statuses =
         archiverService.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
-    logger.log(Level.FINER, "Statuses {0}", statuses);
+    logger.log(
+        Level.FINER,
+        () ->
+            String.format(
+                "Status response from archiver '%s': %s", archiverInfo.alias(), statuses));
     statuses.forEach(
         archivePVStatusJsonMap -> {
           String archiveStatus = archivePVStatusJsonMap.get("status");
@@ -248,14 +271,21 @@ public class AAChannelProcessor implements ChannelProcessor {
           if (archiveStatus == null || pvName == null) {
             logger.log(
                 Level.WARNING,
-                "Missing status or pvName in archivePVStatusJsonMap: {0}",
-                archivePVStatusJsonMap);
+                () ->
+                    String.format(
+                        "Archiver '%s' returned entry with missing 'status' or 'pvName': %s",
+                        archiverInfo.alias(), archivePVStatusJsonMap));
             return;
           }
 
           ArchivePVOptions archivePVOptions = archivePVS.get(pvName);
           if (archivePVOptions == null) {
-            logger.log(Level.WARNING, "archivePVS does not contain pvName: {0}", pvName);
+            logger.log(
+                Level.WARNING,
+                () ->
+                    String.format(
+                        "Archiver '%s' returned status for unknown PV '%s'; ignoring.",
+                        archiverInfo.alias(), pvName));
             return;
           }
 
