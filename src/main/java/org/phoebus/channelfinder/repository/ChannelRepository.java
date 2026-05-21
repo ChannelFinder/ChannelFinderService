@@ -84,7 +84,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
 
   public ChannelRepository(
       ElasticConfig esService,
-      @Qualifier("indexClient") ElasticsearchClient client,
+      ElasticsearchClient client,
       LegacyApiProperties legacyApiProperties) {
     this.esService = esService;
     this.client = client;
