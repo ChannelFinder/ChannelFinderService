@@ -24,6 +24,7 @@ import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.phoebus.channelfinder.repository.PropertyRepository;
 import org.phoebus.channelfinder.web.v0.api.IProperty;
 import org.phoebus.channelfinder.web.v0.controller.PropertyController;
+import org.phoebus.channelfinder.web.v0.mapper.PropertyMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -1419,7 +1420,7 @@ class PropertyControllerIT {
                     new Property(testProperty.getName(), testProperty.getOwner(), "value1")),
                 new ArrayList<Tag>())));
 
-    propertyManager.create(testProperty.getName(), testProperty);
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
 
     // Batch delete from both channels
     long deletedCount =
@@ -1456,7 +1457,7 @@ class PropertyControllerIT {
                     new Property(testProperty.getName(), testProperty.getOwner(), "value")),
                 new ArrayList<Tag>())));
 
-    propertyManager.create(testProperty.getName(), testProperty);
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
 
     // Batch delete from existing and non-existent channels
     long deletedCount =
@@ -1486,7 +1487,7 @@ class PropertyControllerIT {
                     new Property(testProperty.getName(), testProperty.getOwner(), "value")),
                 new ArrayList<Tag>())));
 
-    propertyManager.create(testProperty.getName(), testProperty);
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
 
     // Batch delete with duplicate channel names
     long deletedCount =
@@ -1509,7 +1510,7 @@ class PropertyControllerIT {
   @Test
   void deletePropertyFromEmptyChannelList() {
     Property testProperty = new Property("batchTestProperty4", "testOwner");
-    propertyManager.create(testProperty.getName(), testProperty);
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
 
     // Batch delete with empty channel list
     long deletedCount = propertyManager.removeBatch(testProperty.getName(), List.of());
