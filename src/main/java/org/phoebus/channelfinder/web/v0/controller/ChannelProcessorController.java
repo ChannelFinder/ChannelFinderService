@@ -1,10 +1,11 @@
 package org.phoebus.channelfinder.web.v0.controller;
 
 import java.util.List;
-import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.service.ChannelProcessorService;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.phoebus.channelfinder.web.v0.api.IChannelProcessor;
+import org.phoebus.channelfinder.web.v0.dto.ChannelDto;
+import org.phoebus.channelfinder.web.v0.mapper.ChannelMapper;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,8 +43,8 @@ public class ChannelProcessorController implements IChannelProcessor {
   }
 
   @Override
-  public void processChannels(List<Channel> channels) {
-    channelProcessorService.sendToProcessors(channels);
+  public void processChannels(List<ChannelDto> channels) {
+    channelProcessorService.sendToProcessors(ChannelMapper.toDomains(channels));
   }
 
   @Override

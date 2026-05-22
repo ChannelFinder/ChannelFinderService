@@ -159,7 +159,7 @@ public class PropertyService {
     propagateRenameToChannels(propertyName, updated, chans);
 
     if (!property.getChannels().isEmpty()) {
-      List<Channel> chanList = saveAndRetainProperty(property.getChannels(), propertyName);
+      List<Channel> chanList = saveAndRetainProperty(property.getChannels(), updated.getName());
       if (!chanList.isEmpty()) updated.setChannels(chanList);
     }
 

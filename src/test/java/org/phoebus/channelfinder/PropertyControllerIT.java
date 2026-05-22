@@ -41,6 +41,8 @@ class PropertyControllerIT {
 
   @Autowired IProperty propertyManager;
 
+  private PropertyControllerHelper helper;
+
   @Autowired PropertyRepository propertyRepository;
 
   @Autowired ChannelRepository channelRepository;
@@ -67,6 +69,7 @@ class PropertyControllerIT {
     testChannel1 = new Channel("testChannel1", "testOwner");
     testChannelX = new Channel("testChannelX", "testOwner");
     testChannels = Arrays.asList(testChannel0, testChannel1, testChannelX);
+    helper = new PropertyControllerHelper(propertyManager);
     channelRepository.indexAll(testChannels);
   }
 
@@ -102,8 +105,8 @@ class PropertyControllerIT {
                 new ArrayList<Tag>())));
     List<Property> testProperties = Arrays.asList(testProperty0, testProperty1);
 
-    Iterable<Property> createdProperties = propertyManager.create(testProperties);
-    Iterable<Property> propertyList = propertyManager.list();
+    Iterable<Property> createdProperties = helper.apiCreate(testProperties);
+    Iterable<Property> propertyList = helper.apiList();
     for (Property property : createdProperties) {
       property.setChannels(new ArrayList<Channel>());
     }
@@ -125,24 +128,24 @@ class PropertyControllerIT {
                     new Property(testProperty1.getName(), testProperty1.getOwner(), "value")),
                 new ArrayList<Tag>())));
 
-    Property createdProperty0 = propertyManager.create(testProperty0.getName(), testProperty0);
-    Property createdProperty1 = propertyManager.create(testProperty1.getName(), testProperty1);
+    Property createdProperty0 = helper.apiCreate(testProperty0.getName(), testProperty0);
+    Property createdProperty1 = helper.apiCreate(testProperty1.getName(), testProperty1);
 
     // verify the created properties are read as expected
     // retrieve the testProperty0 without channels
-    Property retrievedProperty = propertyManager.read(createdProperty0.getName(), false);
+    Property retrievedProperty = helper.apiRead(createdProperty0.getName(), false);
     Assertions.assertEquals(createdProperty0, retrievedProperty, "Failed to read the property");
     // retrieve the testProperty0 with channels
-    retrievedProperty = propertyManager.read(createdProperty0.getName(), true);
+    retrievedProperty = helper.apiRead(createdProperty0.getName(), true);
     Assertions.assertEquals(
         createdProperty0, retrievedProperty, "Failed to read the property w/ channels");
 
-    retrievedProperty = propertyManager.read(createdProperty1.getName(), false);
+    retrievedProperty = helper.apiRead(createdProperty1.getName(), false);
     // verify the property was read as expected
     testProperty1.setChannels(new ArrayList<Channel>());
     Assertions.assertEquals(testProperty1, retrievedProperty, "Failed to read the property");
 
-    retrievedProperty = propertyManager.read(createdProperty1.getName(), true);
+    retrievedProperty = helper.apiRead(createdProperty1.getName(), true);
     // verify the property was read as expected
     Assertions.assertEquals(
         createdProperty1, retrievedProperty, "Failed to read the property w/ channels");
@@ -170,7 +173,7 @@ class PropertyControllerIT {
     Property testProperty0 = new Property("testProperty0", "testOwner");
 
     // Create a simple property
-    Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
+    Property createdProperty = helper.apiCreate(testProperty0.getName(), testProperty0);
     Assertions.assertEquals(testProperty0, createdProperty, "Failed to create the property");
 
     //        Tag createdTag1 = tagManager.create("fakeTag", copy(testTag1));
@@ -179,7 +182,7 @@ class PropertyControllerIT {
 
     // Update the test property with a new owner
     Property updatedTestProperty0 = new Property("testProperty0", "updateTestOwner");
-    createdProperty = propertyManager.create(testProperty0.getName(), updatedTestProperty0);
+    createdProperty = helper.apiCreate(testProperty0.getName(), updatedTestProperty0);
     Assertions.assertEquals(updatedTestProperty0, createdProperty, "Failed to create the property");
   }
 
@@ -189,8 +192,8 @@ class PropertyControllerIT {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty1 = new Property("testProperty1", "testOwner");
 
-    Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
-    createdProperty = propertyManager.create(testProperty0.getName(), testProperty1);
+    Property createdProperty = helper.apiCreate(testProperty0.getName(), testProperty0);
+    createdProperty = helper.apiCreate(testProperty0.getName(), testProperty1);
     // verify that the old property "testProperty0" was replaced with the new "testProperty1"
     Assertions.assertEquals(testProperty1, createdProperty, "Failed to create the property");
     // verify that the old property is no longer present
@@ -216,7 +219,7 @@ class PropertyControllerIT {
                 new ArrayList<Tag>())));
 
     Property createdProperty =
-        propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     try {
       Property foundProperty =
           propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
@@ -239,8 +242,7 @@ class PropertyControllerIT {
     Property updatedTestProperty0WithChannels =
         new Property("testProperty0WithChannels", "updateTestOwner");
     createdProperty =
-        propertyManager.create(
-            testProperty0WithChannels.getName(), updatedTestProperty0WithChannels);
+        helper.apiCreate(testProperty0WithChannels.getName(), updatedTestProperty0WithChannels);
     try {
       Property foundProperty =
           propertyRepository.findById(testProperty0WithChannels.getName(), true).get();
@@ -286,10 +288,10 @@ class PropertyControllerIT {
 
     // Create the testProperty0WithChannels
     Property createdProperty =
-        propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     // update the testProperty0WithChannels with testProperty1WithChannels
     createdProperty =
-        propertyManager.create(testProperty0WithChannels.getName(), testProperty1WithChannels);
+        helper.apiCreate(testProperty0WithChannels.getName(), testProperty1WithChannels);
     try {
       Property foundProperty =
           propertyRepository.findById(testProperty1WithChannels.getName(), true).get();
@@ -356,7 +358,7 @@ class PropertyControllerIT {
             testProperty1WithChannels,
             testProperty2WithChannels);
 
-    Iterable<Property> createdProperties = propertyManager.create(testProperties);
+    helper.apiCreate(testProperties);
     List<Property> foundProperties = new ArrayList<Property>();
     testProperties.forEach(
         prop -> foundProperties.add(propertyRepository.findById(prop.getName(), true).get()));
@@ -406,7 +408,7 @@ class PropertyControllerIT {
     List<Property> testProperties = Arrays.asList(testProperty0, testProperty0WithChannels);
 
     // Create a set of original properties to be overriden
-    propertyManager.create(testProperties);
+    helper.apiCreate(testProperties);
     // Now update the test properties
     testProperty0.setOwner("testOwner-updated");
     testProperty0WithChannels.setOwner("testOwner-updated");
@@ -423,11 +425,12 @@ class PropertyControllerIT {
                 new ArrayList<Tag>())));
 
     List<Property> updatedTestProperties = Arrays.asList(testProperty0, testProperty0WithChannels);
-    propertyManager.create(updatedTestProperties);
+    helper.apiCreate(updatedTestProperties);
 
-    // set owner back to original since it shouldn't change
+    // set owner back to original since it shouldn't change; also normalize channel property owners
     testProperty0.setOwner("testOwner");
     testProperty0WithChannels.setOwner("testOwner");
+    testProperty0WithChannels.getChannels().get(0).getProperties().get(0).setOwner("testOwner");
 
     List<Property> foundProperties = new ArrayList<Property>();
     testProperties.forEach(
@@ -459,7 +462,7 @@ class PropertyControllerIT {
     propertyRepository.index(testProperty0);
     testProperty0.setValue("value");
 
-    propertyManager.addSingle(testProperty0.getName(), "testChannel0", testProperty0);
+    helper.apiAddSingle(testProperty0.getName(), "testChannel0", testProperty0);
     Assertions.assertTrue(
         channelRepository.findById("testChannel0").get().getProperties().stream()
             .anyMatch(
@@ -492,7 +495,7 @@ class PropertyControllerIT {
 
     // Update on a non-existing property should result in the creation of that property
     // 1. Test a simple property
-    Property returnedProperty = propertyManager.update(testProperty0.getName(), testProperty0);
+    Property returnedProperty = helper.apiUpdate(testProperty0.getName(), testProperty0);
     Assertions.assertEquals(
         testProperty0, returnedProperty, "Failed to update property " + testProperty0);
     Assertions.assertEquals(
@@ -501,7 +504,7 @@ class PropertyControllerIT {
         "Failed to update property " + testProperty0);
     // 2. Test a property with channels
     returnedProperty =
-        propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiUpdate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     Assertions.assertEquals(
         testProperty0WithChannels,
         returnedProperty,
@@ -513,7 +516,7 @@ class PropertyControllerIT {
 
     // Update the property owner
     testProperty0.setOwner("newTestOwner");
-    returnedProperty = propertyManager.update(testProperty0.getName(), testProperty0);
+    returnedProperty = helper.apiUpdate(testProperty0.getName(), testProperty0);
     Assertions.assertEquals(
         testProperty0, returnedProperty, "Failed to update property " + testProperty0);
     Assertions.assertEquals(
@@ -533,7 +536,7 @@ class PropertyControllerIT {
                         "value")),
                 new ArrayList<Tag>())));
     returnedProperty =
-        propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiUpdate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     Assertions.assertEquals(
         testProperty0WithChannels,
         returnedProperty,
@@ -597,9 +600,9 @@ class PropertyControllerIT {
                         "newValueX")),
                 EMPTY_LIST)));
 
-    propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     // change name and owner on existing channel, add to new channel
-    propertyManager.update(testProperty0WithChannels.getName(), testProperty1WithChannels);
+    helper.apiUpdate(testProperty0WithChannels.getName(), testProperty1WithChannels);
 
     Property expectedProperty = new Property("testProperty1WithChannels", "updateTestOwner");
     expectedProperty.setChannels(
@@ -716,13 +719,11 @@ class PropertyControllerIT {
                 new ArrayList<Tag>())));
 
     // Create the original properties
-    Property createdProperty = propertyManager.create(testProperty0.getName(), testProperty0);
-    Property createdPropertyWithChannels =
-        propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+    helper.apiCreate(testProperty0.getName(), testProperty0);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     // update the properties with new names, 0 -> 1
-    Property updatedProperty = propertyManager.create(testProperty0.getName(), testProperty1);
-    Property updatedPropertyWithChannels =
-        propertyManager.create(testProperty0WithChannels.getName(), testProperty1WithChannels);
+    helper.apiCreate(testProperty0.getName(), testProperty1);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty1WithChannels);
 
     // verify that the old property "testProperty0" was replaced with the new "testProperty1"
     try {
@@ -761,7 +762,7 @@ class PropertyControllerIT {
   void updatePropertyTest1() {
     // A test property with only name and owner
     Property testProperty0 = new Property("testProperty0", "testOwner");
-    propertyManager.create(testProperty0.getName(), testProperty0);
+    helper.apiCreate(testProperty0.getName(), testProperty0);
     // Updating a property with no channels, the new channels should be added to the property
     // Add testChannel0 to testProperty0 which has no channels
     testProperty0.setChannels(
@@ -772,7 +773,7 @@ class PropertyControllerIT {
                 Arrays.asList(
                     new Property(testProperty0.getName(), testProperty0.getOwner(), "value")),
                 new ArrayList<Tag>())));
-    Property returnedTag = propertyManager.update(testProperty0.getName(), testProperty0);
+    Property returnedTag = helper.apiUpdate(testProperty0.getName(), testProperty0);
     Assertions.assertEquals(
         testProperty0, returnedTag, "Failed to update property " + testProperty0);
     Assertions.assertEquals(
@@ -800,7 +801,7 @@ class PropertyControllerIT {
                         testProperty0WithChannels.getOwner(),
                         "value")),
                 new ArrayList<Tag>())));
-    propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     // Updating a property with existing channels, the new channels should be added without
     // affecting existing channels
     // testProperty0WithChannels already has testChannel0, the update operation should append the
@@ -817,7 +818,7 @@ class PropertyControllerIT {
                         "value")),
                 new ArrayList<Tag>())));
     Property returnedTag =
-        propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiUpdate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     Assertions.assertEquals(
         testProperty0WithChannels,
         returnedTag,
@@ -868,7 +869,7 @@ class PropertyControllerIT {
                         testProperty0WithChannels.getOwner(),
                         "value")),
                 new ArrayList<Tag>())));
-    propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     // testProperty0WithChannels already has testChannel0, the update request (which repeats the
     // testChannel0)
     // should append the testChannel1 while leaving the existing channel unaffected.
@@ -893,7 +894,7 @@ class PropertyControllerIT {
                         "value")),
                 new ArrayList<Tag>())));
     Property returnedTag =
-        propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiUpdate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     Assertions.assertEquals(
         testProperty0WithChannels,
         returnedTag,
@@ -933,13 +934,13 @@ class PropertyControllerIT {
                         testProperty0WithChannels.getOwner(),
                         "value")),
                 new ArrayList<Tag>())));
-    propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     // Updating a property with existing channels, the new channels should be added without
     // affecting existing channels
     // testProperty0WithChannels already has testChannel0 & testChannel1, the update request should
     // be a NOP.
     Property returnedTag =
-        propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiUpdate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     Assertions.assertEquals(
         testProperty0WithChannels,
         returnedTag,
@@ -979,7 +980,7 @@ class PropertyControllerIT {
                         testProperty0WithChannels.getOwner(),
                         "value")),
                 new ArrayList<Tag>())));
-    propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     // Updating a property with existing channels, the new channels should be added without
     // affecting existing channels
     // testProperty0WithChannels already has testChannel0 & testChannel1, the update request should
@@ -996,7 +997,7 @@ class PropertyControllerIT {
                         "value")),
                 new ArrayList<Tag>())));
     Property returnedTag =
-        propertyManager.update(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiUpdate(testProperty0WithChannels.getName(), testProperty0WithChannels);
     Assertions.assertEquals(
         testProperty0WithChannels,
         returnedTag,
@@ -1075,8 +1076,8 @@ class PropertyControllerIT {
                         "property1channel1")),
                 new ArrayList<Tag>())));
 
-    propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
-    propertyManager.create(testProperty1WithChannels.getName(), testProperty1WithChannels);
+    helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
+    helper.apiCreate(testProperty1WithChannels.getName(), testProperty1WithChannels);
 
     Property newValueProperty =
         new Property(
@@ -1094,7 +1095,7 @@ class PropertyControllerIT {
                         newValueProperty.getOwner(),
                         "newValueProperty")),
                 new ArrayList<Tag>())));
-    propertyManager.update(newValueProperty.getName(), newValueProperty);
+    helper.apiUpdate(newValueProperty.getName(), newValueProperty);
 
     List<Property> expected0Properties =
         List.of(
@@ -1153,7 +1154,7 @@ class PropertyControllerIT {
                         "value")),
                 new ArrayList<Tag>())));
 
-    propertyManager.update(Arrays.asList(testProperty0, testProperty0WithChannels));
+    helper.apiUpdate(Arrays.asList(testProperty0, testProperty0WithChannels));
     // Query ChannelFinder and verify updated channels and properties
     Property foundProperty = propertyRepository.findById(testProperty0.getName(), true).get();
     Assertions.assertEquals(
@@ -1215,7 +1216,7 @@ class PropertyControllerIT {
                         "valueX")),
                 new ArrayList<Tag>())));
 
-    propertyManager.create(Arrays.asList(testProperty0WithChannels, testProperty1WithChannels));
+    helper.apiCreate(Arrays.asList(testProperty0WithChannels, testProperty1WithChannels));
     // change owners and add channels and change values
     testProperty0WithChannels.setOwner("updateTestOwner");
     testProperty0WithChannels.setChannels(
@@ -1261,7 +1262,7 @@ class PropertyControllerIT {
                 EMPTY_LIST)));
 
     // update both properties
-    propertyManager.update(Arrays.asList(testProperty0WithChannels, testProperty1WithChannels));
+    helper.apiUpdate(Arrays.asList(testProperty0WithChannels, testProperty1WithChannels));
     // create expected properties
 
     // verify that the properties were updated
@@ -1342,7 +1343,7 @@ class PropertyControllerIT {
                 EMPTY_LIST)));
     List<Property> testProperties = Arrays.asList(testProperty0, testProperty0WithChannels);
 
-    Iterable<Property> createdProperties = propertyManager.create(testProperties);
+    helper.apiCreate(testProperties);
 
     propertyManager.removeBatch(testProperty0.getName());
     // verify the property was deleted as expected
@@ -1379,7 +1380,7 @@ class PropertyControllerIT {
                 new ArrayList<Tag>())));
 
     Property createdProperty =
-        propertyManager.create(testProperty0WithChannels.getName(), testProperty0WithChannels);
+        helper.apiCreate(testProperty0WithChannels.getName(), testProperty0WithChannels);
 
     propertyManager.removeSingle(testProperty0WithChannels.getName(), testChannel0.getName());
     // verify the property was only removed from the single test channel

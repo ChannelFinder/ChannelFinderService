@@ -41,10 +41,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -57,20 +59,18 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.exceptions.ChannelValidationException;
+import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.server.ResponseStatusException;
 
 // Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
 
 @Repository
-@Configuration
 public class ChannelRepository implements CrudRepository<Channel, String> {
 
   private static final Logger logger = Logger.getLogger(ChannelRepository.class.getName());
@@ -123,10 +123,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
         return findById(channel.getName()).get();
       }
-    } catch (Exception e) {
+    } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNEL, channel.toLog());
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message, e);
     }
     return null;
   }
@@ -176,8 +176,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 } catch (IOException e) {
                   String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, chunk);
                   logger.log(Level.SEVERE, message, e);
-                  throw new ResponseStatusException(
-                      HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+                  throw new RepositoryException(message, e);
                 }
                 return Collections.emptyList();
               }));
@@ -186,7 +185,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     for (Future<List<Channel>> future : futures) {
       try {
         allIndexed.addAll(future.get(10, TimeUnit.MINUTES));
-      } catch (Exception e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        logger.log(Level.SEVERE, "Bulk indexing failed", e);
+      } catch (ExecutionException | TimeoutException e) {
         logger.log(Level.SEVERE, "Bulk indexing failed", e);
       }
     }
@@ -215,10 +217,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
             Level.CONFIG, () -> MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
         return findById(channel.getName()).get();
       }
-    } catch (Exception e) {
+    } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNEL, channel.toLog());
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message, e);
     }
     return null;
   }
@@ -310,8 +312,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                   String message =
                       MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, channels);
                   logger.log(Level.SEVERE, message, e);
-                  throw new ResponseStatusException(
-                      HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+                  throw new RepositoryException(message, e);
                 }
                 return Collections.emptyList();
               }));
@@ -321,7 +322,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     for (Future<List<Channel>> future : futures) {
       try {
         allSaved.addAll(future.get());
-      } catch (Exception e) {
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        logger.log(Level.SEVERE, "Bulk saving failed", e);
+      } catch (ExecutionException e) {
         logger.log(Level.SEVERE, "Bulk saving failed", e);
       }
     }
@@ -354,7 +358,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_FIND_CHANNEL, channelName);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, message, null);
+      throw new RepositoryException(message, e);
     }
   }
 
@@ -383,8 +387,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
           .containsAll(channelIds);
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
-      throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, null);
+      throw new RepositoryException(TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
     }
   }
 
@@ -404,7 +407,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
       String message =
           MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_CHANNEL_EXISTS, channelName);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message, e);
     }
   }
 
@@ -445,15 +448,13 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 .size(chunk.size())
                 .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
         SearchResponse<Channel> response = client.search(searchBuilder.build(), Channel.class);
-        result.addAll(
-            response.hits().hits().stream().map(Hit::source).collect(Collectors.toList()));
+        result.addAll(response.hits().hits().stream().map(Hit::source).toList());
       }
 
       return result;
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
-      throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_CHANNELS, null);
+      throw new RepositoryException(TextUtil.FAILED_TO_FIND_ALL_CHANNELS, e);
     }
   }
 
@@ -480,7 +481,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_CHANNEL, channelName);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message, e);
     }
   }
 
@@ -539,7 +540,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
               TextUtil.SEARCH_FAILED_CAUSE,
               searchParameters,
               "Max search window exceeded, use the " + scrollResourceUri + " api.");
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+      throw new ChannelValidationException(message);
     }
 
     try {
@@ -562,11 +563,11 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         count = response.hits().total().value();
       }
       return new SearchResult(hits.stream().map(Hit::source).collect(Collectors.toList()), count);
-    } catch (Exception e) {
+    } catch (ElasticsearchException | IOException e) {
       String message =
           MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+      throw new RepositoryException(message, e);
     }
   }
 
@@ -750,11 +751,11 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
       CountResponse response = client.count(countBuilder.build());
 
       return response.count();
-    } catch (Exception e) {
+    } catch (ElasticsearchException | IOException e) {
       String message =
           MessageFormat.format(TextUtil.COUNT_FAILED_CAUSE, searchParameters, e.getMessage());
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+      throw new RepositoryException(message, e);
     }
   }
 
@@ -812,7 +813,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     } catch (IOException | ElasticsearchException e) {
       String message =
           MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+      throw new RepositoryException(message, e);
     }
   }
 

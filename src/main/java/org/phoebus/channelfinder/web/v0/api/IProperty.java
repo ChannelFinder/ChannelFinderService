@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
-import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.web.v0.dto.PropertyDto;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,14 +30,15 @@ public interface IProperty {
             responseCode = "200",
             description = "List of properties",
             content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Property.class)))),
+                @Content(
+                    array = @ArraySchema(schema = @Schema(implementation = PropertyDto.class)))),
         @ApiResponse(
             responseCode = "500",
             description = "Error while listing properties",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping
-  Iterable<Property> list();
+  Iterable<PropertyDto> list();
 
   @Operation(
       summary = "Get property by name",
@@ -49,14 +50,14 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "200",
             description = "Fetch property by propertyName",
-            content = @Content(schema = @Schema(implementation = Property.class))),
+            content = @Content(schema = @Schema(implementation = PropertyDto.class))),
         @ApiResponse(
             responseCode = "404",
             description = "Property not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping("/{propertyName}")
-  Property read(
+  PropertyDto read(
       @PathVariable("propertyName") String propertyName,
       @RequestParam(value = "withChannels", defaultValue = "true") boolean withChannels);
 
@@ -70,7 +71,7 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "200",
             description = "Property created",
-            content = @Content(schema = @Schema(implementation = Property.class))),
+            content = @Content(schema = @Schema(implementation = PropertyDto.class))),
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
@@ -85,8 +86,8 @@ public interface IProperty {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping("/{propertyName}")
-  Property create(
-      @PathVariable("propertyName") String propertyName, @RequestBody Property property);
+  PropertyDto create(
+      @PathVariable("propertyName") String propertyName, @RequestBody PropertyDto property);
 
   @Operation(
       summary = "Create multiple properties",
@@ -98,7 +99,7 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "200",
             description = "Properties created",
-            content = @Content(schema = @Schema(implementation = Property.class))),
+            content = @Content(schema = @Schema(implementation = PropertyDto.class))),
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
@@ -109,7 +110,7 @@ public interface IProperty {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping()
-  Iterable<Property> create(@RequestBody Iterable<Property> properties);
+  Iterable<PropertyDto> create(@RequestBody Iterable<PropertyDto> properties);
 
   @Operation(
       summary = "Add property to a single channel",
@@ -122,7 +123,7 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "200",
             description = "Property added to the channel",
-            content = @Content(schema = @Schema(implementation = Property.class))),
+            content = @Content(schema = @Schema(implementation = PropertyDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -141,10 +142,10 @@ public interface IProperty {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping("/{propertyName}/{channelName}")
-  Property addSingle(
+  PropertyDto addSingle(
       @PathVariable("propertyName") String propertyName,
       @PathVariable("channelName") String channelName,
-      @RequestBody Property property);
+      @RequestBody PropertyDto property);
 
   @Operation(
       summary = "Update a property",
@@ -157,7 +158,7 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "200",
             description = "Property updated",
-            content = @Content(schema = @Schema(implementation = Property.class))),
+            content = @Content(schema = @Schema(implementation = PropertyDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -176,8 +177,8 @@ public interface IProperty {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PostMapping("/{propertyName}")
-  Property update(
-      @PathVariable("propertyName") String propertyName, @RequestBody Property property);
+  PropertyDto update(
+      @PathVariable("propertyName") String propertyName, @RequestBody PropertyDto property);
 
   @Operation(
       summary = "Update multiple properties",
@@ -190,7 +191,8 @@ public interface IProperty {
             responseCode = "200",
             description = "Properties updated",
             content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Property.class)))),
+                @Content(
+                    array = @ArraySchema(schema = @Schema(implementation = PropertyDto.class)))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -209,7 +211,7 @@ public interface IProperty {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PostMapping()
-  Iterable<Property> update(@RequestBody Iterable<Property> properties);
+  Iterable<PropertyDto> update(@RequestBody Iterable<PropertyDto> properties);
 
   @Operation(
       summary = "Delete a property",

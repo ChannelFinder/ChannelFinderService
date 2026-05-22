@@ -37,20 +37,17 @@ import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.entity.Tag.OnlyTag;
+import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.server.ResponseStatusException;
 
 // Jackson 2 required by elasticsearch-java 8.x JacksonJsonpMapper — migrate with ES 9
 
 @Repository
-@Configuration
 public class TagRepository implements CrudRepository<Tag, String> {
 
   private static final Logger logger = Logger.getLogger(TagRepository.class.getName());
@@ -110,7 +107,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     } catch (IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message);
     }
     return Collections.emptyList();
   }
@@ -141,7 +138,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_UPDATE_SAVE_TAG, tag.toLog());
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message);
     }
     return null;
   }
@@ -192,7 +189,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     } catch (IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message);
     }
     return null;
   }
@@ -236,7 +233,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_FIND_TAG, tagId);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.NOT_FOUND, message, null);
+      throw new RepositoryException(message);
     }
   }
 
@@ -249,7 +246,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_CHECK_IF_TAG_EXISTS, id);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message);
     }
   }
 
@@ -271,8 +268,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
       return response.hits().hits().stream().map(Hit::source).toList();
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
-      throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
+      throw new RepositoryException(TextUtil.FAILED_TO_FIND_ALL_TAGS);
     }
   }
 
@@ -296,8 +292,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
       return response.hits().hits().stream().map(Hit::source).toList();
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
-      throw new ResponseStatusException(
-          HttpStatus.INTERNAL_SERVER_ERROR, TextUtil.FAILED_TO_FIND_ALL_TAGS, null);
+      throw new RepositoryException(TextUtil.FAILED_TO_FIND_ALL_TAGS);
     }
   }
 
@@ -312,7 +307,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
 
       String message = MessageFormat.format(TextUtil.COUNT_FAILED_CAUSE, "", e.getMessage());
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, e);
+      throw new RepositoryException(message, e);
     }
   }
 
@@ -367,7 +362,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
         } catch (IOException e) {
           String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_TAG, tagName);
           logger.log(Level.SEVERE, message, e);
-          throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+          throw new RepositoryException(message);
         }
         params.set("~search_after", channels.get(channels.size() - 1).getName());
         channels = channelRepository.search(params).channels();
@@ -376,7 +371,7 @@ public class TagRepository implements CrudRepository<Tag, String> {
     } catch (ElasticsearchException | IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_DELETE_TAG, tagName);
       logger.log(Level.SEVERE, message, e);
-      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, message, null);
+      throw new RepositoryException(message);
     }
   }
 
