@@ -23,6 +23,9 @@ import org.phoebus.channelfinder.service.ChannelFinderEpicsService;
 import org.phoebus.channelfinder.web.v0.api.IChannel;
 import org.phoebus.channelfinder.web.v0.api.IProperty;
 import org.phoebus.channelfinder.web.v0.api.ITag;
+import org.phoebus.channelfinder.web.v0.mapper.ChannelMapper;
+import org.phoebus.channelfinder.web.v0.mapper.PropertyMapper;
+import org.phoebus.channelfinder.web.v0.mapper.TagMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -77,16 +80,17 @@ class EpicsRPCRequestIT {
     Property testProperty0 = new Property("testProperty0", "testOwner", "testPropertyValue0");
     Property testProperty1 = new Property("testProperty1", "testOwner", "testPropertyValue1");
     List<Property> properties = List.of(testProperty0, testProperty1);
-    propertyManager.create(properties);
+    propertyManager.create(PropertyMapper.toDtos(properties));
     testChannel0.setProperties(properties);
 
     // Create tag
     Tag tag = new Tag("testTag", "testOwner");
-    tagManager.create(List.of(tag));
+    tagManager.create(TagMapper.toDtos(List.of(tag)));
     testChannel0.setTags(List.of(tag));
 
     // Create a simple channel
-    Channel createdChannel0 = channelManager.create(testChannel0.getName(), testChannel0);
+    ChannelMapper.toDomain(
+        channelManager.create(testChannel0.getName(), ChannelMapper.toDto(testChannel0)));
 
     Channel expectedChannel = new Channel("testChannel0", "testOwner");
 

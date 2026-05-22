@@ -287,8 +287,7 @@ public class ChannelService {
             .map(Property::getName)
             .collect(Collectors.toCollection(HashSet::new));
 
-    List<String> propNames =
-        channel.getProperties().stream().map(Property::getName).toList();
+    List<String> propNames = channel.getProperties().stream().map(Property::getName).toList();
     for (String propName : propNames) {
       if (!existingPropertyNames.contains(propName)) {
         throw new PropertyNotFoundException(propName);
@@ -303,10 +302,8 @@ public class ChannelService {
    * @throws ChannelValidationException if any property value is null or empty
    */
   private void validatePropertyValues(Channel channel) {
-    List<String> propNames =
-        channel.getProperties().stream().map(Property::getName).toList();
-    List<String> propValues =
-        channel.getProperties().stream().map(Property::getValue).toList();
+    List<String> propNames = channel.getProperties().stream().map(Property::getName).toList();
+    List<String> propValues = channel.getProperties().stream().map(Property::getValue).toList();
 
     for (int i = 0; i < propValues.size(); i++) {
       String value = propValues.get(i);

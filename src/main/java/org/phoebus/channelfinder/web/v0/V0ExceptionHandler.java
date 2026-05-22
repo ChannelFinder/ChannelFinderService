@@ -6,6 +6,7 @@ import org.phoebus.channelfinder.exceptions.ChannelNotFoundException;
 import org.phoebus.channelfinder.exceptions.ChannelValidationException;
 import org.phoebus.channelfinder.exceptions.PropertyNotFoundException;
 import org.phoebus.channelfinder.exceptions.PropertyValidationException;
+import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.phoebus.channelfinder.exceptions.TagNotFoundException;
 import org.phoebus.channelfinder.exceptions.TagValidationException;
 import org.phoebus.channelfinder.exceptions.UnauthorizedException;
@@ -84,6 +85,13 @@ public class V0ExceptionHandler {
   public ResponseStatusException handleMessageNotReadable(HttpMessageNotReadableException ex) {
     logger.log(Level.WARNING, ex.getMessage(), ex);
     return new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed request body");
+  }
+
+  @ExceptionHandler(RepositoryException.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public ResponseStatusException handleStorage(RepositoryException ex) {
+    logger.log(Level.SEVERE, ex.getMessage(), ex);
+    return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
   }
 
   @ExceptionHandler(Exception.class)

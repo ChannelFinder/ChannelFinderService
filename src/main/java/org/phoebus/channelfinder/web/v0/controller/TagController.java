@@ -1,8 +1,9 @@
 package org.phoebus.channelfinder.web.v0.controller;
 
-import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.service.TagService;
 import org.phoebus.channelfinder.web.v0.api.ITag;
+import org.phoebus.channelfinder.web.v0.dto.TagDto;
+import org.phoebus.channelfinder.web.v0.mapper.TagMapper;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,38 +20,38 @@ public class TagController implements ITag {
   }
 
   @Override
-  public Iterable<Tag> list() {
-    return tagService.list();
+  public Iterable<TagDto> list() {
+    return TagMapper.toDtos(tagService.list());
   }
 
   @Override
-  public Tag read(String tagName, boolean withChannels) {
-    return tagService.read(tagName, withChannels);
+  public TagDto read(String tagName, boolean withChannels) {
+    return TagMapper.toDto(tagService.read(tagName, withChannels));
   }
 
   @Override
-  public Tag create(String tagName, Tag tag) {
-    return tagService.create(tagName, tag);
+  public TagDto create(String tagName, TagDto tag) {
+    return TagMapper.toDto(tagService.create(tagName, TagMapper.toDomain(tag)));
   }
 
   @Override
-  public Iterable<Tag> create(Iterable<Tag> tags) {
-    return tagService.create(tags);
+  public Iterable<TagDto> create(Iterable<TagDto> tags) {
+    return TagMapper.toDtos(tagService.create(TagMapper.toDomains(tags)));
   }
 
   @Override
-  public Tag addSingle(String tagName, String channelName) {
-    return tagService.addSingle(tagName, channelName);
+  public TagDto addSingle(String tagName, String channelName) {
+    return TagMapper.toDto(tagService.addSingle(tagName, channelName));
   }
 
   @Override
-  public Tag update(String tagName, Tag tag) {
-    return tagService.update(tagName, tag);
+  public TagDto update(String tagName, TagDto tag) {
+    return TagMapper.toDto(tagService.update(tagName, TagMapper.toDomain(tag)));
   }
 
   @Override
-  public Iterable<Tag> update(Iterable<Tag> tags) {
-    return tagService.update(tags);
+  public Iterable<TagDto> update(Iterable<TagDto> tags) {
+    return TagMapper.toDtos(tagService.update(TagMapper.toDomains(tags)));
   }
 
   @Override

@@ -10,8 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
-import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.entity.SearchResult;
+import org.phoebus.channelfinder.web.v0.dto.ChannelDto;
+import org.phoebus.channelfinder.web.v0.dto.SearchResultDto;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +36,8 @@ public interface IChannel {
             responseCode = "200",
             description = "List of channels",
             content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Channel.class)))),
+                @Content(
+                    array = @ArraySchema(schema = @Schema(implementation = ChannelDto.class)))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -47,7 +48,7 @@ public interface IChannel {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping
-  List<Channel> query(
+  List<ChannelDto> query(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
           MultiValueMap<String, String> allRequestParams);
 
@@ -64,7 +65,8 @@ public interface IChannel {
             description = "The number of matches for the query, and the first 10k channels",
             content =
                 @Content(
-                    array = @ArraySchema(schema = @Schema(implementation = SearchResult.class)))),
+                    array =
+                        @ArraySchema(schema = @Schema(implementation = SearchResultDto.class)))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request - response size exceeded",
@@ -75,7 +77,7 @@ public interface IChannel {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping("/combined")
-  SearchResult combinedQuery(
+  SearchResultDto combinedQuery(
       @Parameter(description = SEARCH_PARAM_DESCRIPTION) @RequestParam
           MultiValueMap<String, String> allRequestParams);
 
@@ -110,14 +112,14 @@ public interface IChannel {
         @ApiResponse(
             responseCode = "200",
             description = "Channel with the specified name",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
+            content = @Content(schema = @Schema(implementation = ChannelDto.class))),
         @ApiResponse(
             responseCode = "404",
             description = "Channel not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @GetMapping("/{channelName}")
-  Channel read(@PathVariable("channelName") String channelName);
+  ChannelDto read(@PathVariable("channelName") String channelName);
 
   @Operation(
       summary = "Create or replace a channel",
@@ -129,7 +131,7 @@ public interface IChannel {
         @ApiResponse(
             responseCode = "200",
             description = "The created/replaced channel",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
+            content = @Content(schema = @Schema(implementation = ChannelDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -148,7 +150,8 @@ public interface IChannel {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping("/{channelName}")
-  Channel create(@PathVariable("channelName") String channelName, @RequestBody Channel channel);
+  ChannelDto create(
+      @PathVariable("channelName") String channelName, @RequestBody ChannelDto channel);
 
   @Operation(
       summary = "Create or replace multiple channels",
@@ -161,7 +164,8 @@ public interface IChannel {
             responseCode = "200",
             description = "The created/replaced channels",
             content =
-                @Content(array = @ArraySchema(schema = @Schema(implementation = Channel.class)))),
+                @Content(
+                    array = @ArraySchema(schema = @Schema(implementation = ChannelDto.class)))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -180,7 +184,7 @@ public interface IChannel {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping
-  Iterable<Channel> create(@RequestBody Iterable<Channel> channels);
+  Iterable<ChannelDto> create(@RequestBody Iterable<ChannelDto> channels);
 
   @Operation(
       summary = "Update a channel",
@@ -193,7 +197,7 @@ public interface IChannel {
         @ApiResponse(
             responseCode = "200",
             description = "The updated channel",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
+            content = @Content(schema = @Schema(implementation = ChannelDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -212,7 +216,8 @@ public interface IChannel {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PostMapping("/{channelName}")
-  Channel update(@PathVariable("channelName") String channelName, @RequestBody Channel channel);
+  ChannelDto update(
+      @PathVariable("channelName") String channelName, @RequestBody ChannelDto channel);
 
   @Operation(
       summary = "Update multiple channels",
@@ -225,7 +230,7 @@ public interface IChannel {
         @ApiResponse(
             responseCode = "200",
             description = "The updated channels",
-            content = @Content(schema = @Schema(implementation = Channel.class))),
+            content = @Content(schema = @Schema(implementation = ChannelDto.class))),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid request",
@@ -244,7 +249,7 @@ public interface IChannel {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PostMapping()
-  Iterable<Channel> update(@RequestBody Iterable<Channel> channels);
+  Iterable<ChannelDto> update(@RequestBody Iterable<ChannelDto> channels);
 
   @Operation(
       summary = "Delete a channel",
