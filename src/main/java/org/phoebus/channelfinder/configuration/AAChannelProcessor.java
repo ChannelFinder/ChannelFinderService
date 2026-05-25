@@ -42,6 +42,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   private static final String PV_STATUS_PROPERTY_NAME = "pvStatus"; // Matches in recsync
   private static final String PV_STATUS_INACTIVE = "Inactive";
   public static final String PV_STATUS_ACTIVE = "Active";
+  private static final int SKIPPED_PV_LOG_LIMIT = 10;
 
   @Value("${aa.enabled:true}")
   private boolean aaEnabled;
@@ -185,10 +186,36 @@ public class AAChannelProcessor implements ChannelProcessor {
           e.getValue().stream().collect(Collectors.toMap(ArchivePVOptions::getPv, pv -> pv));
       Optional<Map<ArchiveAction, List<ArchivePVOptions>>> actions =
           getArchiveActions(pvMap, archiverInfo);
-      if (actions.isEmpty()) continue;
-      count += archiverService.configureAA(actions.get(), archiverInfo.url());
+      if (actions.isEmpty()) {
+        warnSkippedActivePvs(e.getKey(), e.getValue());
+      } else {
+        count += archiverService.configureAA(actions.get(), archiverInfo.url());
+      }
     }
     return count;
+  }
+
+  private void warnSkippedActivePvs(String archiverAlias, List<ArchivePVOptions> pvs) {
+    List<String> activePvNames =
+        pvs.stream()
+            .filter(pv -> PV_STATUS_ACTIVE.equals(pv.getPvStatus()))
+            .map(ArchivePVOptions::getPv)
+            .toList();
+    if (activePvNames.isEmpty()) {
+      return;
+    }
+    int total = activePvNames.size();
+    String sample =
+        String.join(", ", activePvNames.subList(0, Math.min(SKIPPED_PV_LOG_LIMIT, total)));
+    String suffix =
+        total > SKIPPED_PV_LOG_LIMIT ? " ... (" + (total - SKIPPED_PV_LOG_LIMIT) + " more)" : "";
+    logger.log(
+        Level.WARNING,
+        () ->
+            String.format(
+                "Archiver '%s' unreachable: %d Active PV(s) may remain paused until the archiver recovers"
+                    + " and another channel update arrives — RESUME was not sent: %s%s",
+                archiverAlias, total, sample, suffix));
   }
 
   private Stream<String> resolveArchiverAliases(Channel channel) {

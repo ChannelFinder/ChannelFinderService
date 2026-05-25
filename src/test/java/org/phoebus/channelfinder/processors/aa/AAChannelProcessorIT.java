@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -24,6 +25,7 @@ import org.phoebus.channelfinder.configuration.AAChannelProcessor;
 import org.phoebus.channelfinder.configuration.ChannelProcessor;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
 import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
@@ -161,6 +163,19 @@ class AAChannelProcessorIT {
 
     // verify interactions are minimal or none if empty
     // But since list is empty, process returns 0 early
+  }
+
+  @Test
+  void testStatusFetchFailureSkipsConfigureAndReturnsZero() throws JacksonException {
+    Channel channel =
+        new Channel("PVPausedActive", "owner", List.of(archiveProperty, activeProperty), List.of());
+    when(archiverService.getStatusesViaGet(anyString(), anyList()))
+        .thenThrow(new ArchiverServiceException("Connection refused"));
+
+    long count = aaChannelProcessor.process(List.of(channel));
+
+    assertEquals(0L, count);
+    verify(archiverService, never()).configureAA(anyMap(), anyString());
   }
 
   @ParameterizedTest
