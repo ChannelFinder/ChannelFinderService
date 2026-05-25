@@ -8,6 +8,8 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -366,5 +368,39 @@ class ArchiverServiceTest {
     List<String> successfulPvs = archiverService.submitArchiveAction(pvs, payload, ARCHIVER_URL);
     assertEquals(1, successfulPvs.size());
     assertTrue(successfulPvs.contains("PV1"));
+  }
+
+  @Test
+  void testRequestTimesOutAtConfiguredTimeout() throws IOException {
+    int timeoutSeconds = 1;
+
+    // Accept the TCP connection but never send a response, simulating a hung archiver host.
+    try (ServerSocket serverSocket = new ServerSocket(0)) {
+      int port = serverSocket.getLocalPort();
+      Thread serverThread =
+          new Thread(
+              () -> {
+                try {
+                  serverSocket.accept();
+                } catch (IOException _) {
+                  // Ignored
+                }
+              });
+      serverThread.setDaemon(true);
+      serverThread.start();
+
+      RestClient.Builder builder = RestClient.builder();
+      ArchiverService service = new ArchiverService(timeoutSeconds, builder);
+
+      long start = System.currentTimeMillis();
+      List<String> successfulPvs = List.of("pv1");
+      assertThrows(
+          ArchiverServiceException.class,
+          () -> service.getStatusesViaGet("http://localhost:" + port, successfulPvs));
+      long elapsedMs = System.currentTimeMillis() - start;
+
+      // Should timeout at ~1s — well short of the OS TCP default (~2 minutes)
+      assertTrue(elapsedMs < 10_000, "Expected timeout within 10s, elapsed: " + elapsedMs + "ms");
+    }
   }
 }
