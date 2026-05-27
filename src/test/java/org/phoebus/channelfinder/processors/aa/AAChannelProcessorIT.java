@@ -3,6 +3,7 @@ package org.phoebus.channelfinder.processors.aa;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -109,8 +110,7 @@ class AAChannelProcessorIT {
           channels.stream()
               .map(channel -> Map.of("pvName", channel.getName(), "status", archiveStatus))
               .toList();
-      when(archiverService.getStatuses(anyMap(), anyString(), anyString()))
-          .thenReturn(archivePVStatuses);
+      when(archiverService.getStatusesViaGet(anyString(), anyList())).thenReturn(archivePVStatuses);
     }
 
     if (!archiverEndpoint.isEmpty()) {
@@ -127,7 +127,7 @@ class AAChannelProcessorIT {
     verify(archiverService).getAAPolicies(anyString());
 
     if (!archiveStatus.isEmpty()) {
-      verify(archiverService).getStatuses(anyMap(), anyString(), anyString());
+      verify(archiverService).getStatusesViaGet(anyString(), anyList());
     }
 
     if (!archiverEndpoint.isEmpty()) {

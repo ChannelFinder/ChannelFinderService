@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
@@ -60,7 +61,10 @@ public class AAChannelProcessor implements ChannelProcessor {
   private String archiverPropertyName;
 
   @Value("${aa.auto_pause:}")
-  private List<String> autoPauseOptions;
+  private volatile List<String> autoPauseOptions;
+
+  @Value("${aa.post_support:}")
+  private volatile List<String> postSupportArchivers;
 
   @Autowired private ArchiverService archiverService;
 
@@ -106,87 +110,100 @@ public class AAChannelProcessor implements ChannelProcessor {
       return 0;
     }
 
-    // Get Info (policy and version) of each archiver
     Map<String, ArchiverInfo> archiversInfo = getArchiversInfo(aaURLs);
     if (archiversInfo.isEmpty()) {
+      logger.log(
+          Level.WARNING,
+          () ->
+              String.format(
+                  "No reachable archivers configured; skipping %d channels.", channels.size()));
       return 0;
     }
 
-    Map<String, List<ArchivePVOptions>> archiverAliasToArchivePVOptions =
-        new HashMap<>(); // AA identifier, ArchivePVOptions
-    for (String alias : archiversInfo.keySet()) {
-      archiverAliasToArchivePVOptions.put(alias, new ArrayList<>());
-    }
+    logger.log(Level.INFO, () -> String.format("Processing %d channels.", channels.size()));
+    Map<String, List<ArchivePVOptions>> pvsByArchiver = buildArchivePVMap(channels, archiversInfo);
 
-    logger.log(Level.INFO, "Get channelfinder properties for aa processor.");
+    long count = submitToArchivers(pvsByArchiver, archiversInfo);
+    logger.log(Level.INFO, () -> String.format("Configured %d channels.", count));
+    return count;
+  }
+
+  private Map<String, List<ArchivePVOptions>> buildArchivePVMap(
+      List<Channel> channels, Map<String, ArchiverInfo> archiversInfo) {
+    Map<String, List<ArchivePVOptions>> result = new HashMap<>();
+    archiversInfo.keySet().forEach(alias -> result.put(alias, new ArrayList<>()));
+
     channels.forEach(
         channel -> {
-          Optional<Property> archiveProperty =
-              channel.getProperties().stream()
-                  .filter(
-                      xmlProperty -> archivePropertyName.equalsIgnoreCase(xmlProperty.getName()))
-                  .findFirst();
+          Optional<Property> archiveProperty = findProperty(channel, archivePropertyName);
           if (archiveProperty.isPresent()) {
-            channel.getProperties().stream()
-                .filter(xmlProperty -> archiverPropertyName.equalsIgnoreCase(xmlProperty.getName()))
-                .findFirst()
-                .map(
-                    xmlProperty -> {
-                      String archiverValue = xmlProperty.getValue();
-                      // archiver property can be comma separated list of archivers
-                      if (archiverValue != null && !archiverValue.isEmpty()) {
-                        return Arrays.stream(archiverValue.split(","))
-                            .map(String::trim)
-                            .filter(s -> !s.isEmpty());
-                      } else {
-                        return defaultArchivers.stream();
-                      }
-                    })
-                .orElse(
-                    defaultArchivers
-                        .stream()) // Use defaultArchivers list if no matching property found
+            resolveArchiverAliases(channel)
                 .forEach(
                     archiverAlias -> {
                       try {
                         addChannelChange(
-                            channel,
-                            archiverAliasToArchivePVOptions,
-                            archiversInfo,
-                            archiveProperty,
-                            archiverAlias);
+                            channel, result, archiversInfo, archiveProperty, archiverAlias);
                       } catch (Exception e) {
                         logger.log(
-                            Level.WARNING, String.format("Failed to process %s", channel), e);
+                            Level.WARNING,
+                            () ->
+                                String.format(
+                                    "Failed to add channel '%s' to archiver '%s': %s",
+                                    channel.getName(), archiverAlias, e.getMessage()));
                       }
                     });
           } else if (autoPauseOptions.contains(archivePropertyName)) {
-            aaURLs
+            archiversInfo
                 .keySet()
                 .forEach(
                     archiverAlias ->
-                        archiverAliasToArchivePVOptions
+                        result
                             .get(archiverAlias)
                             .add(createArchivePV(List.of(), channel, "", PV_STATUS_INACTIVE)));
           }
         });
+    return result;
+  }
+
+  private long submitToArchivers(
+      Map<String, List<ArchivePVOptions>> pvsByArchiver, Map<String, ArchiverInfo> archiversInfo)
+      throws JacksonException {
     long count = 0;
-    for (Map.Entry<String, List<ArchivePVOptions>> e : archiverAliasToArchivePVOptions.entrySet()) {
+    for (Map.Entry<String, List<ArchivePVOptions>> e : pvsByArchiver.entrySet()) {
       ArchiverInfo archiverInfo = archiversInfo.get(e.getKey());
       if (archiverInfo == null) {
-        logger.log(Level.WARNING, String.format("Failed to process %s", e.getKey()));
+        logger.log(
+            Level.WARNING,
+            () ->
+                String.format(
+                    "Archiver alias '%s' present in PV map but missing from archiver info; skipping.",
+                    e.getKey()));
         continue;
       }
-      Map<String, ArchivePVOptions> archivePVSList =
-          e.getValue().stream()
-              .collect(
-                  Collectors.toMap(ArchivePVOptions::getPv, archivePVOptions -> archivePVOptions));
-      Map<ArchiveAction, List<ArchivePVOptions>> archiveActionArchivePVMap =
-          getArchiveActions(archivePVSList, archiverInfo);
-      count += archiverService.configureAA(archiveActionArchivePVMap, archiverInfo.url());
+      Map<String, ArchivePVOptions> pvMap =
+          e.getValue().stream().collect(Collectors.toMap(ArchivePVOptions::getPv, pv -> pv));
+      count +=
+          archiverService.configureAA(getArchiveActions(pvMap, archiverInfo), archiverInfo.url());
     }
-    long finalCount = count;
-    logger.log(Level.INFO, () -> String.format("Configured %s channels.", finalCount));
-    return finalCount;
+    return count;
+  }
+
+  private Stream<String> resolveArchiverAliases(Channel channel) {
+    return findPropertyValue(channel, archiverPropertyName)
+        .map(v -> Arrays.stream(v.split(",")).map(String::trim).filter(s -> !s.isEmpty()))
+        .orElseGet(defaultArchivers::stream);
+  }
+
+  private Optional<Property> findProperty(Channel channel, String propertyName) {
+    return channel.getProperties().stream()
+        .filter(p -> propertyName.equalsIgnoreCase(p.getName()))
+        .findFirst();
+  }
+
+  private Optional<String> findPropertyValue(Channel channel, String propertyName) {
+    return findProperty(channel, propertyName)
+        .map(Property::getValue)
+        .filter(v -> v != null && !v.isEmpty());
   }
 
   private void addChannelChange(
@@ -196,11 +213,7 @@ public class AAChannelProcessor implements ChannelProcessor {
       Optional<Property> archiveProperty,
       String archiverAlias) {
     String pvStatus =
-        channel.getProperties().stream()
-            .filter(xmlProperty -> PV_STATUS_PROPERTY_NAME.equalsIgnoreCase(xmlProperty.getName()))
-            .findFirst()
-            .map(Property::getValue)
-            .orElse(PV_STATUS_INACTIVE);
+        findPropertyValue(channel, PV_STATUS_PROPERTY_NAME).orElse(PV_STATUS_INACTIVE);
     if (aaArchivePVS.containsKey(archiverAlias) && archiveProperty.isPresent()) {
       ArchivePVOptions newArchiverPV =
           createArchivePV(
@@ -232,7 +245,12 @@ public class AAChannelProcessor implements ChannelProcessor {
       return Map.of();
     }
 
-    logger.log(Level.INFO, () -> String.format("Get archiver status in archiver %s", archiverInfo));
+    logger.log(
+        Level.FINE,
+        () ->
+            String.format(
+                "Querying status of %d PVs from archiver '%s'.",
+                archivePVS.size(), archiverInfo.alias()));
 
     Map<ArchiveAction, List<ArchivePVOptions>> result = new EnumMap<>(ArchiveAction.class);
     Arrays.stream(ArchiveAction.values())
@@ -241,9 +259,16 @@ public class AAChannelProcessor implements ChannelProcessor {
     if (archivePVS.isEmpty()) {
       return result;
     }
+    List<String> pvList = new ArrayList<>(archivePVS.keySet());
     List<Map<String, String>> statuses =
-        archiverService.getStatuses(archivePVS, archiverInfo.url(), archiverInfo.alias());
-    logger.log(Level.FINER, "Statuses {0}", statuses);
+        postSupportArchivers.contains(archiverInfo.alias())
+            ? archiverService.getStatusesViaPost(archiverInfo.url(), pvList)
+            : archiverService.getStatusesViaGet(archiverInfo.url(), pvList);
+    logger.log(
+        Level.FINER,
+        () ->
+            String.format(
+                "Status response from archiver '%s': %s", archiverInfo.alias(), statuses));
     statuses.forEach(
         archivePVStatusJsonMap -> {
           String archiveStatus = archivePVStatusJsonMap.get("status");
@@ -252,14 +277,21 @@ public class AAChannelProcessor implements ChannelProcessor {
           if (archiveStatus == null || pvName == null) {
             logger.log(
                 Level.WARNING,
-                "Missing status or pvName in archivePVStatusJsonMap: {0}",
-                archivePVStatusJsonMap);
+                () ->
+                    String.format(
+                        "Archiver '%s' returned entry with missing 'status' or 'pvName': %s",
+                        archiverInfo.alias(), archivePVStatusJsonMap));
             return;
           }
 
           ArchivePVOptions archivePVOptions = archivePVS.get(pvName);
           if (archivePVOptions == null) {
-            logger.log(Level.WARNING, "archivePVS does not contain pvName: {0}", pvName);
+            logger.log(
+                Level.WARNING,
+                () ->
+                    String.format(
+                        "Archiver '%s' returned status for unknown PV '%s'; ignoring.",
+                        archiverInfo.alias(), pvName));
             return;
           }
 
@@ -273,7 +305,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   }
 
   private ArchivePVOptions createArchivePV(
-      List<String> policyList, Channel channel, String archiveProperty, String pvStaus) {
+      List<String> policyList, Channel channel, String archiveProperty, String pvStatus) {
     ArchivePVOptions newArchiverPV = new ArchivePVOptions();
     if (aaPVA && !channel.getName().contains("://")) {
       newArchiverPV.setPv("pva://" + channel.getName());
@@ -281,20 +313,18 @@ public class AAChannelProcessor implements ChannelProcessor {
       newArchiverPV.setPv(channel.getName());
     }
     newArchiverPV.setSamplingParameters(archiveProperty, policyList);
-    newArchiverPV.setPvStatus(pvStaus);
+    newArchiverPV.setPvStatus(pvStatus);
     return newArchiverPV;
   }
 
   private Map<String, ArchiverInfo> getArchiversInfo(Map<String, String> aaURLs) {
-    Map<String, ArchiverInfo> result = new HashMap<>();
-    for (Map.Entry<String, String> aa : aaURLs.entrySet()) {
-      if (StringUtils.isEmpty(aa.getValue())) {
-        // Empty archiver tagged
-        continue;
-      }
-      List<String> policies = archiverService.getAAPolicies(aa.getValue());
-      result.put(aa.getKey(), new ArchiverInfo(aa.getKey(), aa.getValue(), policies));
-    }
-    return result;
+    return aaURLs.entrySet().stream()
+        .filter(aa -> !StringUtils.isEmpty(aa.getValue()))
+        .collect(
+            Collectors.toMap(
+                Map.Entry::getKey,
+                aa ->
+                    new ArchiverInfo(
+                        aa.getKey(), aa.getValue(), archiverService.getAAPolicies(aa.getValue()))));
   }
 }

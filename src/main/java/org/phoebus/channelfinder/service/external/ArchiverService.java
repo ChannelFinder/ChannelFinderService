@@ -4,7 +4,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -57,9 +56,6 @@ public class ArchiverService {
     }
   }
 
-  @Value("${aa.post_support:}")
-  private List<String> postSupportArchivers;
-
   @Autowired
   public ArchiverService(
       @Value("${aa.timeout_seconds:15}") int timeoutSeconds, RestClient.Builder builder) {
@@ -72,35 +68,19 @@ public class ArchiverService {
     this.client = builder.build();
   }
 
-  private Stream<List<String>> partitionSet(Set<String> pvSet, int pageSize) {
-    List<String> list = new ArrayList<>(pvSet);
-    return IntStream.range(0, (list.size() + pageSize - 1) / pageSize)
-        .mapToObj(i -> list.subList(i * pageSize, Math.min(pageSize * (i + 1), list.size())));
+  private Stream<List<String>> partition(List<String> pvs, int pageSize) {
+    return IntStream.range(0, (pvs.size() + pageSize - 1) / pageSize)
+        .mapToObj(i -> pvs.subList(i * pageSize, Math.min(pageSize * (i + 1), pvs.size())));
   }
 
-  public List<Map<String, String>> getStatuses(
-      Map<String, ArchivePVOptions> archivePVS, String archiverURL, String archiverAlias) {
-    Set<String> pvs = archivePVS.keySet();
-    boolean postSupportOverride = postSupportArchivers.contains(archiverAlias);
-    logger.log(Level.INFO, "Archiver Alias: {0}", archiverAlias);
-    logger.log(Level.INFO, "Post Support Override Archivers: {0}", postSupportArchivers);
-
-    if (postSupportOverride) {
-      logger.log(Level.INFO, "Post Support");
-      return getStatusesFromPvListBody(archiverURL, pvs.stream().toList());
-    } else {
-      logger.log(Level.INFO, "Query Support");
-      Stream<List<String>> stream = partitionSet(pvs, STATUS_BATCH_SIZE);
-
-      return stream
-          .map(pvList -> getStatusesFromPvListQuery(archiverURL, pvList))
-          .flatMap(List::stream)
-          .toList();
-    }
+  public List<Map<String, String>> getStatusesViaGet(String archiverURL, List<String> pvs) {
+    return partition(pvs, STATUS_BATCH_SIZE)
+        .map(batch -> getStatusesViaGetBatch(archiverURL, batch))
+        .flatMap(List::stream)
+        .toList();
   }
 
-  private List<Map<String, String>> getStatusesFromPvListQuery(
-      String archiverURL, List<String> pvs) {
+  private List<Map<String, String>> getStatusesViaGetBatch(String archiverURL, List<String> pvs) {
     String uriString = archiverURL + PV_STATUS_RESOURCE;
     URI pvStatusURI =
         UriComponentsBuilder.fromUri(URI.create(uriString))
@@ -122,8 +102,7 @@ public class ArchiverService {
     }
   }
 
-  private List<Map<String, String>> getStatusesFromPvListBody(
-      String archiverURL, List<String> pvs) {
+  public List<Map<String, String>> getStatusesViaPost(String archiverURL, List<String> pvs) {
     String uriString = archiverURL + PV_STATUS_RESOURCE;
     try {
       List<Map<String, String>> result =
@@ -209,7 +188,11 @@ public class ArchiverService {
 
   public long configureAA(Map<ArchiveAction, List<ArchivePVOptions>> archivePVS, String aaURL) {
     logger.log(
-        Level.INFO, () -> String.format("Configure PVs %s in %s", archivePVS.toString(), aaURL));
+        Level.FINE,
+        () ->
+            String.format(
+                "Configuring actions for %d PVs at archiver %s.",
+                archivePVS.values().stream().mapToLong(List::size).sum(), aaURL));
     long count = 0;
     // Don't request to archive an empty list.
     if (archivePVS.isEmpty()) {
@@ -240,7 +223,11 @@ public class ArchiverService {
       }
       return successfulPvs.size();
     } catch (ArchiverServiceException e) {
-      logger.log(Level.WARNING, "Failed to submit " + action.name().toLowerCase() + " request", e);
+      logger.log(
+          Level.WARNING,
+          () ->
+              String.format(
+                  "Failed to submit %s request: %s", action.name().toLowerCase(), e.getMessage()));
       return 0;
     }
   }
@@ -263,7 +250,9 @@ public class ArchiverService {
       return new ArrayList<>(policyMap.keySet());
     } catch (Exception e) {
       // problem collecting policies from AA, so warn and return empty list
-      logger.log(Level.WARNING, "Could not get AA policies list from: " + aaURL, e);
+      logger.log(
+          Level.WARNING,
+          () -> "Could not get AA policies list from " + aaURL + ": " + e.getMessage());
       return List.of();
     }
   }
