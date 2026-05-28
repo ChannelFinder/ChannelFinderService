@@ -31,9 +31,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.FileCopyUtils;
 
 @EnableAutoConfiguration
@@ -112,20 +110,5 @@ public class Application implements ApplicationRunner {
               processors.add(notifier);
             });
     return processors;
-  }
-
-  /**
-   * {@link TaskExecutor} used when calling {@link ChannelProcessor}s.
-   *
-   * @return A {@link TaskExecutor}
-   */
-  @Bean("channelFinderTaskExecutor")
-  public TaskExecutor taskExecutor() {
-    ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-    taskExecutor.setCorePoolSize(3);
-    taskExecutor.setMaxPoolSize(10);
-    taskExecutor.setQueueCapacity(25);
-
-    return taskExecutor;
   }
 }
