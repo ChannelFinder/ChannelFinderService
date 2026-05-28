@@ -24,6 +24,7 @@ import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.phoebus.channelfinder.repository.PropertyRepository;
 import org.phoebus.channelfinder.web.v0.api.IProperty;
 import org.phoebus.channelfinder.web.v0.controller.PropertyController;
+import org.phoebus.channelfinder.web.v0.mapper.PropertyMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -57,21 +58,24 @@ class PropertyControllerIT {
   // Helper operations to create and clean up the resources needed for successful
   // testing of the PropertyManager operations
 
-  private final Channel testChannel0 = new Channel("testChannel0", "testOwner");
-  private final Channel testChannel1 = new Channel("testChannel1", "testOwner");
-  private final Channel testChannelX = new Channel("testChannelX", "testOwner");
+  private Channel testChannel0;
+  private Channel testChannel1;
+  private Channel testChannelX;
 
-  private final List<Channel> testChannels =
-      Arrays.asList(testChannel0, testChannel1, testChannelX);
+  private List<Channel> testChannels;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
+    testChannel0 = new Channel("testChannel0", "testOwner");
+    testChannel1 = new Channel("testChannel1", "testOwner");
+    testChannelX = new Channel("testChannelX", "testOwner");
+    testChannels = Arrays.asList(testChannel0, testChannel1, testChannelX);
     helper = new PropertyControllerHelper(propertyManager);
     channelRepository.indexAll(testChannels);
   }
 
   @AfterEach
-  public void cleanup() {
+  void cleanup() {
 
     MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
     map.set("~name", "*");
@@ -89,7 +93,7 @@ class PropertyControllerIT {
 
   /** list all properties */
   @Test
-  void listXmlProperties() {
+  void listProperties() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty1 = new Property("testProperty1", "testOwner1");
     testProperty1.setChannels(
@@ -113,7 +117,7 @@ class PropertyControllerIT {
 
   /** read a single property test the "withChannels" flag */
   @Test
-  void readXmlProperty() {
+  void readProperty() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty1 = new Property("testProperty1", "testOwner");
     testProperty1.setChannels(
@@ -150,7 +154,7 @@ class PropertyControllerIT {
 
   /** attempt to read a single non existent property */
   @Test
-  void readNonExistingXmlProperty() {
+  void readNonExistingProperty() {
     // verify the property failed to be read, as expected
     Assertions.assertThrows(
         PropertyNotFoundException.class, () -> propertyManager.read("fakeProperty", false));
@@ -158,7 +162,7 @@ class PropertyControllerIT {
 
   /** attempt to read a single non existent property with channels */
   @Test
-  void readNonExistingXmlProperty2() {
+  void readNonExistingProperty2() {
     // verify the property failed to be read, as expected
     Assertions.assertThrows(
         PropertyNotFoundException.class, () -> propertyManager.read("fakeProperty", true));
@@ -166,7 +170,7 @@ class PropertyControllerIT {
 
   /** create a simple property */
   @Test
-  void createXmlProperty() {
+  void createProperty() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
 
     // Create a simple property
@@ -185,7 +189,7 @@ class PropertyControllerIT {
 
   /** Rename a simple property using create */
   @Test
-  void renameByCreateXmlProperty() {
+  void renameByCreateProperty() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty1 = new Property("testProperty1", "testOwner");
 
@@ -201,7 +205,7 @@ class PropertyControllerIT {
 
   /** create a single property with channels */
   @Test
-  void createXmlProperty2() {
+  void createProperty2() {
     Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
     testProperty0WithChannels.setChannels(
         Arrays.asList(
@@ -257,7 +261,7 @@ class PropertyControllerIT {
 
   /** Rename a single property with channels using create */
   @Test
-  void renameByCreateXmlProperty2() {
+  void renameByCreateProperty2() {
     Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
     testProperty0WithChannels.setChannels(
         Arrays.asList(
@@ -304,7 +308,7 @@ class PropertyControllerIT {
 
   /** create multiple properties */
   @Test
-  void createXmlProperties() {
+  void createProperties() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty1 = new Property("testProperty1", "testOwner");
     Property testProperty2 = new Property("testProperty2", "testOwner");
@@ -388,7 +392,7 @@ class PropertyControllerIT {
 
   /** create by overriding multiple properties */
   @Test
-  void createXmlPropertiesWithOverride() {
+  void createPropertiesWithOverride() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
     testProperty0WithChannels.setChannels(
@@ -454,7 +458,7 @@ class PropertyControllerIT {
    * add a single property to a single channel @Todo fix this test after addsingle method is fixed
    */
   @Test
-  void addSingleXmlProperty() {
+  void addSingleProperty() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     propertyRepository.index(testProperty0);
     testProperty0.setValue("value");
@@ -471,7 +475,7 @@ class PropertyControllerIT {
 
   /** update a property */
   @Test
-  void updateXmlProperty() {
+  void updateProperty() {
     // A test property with only name and owner
     Property testProperty0 = new Property("testProperty0", "testOwner");
     // A test property with name, owner, and a single test channel with a copy of the property with
@@ -546,7 +550,7 @@ class PropertyControllerIT {
 
   /** update a property's name and owner and value on its channels */
   @Test
-  void updateXmlPropertyOnChan() {
+  void updatePropertyOnChan() {
     // extra channel for this test
     Channel testChannelX = new Channel("testChannelX", "testOwner");
     channelRepository.index(testChannelX);
@@ -687,7 +691,7 @@ class PropertyControllerIT {
 
   /** Rename a property using update */
   @Test
-  void renameByUpdateXmlProperty() {
+  void renameByUpdateProperty() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty1 = new Property("testProperty1", "testOwner");
     Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
@@ -1165,7 +1169,7 @@ class PropertyControllerIT {
 
   /** update properties' names and values and attempt to change owners on their channels */
   @Test
-  void updateMultipleXmlPropertiesOnChan() {
+  void updateMultiplePropertiesOnChan() {
     // extra channel for this test
     Channel testChannelX = new Channel("testChannelX", "testOwner");
     channelRepository.index(testChannelX);
@@ -1324,7 +1328,7 @@ class PropertyControllerIT {
 
   /** delete a single property */
   @Test
-  void deleteXmlProperty() {
+  void deleteProperty() {
     Property testProperty0 = new Property("testProperty0", "testOwner");
     Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
     testProperty0WithChannels.setChannels(
@@ -1342,12 +1346,12 @@ class PropertyControllerIT {
 
     helper.apiCreate(testProperties);
 
-    propertyManager.remove(testProperty0.getName());
+    propertyManager.removeBatch(testProperty0.getName());
     // verify the property was deleted as expected
     Assertions.assertFalse(
         propertyRepository.existsById(testProperty0.getName()), "Failed to delete the property");
 
-    propertyManager.remove(testProperty0WithChannels.getName());
+    propertyManager.removeBatch(testProperty0WithChannels.getName());
     MultiValueMap<String, String> params = new LinkedMultiValueMap<String, String>();
     params.add("testProperty0WithChannels", "*");
     // verify the property was deleted and removed from all associated channels
@@ -1362,7 +1366,7 @@ class PropertyControllerIT {
 
   /** delete a single property from a single channel */
   @Test
-  void deleteXmlPropertyFromChannel() {
+  void deletePropertyFromChannel() {
     Property testProperty0WithChannels = new Property("testProperty0WithChannels", "testOwner");
     testProperty0WithChannels.setChannels(
         Arrays.asList(
@@ -1395,5 +1399,127 @@ class PropertyControllerIT {
                   return ch.getName().equals(testChannel0.getName());
                 }),
         "Failed to delete the property from channel");
+  }
+
+  /** delete a property from multiple channels */
+  @Test
+  void deletePropertyFromMultipleChannels() {
+    Property testProperty = new Property("batchTestProperty", "testOwner");
+    testProperty.setChannels(
+        Arrays.asList(
+            new Channel(
+                testChannel0.getName(),
+                testChannel0.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value0")),
+                new ArrayList<Tag>()),
+            new Channel(
+                testChannel1.getName(),
+                testChannel1.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value1")),
+                new ArrayList<Tag>())));
+
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
+
+    // Batch delete from both channels
+    long deletedCount =
+        propertyManager.removeBatch(
+            testProperty.getName(), Arrays.asList(testChannel0.getName(), testChannel1.getName()));
+
+    // Verify 2 channels had the property removed
+    Assertions.assertEquals(2, deletedCount, "Failed to remove property from 2 channels");
+
+    // Verify the property still exists globally
+    Assertions.assertTrue(
+        propertyRepository.existsById(testProperty.getName()),
+        "Property should still exist globally");
+
+    // Verify the property was removed from all channels
+    MultiValueMap<String, String> searchParams = new LinkedMultiValueMap<String, String>();
+    searchParams.add(testProperty.getName(), "*");
+    Assertions.assertEquals(
+        0,
+        channelRepository.search(searchParams).channels().size(),
+        "Failed to remove property from channels");
+  }
+
+  /** delete a property from multiple channels with mixed existing and non-existent channels */
+  @Test
+  void deletePropertyFromMixedChannels() {
+    Property testProperty = new Property("batchTestProperty2", "testOwner");
+    testProperty.setChannels(
+        Arrays.asList(
+            new Channel(
+                testChannel0.getName(),
+                testChannel0.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value")),
+                new ArrayList<Tag>())));
+
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
+
+    // Batch delete from existing and non-existent channels
+    long deletedCount =
+        propertyManager.removeBatch(
+            testProperty.getName(),
+            Arrays.asList(testChannel0.getName(), "nonExistentChannel", "anotherFakeChannel"));
+
+    // Verify only 1 channel (testChannel0) had the property removed
+    Assertions.assertEquals(
+        1, deletedCount, "Should only count the property removed from existing channel");
+
+    // Verify the property still exists
+    Assertions.assertTrue(
+        propertyRepository.existsById(testProperty.getName()), "Property should still exist");
+  }
+
+  /** delete a property from multiple channels with duplicates */
+  @Test
+  void deletePropertyFromChannelsWithDuplicates() {
+    Property testProperty = new Property("batchTestProperty3", "testOwner");
+    testProperty.setChannels(
+        Arrays.asList(
+            new Channel(
+                testChannel0.getName(),
+                testChannel0.getOwner(),
+                Arrays.asList(
+                    new Property(testProperty.getName(), testProperty.getOwner(), "value")),
+                new ArrayList<Tag>())));
+
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
+
+    // Batch delete with duplicate channel names
+    long deletedCount =
+        propertyManager.removeBatch(
+            testProperty.getName(),
+            Arrays.asList(testChannel0.getName(), testChannel0.getName(), testChannel0.getName()));
+
+    // Verify only 1 channel processed (duplicates deduplicated)
+    Assertions.assertEquals(
+        1, deletedCount, "Should deduplicate and only remove from channel once");
+
+    // Verify the property is gone from the channel
+    Assertions.assertTrue(
+        channelRepository.findById(testChannel0.getName()).get().getProperties().stream()
+            .noneMatch(p -> p.getName().equals(testProperty.getName())),
+        "Property should be removed from channel");
+  }
+
+  /** delete a property from empty channel list returns 0 */
+  @Test
+  void deletePropertyFromEmptyChannelList() {
+    Property testProperty = new Property("batchTestProperty4", "testOwner");
+    propertyManager.create(testProperty.getName(), PropertyMapper.toDto(testProperty));
+
+    // Batch delete with empty channel list
+    long deletedCount = propertyManager.removeBatch(testProperty.getName(), List.of());
+
+    // Verify 0 channels affected
+    Assertions.assertEquals(0, deletedCount, "Should return 0 when channel list is empty");
+
+    // Verify the property still exists
+    Assertions.assertTrue(
+        propertyRepository.existsById(testProperty.getName()), "Property should still exist");
   }
 }
