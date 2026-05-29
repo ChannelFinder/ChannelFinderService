@@ -1,12 +1,16 @@
 package org.phoebus.channelfinder.configuration;
 
+import jakarta.annotation.PostConstruct;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -14,15 +18,18 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
 import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiverInfo;
+import org.phoebus.channelfinder.service.model.archiver.aa.ArchiverPolicies;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Scheduled;
 import tools.jackson.core.JacksonException;
 
 /**
@@ -41,6 +48,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   private static final String PV_STATUS_PROPERTY_NAME = "pvStatus"; // Matches in recsync
   private static final String PV_STATUS_INACTIVE = "Inactive";
   public static final String PV_STATUS_ACTIVE = "Active";
+  private static final int SKIPPED_PV_LOG_LIMIT = 10;
 
   @Value("${aa.enabled:true}")
   private boolean aaEnabled;
@@ -68,6 +76,12 @@ public class AAChannelProcessor implements ChannelProcessor {
 
   @Autowired private ArchiverService archiverService;
 
+  @Value("${aa.policy_refresh_interval_seconds:3600}")
+  private long policyRefreshIntervalSeconds;
+
+  private volatile Map<String, ArchiverPolicies> cachedPolicies = Map.of();
+  private volatile Instant lastPolicyRefresh;
+
   @Override
   public boolean enabled() {
     return aaEnabled;
@@ -78,8 +92,24 @@ public class AAChannelProcessor implements ChannelProcessor {
     this.aaEnabled = enabled;
   }
 
+  @PostConstruct
+  public void initPolicyCache() {
+    refreshPolicies();
+  }
+
+  @Scheduled(
+      fixedDelayString = "${aa.policy_refresh_interval_seconds:3600}",
+      timeUnit = TimeUnit.SECONDS)
+  public void scheduledPolicyRefresh() {
+    refreshPolicies();
+  }
+
   @Override
   public ChannelProcessorInfo processorInfo() {
+    String policyCounts =
+        cachedPolicies.entrySet().stream()
+            .map(e -> e.getKey() + "=" + e.getValue())
+            .collect(Collectors.joining(", "));
     return new ChannelProcessorInfo(
         "AAChannelProcessor",
         aaEnabled,
@@ -91,7 +121,15 @@ public class AAChannelProcessor implements ChannelProcessor {
             "Archivers",
             aaURLs.keySet().toString(),
             "AutoPauseOn",
-            autoPauseOptions.toString()));
+            autoPauseOptions.toString(),
+            "PostSupportArchivers",
+            postSupportArchivers.toString(),
+            "PolicyRefreshIntervalSeconds",
+            String.valueOf(policyRefreshIntervalSeconds),
+            "LastPolicyRefresh",
+            lastPolicyRefresh == null ? "never" : lastPolicyRefresh.toString(),
+            "CachedPoliciesPerArchiver",
+            policyCounts.isEmpty() ? "none" : policyCounts));
   }
 
   /**
@@ -110,7 +148,7 @@ public class AAChannelProcessor implements ChannelProcessor {
       return 0;
     }
 
-    Map<String, ArchiverInfo> archiversInfo = getArchiversInfo(aaURLs);
+    Map<String, ArchiverInfo> archiversInfo = getArchiversInfoFromCache();
     if (archiversInfo.isEmpty()) {
       logger.log(
           Level.WARNING,
@@ -182,10 +220,38 @@ public class AAChannelProcessor implements ChannelProcessor {
       }
       Map<String, ArchivePVOptions> pvMap =
           e.getValue().stream().collect(Collectors.toMap(ArchivePVOptions::getPv, pv -> pv));
-      count +=
-          archiverService.configureAA(getArchiveActions(pvMap, archiverInfo), archiverInfo.url());
+      Optional<Map<ArchiveAction, List<ArchivePVOptions>>> actions =
+          getArchiveActions(pvMap, archiverInfo);
+      if (actions.isEmpty()) {
+        warnSkippedActivePvs(e.getKey(), e.getValue());
+      } else {
+        count += archiverService.configureAA(actions.get(), archiverInfo.url());
+      }
     }
     return count;
+  }
+
+  private void warnSkippedActivePvs(String archiverAlias, List<ArchivePVOptions> pvs) {
+    List<String> activePvNames =
+        pvs.stream()
+            .filter(pv -> PV_STATUS_ACTIVE.equals(pv.getPvStatus()))
+            .map(ArchivePVOptions::getPv)
+            .toList();
+    if (activePvNames.isEmpty()) {
+      return;
+    }
+    int total = activePvNames.size();
+    String sample =
+        String.join(", ", activePvNames.subList(0, Math.min(SKIPPED_PV_LOG_LIMIT, total)));
+    String suffix =
+        total > SKIPPED_PV_LOG_LIMIT ? " ... (" + (total - SKIPPED_PV_LOG_LIMIT) + " more)" : "";
+    logger.log(
+        Level.WARNING,
+        () ->
+            String.format(
+                "Archiver '%s' unreachable: %d Active PV(s) may remain paused until the archiver recovers"
+                    + " and another channel update arrives — RESUME was not sent: %s%s",
+                archiverAlias, total, sample, suffix));
   }
 
   private Stream<String> resolveArchiverAliases(Channel channel) {
@@ -239,12 +305,8 @@ public class AAChannelProcessor implements ChannelProcessor {
     return ArchiveAction.NONE;
   }
 
-  private Map<ArchiveAction, List<ArchivePVOptions>> getArchiveActions(
+  private Optional<Map<ArchiveAction, List<ArchivePVOptions>>> getArchiveActions(
       Map<String, ArchivePVOptions> archivePVS, ArchiverInfo archiverInfo) {
-    if (archiverInfo == null) {
-      return Map.of();
-    }
-
     logger.log(
         Level.FINE,
         () ->
@@ -257,13 +319,24 @@ public class AAChannelProcessor implements ChannelProcessor {
         .forEach(archiveAction -> result.put(archiveAction, new ArrayList<>()));
     // Don't request to archive an empty list.
     if (archivePVS.isEmpty()) {
-      return result;
+      return Optional.of(result);
     }
     List<String> pvList = new ArrayList<>(archivePVS.keySet());
-    List<Map<String, String>> statuses =
-        postSupportArchivers.contains(archiverInfo.alias())
-            ? archiverService.getStatusesViaPost(archiverInfo.url(), pvList)
-            : archiverService.getStatusesViaGet(archiverInfo.url(), pvList);
+    List<Map<String, String>> statuses;
+    try {
+      statuses =
+          postSupportArchivers.contains(archiverInfo.alias())
+              ? archiverService.getStatusesViaPost(archiverInfo.url(), pvList)
+              : archiverService.getStatusesViaGet(archiverInfo.url(), pvList);
+    } catch (ArchiverServiceException e) {
+      logger.log(
+          Level.WARNING,
+          () ->
+              String.format(
+                  "Status fetch failed for archiver '%s'; skipping %d PVs to avoid spurious ARCHIVE submissions: %s",
+                  archiverInfo.alias(), archivePVS.size(), e.getMessage()));
+      return Optional.empty();
+    }
     logger.log(
         Level.FINER,
         () ->
@@ -301,7 +374,7 @@ public class AAChannelProcessor implements ChannelProcessor {
           List<ArchivePVOptions> archivePVOptionsList = result.get(action);
           archivePVOptionsList.add(archivePVOptions);
         });
-    return result;
+    return Optional.of(result);
   }
 
   private ArchivePVOptions createArchivePV(
@@ -317,14 +390,71 @@ public class AAChannelProcessor implements ChannelProcessor {
     return newArchiverPV;
   }
 
-  private Map<String, ArchiverInfo> getArchiversInfo(Map<String, String> aaURLs) {
+  private Map<String, ArchiverInfo> getArchiversInfoFromCache() {
+    Map<String, ArchiverPolicies> snapshot = cachedPolicies;
     return aaURLs.entrySet().stream()
-        .filter(aa -> !StringUtils.isEmpty(aa.getValue()))
+        .filter(e -> !StringUtils.isEmpty(e.getValue()))
+        .filter(
+            e -> {
+              if (!snapshot.containsKey(e.getKey())) {
+                logger.log(
+                    Level.WARNING,
+                    () ->
+                        String.format(
+                            "Archiver '%s' has no cached policies (unreachable at last refresh); skipping.",
+                            e.getKey()));
+                return false;
+              }
+              return true;
+            })
         .collect(
             Collectors.toMap(
                 Map.Entry::getKey,
-                aa ->
+                e ->
                     new ArchiverInfo(
-                        aa.getKey(), aa.getValue(), archiverService.getAAPolicies(aa.getValue()))));
+                        e.getKey(), e.getValue(), snapshot.get(e.getKey()).policies())));
+  }
+
+  private void refreshPolicies() {
+    if (aaURLs.isEmpty()) {
+      logger.log(Level.FINE, "No archivers configured; skipping policy cache refresh.");
+      return;
+    }
+    Map<String, ArchiverPolicies> current = cachedPolicies;
+    Map<String, ArchiverPolicies> updated = new HashMap<>(current);
+    List<String> changed = new ArrayList<>();
+
+    for (Map.Entry<String, String> entry : aaURLs.entrySet()) {
+      if (StringUtils.isEmpty(entry.getValue())) continue;
+      String alias = entry.getKey();
+      try {
+        List<String> fresh = archiverService.getAAPolicies(entry.getValue());
+        ArchiverPolicies existing = current.get(alias);
+        if (existing == null || !existing.policies().equals(fresh)) {
+          updated.put(alias, new ArchiverPolicies(fresh));
+          changed.add(alias);
+        }
+      } catch (ArchiverServiceException ex) {
+        logger.log(
+            Level.WARNING,
+            () ->
+                String.format(
+                    "Policy fetch failed for archiver '%s'; retaining cached policies: %s",
+                    alias, ex.getMessage()));
+      }
+    }
+
+    lastPolicyRefresh = Instant.now();
+    if (!changed.isEmpty()) {
+      cachedPolicies = Collections.unmodifiableMap(updated);
+      logger.log(
+          Level.INFO,
+          "AA policy cache updated: {0}",
+          cachedPolicies.entrySet().stream()
+              .map(e -> e.getKey() + "=" + e.getValue())
+              .collect(Collectors.joining(", ")));
+    } else {
+      logger.log(Level.FINE, "AA policy cache unchanged after refresh.");
+    }
   }
 }

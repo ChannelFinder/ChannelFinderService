@@ -61,6 +61,7 @@ public class ArchiverService {
       @Value("${aa.timeout_seconds:15}") int timeoutSeconds, RestClient.Builder builder) {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setReadTimeout(timeoutSeconds * 1000);
+    factory.setConnectTimeout(timeoutSeconds * 1000);
     this.client = builder.requestFactory(factory).build();
   }
 
@@ -87,18 +88,13 @@ public class ArchiverService {
             .queryParam(StatusResponseKey.PV.key(), String.join(",", pvs))
             .build()
             .toUri();
-
     try {
       List<Map<String, String>> result =
           client.get().uri(pvStatusURI).retrieve().body(new ParameterizedTypeReference<>() {});
       return result != null ? result : List.of();
     } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format(
-              "There was an error getting a response with URI: %s. Error: %s",
-              uriString, e.getMessage()));
-      return List.of();
+      throw new ArchiverServiceException(
+          String.format("Failed GET status query to %s: %s", uriString, e.getMessage()), e);
     }
   }
 
@@ -115,12 +111,8 @@ public class ArchiverService {
               .body(new ParameterizedTypeReference<>() {});
       return result != null ? result : List.of();
     } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format(
-              "There was an error getting a response with URI: %s. Error: %s",
-              uriString, e.getMessage()));
-      return List.of();
+      throw new ArchiverServiceException(
+          String.format("Failed POST status query to %s: %s", uriString, e.getMessage()), e);
     }
   }
 
@@ -245,15 +237,14 @@ public class ArchiverService {
               .retrieve()
               .body(new ParameterizedTypeReference<>() {});
       if (policyMap == null) {
-        return List.of();
+        throw new ArchiverServiceException("Null response from " + uriString);
       }
       return new ArrayList<>(policyMap.keySet());
+    } catch (ArchiverServiceException e) {
+      throw e;
     } catch (Exception e) {
-      // problem collecting policies from AA, so warn and return empty list
-      logger.log(
-          Level.WARNING,
-          () -> "Could not get AA policies list from " + aaURL + ": " + e.getMessage());
-      return List.of();
+      throw new ArchiverServiceException(
+          "Could not get AA policies from " + aaURL + ": " + e.getMessage(), e);
     }
   }
 }
