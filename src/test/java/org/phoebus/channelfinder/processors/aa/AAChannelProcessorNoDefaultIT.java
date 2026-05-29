@@ -1,11 +1,14 @@
 package org.phoebus.channelfinder.processors.aa;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activeProperty;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.paramableAAChannelProcessorTest;
 
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,6 +32,12 @@ class AAChannelProcessorNoDefaultIT {
   @Autowired AAChannelProcessor aaChannelProcessor;
 
   @MockitoBean ArchiverService archiverService;
+
+  @BeforeEach
+  void primeCache() {
+    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
+    aaChannelProcessor.scheduledPolicyRefresh();
+  }
 
   private static Stream<Arguments> processNoPauseSource() {
 
