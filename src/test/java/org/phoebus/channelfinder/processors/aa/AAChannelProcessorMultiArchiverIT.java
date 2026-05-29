@@ -114,25 +114,14 @@ class AAChannelProcessorMultiArchiverIT {
           when(archiverService.configureAA(anyMap(), anyString())).thenReturn((long) value.size());
         });
 
-    // Request to policies
-    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
-
-    // Request to archiver status
-    when(archiverService.getStatusesViaGet(anyString(), anyList())).thenReturn(archivePVStatuses);
-
-    // Requests to archiver
-    actionsToNames.forEach(
-        (key, value) -> {
-          when(archiverService.configureAA(anyMap(), anyString())).thenReturn((long) value.size());
-        });
-
     aaChannelProcessor.process(channels);
 
     // Verifications
     verify(archiverService, times(2)).getAAPolicies(anyString());
 
     if (!namesToStatuses.isEmpty()) {
-      verify(archiverService, times(1)).getStatusesViaGet(anyString(), anyList());
+      verify(archiverService).getStatusesViaGet(anyString(), anyList());
+      verify(archiverService).getStatusesViaPost(anyString(), anyList());
     }
   }
 }
