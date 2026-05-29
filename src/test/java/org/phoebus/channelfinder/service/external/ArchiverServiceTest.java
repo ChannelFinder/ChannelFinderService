@@ -306,9 +306,7 @@ class ArchiverServiceTest {
         .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess("invalid-json", MediaType.APPLICATION_JSON));
 
-    List<String> result = archiverService.getAAPolicies(ARCHIVER_URL);
-
-    assertTrue(result.isEmpty());
+    assertThrows(ArchiverServiceException.class, () -> archiverService.getAAPolicies(ARCHIVER_URL));
   }
 
   @Test

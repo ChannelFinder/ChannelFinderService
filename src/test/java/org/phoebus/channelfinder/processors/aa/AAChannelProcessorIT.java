@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -46,6 +47,12 @@ class AAChannelProcessorIT {
 
   @MockitoBean ArchiverService archiverService;
   @Autowired AAChannelProcessor aaChannelProcessor;
+
+  @BeforeEach
+  void primeCache() {
+    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
+    aaChannelProcessor.scheduledPolicyRefresh();
+  }
 
   @NotNull
   private static Stream<Arguments> processSource() {
@@ -103,9 +110,6 @@ class AAChannelProcessorIT {
       String archiveStatus,
       String archiverEndpoint)
       throws JacksonException {
-    // Mock getAAPolicies
-    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
-
     if (!archiveStatus.isEmpty()) {
       // Mock getStatuses
       List<Map<String, String>> archivePVStatuses =
@@ -126,8 +130,6 @@ class AAChannelProcessorIT {
     assertEquals(count, archiverEndpoint.isEmpty() ? 0 : channels.size());
 
     // Verifications
-    verify(archiverService).getAAPolicies(anyString());
-
     if (!archiveStatus.isEmpty()) {
       verify(archiverService).getStatusesViaGet(anyString(), anyList());
     }

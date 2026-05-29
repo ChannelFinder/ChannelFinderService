@@ -237,15 +237,14 @@ public class ArchiverService {
               .retrieve()
               .body(new ParameterizedTypeReference<>() {});
       if (policyMap == null) {
-        return List.of();
+        throw new ArchiverServiceException("Null response from " + uriString);
       }
       return new ArrayList<>(policyMap.keySet());
+    } catch (ArchiverServiceException e) {
+      throw e;
     } catch (Exception e) {
-      // problem collecting policies from AA, so warn and return empty list
-      logger.log(
-          Level.WARNING,
-          () -> "Could not get AA policies list from " + aaURL + ": " + e.getMessage());
-      return List.of();
+      throw new ArchiverServiceException(
+          "Could not get AA policies from " + aaURL + ": " + e.getMessage(), e);
     }
   }
 }

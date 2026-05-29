@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -41,6 +42,12 @@ class AAChannelProcessorMultiIT {
   public static final String OWNER = "owner";
   @Autowired AAChannelProcessor aaChannelProcessor;
   @MockitoBean ArchiverService archiverService;
+
+  @BeforeEach
+  void primeCache() {
+    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
+    aaChannelProcessor.scheduledPolicyRefresh();
+  }
 
   static Stream<Arguments> provideArguments() {
     List<Channel> channels =
@@ -104,9 +111,6 @@ class AAChannelProcessorMultiIT {
       int expectedProcessedChannels)
       throws JacksonException {
 
-    // Mock getAAPolicies
-    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
-
     // Mock getStatuses
     List<Map<String, String>> archivePVStatuses =
         namesToStatuses.entrySet().stream()
@@ -121,7 +125,6 @@ class AAChannelProcessorMultiIT {
     long count = aaChannelProcessor.process(channels);
     assertEquals(expectedProcessedChannels, count);
 
-    verify(archiverService).getAAPolicies(anyString());
     verify(archiverService).getStatusesViaGet(anyString(), anyList());
 
     ArgumentCaptor<Map<ArchiveAction, List<ArchivePVOptions>>> captor =

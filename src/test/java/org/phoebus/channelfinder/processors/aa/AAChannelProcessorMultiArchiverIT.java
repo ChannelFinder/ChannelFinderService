@@ -3,7 +3,6 @@ package org.phoebus.channelfinder.processors.aa;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activeProperty;
@@ -15,6 +14,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -38,6 +38,12 @@ class AAChannelProcessorMultiArchiverIT {
   public static final String OWNER = "owner";
   @Autowired AAChannelProcessor aaChannelProcessor;
   @MockitoBean ArchiverService archiverService;
+
+  @BeforeEach
+  void primeCache() {
+    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
+    aaChannelProcessor.scheduledPolicyRefresh();
+  }
 
   static Stream<Arguments> provideArguments() {
     List<Channel> channels =
@@ -99,8 +105,6 @@ class AAChannelProcessorMultiArchiverIT {
       Map<String, String> namesToStatuses,
       Map<ArchiveAction, List<String>> actionsToNames)
       throws JacksonException {
-    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
-
     // Request to archiver status
     List<Map<String, String>> archivePVStatuses =
         namesToStatuses.entrySet().stream()
@@ -116,9 +120,7 @@ class AAChannelProcessorMultiArchiverIT {
 
     aaChannelProcessor.process(channels);
 
-    // Verifications
-    verify(archiverService, times(2)).getAAPolicies(anyString());
-
+    // Verifications: query archiver uses GET, post archiver uses POST (aa.post_support=post)
     if (!namesToStatuses.isEmpty()) {
       verify(archiverService).getStatusesViaGet(anyString(), anyList());
       verify(archiverService).getStatusesViaPost(anyString(), anyList());
