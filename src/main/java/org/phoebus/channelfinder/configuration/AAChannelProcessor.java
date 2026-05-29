@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
+import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
 import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
@@ -41,6 +42,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   private static final String PV_STATUS_PROPERTY_NAME = "pvStatus"; // Matches in recsync
   private static final String PV_STATUS_INACTIVE = "Inactive";
   public static final String PV_STATUS_ACTIVE = "Active";
+  private static final int SKIPPED_PV_LOG_LIMIT = 10;
 
   @Value("${aa.enabled:true}")
   private boolean aaEnabled;
@@ -182,10 +184,38 @@ public class AAChannelProcessor implements ChannelProcessor {
       }
       Map<String, ArchivePVOptions> pvMap =
           e.getValue().stream().collect(Collectors.toMap(ArchivePVOptions::getPv, pv -> pv));
-      count +=
-          archiverService.configureAA(getArchiveActions(pvMap, archiverInfo), archiverInfo.url());
+      Optional<Map<ArchiveAction, List<ArchivePVOptions>>> actions =
+          getArchiveActions(pvMap, archiverInfo);
+      if (actions.isEmpty()) {
+        warnSkippedActivePvs(e.getKey(), e.getValue());
+      } else {
+        count += archiverService.configureAA(actions.get(), archiverInfo.url());
+      }
     }
     return count;
+  }
+
+  private void warnSkippedActivePvs(String archiverAlias, List<ArchivePVOptions> pvs) {
+    List<String> activePvNames =
+        pvs.stream()
+            .filter(pv -> PV_STATUS_ACTIVE.equals(pv.getPvStatus()))
+            .map(ArchivePVOptions::getPv)
+            .toList();
+    if (activePvNames.isEmpty()) {
+      return;
+    }
+    int total = activePvNames.size();
+    String sample =
+        String.join(", ", activePvNames.subList(0, Math.min(SKIPPED_PV_LOG_LIMIT, total)));
+    String suffix =
+        total > SKIPPED_PV_LOG_LIMIT ? " ... (" + (total - SKIPPED_PV_LOG_LIMIT) + " more)" : "";
+    logger.log(
+        Level.WARNING,
+        () ->
+            String.format(
+                "Archiver '%s' unreachable: %d Active PV(s) may remain paused until the archiver recovers"
+                    + " and another channel update arrives — RESUME was not sent: %s%s",
+                archiverAlias, total, sample, suffix));
   }
 
   private Stream<String> resolveArchiverAliases(Channel channel) {
@@ -239,10 +269,10 @@ public class AAChannelProcessor implements ChannelProcessor {
     return ArchiveAction.NONE;
   }
 
-  private Map<ArchiveAction, List<ArchivePVOptions>> getArchiveActions(
+  private Optional<Map<ArchiveAction, List<ArchivePVOptions>>> getArchiveActions(
       Map<String, ArchivePVOptions> archivePVS, ArchiverInfo archiverInfo) {
     if (archiverInfo == null) {
-      return Map.of();
+      return Optional.of(Map.of());
     }
 
     logger.log(
@@ -257,13 +287,24 @@ public class AAChannelProcessor implements ChannelProcessor {
         .forEach(archiveAction -> result.put(archiveAction, new ArrayList<>()));
     // Don't request to archive an empty list.
     if (archivePVS.isEmpty()) {
-      return result;
+      return Optional.of(result);
     }
     List<String> pvList = new ArrayList<>(archivePVS.keySet());
-    List<Map<String, String>> statuses =
-        postSupportArchivers.contains(archiverInfo.alias())
-            ? archiverService.getStatusesViaPost(archiverInfo.url(), pvList)
-            : archiverService.getStatusesViaGet(archiverInfo.url(), pvList);
+    List<Map<String, String>> statuses;
+    try {
+      statuses =
+          postSupportArchivers.contains(archiverInfo.alias())
+              ? archiverService.getStatusesViaPost(archiverInfo.url(), pvList)
+              : archiverService.getStatusesViaGet(archiverInfo.url(), pvList);
+    } catch (ArchiverServiceException e) {
+      logger.log(
+          Level.WARNING,
+          () ->
+              String.format(
+                  "Status fetch failed for archiver '%s'; skipping %d PVs to avoid spurious ARCHIVE submissions: %s",
+                  archiverInfo.alias(), archivePVS.size(), e.getMessage()));
+      return Optional.empty();
+    }
     logger.log(
         Level.FINER,
         () ->
@@ -301,7 +342,7 @@ public class AAChannelProcessor implements ChannelProcessor {
           List<ArchivePVOptions> archivePVOptionsList = result.get(action);
           archivePVOptionsList.add(archivePVOptions);
         });
-    return result;
+    return Optional.of(result);
   }
 
   private ArchivePVOptions createArchivePV(
