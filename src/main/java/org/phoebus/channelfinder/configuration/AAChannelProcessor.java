@@ -245,7 +245,7 @@ public class AAChannelProcessor implements ChannelProcessor {
   private Optional<Map<ArchiveAction, List<ArchivePVOptions>>> getArchiveActions(
       Map<String, ArchivePVOptions> archivePVS, ArchiverInfo archiverInfo) {
     if (archiverInfo == null) {
-      return Optional.of(Map.of());
+      return Optional.empty();
     }
 
     logger.log(
