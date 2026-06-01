@@ -371,8 +371,9 @@ class ArchiverServiceTest {
   }
 
   @Test
-  void testRequestTimesOutAtConfiguredTimeout() throws IOException {
-    int timeoutSeconds = 1;
+  void testRequestTimesOutAtConfiguredReadTimeout() throws IOException {
+    int connectTimeoutSeconds = 30;
+    int readTimeoutSeconds = 1;
 
     // Accept the TCP connection but never send a response, simulating a hung archiver host.
     try (ServerSocket serverSocket = new ServerSocket(0)) {
@@ -390,7 +391,8 @@ class ArchiverServiceTest {
       serverThread.start();
 
       RestClient.Builder builder = RestClient.builder();
-      ArchiverService service = new ArchiverService(timeoutSeconds, builder);
+      ArchiverService service =
+          new ArchiverService(connectTimeoutSeconds, readTimeoutSeconds, builder);
 
       long start = System.currentTimeMillis();
       List<String> successfulPvs = List.of("pv1");
@@ -399,8 +401,45 @@ class ArchiverServiceTest {
           () -> service.getStatusesViaGet("http://localhost:" + port, successfulPvs));
       long elapsedMs = System.currentTimeMillis() - start;
 
-      // Should timeout at ~1s — well short of the OS TCP default (~2 minutes)
+      // The connection is accepted instantly, so this can only be the read timeout. Elapsing
+      // at ~1s — far below the 30s connect timeout — proves it was the read timeout that
+      // fired, and well short of the OS TCP default (~2 minutes).
+      assertTrue(
+          elapsedMs >= readTimeoutSeconds * 1000L,
+          "Expected to wait for the read timeout, elapsed: " + elapsedMs + "ms");
       assertTrue(elapsedMs < 10_000, "Expected timeout within 10s, elapsed: " + elapsedMs + "ms");
     }
+  }
+
+  @Test
+  void testConnectionTimesOutAtConfiguredConnectTimeout() {
+    int connectTimeoutSeconds = 1;
+    int readTimeoutSeconds = 30;
+    RestClient.Builder builder = RestClient.builder();
+    ArchiverService service =
+        new ArchiverService(connectTimeoutSeconds, readTimeoutSeconds, builder);
+
+    // 192.0.2.0/24 is TEST-NET-1 (RFC 5737): reserved and unrouted, so the TCP SYN is
+    // silently dropped and the connect attempt hangs until the connect timeout fires.
+    // A closed local port would instead be refused (RST) instantly, never exercising the
+    // connect timeout — this address ensures we test connection, not response, timeout.
+    long start = System.currentTimeMillis();
+    List<String> pvs = List.of("pv1");
+    assertThrows(
+        ArchiverServiceException.class,
+        () -> service.getStatusesViaGet("http://192.0.2.1:81", pvs));
+    long elapsedMs = System.currentTimeMillis() - start;
+
+    // Distinct timeouts make this self-distinguishing: elapsing at ~1s — far below the 30s
+    // read timeout — proves it was the connect timeout that fired, not the read timeout, and
+    // not the OS TCP default (~2 minutes). The lower bound rules out an instant refusal.
+    assertTrue(
+        elapsedMs >= connectTimeoutSeconds * 1000L,
+        "Expected to wait for the connect timeout, elapsed: " + elapsedMs + "ms");
+    assertTrue(
+        elapsedMs < 10_000,
+        "Expected to fail at the connect timeout (not the 30s read timeout), elapsed: "
+            + elapsedMs
+            + "ms");
   }
 }
