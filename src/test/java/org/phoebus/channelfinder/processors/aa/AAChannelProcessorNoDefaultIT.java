@@ -1,46 +1,26 @@
 package org.phoebus.channelfinder.processors.aa;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activeProperty;
-import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
-import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.paramableAAChannelProcessorTest;
-
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.phoebus.channelfinder.configuration.AAChannelProcessor;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.service.external.ArchiverService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.core.JacksonException;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(
     locations = "classpath:application_aa_proc_test.properties",
     properties = "aa.urls:{'default': '','aa': 'http://localhost:17665'}")
-class AAChannelProcessorNoDefaultIT {
+class AAChannelProcessorNoDefaultIT extends AAChannelProcessorBaseIT {
+
   protected static Property archiverProperty = new Property("archiver", "owner", "aa");
 
-  @Autowired AAChannelProcessor aaChannelProcessor;
-
-  @MockitoBean ArchiverService archiverService;
-
-  @BeforeEach
-  void primeCache() {
-    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
-    aaChannelProcessor.scheduledPolicyRefresh();
-  }
-
   private static Stream<Arguments> processNoPauseSource() {
-
     return Stream.of(
         Arguments.of(
             new Channel(
@@ -64,7 +44,6 @@ class AAChannelProcessorNoDefaultIT {
   void testProcessNotArchivedActive(
       Channel channel, String archiveStatus, String archiverEndpoint, String submissionBody)
       throws JacksonException {
-    paramableAAChannelProcessorTest(
-        archiverService, aaChannelProcessor, List.of(channel), archiveStatus, archiverEndpoint);
+    paramableAAChannelProcessorTest(List.of(channel), archiveStatus, archiverEndpoint);
   }
 }

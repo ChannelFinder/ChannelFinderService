@@ -5,45 +5,30 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.activeProperty;
-import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.archiveProperty;
-import static org.phoebus.channelfinder.processors.aa.AAChannelProcessorIT.inactiveProperty;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.phoebus.channelfinder.configuration.AAChannelProcessor;
 import org.phoebus.channelfinder.entity.Channel;
-import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.core.JacksonException;
 
 @WebMvcTest(AAChannelProcessor.class)
 @TestPropertySource(value = "classpath:application_test_multi.properties")
-class AAChannelProcessorMultiArchiverIT {
+class AAChannelProcessorMultiArchiverIT extends AAChannelProcessorBaseIT {
 
   public static final String BEING_ARCHIVED = "Being archived";
   public static final String PAUSED = "Paused";
   public static final String NOT_BEING_ARCHIVED = "Not being archived";
   public static final String OWNER = "owner";
-  @Autowired AAChannelProcessor aaChannelProcessor;
-  @MockitoBean ArchiverService archiverService;
-
-  @BeforeEach
-  void primeCache() {
-    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
-    aaChannelProcessor.scheduledPolicyRefresh();
-  }
 
   static Stream<Arguments> provideArguments() {
     List<Channel> channels =
@@ -105,14 +90,12 @@ class AAChannelProcessorMultiArchiverIT {
       Map<String, String> namesToStatuses,
       Map<ArchiveAction, List<String>> actionsToNames)
       throws JacksonException {
-    // Request to archiver status
     List<Map<String, String>> archivePVStatuses =
         namesToStatuses.entrySet().stream()
             .map(entry -> Map.of("pvName", entry.getKey(), "status", entry.getValue()))
             .toList();
     when(archiverService.getStatusesViaGet(anyString(), anyList())).thenReturn(archivePVStatuses);
 
-    // Requests to archiver
     actionsToNames.forEach(
         (key, value) -> {
           when(archiverService.configureAA(anyMap(), anyString())).thenReturn((long) value.size());
@@ -120,7 +103,6 @@ class AAChannelProcessorMultiArchiverIT {
 
     aaChannelProcessor.process(channels);
 
-    // Verifications
     if (!namesToStatuses.isEmpty()) {
       verify(archiverService).getStatusesViaGet(anyString(), anyList());
       verify(archiverService).getStatusesViaPost(anyString(), anyList());

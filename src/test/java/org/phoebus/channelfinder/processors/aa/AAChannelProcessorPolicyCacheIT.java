@@ -13,34 +13,21 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.phoebus.channelfinder.configuration.AAChannelProcessor;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
-import org.phoebus.channelfinder.service.external.ArchiverService;
 import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import tools.jackson.core.JacksonException;
 
 @WebMvcTest(AAChannelProcessor.class)
 @ExtendWith(MockitoExtension.class)
 @TestPropertySource(value = "classpath:application_aa_proc_test.properties")
-class AAChannelProcessorPolicyCacheIT {
-
-  @MockitoBean ArchiverService archiverService;
-  @Autowired AAChannelProcessor aaChannelProcessor;
-
-  @BeforeEach
-  void primeCache() {
-    when(archiverService.getAAPolicies(anyString())).thenReturn(List.of("policy"));
-    aaChannelProcessor.scheduledPolicyRefresh();
-  }
+class AAChannelProcessorPolicyCacheIT extends AAChannelProcessorBaseIT {
 
   @Test
   void testProcessDoesNotCallGetAAPolicies() throws JacksonException {
