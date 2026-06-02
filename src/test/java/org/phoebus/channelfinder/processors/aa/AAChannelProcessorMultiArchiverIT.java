@@ -120,7 +120,7 @@ class AAChannelProcessorMultiArchiverIT {
 
     aaChannelProcessor.process(channels);
 
-    // Verifications: query archiver uses GET, post archiver uses POST (aa.post_support=post)
+    // Verifications
     if (!namesToStatuses.isEmpty()) {
       verify(archiverService).getStatusesViaGet(anyString(), anyList());
       verify(archiverService).getStatusesViaPost(anyString(), anyList());
