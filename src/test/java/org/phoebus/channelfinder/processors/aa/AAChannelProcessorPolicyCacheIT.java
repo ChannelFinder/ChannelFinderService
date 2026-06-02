@@ -66,9 +66,9 @@ class AAChannelProcessorPolicyCacheIT {
   void testProcessorInfoShowsCacheMetadata() {
     ChannelProcessorInfo info = aaChannelProcessor.processorInfo();
 
-    assertNotEquals("never", info.properties().get("LastPolicyRefresh"));
-    assertTrue(info.properties().get("CachedPoliciesPerArchiver").contains("default="));
-    assertEquals("3600", info.properties().get("PolicyRefreshIntervalSeconds"));
+    assertNotEquals("never", info.properties().get("lastPolicyRefresh"));
+    assertTrue(info.properties().get("cachedPoliciesPerArchiver").contains("default="));
+    assertEquals("3600", info.properties().get("policyCacheRefreshIntervalSeconds"));
   }
 
   @Test
@@ -83,7 +83,7 @@ class AAChannelProcessorPolicyCacheIT {
         aaChannelProcessor
             .processorInfo()
             .properties()
-            .get("CachedPoliciesPerArchiver")
+            .get("cachedPoliciesPerArchiver")
             .contains("default=3"));
   }
 }
