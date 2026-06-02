@@ -58,9 +58,12 @@ public class ArchiverService {
 
   @Autowired
   public ArchiverService(
-      @Value("${aa.timeout_seconds:15}") int timeoutSeconds, RestClient.Builder builder) {
+      @Value("${aa.connect_timeout_seconds:5}") int connectTimeoutSeconds,
+      @Value("${aa.timeout_seconds:15}") int readTimeoutSeconds,
+      RestClient.Builder builder) {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setReadTimeout(timeoutSeconds * 1000);
+    factory.setConnectTimeout(connectTimeoutSeconds * 1000);
+    factory.setReadTimeout(readTimeoutSeconds * 1000);
     this.client = builder.requestFactory(factory).build();
   }
 
@@ -87,18 +90,13 @@ public class ArchiverService {
             .queryParam(StatusResponseKey.PV.key(), String.join(",", pvs))
             .build()
             .toUri();
-
     try {
       List<Map<String, String>> result =
           client.get().uri(pvStatusURI).retrieve().body(new ParameterizedTypeReference<>() {});
       return result != null ? result : List.of();
     } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format(
-              "There was an error getting a response with URI: %s. Error: %s",
-              uriString, e.getMessage()));
-      return List.of();
+      throw new ArchiverServiceException(
+          String.format("Failed GET status query to %s: %s", uriString, e.getMessage()), e);
     }
   }
 
@@ -115,12 +113,8 @@ public class ArchiverService {
               .body(new ParameterizedTypeReference<>() {});
       return result != null ? result : List.of();
     } catch (Exception e) {
-      logger.log(
-          Level.WARNING,
-          String.format(
-              "There was an error getting a response with URI: %s. Error: %s",
-              uriString, e.getMessage()));
-      return List.of();
+      throw new ArchiverServiceException(
+          String.format("Failed POST status query to %s: %s", uriString, e.getMessage()), e);
     }
   }
 
