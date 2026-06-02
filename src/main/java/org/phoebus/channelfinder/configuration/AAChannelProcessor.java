@@ -185,8 +185,9 @@ public class AAChannelProcessor implements ChannelProcessor {
           e.getValue().stream().collect(Collectors.toMap(ArchivePVOptions::getPv, pv -> pv));
       Optional<Map<ArchiveAction, List<ArchivePVOptions>>> actions =
           getArchiveActions(pvMap, archiverInfo);
-      if (actions.isEmpty()) continue;
-      count += archiverService.configureAA(actions.get(), archiverInfo.url());
+      if (!actions.isEmpty()) {
+        count += archiverService.configureAA(actions.get(), archiverInfo.url());
+      }
     }
     return count;
   }
