@@ -66,11 +66,8 @@ class AAChannelProcessorPolicyCacheIT extends AAChannelProcessorBaseIT {
     aaChannelProcessor.scheduledPolicyRefresh();
 
     verify(archiverService).getAAPolicies(anyString());
-    assertTrue(
-        aaChannelProcessor
-            .processorInfo()
-            .properties()
-            .get("cachedPoliciesPerArchiver")
-            .contains("default=3"));
+    String cachedPoliciePerArchiver =
+        aaChannelProcessor.processorInfo().properties().get("cachedPoliciesPerArchiver");
+    assertTrue(cachedPoliciePerArchiver.contains("default=ArchiverPolicies[policies=[p1, p2, p3]"));
   }
 }

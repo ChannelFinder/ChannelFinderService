@@ -105,10 +105,7 @@ public class AAChannelProcessor implements ChannelProcessor {
 
   @Override
   public ChannelProcessorInfo processorInfo() {
-    String policyCounts =
-        cachedPolicies.entrySet().stream()
-            .map(e -> e.getKey() + "=" + e.getValue())
-            .collect(Collectors.joining(", "));
+    String cachedPoliciesStringValue = cachedPoliciesRepresentation(cachedPolicies);
     return new ChannelProcessorInfo(
         "AAChannelProcessor",
         aaEnabled,
@@ -128,7 +125,7 @@ public class AAChannelProcessor implements ChannelProcessor {
             "lastPolicyRefresh",
             lastPolicyRefresh == null ? "never" : lastPolicyRefresh.toString(),
             "cachedPoliciesPerArchiver",
-            policyCounts.isEmpty() ? "none" : policyCounts));
+            cachedPoliciesStringValue.isEmpty() ? "none" : cachedPoliciesStringValue));
   }
 
   /**
@@ -393,6 +390,12 @@ public class AAChannelProcessor implements ChannelProcessor {
                         e.getKey(), e.getValue(), snapshot.get(e.getKey()).policies())));
   }
 
+  private static String cachedPoliciesRepresentation(Map<String, ArchiverPolicies> policies) {
+    return policies.entrySet().stream()
+        .map(e -> e.getKey() + "=" + e.getValue())
+        .collect(Collectors.joining(", "));
+  }
+
   private void refreshPolicies() {
     if (aaURLs.isEmpty()) {
       logger.log(Level.FINE, "No archivers configured; skipping policy cache refresh.");
@@ -426,11 +429,7 @@ public class AAChannelProcessor implements ChannelProcessor {
     if (!changed.isEmpty()) {
       cachedPolicies = Collections.unmodifiableMap(updated);
       logger.log(
-          Level.INFO,
-          "AA policy cache updated: {0}",
-          cachedPolicies.entrySet().stream()
-              .map(e -> e.getKey() + "=" + e.getValue())
-              .collect(Collectors.joining(", ")));
+          Level.INFO, "AA policy cache updated: {0}", cachedPoliciesRepresentation(cachedPolicies));
     } else {
       logger.log(Level.FINE, "AA policy cache unchanged after refresh.");
     }
