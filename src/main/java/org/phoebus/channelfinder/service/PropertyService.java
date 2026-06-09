@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.phoebus.channelfinder.common.TextUtil;
@@ -204,7 +206,7 @@ public class PropertyService {
     return properties;
   }
 
-  public void remove(String propertyName) {
+  public void removeBatch(String propertyName) {
     requireRole(ROLES.CF_PROPERTY, propertyName);
 
     Property existing =
@@ -230,6 +232,61 @@ public class PropertyService {
             .orElseThrow(() -> new ChannelNotFoundException(channelName));
     channel.removeProperty(new Property(propertyName, ""));
     channelRepository.index(channel);
+  }
+
+  /**
+   * Remove property from multiple channels.
+   *
+   * <p>Best-effort processing: non-existent channels are ignored, duplicates are deduplicated. Only
+   * channels where the property actually existed contribute to the returned count.
+   *
+   * @param propertyName name of the property to remove
+   * @param channelNames list of channel names to remove property from
+   * @return count of channels where property was actually removed
+   * @throws PropertyNotFoundException if property does not exist
+   * @throws UnauthorizedException if user lacks CF_PROPERTY role or is not property owner
+   */
+  public long removeBatch(String propertyName, List<String> channelNames) {
+    requireRole(ROLES.CF_PROPERTY, propertyName);
+
+    Property property =
+        propertyRepository
+            .findById(propertyName)
+            .orElseThrow(() -> new PropertyNotFoundException(propertyName));
+    requireOwner(property);
+
+    // Normalize and deduplicate incoming channel names
+    Set<String> uniqueChannelNames = new HashSet<>(channelNames);
+
+    if (uniqueChannelNames.isEmpty()) {
+      return 0;
+    }
+
+    List<Channel> existingChannels = channelRepository.findAllById(uniqueChannelNames);
+    long removedCount = 0;
+    List<Channel> modifiedChannels = new ArrayList<>();
+
+    for (Channel channel : existingChannels) {
+      // Check if property exists before removal
+      boolean hadProperty =
+          channel.getProperties().stream().anyMatch(p -> p.getName().equals(propertyName));
+
+      if (hadProperty) {
+        // Create a minimal Property object for removal (matching removeSingle pattern)
+        channel.removeProperty(new Property(propertyName, ""));
+        removedCount++;
+        modifiedChannels.add(channel);
+        audit.log(
+            Level.INFO,
+            () ->
+                MessageFormat.format(
+                    "Removed property {0} from channel {1}", propertyName, channel.getName()));
+      }
+    }
+    if (!modifiedChannels.isEmpty()) {
+      channelRepository.indexAll(modifiedChannels);
+    }
+    return removedCount;
   }
 
   private void propagateRenameToChannels(

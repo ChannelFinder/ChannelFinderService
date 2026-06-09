@@ -1,5 +1,6 @@
 package org.phoebus.channelfinder.web.v0.controller;
 
+import java.util.List;
 import org.phoebus.channelfinder.service.PropertyService;
 import org.phoebus.channelfinder.web.v0.api.IProperty;
 import org.phoebus.channelfinder.web.v0.dto.PropertyDto;
@@ -58,12 +59,17 @@ public class PropertyController implements IProperty {
   }
 
   @Override
-  public void remove(String propertyName) {
-    propertyService.remove(propertyName);
+  public void removeBatch(String propertyName) {
+    propertyService.removeBatch(propertyName);
   }
 
   @Override
   public void removeSingle(String propertyName, String channelName) {
     propertyService.removeSingle(propertyName, channelName);
+  }
+
+  @Override
+  public long removeBatch(String propertyName, List<String> channelNames) {
+    return propertyService.removeBatch(propertyName, channelNames);
   }
 }
