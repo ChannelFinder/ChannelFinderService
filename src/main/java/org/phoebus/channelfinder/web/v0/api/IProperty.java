@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import java.util.List;
 import org.phoebus.channelfinder.web.v0.dto.PropertyDto;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -234,7 +235,7 @@ public interface IProperty {
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @DeleteMapping("/{propertyName}")
-  void remove(@PathVariable("propertyName") String propertyName);
+  void removeBatch(@PathVariable("propertyName") String propertyName);
 
   @Operation(
       summary = "Delete property from a channel",
@@ -263,11 +264,31 @@ public interface IProperty {
       @PathVariable("propertyName") String propertyName,
       @PathVariable("channelName") String channelName);
 
-  /**
-   * Checks if 1. the property name is not null and matches the name in the body 2. the property
-   * owner is not null or empty 3. all the listed channels exist and have the property with a non
-   * null and non empty value
-   *
-   * @param property validate property
-   */
+  @Operation(
+      summary = "Delete property from multiple channels",
+      description =
+          "Remove the specified property from a list of channels. Best-effort processing: non-existent channels are ignored, duplicates are deduplicated. Returns count of channels where property was actually removed.",
+      operationId = "deletePropertyFromChannels",
+      tags = {"Property"})
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Number of channels where property was removed"),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Property not found",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Error while trying to remove property from channels",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
+      })
+  @DeleteMapping("/{propertyName}/channels")
+  long removeBatch(
+      @PathVariable("propertyName") String propertyName, @RequestBody List<String> channelNames);
 }
