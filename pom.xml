@@ -414,6 +414,7 @@
                     <excludeProperties>
                         <excludeProperty>^git.build.*$</excludeProperty>
                     </excludeProperties>
+                    <failOnNoGitDirectory>false</failOnNoGitDirectory>
                 </configuration>
             </plugin>
         </plugins>
