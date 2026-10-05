@@ -214,10 +214,44 @@
             </resource>
         </resources>
         <plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<version>3.6.3</version>
+				<executions>
+					<execution>
+						<id>enforce-plugin-versions</id>
+						<goals>
+							<goal>enforce</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<requirePluginVersions />
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
+            </plugin>
+            <plugin>
+              <artifactId>maven-resources-plugin</artifactId>
+              <version>3.3.1</version>
+            </plugin>
+            <plugin>
+              <artifactId>maven-clean-plugin</artifactId>
+              <version>3.4.0</version>
+            </plugin>
+            <plugin>
+              <artifactId>maven-install-plugin</artifactId>
+              <version>3.1.2</version>
+            </plugin>
+            <plugin>
+              <artifactId>maven-deploy-plugin</artifactId>
+              <version>3.1.2</version>
             </plugin>
             <plugin>
                 <groupId>com.spotify.fmt</groupId>
