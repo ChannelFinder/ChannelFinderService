@@ -466,10 +466,11 @@
                             <failOnWarning>true</failOnWarning>
                             <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
                             <ignoredUsedUndeclaredDependencies>
-                                <!-- The Spring Boot BOM does not manage these. Their versions come from elasticsearch-rest-client, springdoc and Testcontainers. -->
+                                <!-- The Spring Boot BOM does not manage these. Their versions come from elasticsearch-rest-client, springdoc, Testcontainers and JUnit. -->
                                 <ignoredUsedUndeclaredDependency>org.apache.httpcomponents:httpclient</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>io.swagger.core.v3:swagger-annotations-jakarta</ignoredUsedUndeclaredDependency>
                                 <ignoredUsedUndeclaredDependency>com.github.docker-java:docker-java-api</ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>org.opentest4j:opentest4j</ignoredUsedUndeclaredDependency>
                                 <!-- Declaring this would replace the httpclient that elasticsearch-rest-client brings in with an older one. -->
                                 <ignoredUsedUndeclaredDependency>org.apache.httpcomponents:httpasyncclient</ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
