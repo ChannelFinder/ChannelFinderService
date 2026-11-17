@@ -36,7 +36,7 @@
     </developers>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.boot-version>4.0.5</spring.boot-version>
+        <spring.boot-version>4.0.9</spring.boot-version>
         <elasticsearch.version>8.18.0</elasticsearch.version>
         <!-- Elasticsearch server started by the ITs; compose.yml and src/test/resources/compose.yml keep their own copy -->
         <elasticsearch.server.version>${elasticsearch.version}</elasticsearch.server.version>
