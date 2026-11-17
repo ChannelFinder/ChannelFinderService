@@ -58,6 +58,7 @@ jobs:
     permissions:
       checks: write
       contents: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -71,7 +72,7 @@ jobs:
       shell: bash
       run: docker image prune -af
     - name: Integration Test with Maven
-      run: mvn clean install test-compile failsafe:integration-test failsafe:verify --batch-mode --fail-at-end -Djacoco.skip=true -DskipITs=false -DskipITCoverage=true
+      run: mvn clean install test-compile failsafe:integration-test failsafe:verify --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false -DskipITCoverage=false
       env:
         EPICS_PVA_ENABLE_IP6: "false"
     - name: Publish Test Report
@@ -79,3 +80,23 @@ jobs:
       if: success() || failure() # always run even if the previous step fails
       with:
         report_paths: '**/target/failsafe-reports/TEST-*.xml'
+    - name: Add coverage to PR
+      id: jacoco
+      uses: madrapps/jacoco-report@v1.6.1
+      with:
+        paths: |
+          ${{ github.workspace }}/**/target/site/jacoco/jacoco.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+        min-coverage-overall: 40
+        min-coverage-changed-files: 60
+    - name: Upload Code Coverage Artifacts
+      uses: actions/upload-artifact@v4
+      if: success() || failure() # always run even if the previous step fails
+      with:
+        name: code-coverage-reports
+        path: ${{ github.workspace }}/**/target/site/jacoco
+
+    - name: Get the Coverage info
+      run: |
+        echo "Total coverage ${{ steps.jacoco.outputs.coverage-overall }}"
+        echo "Changed Files coverage ${{ steps.jacoco.outputs.coverage-changed-files }}"
