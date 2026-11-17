@@ -31,7 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 @WebMvcTest(PropertyRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 @ContextConfiguration(classes = {PropertyRepository.class, ElasticConfig.class})
-class PropertyRepositoryIT {
+class PropertyRepositoryIT extends ElasticsearchTestBase {
   public static final String TEST_PROPERTY_NAME = "testProperty";
 
   @Autowired ElasticConfig esService;

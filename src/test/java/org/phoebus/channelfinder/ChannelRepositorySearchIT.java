@@ -39,7 +39,7 @@ import org.springframework.util.MultiValueMap;
     matches = "true",
     disabledReason = "Requires Elasticsearch on localhost:9200; runs in CI only")
 @ContextConfiguration(classes = {ChannelRepository.class, ElasticConfig.class})
-class ChannelRepositorySearchIT {
+class ChannelRepositorySearchIT extends ElasticsearchTestBase {
   private static final Logger logger = Logger.getLogger(ChannelRepositorySearchIT.class.getName());
 
   // Need at least 10 000 channels to test Elastic search beyond the 10 000 default result limit

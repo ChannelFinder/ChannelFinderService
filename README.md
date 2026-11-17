@@ -122,6 +122,30 @@ To run the server in development (you need a running version of Elasticsearch)
 mvn spring-boot:run
 ```
 
+### Integration tests
+
+Integration tests (`*IT`) are skipped by default. Those that need Elasticsearch start a single Elasticsearch container
+with [Testcontainers](https://testcontainers.com/) on a random port, so only a running Docker engine is required.
+
+```bash
+mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false
+```
+
+To run them against an Elasticsearch that is already running instead, pass its URL:
+
+```bash
+mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.host_urls=http://localhost:9200
+```
+
+The Elasticsearch version of the container is the `elasticsearch.server.version` property in `pom.xml`. It defaults to
+the version of the Elasticsearch client. To test against another version, override it:
+
+```bash
+mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.server.version=8.19.0
+```
+
+`compose.yml` and `src/test/resources/compose.yml` set their own Elasticsearch image and do not follow this property.
+
 ### Integration tests with Docker containers
 
 Purpose is to have integration tests for ChannelFinder API with Docker.

@@ -41,7 +41,7 @@ import org.springframework.util.MultiValueMap;
       "metrics.updateInterval=1"
     })
 @ContextConfiguration(classes = {ElasticConfig.class, MetricsService.class})
-class MetricsServiceIT {
+class MetricsServiceIT extends ElasticsearchTestBase {
 
   public static final String METRICS_ENDPOINT = "/actuator/metrics";
   public static final String PROPERTY_NAME = "testProperty";
