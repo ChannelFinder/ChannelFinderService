@@ -1,7 +1,5 @@
 package org.phoebus.channelfinder;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,8 +69,7 @@ class ChannelRepositoryIT extends ElasticsearchTestBase {
 
     Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
     // verify the channels were created as expected
-    Assertions.assertTrue(
-        Iterables.elementsEqual(testChannels, createdChannels), "Failed to create the channels");
+    Assertions.assertIterableEquals(testChannels, createdChannels, "Failed to create the channels");
   }
 
   /** save a single channel */
@@ -386,9 +383,9 @@ class ChannelRepositoryIT extends ElasticsearchTestBase {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
     List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
-    Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
+    List<Channel> createdChannels = channelRepository.indexAll(testChannels);
     // Start with all created channels in cleanup list in case deleteAll fails
-    cleanupTestChannels = new ArrayList<>(Lists.newArrayList(createdChannels));
+    cleanupTestChannels = new ArrayList<>(createdChannels);
 
     channelRepository.deleteAll(testChannels);
     // verify the channels were deleted as expected
@@ -408,8 +405,8 @@ class ChannelRepositoryIT extends ElasticsearchTestBase {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
     Channel testChannel1 = new Channel("testChannel1", "testOwner1", testProperties, testTags);
     List<Channel> testChannels = Arrays.asList(testChannel, testChannel1);
-    Iterable<Channel> createdChannels = channelRepository.indexAll(testChannels);
-    cleanupTestChannels = new ArrayList<>(Lists.newArrayList(createdChannels));
+    List<Channel> createdChannels = channelRepository.indexAll(testChannels);
+    cleanupTestChannels = new ArrayList<>(createdChannels);
 
     // Create a list with existing and non-existing channel IDs
     List<String> channelIdsToDelete =
@@ -472,8 +469,8 @@ class ChannelRepositoryIT extends ElasticsearchTestBase {
   @Test
   void deleteChannelsBestEffortWithDuplicateIds() {
     Channel testChannel = new Channel("testChannel", "testOwner", testProperties, testTags);
-    Iterable<Channel> createdChannels = channelRepository.indexAll(Arrays.asList(testChannel));
-    cleanupTestChannels = new ArrayList<>(Lists.newArrayList(createdChannels));
+    List<Channel> createdChannels = channelRepository.indexAll(Arrays.asList(testChannel));
+    cleanupTestChannels = new ArrayList<>(createdChannels);
 
     // Create a list with duplicate IDs
     List<String> channelIdsToDelete =
@@ -623,7 +620,7 @@ class ChannelRepositoryIT extends ElasticsearchTestBase {
       testProperties.add(testProperty);
     }
     try {
-      return Lists.newArrayList(propertyRepository.indexAll(testProperties));
+      return new ArrayList<>(propertyRepository.indexAll(testProperties));
     } catch (Exception e) {
       propertyRepository.deleteAll(testProperties);
       return Collections.emptyList();

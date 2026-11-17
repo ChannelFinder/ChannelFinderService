@@ -1,13 +1,14 @@
 package org.phoebus.channelfinder;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -64,9 +65,8 @@ class PropertyRepositoryIT extends ElasticsearchTestBase {
 
     Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
     // verify the properties were created as expected
-    Assertions.assertTrue(
-        Iterables.elementsEqual(testProperties, createdProperties),
-        "Failed to create the list of properties");
+    Assertions.assertIterableEquals(
+        testProperties, createdProperties, "Failed to create the list of properties");
   }
 
   /** save a single property */
@@ -106,9 +106,8 @@ class PropertyRepositoryIT extends ElasticsearchTestBase {
     Iterable<Property> createdProperties = propertyRepository.indexAll(testProperties);
     Iterable<Property> updatedTestProperties = propertyRepository.saveAll(updateTestProperties);
     // verify the properties were updated as expected
-    Assertions.assertTrue(
-        Iterables.elementsEqual(updateTestProperties, updatedTestProperties),
-        "Failed to update the properties");
+    Assertions.assertIterableEquals(
+        updateTestProperties, updatedTestProperties, "Failed to update the properties");
   }
 
   /** find a single property */
@@ -170,9 +169,10 @@ class PropertyRepositoryIT extends ElasticsearchTestBase {
     List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
 
     try {
-      Set<Property> createdProperties =
-          Sets.newHashSet(propertyRepository.indexAll(testProperties));
-      Set<Property> listedProperties = Sets.newHashSet(propertyRepository.findAll());
+      Set<Property> createdProperties = new HashSet<>(propertyRepository.indexAll(testProperties));
+      Set<Property> listedProperties =
+          StreamSupport.stream(propertyRepository.findAll().spliterator(), false)
+              .collect(Collectors.toSet());
       // verify the properties were listed as expected
       Assertions.assertEquals(
           createdProperties, listedProperties, "Failed to list all created properties");
@@ -189,8 +189,7 @@ class PropertyRepositoryIT extends ElasticsearchTestBase {
     List<Property> testProperties = Arrays.asList(testProperty, testProperty1);
 
     try {
-      Set<Property> createdProperties =
-          Sets.newHashSet(propertyRepository.indexAll(testProperties));
+      Set<Property> createdProperties = new HashSet<>(propertyRepository.indexAll(testProperties));
       long listedPropertiesCount = propertyRepository.count();
       // verify the properties were listed as expected
       Assertions.assertEquals(
