@@ -176,10 +176,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>io.netty</groupId> <!-- Need for running tests on mac -->
-            <artifactId>netty-all</artifactId>
-        </dependency>
 
         <!-- Metrics -->
         <dependency>
