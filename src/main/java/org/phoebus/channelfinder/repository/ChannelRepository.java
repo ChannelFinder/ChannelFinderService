@@ -535,12 +535,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     Integer finalSize = builtQuery.size;
     Integer finalFrom = builtQuery.from;
 
-    if (builtQuery.size < 0 || builtQuery.from < 0) {
-      String message =
-          MessageFormat.format(
-              TextUtil.SEARCH_FAILED_CAUSE, searchParameters, "~size and ~from cannot be negative");
-      throw new ChannelValidationException(message);
-    }
+    requireNonNegativePaging(builtQuery, searchParameters);
     if (builtQuery.size + builtQuery.from > esService.getES_MAX_RESULT_WINDOW_SIZE()) {
       String message =
           MessageFormat.format(
@@ -575,6 +570,16 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
           MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
       logger.log(Level.SEVERE, message, e);
       throw new RepositoryException(message, e);
+    }
+  }
+
+  private static void requireNonNegativePaging(
+      BuiltQuery builtQuery, MultiValueMap<String, String> searchParameters) {
+    if (builtQuery.size < 0 || builtQuery.from < 0) {
+      String message =
+          MessageFormat.format(
+              TextUtil.SEARCH_FAILED_CAUSE, searchParameters, "~size and ~from cannot be negative");
+      throw new ChannelValidationException(message);
     }
   }
 
@@ -842,6 +847,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    */
   public Scroll scroll(String scrollId, MultiValueMap<String, String> searchParameters) {
     BuiltQuery builtQuery = getBuiltQuery(searchParameters);
+    requireNonNegativePaging(builtQuery, searchParameters);
     try {
       SearchRequest.Builder builder =
           new SearchRequest.Builder()
