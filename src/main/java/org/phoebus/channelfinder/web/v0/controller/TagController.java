@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @EnableAutoConfiguration
-@RequestMapping("${channelfinder.legacy.service-root:ChannelFinder}/resources/tags")
+@RequestMapping("#{@legacyApiProperties.serviceRoot}/resources/tags")
 public class TagController implements ITag {
 
   private final TagService tagService;

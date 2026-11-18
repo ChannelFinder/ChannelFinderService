@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @EnableAutoConfiguration
-@RequestMapping("${channelfinder.legacy.service-root:ChannelFinder}/resources/properties")
+@RequestMapping("#{@legacyApiProperties.serviceRoot}/resources/properties")
 public class PropertyController implements IProperty {
 
   private final PropertyService propertyService;

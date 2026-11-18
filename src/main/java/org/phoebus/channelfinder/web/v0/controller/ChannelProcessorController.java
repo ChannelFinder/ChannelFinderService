@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @EnableAutoConfiguration
-@RequestMapping("${channelfinder.legacy.service-root:ChannelFinder}/resources/processors")
+@RequestMapping("#{@legacyApiProperties.serviceRoot}/resources/processors")
 public class ChannelProcessorController implements IChannelProcessor {
 
   private final ChannelProcessorService channelProcessorService;
