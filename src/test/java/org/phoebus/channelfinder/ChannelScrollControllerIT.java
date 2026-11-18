@@ -31,7 +31,7 @@ import org.springframework.util.MultiValueMap;
     named = "GITHUB_ACTIONS",
     matches = "true",
     disabledReason = "Requires Elasticsearch on localhost:9200; runs in CI only")
-class ChannelScrollControllerIT {
+class ChannelScrollControllerIT extends ElasticsearchTestBase {
 
   @Autowired IChannelScroll channelScroll;
 

@@ -37,7 +37,7 @@ import org.springframework.util.MultiValueMap;
 @WithMockUser(roles = "CF-ADMINS")
 @TestPropertySource(value = "classpath:application_test.properties")
 @ContextConfiguration(classes = {PropertyController.class, ElasticConfig.class})
-class PropertyControllerIT {
+class PropertyControllerIT extends ElasticsearchTestBase {
 
   @Autowired IProperty propertyManager;
 

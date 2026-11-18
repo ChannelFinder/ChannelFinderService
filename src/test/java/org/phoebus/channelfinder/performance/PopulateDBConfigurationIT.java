@@ -3,6 +3,7 @@ package org.phoebus.channelfinder.performance;
 import java.net.URL;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.phoebus.channelfinder.ElasticsearchTestBase;
 import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.service.AuthorizationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 /** An class for creating the example database and testing the speed. */
 @WebMvcTest(AuthorizationService.class)
 @TestPropertySource(value = "classpath:performance_application.properties")
-class PopulateDBConfigurationIT {
+class PopulateDBConfigurationIT extends ElasticsearchTestBase {
 
   @Autowired PopulateDBConfiguration populateDBConfiguration;
 

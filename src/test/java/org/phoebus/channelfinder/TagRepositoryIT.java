@@ -29,7 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 @WebMvcTest(TagRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 @ContextConfiguration(classes = {TagRepository.class, ElasticConfig.class})
-class TagRepositoryIT {
+class TagRepositoryIT extends ElasticsearchTestBase {
 
   @Autowired ElasticConfig esService;
 
