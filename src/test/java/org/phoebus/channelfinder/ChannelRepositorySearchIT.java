@@ -37,7 +37,7 @@ import org.springframework.util.MultiValueMap;
 @EnabledIfEnvironmentVariable(
     named = "GITHUB_ACTIONS",
     matches = "true",
-    disabledReason = "Requires Elasticsearch on localhost:9200; runs in CI only")
+    disabledReason = "Slow: indexes 150 000 channels; runs in CI only")
 @ContextConfiguration(classes = {ChannelRepository.class, ElasticConfig.class})
 class ChannelRepositorySearchIT extends ElasticsearchTestBase {
   private static final Logger logger = Logger.getLogger(ChannelRepositorySearchIT.class.getName());
