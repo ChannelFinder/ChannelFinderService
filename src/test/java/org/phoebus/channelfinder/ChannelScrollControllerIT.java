@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.repository.ChannelRepository;
@@ -27,10 +26,6 @@ import org.springframework.util.MultiValueMap;
 @WebMvcTest(ChannelScrollController.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 @ContextConfiguration(classes = {ChannelScrollController.class, ElasticConfig.class})
-@EnabledIfEnvironmentVariable(
-    named = "GITHUB_ACTIONS",
-    matches = "true",
-    disabledReason = "Requires Elasticsearch on localhost:9200; runs in CI only")
 class ChannelScrollControllerIT extends ElasticsearchTestBase {
 
   @Autowired IChannelScroll channelScroll;
