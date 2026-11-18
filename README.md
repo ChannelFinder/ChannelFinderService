@@ -35,7 +35,7 @@ Its intended use is for control systems, namely the EPICS Control system.
 
 ## Installation
 
-ChannelFinder is a Java EE5 REST-style web service. The directory data is held in a ElasticSearch index.
+ChannelFinder is a Java EE5 REST-style web service. The directory data is held in an Elasticsearch index.
 
 ### Docker Compose
 
@@ -65,7 +65,7 @@ Options:
 sudo apt-get install openjdk-25-jre git curl wget
 sudo systemctl start elasticsearch # Or other command to run elastic search
 
-# Replace verison with the release you want
+# Replace version with the release you want
 wget https://github.com/ChannelFinder/ChannelFinderService/releases/download/ChannelFinder-{version}/ChannelFinder-{version}.jar 
 java -jar target/ChannelFinder-*.jar
 ``` 
@@ -93,8 +93,8 @@ information on the api see the [swagger docs endpoint](http://localhost:8080/swa
 
 ## Development
 
-It's strongly encouraged to use a modern IDE such as [Intelij](https://www.jetbrains.com/idea/)
-and [Eclipse](https://eclipseide.org/).
+It's strongly encouraged to use a modern IDE such as [IntelliJ IDEA](https://www.jetbrains.com/idea/)
+or [Eclipse](https://eclipseide.org/).
 
 * Prerequisites
 
@@ -173,7 +173,7 @@ See also
 
 ### Release ChannelFinder Server binaries to maven central
 
-The Phoebus ChannelFinder service uses the maven release plugin to prepare the publish the ChannelFinder server binaries
+The Phoebus ChannelFinder service uses the maven release plugin to prepare and publish the ChannelFinder server binaries
 to maven central
 using the sonatype repositories.
 
@@ -197,7 +197,7 @@ Create a sonatype account and update the maven settings.xml file with your sonat
 ./mvnw release:prepare
 ```  
 
-In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
+This step will ensure there are no uncommitted changes, ensure the version numbers are correct, tag the scm, etc..
 A full list of checks is
 documented [here](https://maven.apache.org/maven-release/maven-release-plugin/usage/prepare-release.html):
 
