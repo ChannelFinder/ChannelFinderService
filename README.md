@@ -67,7 +67,7 @@ sudo systemctl start elasticsearch # Or other command to run elastic search
 
 # Replace version with the release you want
 wget https://github.com/ChannelFinder/ChannelFinderService/releases/download/ChannelFinder-{version}/ChannelFinder-{version}.jar 
-java -jar target/ChannelFinder-*.jar
+java -jar ChannelFinder-{version}.jar
 ``` 
 
 Other installation recipes can be found
