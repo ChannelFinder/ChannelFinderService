@@ -305,8 +305,32 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.9.0</version>
                 <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
+                            <!-- The starters bring in what the code uses, so those are not declared one by one. -->
+                            <ignoredUsedUndeclaredDependencies>
+                                <ignoredUsedUndeclaredDependency>*</ignoredUsedUndeclaredDependency>
+                            </ignoredUsedUndeclaredDependencies>
+                            <!-- Declared for what they bring in or for use at run time, not for their own classes. -->
+                            <ignoredUnusedDeclaredDependencies>
+                                <ignoredUnusedDeclaredDependency>org.springframework.boot:spring-boot-starter*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.springframework.boot:spring-boot-restclient</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.springdoc:springdoc-openapi-starter-webmvc-ui</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>jakarta.json:jakarta.json-api</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>com.unboundid:unboundid-ldapsdk</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.jacoco:org.jacoco.agent</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>copy</id>
                         <phase>package</phase>
