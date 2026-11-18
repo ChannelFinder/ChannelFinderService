@@ -71,7 +71,7 @@ java -jar target/ChannelFinder-*.jar
 ``` 
 
 Other installation recipes can be found
-on [the wiki pages](https://github.com/ChannelFinder/ChannelFinder-SpringBoot/wiki).
+on [the wiki pages](https://github.com/ChannelFinder/ChannelFinderService/wiki).
 
 ### Configuration
 
@@ -199,7 +199,7 @@ Create a sonatype account and update the maven settings.xml file with your sonat
 
 In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
 A full list of checks is
-documented [here](https://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html):
+documented [here](https://maven.apache.org/maven-release/maven-release-plugin/usage/prepare-release.html):
 
 #### Perform the release
 
