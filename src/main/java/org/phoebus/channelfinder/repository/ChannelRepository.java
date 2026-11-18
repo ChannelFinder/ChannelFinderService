@@ -535,6 +535,12 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     Integer finalSize = builtQuery.size;
     Integer finalFrom = builtQuery.from;
 
+    if (builtQuery.size < 0 || builtQuery.from < 0) {
+      String message =
+          MessageFormat.format(
+              TextUtil.SEARCH_FAILED_CAUSE, searchParameters, "~size and ~from cannot be negative");
+      throw new ChannelValidationException(message);
+    }
     if (builtQuery.size + builtQuery.from > esService.getES_MAX_RESULT_WINDOW_SIZE()) {
       String message =
           MessageFormat.format(
@@ -681,10 +687,16 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   }
 
   private static int parseCountParameter(Map.Entry<String, List<String>> parameter, int size) {
-    Optional<String> maxSize =
-        parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
-    if (maxSize.isPresent()) {
-      size = Integer.parseInt(maxSize.get());
+    try {
+      Optional<String> maxSize =
+          parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
+      if (maxSize.isPresent()) {
+        size = Integer.parseInt(maxSize.get());
+      }
+    } catch (NumberFormatException _) {
+      throw new ChannelValidationException(
+          MessageFormat.format(
+              TextUtil.SEARCH_FAILED_CAUSE, parameter, parameter.getKey() + " is not a number"));
     }
     return size;
   }

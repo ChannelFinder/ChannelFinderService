@@ -13,6 +13,8 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junitpioneer.jupiter.ExpectedToFail;
 import org.opentest4j.AssertionFailedError;
 import tools.jackson.databind.node.ObjectNode;
@@ -252,14 +254,10 @@ class ChannelQueryApiIT extends ApiTestBase {
     assertEquals("10005", cf.get("/resources/channels/count").body());
   }
 
-  @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "a non-numeric ~size is answered with 500, although the mistake is the client's",
-      withExceptions = AssertionFailedError.class)
-  void nonNumericSizeIsRejectedWith400() {
-    // today: returns 500
-    assertEquals(400, cf.get("/resources/channels?~size=ten").status());
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"~size=ten", "~from=ten", "~size=-1", "~from=-1"})
+  void nonNumericOrNegativeSizeAndFromAreRejectedWith400(String query) {
+    assertEquals(400, cf.get("/resources/channels?" + query).status());
   }
 
   @Test
