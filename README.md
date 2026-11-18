@@ -102,24 +102,24 @@ and [Eclipse](https://eclipseide.org/).
     * Maven (via package manager or via the wrapper `./mvnw`) (version specified
       in [the wrapper properties](./.mvn/wrapper/maven-wrapper.properties))
 
-For the following commands `mvn` can be interchangeably used instead via `./mvnw`
+The commands below use the Maven wrapper `./mvnw`. An installed `mvn` works as well.
 
 To build:
 
 ```bash
-mvn clean install
+./mvnw clean install
 ```
 
 To test:
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 To run the server in development (you need a running version of Elasticsearch)
 
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 ### Integration tests
@@ -128,20 +128,20 @@ Integration tests (`*IT`) are skipped by default. Those that need Elasticsearch 
 with [Testcontainers](https://testcontainers.com/) on a random port, so only a running Docker engine is required.
 
 ```bash
-mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false
+./mvnw test-compile failsafe:integration-test failsafe:verify -DskipITs=false
 ```
 
 To run them against an Elasticsearch that is already running instead, pass its URL:
 
 ```bash
-mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.host_urls=http://localhost:9200
+./mvnw test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.host_urls=http://localhost:9200
 ```
 
 The Elasticsearch version of the container is the `elasticsearch.server.version` property in `pom.xml`. It defaults to
 the version of the Elasticsearch client. To test against another version, override it:
 
 ```bash
-mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.server.version=8.19.0
+./mvnw test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.server.version=8.19.0
 ```
 
 `compose.yml` and `src/test/resources/compose.yml` set their own Elasticsearch image and do not follow this property.
@@ -163,7 +163,7 @@ There are tests for properties, tags and channels separately and in combination.
 Integration tests can be run in IDE and via Maven.
 
 ```
-mvn failsafe:integration-test failsafe:verify -DskipITs=false
+./mvnw failsafe:integration-test failsafe:verify -DskipITs=false
 ```
 
 See also
@@ -194,7 +194,7 @@ Create a sonatype account and update the maven settings.xml file with your sonat
 #### Prepare the release
 
 ```bash
-mvn release:prepare
+./mvnw release:prepare
 ```  
 
 In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
@@ -204,7 +204,7 @@ documented [here](https://maven.apache.org/maven-release/maven-release-plugin/ex
 #### Perform the release
 
 ```bash
-mvn release:perform
+./mvnw release:perform
 ```
 
 Checkout the release tag, build, sign and push the build binaries to sonatype.
