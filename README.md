@@ -35,7 +35,7 @@ Its intended use is for control systems, namely the EPICS Control system.
 
 ## Installation
 
-ChannelFinder is a Java EE5 REST-style web service. The directory data is held in an Elasticsearch index.
+ChannelFinder is a Spring Boot REST-style web service. The directory data is held in an Elasticsearch index.
 
 ### Docker Compose
 
@@ -82,9 +82,11 @@ different `application.properties` file:
 java -Dspring.config.location=file:./application.properties -jar ChannelFinder-*.jar
 ```
 
-The default authentication includes an embedded ldap server with users and roles defined in
-the [`cf.ldif`](src/main/resources/cf.ldif) file.
-Note that `cf.ldif` contains **default credentials** and should only be used during testing and evaluation.
+The default authentication is `demo_auth`, with users, passwords and roles set by the `demo_auth.*` properties in
+[`application.properties`](src/main/resources/application.properties).
+An embedded LDAP server with users and roles defined in the [`cf.ldif`](src/main/resources/cf.ldif) file can be
+enabled with `embedded_ldap.enabled=true`.
+Note that both contain **default credentials** and should only be used during testing and evaluation.
 
 ### Verification
 
