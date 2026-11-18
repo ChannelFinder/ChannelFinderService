@@ -157,7 +157,8 @@ public class TagService {
     Tag updated = tagRepository.save(newTag);
 
     if (!channels.isEmpty()) {
-      channels.forEach(chan -> chan.addTag(updated));
+      // saveAll merges these tags into the stored channels, which no longer carry the old name
+      channels.forEach(chan -> chan.setTags(List.of(updated)));
     }
     if (!tag.getChannels().isEmpty()) {
       tag.getChannels().forEach(c -> c.addTag(updated));
