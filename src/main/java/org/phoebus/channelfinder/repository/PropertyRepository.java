@@ -340,11 +340,11 @@ public class PropertyRepository implements CrudRepository<Property, String> {
       }
 
       // Remove the Property from Channels
-      BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
       MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
       params.add(propertyName, "*");
       List<Channel> channels = channelRepository.search(params).channels();
       while (channels.size() > 0) {
+        BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
         for (Channel channel : channels) {
           channel.removeProperty(
               channel.getProperties().stream()

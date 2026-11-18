@@ -327,12 +327,11 @@ public class TagRepository implements CrudRepository<Tag, String> {
       if (response.result().equals(Result.Deleted)) {
         logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_TAG, tagName));
       }
-      BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
       MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
       params.add("~tag", tagName);
       List<Channel> channels = channelRepository.search(params).channels();
       while (!channels.isEmpty()) {
-
+        BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
         for (Channel channel : channels) {
           // Or
           channel.removeTag(

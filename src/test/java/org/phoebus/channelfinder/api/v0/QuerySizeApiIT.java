@@ -109,34 +109,22 @@ class QuerySizeApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value =
-          "deleting a property that is on more than one page of channels fails after the first"
-              + " page",
-      withExceptions = AssertionFailedError.class)
   void deletingAPropertyOnMoreThanOnePageRemovesItEverywhere() {
     createProperties("admin", "area");
     createTags("admin", "archived");
     putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
 
-    // today: returns 500, and ch6 and ch7 keep the property
     assertEquals(200, cf.delete("/resources/properties/area", ApiClient.ADMIN).status());
     assertEquals(404, cf.get("/resources/properties/area").status());
     assertEquals(List.of(), names(cf.get("/resources/channels?area=*").json()));
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "deleting a tag that is on more than one page of channels fails after the first page",
-      withExceptions = AssertionFailedError.class)
   void deletingATagOnMoreThanOnePageRemovesItEverywhere() {
     createProperties("admin", "area");
     createTags("admin", "archived");
     putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
 
-    // today: returns 500, and ch6 and ch7 keep the tag
     assertEquals(200, cf.delete("/resources/tags/archived", ApiClient.ADMIN).status());
     assertEquals(404, cf.get("/resources/tags/archived").status());
     assertEquals(List.of(), names(cf.get("/resources/channels?~tag=archived").json()));
