@@ -128,22 +128,26 @@ To run the server in development (you need a running version of Elasticsearch)
 
 Integration tests (`*IT`) are skipped by default. Those that need Elasticsearch start a single Elasticsearch container
 with [Testcontainers](https://testcontainers.com/) on a random port, so only a running Docker engine is required.
+The same run includes the [Docker integration tests](#integration-tests-with-docker-containers), which build a
+ChannelFinder image from the jar in `target/`. The commands therefore start with `package`, which builds the jar and
+also runs the unit tests. The `test-compile` after `package` is also needed. Failsafe otherwise loads the classes from
+the repackaged Spring Boot jar, and the tests fail with `NoClassDefFoundError`.
 
 ```bash
-./mvnw test-compile failsafe:integration-test failsafe:verify -DskipITs=false
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false
 ```
 
 To run them against an Elasticsearch that is already running instead, pass its URL:
 
 ```bash
-./mvnw test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.host_urls=http://localhost:9200
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.host_urls=http://localhost:9200
 ```
 
 The Elasticsearch version of the container is the `elasticsearch.server.version` property in `pom.xml`. It defaults to
 the version of the Elasticsearch client. To test against another version, override it:
 
 ```bash
-./mvnw test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.server.version=8.19.0
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.server.version=8.19.0
 ```
 
 `compose.yml` and `src/test/resources/compose.yml` set their own Elasticsearch image and do not follow this property.
@@ -162,10 +166,10 @@ replies are received and checked if content is as expected.
 
 There are tests for properties, tags and channels separately and in combination.
 
-Integration tests can be run in IDE and via Maven.
+Integration tests can be run in IDE and via Maven. This command runs only these tests:
 
 ```
-./mvnw failsafe:integration-test failsafe:verify -DskipITs=false
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Pintegrationtest-docker
 ```
 
 See also
