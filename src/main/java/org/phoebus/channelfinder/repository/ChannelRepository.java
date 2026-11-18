@@ -798,6 +798,41 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   }
 
   /**
+   * Find one page of the channels that have the given property, sorted by name.
+   *
+   * @param propertyName channel search property name
+   * @param searchAfter name of the last channel on the previous page, or {@code null} for the first
+   *     page
+   * @return the channels on the page
+   */
+  public List<Channel> findByProperty(String propertyName, String searchAfter) {
+    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+    params.add(propertyName, "*");
+    return searchPage(params, searchAfter);
+  }
+
+  /**
+   * Find one page of the channels that have the given tag, sorted by name.
+   *
+   * @param tagName channel search tag
+   * @param searchAfter name of the last channel on the previous page, or {@code null} for the first
+   *     page
+   * @return the channels on the page
+   */
+  public List<Channel> findByTag(String tagName, String searchAfter) {
+    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+    params.add("~tag", tagName);
+    return searchPage(params, searchAfter);
+  }
+
+  private List<Channel> searchPage(MultiValueMap<String, String> params, String searchAfter) {
+    if (searchAfter != null) {
+      params.add("~search_after", searchAfter);
+    }
+    return search(params).channels();
+  }
+
+  /**
    * Scroll-paginated search. Returns a page of channels and the ID to pass as scrollId on the next
    * call to advance the cursor. Accepts the same query parameters as {@link #search}.
    *

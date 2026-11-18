@@ -139,13 +139,14 @@ public class PropertyService {
     List<Channel> chans = new ArrayList<>();
     Optional<Property> existingOpt = propertyRepository.findById(propertyName, true);
     Property newProperty;
+    String oldName = null;
     if (existingOpt.isPresent()) {
       requireOwner(existingOpt.get());
       chans = existingOpt.get().getChannels();
       newProperty = existingOpt.get();
       newProperty.setOwner(property.getOwner());
       if (!property.getName().equalsIgnoreCase(existingOpt.get().getName())) {
-        propertyRepository.deleteById(existingOpt.get().getName());
+        oldName = existingOpt.get().getName();
         newProperty.setName(property.getName());
       }
     } else {
@@ -153,6 +154,10 @@ public class PropertyService {
     }
 
     Property updated = propertyRepository.save(newProperty);
+    if (oldName != null) {
+      renameOnChannels(oldName, updated);
+      propertyRepository.deleteById(oldName);
+    }
 
     propagateRenameToChannels(propertyName, updated, chans);
 
@@ -230,6 +235,30 @@ public class PropertyService {
             .orElseThrow(() -> new ChannelNotFoundException(channelName));
     channel.removeProperty(new Property(propertyName, ""));
     channelRepository.index(channel);
+  }
+
+  /**
+   * Replace the old property with the renamed one on every channel, keeping its value, one page at
+   * a time. A renamed channel no longer matches the search, and the next page starts after the last
+   * name on this one, so no channel is skipped or renamed twice.
+   */
+  private void renameOnChannels(String oldName, Property renamed) {
+    List<Channel> page = channelRepository.findByProperty(oldName, null);
+    while (!page.isEmpty()) {
+      for (Channel channel : page) {
+        channel.getProperties().stream()
+            .filter(p -> p.getName().equals(oldName))
+            .findFirst()
+            .ifPresent(
+                old -> {
+                  channel.removeProperty(old);
+                  channel.addProperty(
+                      new Property(renamed.getName(), renamed.getOwner(), old.getValue()));
+                });
+      }
+      channelRepository.indexAll(page);
+      page = channelRepository.findByProperty(oldName, page.getLast().getName());
+    }
   }
 
   private void propagateRenameToChannels(

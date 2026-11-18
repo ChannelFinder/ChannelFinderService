@@ -90,6 +90,55 @@ class QuerySizeApiIT extends ApiTestBase {
   }
 
   @Test
+  void renamingAPropertyOnMoreThanOnePageRenamesItEverywhere() {
+    createProperties("admin", "area");
+    createTags("admin", "archived");
+    putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
+    String renamed = property("zone", "admin").toString();
+
+    ApiClient.Response response = cf.post("/resources/properties/area", renamed, ApiClient.ADMIN);
+
+    assertEquals(200, response.status());
+    // Unlike GET, the POST response lists only the channels in the payload.
+    assertEquals(List.of(), names(response.json().get("channels")));
+    assertEquals("7", cf.get("/resources/channels/count?zone=north").body());
+    assertEquals("0", cf.get("/resources/channels/count?area=*").body());
+  }
+
+  @Test
+  void renamingATagOnMoreThanOnePageRenamesItEverywhere() {
+    createProperties("admin", "area");
+    createTags("admin", "archived");
+    putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
+    String renamed = tag("saved", "admin").toString();
+
+    ApiClient.Response response = cf.post("/resources/tags/archived", renamed, ApiClient.ADMIN);
+
+    assertEquals(200, response.status());
+    assertEquals(
+        names(cf.get("/resources/tags/saved").json().get("channels")),
+        names(response.json().get("channels")));
+    assertEquals("7", cf.get("/resources/channels/count?~tag=saved").body());
+    assertEquals("0", cf.get("/resources/channels/count?~tag=archived").body());
+  }
+
+  @Test
+  void postingATagWithoutARenameAnswersWithOnePageAndKeepsEveryChannel() {
+    createProperties("admin", "area");
+    createTags("admin", "archived");
+    putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
+    String unchanged = tag("archived", "admin").toString();
+
+    ApiClient.Response response = cf.post("/resources/tags/archived", unchanged, ApiClient.ADMIN);
+
+    assertEquals(200, response.status());
+    assertEquals(
+        names(cf.get("/resources/tags/archived").json().get("channels")),
+        names(response.json().get("channels")));
+    assertEquals("7", cf.get("/resources/channels/count?~tag=archived").body());
+  }
+
+  @Test
   void listingTheDefinitionsReturnsEveryDefinition() {
     createProperties("admin", "p1", "p2", "p3", "p4", "p5", "p6");
 
