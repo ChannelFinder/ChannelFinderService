@@ -848,6 +848,15 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   public Scroll scroll(String scrollId, MultiValueMap<String, String> searchParameters) {
     BuiltQuery builtQuery = getBuiltQuery(searchParameters);
     requireNonNegativePaging(builtQuery, searchParameters);
+    boolean hasScrollId = scrollId != null && !scrollId.isEmpty();
+    if (hasScrollId && builtQuery.from > 0) {
+      String message =
+          MessageFormat.format(
+              TextUtil.SEARCH_FAILED_CAUSE,
+              searchParameters,
+              "~from cannot be combined with a scroll id");
+      throw new ChannelValidationException(message);
+    }
     try {
       SearchRequest.Builder builder =
           new SearchRequest.Builder()
@@ -856,7 +865,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
               .from(builtQuery.from)
               .size(builtQuery.size)
               .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
-      if (scrollId != null && !scrollId.isEmpty()) {
+      if (hasScrollId) {
         builder.searchAfter(FieldValue.of(scrollId));
       }
       SearchResponse<Channel> response = client.search(builder.build(), Channel.class);

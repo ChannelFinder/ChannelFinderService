@@ -93,6 +93,14 @@ class ScrollApiIT extends ApiTestBase {
   }
 
   @Test
+  void fromCannotBeCombinedWithAScrollId() {
+    ApiClient.Response response = cf.get("/resources/scroll/ch2?~from=1");
+
+    assertEquals(400, response.status());
+    assertTrue(response.body().contains("~from cannot be combined with a scroll id"));
+  }
+
+  @Test
   void defaultPageSizeIsTheQuerySize() {
     // api.rst gives 100 as the current default page size. The code uses elasticsearch.query.size,
     // which is 10000 here, and this test records the code.
