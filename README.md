@@ -163,7 +163,7 @@ There are tests for properties, tags and channels separately and in combination.
 Integration tests can be run in IDE and via Maven.
 
 ```
-mvn failsafe:integration-test -DskipITs=false
+mvn failsafe:integration-test failsafe:verify -DskipITs=false
 ```
 
 See also

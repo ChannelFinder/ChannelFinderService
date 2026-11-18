@@ -21,8 +21,8 @@ All or individual integration tests (including methods) can be run in IDE as JUn
 To run all integration tests via Maven.
 
 ```
-mvn failsafe:integration-test -DskipITs=false
-mvn failsafe:integration-test -DskipITs=false -DskipITCoverage=false
+mvn failsafe:integration-test failsafe:verify -DskipITs=false
+mvn failsafe:integration-test failsafe:verify -DskipITs=false -DskipITCoverage=false
 ```
 
 To run individual integration tests (classes) via Maven.
