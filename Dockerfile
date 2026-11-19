@@ -2,9 +2,11 @@
 
 FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /build
-RUN apt-get update && apt-get install -y maven
+COPY mvnw ./
+COPY .mvn .mvn
+RUN ./mvnw --batch-mode --version
 COPY . .
-RUN mvn --batch-mode --update-snapshots clean package -DskipTests
+RUN ./mvnw --batch-mode --update-snapshots clean package -DskipTests
 
 FROM eclipse-temurin:25-jre AS runner
 WORKDIR /app

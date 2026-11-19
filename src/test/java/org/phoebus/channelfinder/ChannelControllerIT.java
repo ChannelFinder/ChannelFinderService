@@ -35,7 +35,7 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(value = "classpath:application_test.properties")
 @ContextConfiguration(
     classes = {ChannelController.class, ElasticConfig.class, ChannelRepository.class})
-class ChannelControllerIT {
+class ChannelControllerIT extends ElasticsearchTestBase {
 
   @Autowired IChannel channelManager;
 

@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.phoebus.channelfinder.ElasticsearchTestBase;
 import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
 import org.phoebus.channelfinder.repository.ChannelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ import org.springframework.test.context.TestPropertySource;
  */
 @WebMvcTest(ChannelRepository.class)
 @TestPropertySource(properties = "aa.enabled=false")
-class ExistsPerformanceIT {
+class ExistsPerformanceIT extends ElasticsearchTestBase {
 
   @Autowired PopulateDBConfiguration service;
 

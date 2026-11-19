@@ -5,7 +5,7 @@
 
     <artifactId>ChannelFinder</artifactId>
     <groupId>org.phoebus</groupId>
-    <version>5.1.1-SNAPSHOT</version>
+    <version>5.1.2-SNAPSHOT</version>
     <name>ChannelFinder Service</name>
 
     <description>A RESTful directory services for a list channels</description>
@@ -38,6 +38,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.boot-version>4.0.5</spring.boot-version>
         <elasticsearch.version>8.18.0</elasticsearch.version>
+        <!-- Elasticsearch server started by the ITs; compose.yml and src/test/resources/compose.yml keep their own copy -->
+        <elasticsearch.server.version>${elasticsearch.version}</elasticsearch.server.version>
         <skipITs>true</skipITs>
         <skipITCoverage>true</skipITCoverage>
         <jacoco.skip>true</jacoco.skip>
@@ -61,7 +63,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers</artifactId>
-                <version>1.19.3</version>
+                <version>1.21.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -169,7 +171,7 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>1.19.3</version>
+            <version>1.21.4</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -213,6 +215,22 @@
                 </excludes>
             </resource>
         </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>elasticsearch-test.properties</include>
+                </includes>
+            </testResource>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>elasticsearch-test.properties</exclude>
+                </excludes>
+            </testResource>
+        </testResources>
         <plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

@@ -27,7 +27,7 @@ import org.springframework.util.MultiValueMap;
 @WebMvcTest(ChannelScrollController.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 @ContextConfiguration(classes = {ChannelScrollController.class, ElasticConfig.class})
-class ChannelScrollControllerSearchIT {
+class ChannelScrollControllerSearchIT extends ElasticsearchTestBase {
 
   private static final Logger logger =
       Logger.getLogger(ChannelScrollControllerSearchIT.class.getName());

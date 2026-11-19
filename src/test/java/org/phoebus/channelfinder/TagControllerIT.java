@@ -37,7 +37,7 @@ import org.springframework.util.MultiValueMap;
 @WithMockUser(roles = "CF-ADMINS")
 @ContextConfiguration(classes = {TagRepository.class, ElasticConfig.class})
 @TestPropertySource(value = "classpath:application_test.properties")
-class TagControllerIT {
+class TagControllerIT extends ElasticsearchTestBase {
 
   @Autowired ITag tagManager;
 

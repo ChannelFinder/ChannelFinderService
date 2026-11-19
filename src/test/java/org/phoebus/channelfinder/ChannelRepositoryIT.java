@@ -35,7 +35,7 @@ import org.springframework.web.server.ResponseStatusException;
 @WebMvcTest(ChannelRepository.class)
 @TestPropertySource(value = "classpath:application_test.properties")
 @ContextConfiguration(classes = {ChannelRepository.class, ElasticConfig.class})
-class ChannelRepositoryIT {
+class ChannelRepositoryIT extends ElasticsearchTestBase {
 
   @Autowired ElasticConfig esService;
 
