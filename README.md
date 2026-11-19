@@ -35,7 +35,7 @@ Its intended use is for control systems, namely the EPICS Control system.
 
 ## Installation
 
-ChannelFinder is a Java EE5 REST-style web service. The directory data is held in a ElasticSearch index.
+ChannelFinder is a Spring Boot REST-style web service. The directory data is held in an Elasticsearch index.
 
 ### Docker Compose
 
@@ -65,13 +65,13 @@ Options:
 sudo apt-get install openjdk-25-jre git curl wget
 sudo systemctl start elasticsearch # Or other command to run elastic search
 
-# Replace verison with the release you want
+# Replace version with the release you want
 wget https://github.com/ChannelFinder/ChannelFinderService/releases/download/ChannelFinder-{version}/ChannelFinder-{version}.jar 
-java -jar target/ChannelFinder-*.jar
+java -jar ChannelFinder-{version}.jar
 ``` 
 
 Other installation recipes can be found
-on [the wiki pages](https://github.com/ChannelFinder/ChannelFinder-SpringBoot/wiki).
+on [the wiki pages](https://github.com/ChannelFinder/ChannelFinderService/wiki).
 
 ### Configuration
 
@@ -82,9 +82,11 @@ different `application.properties` file:
 java -Dspring.config.location=file:./application.properties -jar ChannelFinder-*.jar
 ```
 
-The default authentication includes an embedded ldap server with users and roles defined in
-the [`cf.ldif`](src/main/resources/cf.ldif) file.
-Note that `cf.ldif` contains **default credentials** and should only be used during testing and evaluation.
+The default authentication is `demo_auth`, with users, passwords and roles set by the `demo_auth.*` properties in
+[`application.properties`](src/main/resources/application.properties).
+An embedded LDAP server with users and roles defined in the [`cf.ldif`](src/main/resources/cf.ldif) file can be
+enabled with `embedded_ldap.enabled=true`.
+Note that both contain **default credentials** and should only be used during testing and evaluation.
 
 ### Verification
 
@@ -93,8 +95,8 @@ information on the api see the [swagger docs endpoint](http://localhost:8080/swa
 
 ## Development
 
-It's strongly encouraged to use a modern IDE such as [Intelij](https://www.jetbrains.com/idea/)
-and [Eclipse](https://eclipseide.org/).
+It's strongly encouraged to use a modern IDE such as [IntelliJ IDEA](https://www.jetbrains.com/idea/)
+or [Eclipse](https://eclipseide.org/).
 
 * Prerequisites
 
@@ -102,46 +104,50 @@ and [Eclipse](https://eclipseide.org/).
     * Maven (via package manager or via the wrapper `./mvnw`) (version specified
       in [the wrapper properties](./.mvn/wrapper/maven-wrapper.properties))
 
-For the following commands `mvn` can be interchangeably used instead via `./mvnw`
+The commands below use the Maven wrapper `./mvnw`. An installed `mvn` works as well.
 
 To build:
 
 ```bash
-mvn clean install
+./mvnw clean install
 ```
 
 To test:
 
 ```bash
-mvn test
+./mvnw test
 ```
 
 To run the server in development (you need a running version of Elasticsearch)
 
 ```bash
-mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 ### Integration tests
 
 Integration tests (`*IT`) are skipped by default. Those that need Elasticsearch start a single Elasticsearch container
 with [Testcontainers](https://testcontainers.com/) on a random port, so only a running Docker engine is required.
+The same run includes the [Docker integration tests](#integration-tests-with-docker-containers), which build a
+ChannelFinder image from the jar in `target/`. The commands therefore start with `package`, which builds the jar and
+also runs the unit tests. The `test-compile` after `package` is also needed. Failsafe otherwise loads the classes from
+the repackaged Spring Boot jar, and the tests fail with `NoClassDefFoundError`.
 
 ```bash
-mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false
 ```
 
 To run them against an Elasticsearch that is already running instead, pass its URL:
 
 ```bash
-mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.host_urls=http://localhost:9200
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.host_urls=http://localhost:9200
 ```
 
 The Elasticsearch version of the container is the `elasticsearch.server.version` property in `pom.xml`. It defaults to
 the version of the Elasticsearch client. To test against another version, override it:
 
 ```bash
-mvn test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.server.version=8.19.0
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Delasticsearch.server.version=8.19.0
 ```
 
 `compose.yml` and `src/test/resources/compose.yml` set their own Elasticsearch image and do not follow this property.
@@ -160,10 +166,10 @@ replies are received and checked if content is as expected.
 
 There are tests for properties, tags and channels separately and in combination.
 
-Integration tests can be run in IDE and via Maven.
+Integration tests can be run in IDE and via Maven. This command runs only these tests:
 
 ```
-mvn failsafe:integration-test -DskipITs=false
+./mvnw package test-compile failsafe:integration-test failsafe:verify -DskipITs=false -Pintegrationtest-docker
 ```
 
 See also
@@ -173,7 +179,7 @@ See also
 
 ### Release ChannelFinder Server binaries to maven central
 
-The Phoebus ChannelFinder service uses the maven release plugin to prepare the publish the ChannelFinder server binaries
+The Phoebus ChannelFinder service uses the maven release plugin to prepare and publish the ChannelFinder server binaries
 to maven central
 using the sonatype repositories.
 
@@ -194,17 +200,17 @@ Create a sonatype account and update the maven settings.xml file with your sonat
 #### Prepare the release
 
 ```bash
-mvn release:prepare
+./mvnw release:prepare
 ```  
 
-In this step will ensure there are no uncommitted changes, ensure the versions number are correct, tag the scm, etc..
+This step will ensure there are no uncommitted changes, ensure the version numbers are correct, tag the scm, etc..
 A full list of checks is
-documented [here](https://maven.apache.org/maven-release/maven-release-plugin/examples/prepare-release.html):
+documented [here](https://maven.apache.org/maven-release/maven-release-plugin/usage/prepare-release.html):
 
 #### Perform the release
 
 ```bash
-mvn release:perform
+./mvnw release:perform
 ```
 
 Checkout the release tag, build, sign and push the build binaries to sonatype.
