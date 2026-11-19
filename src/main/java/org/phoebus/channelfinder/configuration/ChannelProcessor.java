@@ -8,8 +8,8 @@ import tools.jackson.core.JacksonException;
 /**
  * Defines the contract for a post-processor that acts on a list of {@link Channel} objects.
  *
- * <p>Implementations are responsible for performing domain-specific side-effects on channels
- * (e.g. submitting PVs to an archiver appliance) after they have been stored in the Channel Finder
+ * <p>Implementations are responsible for performing domain-specific side-effects on channels (e.g.
+ * submitting PVs to an archiver appliance) after they have been stored in the Channel Finder
  * service. A processor can be individually enabled or disabled at runtime.
  */
 public interface ChannelProcessor {
@@ -32,8 +32,8 @@ public interface ChannelProcessor {
   /**
    * Returns a snapshot of this processor's current configuration and status.
    *
-   * @return a {@link ChannelProcessorInfo} describing the processor name, enabled state, and
-   *     any additional configuration key/value pairs.
+   * @return a {@link ChannelProcessorInfo} describing the processor name, enabled state, and any
+   *     additional configuration key/value pairs.
    */
   ChannelProcessorInfo processorInfo();
 

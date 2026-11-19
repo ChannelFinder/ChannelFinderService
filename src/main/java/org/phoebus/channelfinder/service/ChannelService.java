@@ -41,18 +41,21 @@ public class ChannelService {
   private final PropertyRepository propertyRepository;
   private final AuthorizationService authorizationService;
   private final ChannelProcessorService channelProcessorService;
+  private final ChannelPreProcessorService channelPreProcessorService;
 
   public ChannelService(
       ChannelRepository channelRepository,
       TagRepository tagRepository,
       PropertyRepository propertyRepository,
       AuthorizationService authorizationService,
-      ChannelProcessorService channelProcessorService) {
+      ChannelProcessorService channelProcessorService,
+      ChannelPreProcessorService channelPreProcessorService) {
     this.channelRepository = channelRepository;
     this.tagRepository = tagRepository;
     this.propertyRepository = propertyRepository;
     this.authorizationService = authorizationService;
     this.channelProcessorService = channelProcessorService;
+    this.channelPreProcessorService = channelPreProcessorService;
   }
 
   public List<Channel> query(MultiValueMap<String, String> allRequestParams) {

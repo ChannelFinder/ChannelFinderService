@@ -37,6 +37,7 @@ class ChannelServiceTest {
   @Mock private PropertyRepository propertyRepository;
   @Mock private AuthorizationService authorizationService;
   @Mock private ChannelProcessorService channelProcessorService;
+  @Mock private ChannelPreProcessorService channelPreProcessorService;
 
   private ChannelService channelService;
 
@@ -48,7 +49,8 @@ class ChannelServiceTest {
             tagRepository,
             propertyRepository,
             authorizationService,
-            channelProcessorService);
+            channelProcessorService,
+            channelPreProcessorService);
     when(authorizationService.isAuthorizedRole(any(), eq(ROLES.CF_CHANNEL))).thenReturn(true);
   }
 
