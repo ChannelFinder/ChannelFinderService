@@ -82,10 +82,8 @@ public class ChannelPreProcessorService {
             Level.INFO,
             () ->
                 String.format(
-                    "Preprocessor '%s' returned %d warnings across %d channels.",
-                    result.preprocessorName(),
-                    result.totalWarnings(),
-                    result.channelsWithWarnings()));
+                    "Preprocessor '%s' returned warnings for %d channels.",
+                    result.preprocessorName(), result.warnings().size()));
       }
     }
 

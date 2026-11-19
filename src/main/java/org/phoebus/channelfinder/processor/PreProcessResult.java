@@ -17,40 +17,7 @@ import java.util.Map;
  */
 public record PreProcessResult(Map<String, List<String>> warnings, String preprocessorName) {
 
-  /**
-   * Creates an empty result (no warnings).
-   *
-   * @param preprocessorName the name of the preprocessor.
-   * @return a result with an empty warnings map.
-   */
-  public static PreProcessResult empty(String preprocessorName) {
-    return new PreProcessResult(Map.of(), preprocessorName);
-  }
-
-  /**
-   * Checks if this result contains any warnings.
-   *
-   * @return {@code true} if the warnings map is not empty, {@code false} otherwise.
-   */
   public boolean hasWarnings() {
     return !warnings.isEmpty();
-  }
-
-  /**
-   * Returns the number of channels with warnings.
-   *
-   * @return the number of distinct channel names in the warnings map.
-   */
-  public int channelsWithWarnings() {
-    return warnings.size();
-  }
-
-  /**
-   * Returns the total count of warning messages across all channels.
-   *
-   * @return the sum of all warning list sizes.
-   */
-  public int totalWarnings() {
-    return warnings.values().stream().mapToInt(List::size).sum();
   }
 }
