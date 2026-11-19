@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.configuration.ChannelPreProcessor;
-import org.phoebus.channelfinder.configuration.PreProcessResult;
 import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.processor.ChannelPreProcessor;
+import org.phoebus.channelfinder.processor.PreProcessResult;
 import org.springframework.stereotype.Service;
 
 /**

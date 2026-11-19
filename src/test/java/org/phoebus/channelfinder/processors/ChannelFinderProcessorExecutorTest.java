@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.phoebus.channelfinder.configuration.ChannelFinderProcessorExecutor;
+import org.phoebus.channelfinder.processor.ChannelFinderProcessorExecutor;
 
 class ChannelFinderProcessorExecutorTest {
 

@@ -1,13 +1,13 @@
 package org.phoebus.channelfinder.exceptions;
 
 /**
- * Thrown when a {@link org.phoebus.channelfinder.configuration.ChannelPreProcessor} encounters a
- * hard failure that should abort the channel create/update operation.
+ * Thrown when a {@link org.phoebus.channelfinder.processor.ChannelPreProcessor} encounters a hard
+ * failure that should abort the channel create/update operation.
  *
  * <p>This differs from warnings (returned in {@link
- * org.phoebus.channelfinder.configuration.PreProcessResult}) in that it immediately stops
- * processing and prevents persistence. Use this for validation failures, missing mandatory
- * properties, or fatal external service errors (e.g. notification service unreachable).
+ * org.phoebus.channelfinder.processor.PreProcessResult}) in that it immediately stops processing
+ * and prevents persistence. Use this for validation failures, missing mandatory properties, or
+ * fatal external service errors (e.g. notification service unreachable).
  */
 public class ChannelPreProcessException extends RuntimeException {
 

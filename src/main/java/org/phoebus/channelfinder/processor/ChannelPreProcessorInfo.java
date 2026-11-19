@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.configuration;
+package org.phoebus.channelfinder.processor;
 
 import java.util.Map;
 
