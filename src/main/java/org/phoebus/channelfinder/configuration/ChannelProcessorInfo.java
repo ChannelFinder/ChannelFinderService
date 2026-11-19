@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.service.model.archiver;
+package org.phoebus.channelfinder.configuration;
 
 import java.util.Map;
 

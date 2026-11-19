@@ -2,7 +2,7 @@ package org.phoebus.channelfinder.web.v0.controller;
 
 import java.util.List;
 import org.phoebus.channelfinder.service.ChannelProcessorService;
-import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
+import org.phoebus.channelfinder.configuration.ChannelProcessorInfo;
 import org.phoebus.channelfinder.web.v0.api.IChannelProcessor;
 import org.phoebus.channelfinder.web.v0.dto.ChannelDto;
 import org.phoebus.channelfinder.web.v0.mapper.ChannelMapper;
