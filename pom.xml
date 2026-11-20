@@ -297,6 +297,8 @@
                 <version>3.1.2</version>
                 <configuration>
                     <skipITs>${skipITs}</skipITs>
+                    <!-- After `package` the project artifact is the repackaged jar, which keeps the classes under BOOT-INF. -->
+                    <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                     <includes>
                         <include>**/*IT.java</include>
                     </includes>
@@ -304,6 +306,14 @@
                         <exclude>**/EpicsRPCRequestIT.java</exclude>
                     </excludes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
