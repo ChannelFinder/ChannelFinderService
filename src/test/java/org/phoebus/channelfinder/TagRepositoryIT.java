@@ -215,8 +215,8 @@ class TagRepositoryIT extends ElasticsearchTestBase {
     Channel createdChannel = channelRepository.index(channel);
     tagRepository.deleteById(createdTag.getName());
     // verify the tag was deleted as expected
-    Assertions.assertNotEquals(
-        testTag, tagRepository.findById(testTag.getName()), "Failed to delete tag");
+    Assertions.assertTrue(
+        tagRepository.findById(testTag.getName()).isEmpty(), "Failed to delete tag");
 
     // verify the tag was deleted from channels as expected
     Channel foundChannel = channelRepository.findById("testChannel").get();
