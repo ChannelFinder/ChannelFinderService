@@ -198,7 +198,7 @@ public class ITUtilProperties {
         assertTrue(actual.length <= expectedLessThanOrEqual);
       }
       if (expected != null && expected.length > 0) {
-        assertEqualsXmlProperties(actual, expected);
+        assertEqualsProperties(actual, expected);
       }
     } catch (Exception e) {
       fail();
@@ -386,7 +386,7 @@ public class ITUtilProperties {
         actual = ITUtil.MAPPER.readValue(response[1], Property[].class);
       }
       if (expected != null) {
-        assertEqualsXmlProperties(expected, actual);
+        assertEqualsProperties(expected, actual);
       }
     } catch (Exception e) {
       fail();
@@ -511,7 +511,7 @@ public class ITUtilProperties {
         actual = ITUtil.MAPPER.readValue(response[1], Property[].class);
       }
       if (expected != null) {
-        assertEqualsXmlProperties(expected, actual);
+        assertEqualsProperties(expected, actual);
       }
     } catch (Exception e) {
       fail();
@@ -582,7 +582,7 @@ public class ITUtilProperties {
    * @param actual actual array of Property objects
    * @param expected expected arbitrary number of Property objects
    */
-  static void assertEqualsXmlProperties(Property[] actual, Property... expected) {
+  static void assertEqualsProperties(Property[] actual, Property... expected) {
     if (expected != null) {
       assertNotNull(actual);
       assertEquals(expected.length, actual.length);
