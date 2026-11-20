@@ -454,9 +454,13 @@
                         <configuration>
                             <failOnWarning>true</failOnWarning>
                             <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
-                            <!-- The starters bring in what the code uses, so those are not declared one by one. -->
                             <ignoredUsedUndeclaredDependencies>
-                                <ignoredUsedUndeclaredDependency>*</ignoredUsedUndeclaredDependency>
+                                <!-- The Spring Boot BOM does not manage these. Their versions come from elasticsearch-rest-client, springdoc and Testcontainers. -->
+                                <ignoredUsedUndeclaredDependency>org.apache.httpcomponents:httpclient</ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>io.swagger.core.v3:swagger-annotations-jakarta</ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>com.github.docker-java:docker-java-api</ignoredUsedUndeclaredDependency>
+                                <!-- Declaring this would replace the httpclient that elasticsearch-rest-client brings in with an older one. -->
+                                <ignoredUsedUndeclaredDependency>org.apache.httpcomponents:httpasyncclient</ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
                             <!-- Declared for what they bring in or for use at run time, not for their own classes. -->
                             <ignoredUnusedDeclaredDependencies>
