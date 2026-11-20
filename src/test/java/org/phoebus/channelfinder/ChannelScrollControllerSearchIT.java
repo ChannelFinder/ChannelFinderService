@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -205,5 +206,6 @@ class ChannelScrollControllerSearchIT extends ElasticsearchTestBase {
             + " size 10000 in avg: "
             + avg10000
             + "\n");
+    Assertions.assertTrue(totalResult > 0, "The scroll returned no channels");
   }
 }

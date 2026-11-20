@@ -24,7 +24,8 @@ class PopulateDBConfigurationIT extends ElasticsearchTestBase {
     final URL tagResource = getClass().getResource("/perf_tags.json");
     final URL propertyResource = getClass().getResource("/perf_properties.json");
 
-    populateDBConfiguration.createTagsAndProperties(tagResource, propertyResource);
+    Assertions.assertDoesNotThrow(
+        () -> populateDBConfiguration.createTagsAndProperties(tagResource, propertyResource));
   }
 
   @Test
@@ -34,6 +35,6 @@ class PopulateDBConfigurationIT extends ElasticsearchTestBase {
 
   @Test
   void testCleanUpDB() {
-    populateDBConfiguration.cleanupDB();
+    Assertions.assertDoesNotThrow(() -> populateDBConfiguration.cleanupDB());
   }
 }

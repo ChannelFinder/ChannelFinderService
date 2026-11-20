@@ -74,6 +74,7 @@ import org.springframework.util.MultiValueMap;
 public class ChannelRepository implements CrudRepository<Channel, String> {
 
   private static final Logger logger = Logger.getLogger(ChannelRepository.class.getName());
+  private static final String PROPERTY_NAME_FIELD = "properties.name";
 
   private final ElasticConfig esService;
   private final ElasticsearchClient client;
@@ -652,19 +653,19 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     BoolQuery bq;
     if (isNot) {
       if (pattern.trim().equals("*")) {
-        bq = BoolQuery.of(p -> p.must(getSingleValueQuery("properties.name", key)));
+        bq = BoolQuery.of(p -> p.must(getSingleValueQuery(PROPERTY_NAME_FIELD, key)));
       } else {
         bq =
             BoolQuery.of(
                 p ->
-                    p.must(getSingleValueQuery("properties.name", key))
+                    p.must(getSingleValueQuery(PROPERTY_NAME_FIELD, key))
                         .mustNot(getSingleValueQuery("properties.value", pattern.trim())));
       }
     } else {
       bq =
           BoolQuery.of(
               p ->
-                  p.must(getSingleValueQuery("properties.name", key))
+                  p.must(getSingleValueQuery(PROPERTY_NAME_FIELD, key))
                       .must(getSingleValueQuery("properties.value", pattern.trim())));
     }
     return bq;

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @Component("channelFinderTaskExecutor")
 public class ChannelFinderProcessorExecutor extends ThreadPoolTaskExecutor {
 
-  private static final Logger logger =
+  private static final Logger log =
       Logger.getLogger(ChannelFinderProcessorExecutor.class.getName());
 
   public ChannelFinderProcessorExecutor(
@@ -37,7 +37,7 @@ public class ChannelFinderProcessorExecutor extends ThreadPoolTaskExecutor {
           if (!executor.isShutdown()) {
             executor.getQueue().poll(); // evict oldest (stale) task to make room
             executor.getQueue().offer(runnable);
-            logger.log(
+            log.log(
                 Level.WARNING,
                 () ->
                     "ChannelFinderProcessorExecutor task queue full — evicted oldest task to admit fresher update"

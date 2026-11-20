@@ -1226,8 +1226,8 @@ public class PopulateDBConfiguration {
         Integer val = entry.getValue().remove(randIndex);
         channel
             .getProperties()
-            .add(new Property("group" + entry.getKey(), powner, String.valueOf(val)));
-        channel.getTags().add(new Tag("group" + entry.getKey() + "_" + val, towner));
+            .add(new Property(GROUP + entry.getKey(), powner, String.valueOf(val)));
+        channel.getTags().add(new Tag(GROUP + entry.getKey() + "_" + val, towner));
       }
 
       String group = GROUP + 6;

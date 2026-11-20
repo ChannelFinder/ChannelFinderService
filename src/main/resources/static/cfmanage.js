@@ -210,7 +210,7 @@ function translateList(tp, selector, list) {
         C.innerText = "Delete";
         C.onclick = function() {
             console.log("Delete", tp, ent.name);
-            var args = {};
+            const args = {};
             args[tp] = ent.name;
             CF.delete(args)
             .finally(() => {
