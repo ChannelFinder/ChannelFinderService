@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder.service;
 
-import com.google.common.collect.Lists;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.StreamSupport;
 import org.phoebus.channelfinder.common.TextUtil;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
@@ -90,7 +90,7 @@ public class PropertyService {
       }
     }
 
-    propertyRepository.indexAll(Lists.newArrayList(properties));
+    propertyRepository.indexAll(StreamSupport.stream(properties.spliterator(), false).toList());
 
     Map<String, Channel> channels = new HashMap<>();
     for (Property property : properties) {

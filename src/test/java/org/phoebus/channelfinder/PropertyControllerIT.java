@@ -3,7 +3,6 @@ package org.phoebus.channelfinder;
 import static java.util.Collections.EMPTY_LIST;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.google.common.collect.Iterables;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -433,9 +432,8 @@ class PropertyControllerIT extends ElasticsearchTestBase {
     testProperties.forEach(
         prop -> foundProperties.add(propertyRepository.findById(prop.getName(), true).get()));
     // verify the properties were created as expected
-    Assertions.assertTrue(
-        Iterables.elementsEqual(updatedTestProperties, foundProperties),
-        "Failed to create the properties");
+    Assertions.assertIterableEquals(
+        updatedTestProperties, foundProperties, "Failed to create the properties");
 
     testChannels
         .get(1)

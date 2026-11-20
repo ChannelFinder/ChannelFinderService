@@ -36,7 +36,7 @@
     </developers>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.boot-version>4.0.5</spring.boot-version>
+        <spring.boot-version>4.0.9</spring.boot-version>
         <elasticsearch.version>8.18.0</elasticsearch.version>
         <!-- Elasticsearch server started by the ITs; compose.yml and src/test/resources/compose.yml keep their own copy -->
         <elasticsearch.server.version>${elasticsearch.version}</elasticsearch.server.version>
@@ -105,9 +105,8 @@
             <version>2.1.3</version>
         </dependency>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>32.1.3-jre</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -122,10 +121,6 @@
             <artifactId>spring-security-ldap</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.unboundid</groupId>
             <artifactId>unboundid-ldapsdk</artifactId>
         </dependency>
@@ -138,21 +133,16 @@
         <dependency>
             <groupId>org.phoebus</groupId>
             <artifactId>core-pva</artifactId>
-            <version>5.0.2</version>
+            <version>5.0.5</version>
         </dependency>
 
         <dependency>
             <groupId>org.jacoco</groupId>
             <artifactId>org.jacoco.agent</artifactId>
-            <version>0.8.14</version>
-            <scope>runtime</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
+            <version>0.8.16</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -180,16 +170,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>io.netty</groupId> <!-- Need for running tests on mac -->
-            <artifactId>netty-all</artifactId>
-        </dependency>
 
         <!-- Metrics -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-            <version>${spring.boot-version}</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -253,7 +238,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.6.1</version>
             </plugin>
             <plugin>
               <artifactId>maven-resources-plugin</artifactId>
@@ -294,7 +279,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.6.1</version>
                 <configuration>
                     <skipITs>${skipITs}</skipITs>
                     <includes>
@@ -320,8 +305,32 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>3.9.0</version>
                 <executions>
+                    <execution>
+                        <id>analyze</id>
+                        <goals>
+                            <goal>analyze-only</goal>
+                        </goals>
+                        <configuration>
+                            <failOnWarning>true</failOnWarning>
+                            <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
+                            <!-- The starters bring in what the code uses, so those are not declared one by one. -->
+                            <ignoredUsedUndeclaredDependencies>
+                                <ignoredUsedUndeclaredDependency>*</ignoredUsedUndeclaredDependency>
+                            </ignoredUsedUndeclaredDependencies>
+                            <!-- Declared for what they bring in or for use at run time, not for their own classes. -->
+                            <ignoredUnusedDeclaredDependencies>
+                                <ignoredUnusedDeclaredDependency>org.springframework.boot:spring-boot-starter*</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.springframework.boot:spring-boot-restclient</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.springdoc:springdoc-openapi-starter-webmvc-ui</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>jakarta.json:jakarta.json-api</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>com.unboundid:unboundid-ldapsdk</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.jacoco:org.jacoco.agent</ignoredUnusedDeclaredDependency>
+                            </ignoredUnusedDeclaredDependencies>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>copy</id>
                         <phase>package</phase>
@@ -345,7 +354,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.14</version>
+                <version>0.8.16</version>
                 <executions>
                     <execution>
                         <goals>
@@ -412,7 +421,7 @@
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>
                 <artifactId>git-commit-id-maven-plugin</artifactId>
-                <version>9.0.1</version>
+                <version>10.0.1</version>
                 <executions>
                     <execution>
                         <id>get-the-git-infos</id>
@@ -557,7 +566,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>3.1.2</version>
+                        <version>3.6.1</version>
                         <configuration>
                             <skipITs>${skipITs}</skipITs>
                             <includes>
@@ -569,13 +578,4 @@
             </build>
         </profile>
     </profiles>
-    <repositories>
-        <repository>
-            <id>snapshots-repo</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 </project>

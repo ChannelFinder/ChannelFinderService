@@ -1,12 +1,14 @@
 package org.phoebus.channelfinder;
 
-import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -161,8 +163,10 @@ class TagRepositoryIT extends ElasticsearchTestBase {
     cleanupTestTags = testTags;
 
     try {
-      Set<Tag> createdTags = Sets.newHashSet(tagRepository.indexAll(testTags));
-      Set<Tag> listedTags = Sets.newHashSet(tagRepository.findAll());
+      Set<Tag> createdTags = new HashSet<>(tagRepository.indexAll(testTags));
+      Set<Tag> listedTags =
+          StreamSupport.stream(tagRepository.findAll().spliterator(), false)
+              .collect(Collectors.toSet());
       // verify the tag was created as expected
       Assertions.assertEquals(listedTags, createdTags, "Failed to list all created tags");
     } catch (Exception e) {

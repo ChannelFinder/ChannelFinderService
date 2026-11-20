@@ -1,7 +1,7 @@
 package org.phoebus.channelfinder.service;
 
-import com.google.common.collect.Lists;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -97,7 +97,7 @@ public class ChannelService {
   public Iterable<Channel> create(Iterable<Channel> channels) {
     requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
 
-    List<Channel> channelList = Lists.newArrayList(channels);
+    List<Channel> channelList = StreamSupport.stream(channels.spliterator(), false).toList();
     Map<String, Channel> existing = findExistingChannels(channelList);
 
     for (Channel channel : channelList) {
@@ -150,7 +150,7 @@ public class ChannelService {
   public Iterable<Channel> update(Iterable<Channel> channels) {
     requireRole(ROLES.CF_CHANNEL, BATCH_OPERATION_SUBJECT);
 
-    List<Channel> channelList = Lists.newArrayList(channels);
+    List<Channel> channelList = StreamSupport.stream(channels.spliterator(), false).toList();
     Map<String, Channel> existing = findExistingChannels(channelList);
 
     for (Channel channel : channelList) {
@@ -165,7 +165,9 @@ public class ChannelService {
     validateChannels(channelList);
     resetOwnersToExisting(channelList);
 
-    List<Channel> updated = Lists.newArrayList(channelRepository.saveAll(channelList));
+    List<Channel> updated =
+        StreamSupport.stream(channelRepository.saveAll(channelList).spliterator(), false)
+            .collect(Collectors.toCollection(ArrayList::new));
     channelProcessorService.sendToProcessors(updated);
     return updated;
   }

@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder;
 
-import com.google.common.collect.Iterables;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -188,8 +187,7 @@ class ChannelControllerIT extends ElasticsearchTestBase {
     testChannels.forEach(
         chan -> foundChannels.add(channelRepository.findById(chan.getName()).get()));
     // verify the channels were created as expected
-    Assertions.assertTrue(
-        Iterables.elementsEqual(testChannels, foundChannels), "Failed to create the channels");
+    Assertions.assertIterableEquals(testChannels, foundChannels, "Failed to create the channels");
   }
 
   /** create by overriding multiple channels */
@@ -216,9 +214,8 @@ class ChannelControllerIT extends ElasticsearchTestBase {
     testChannels.forEach(
         chan -> foundChannels.add(channelRepository.findById(chan.getName()).get()));
     // verify the channels were created as expected
-    Assertions.assertTrue(
-        Iterables.elementsEqual(updatedTestChannels, foundChannels),
-        "Failed to create the channels");
+    Assertions.assertIterableEquals(
+        updatedTestChannels, foundChannels, "Failed to create the channels");
   }
 
   /** update a channel */

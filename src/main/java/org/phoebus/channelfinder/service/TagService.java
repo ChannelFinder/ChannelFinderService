@@ -1,6 +1,5 @@
 package org.phoebus.channelfinder.service;
 
-import com.google.common.collect.Lists;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,7 +97,7 @@ public class TagService {
       }
     }
 
-    tagRepository.indexAll(Lists.newArrayList(tags));
+    tagRepository.indexAll(StreamSupport.stream(tags.spliterator(), false).toList());
 
     Map<String, Channel> channels = new HashMap<>();
     for (Tag tag : tags) {

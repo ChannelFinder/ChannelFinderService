@@ -1,7 +1,7 @@
 package org.phoebus.channelfinder.performance;
 
-import com.google.common.collect.Lists;
 import java.io.IOException;
+import java.util.ArrayList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.phoebus.channelfinder.ElasticsearchTestBase;
@@ -27,8 +27,7 @@ class ExistsPerformanceIT extends ElasticsearchTestBase {
   @Test
   void channelExists() throws IOException {
     service.createDB(1);
-    Assertions.assertTrue(
-        channelRepository.existsByIds(Lists.newArrayList(service.getChannelList())));
+    Assertions.assertTrue(channelRepository.existsByIds(new ArrayList<>(service.getChannelList())));
     service.cleanupDB();
   }
 }
