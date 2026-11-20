@@ -123,6 +123,7 @@
         <dependency>
             <groupId>com.unboundid</groupId>
             <artifactId>unboundid-ldapsdk</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -326,7 +327,6 @@
                                 <ignoredUnusedDeclaredDependency>org.springdoc:springdoc-openapi-starter-webmvc-ui</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.junit.jupiter:junit-jupiter</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>jakarta.json:jakarta.json-api</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>com.unboundid:unboundid-ldapsdk</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.jacoco:org.jacoco.agent</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
