@@ -1,0 +1,826 @@
+/* Grey, calm and dense. Colour is kept for interaction, destructive actions and failures. */
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Mono";
+  src: url("fonts/atkinson-hyperlegible-mono-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+  --cf-page: #e9ecef;
+  --cf-surface: #f7f8f9;
+  --cf-surface-2: #e9edf0;
+  --cf-hover: #dfe5ea;
+  --cf-rule: #d2d8dd;
+  --cf-field: #75808a; /* borders of inputs, buttons and tag chips, at least 3:1 on every surface */
+  --cf-ink: #1b2127;
+  --cf-ink-2: #525d68; /* secondary text, at least 4.5:1 */
+  --cf-ink-3: #8a949d; /* disabled and decorative only */
+  --cf-act: #2c5b88;
+  --cf-act-fill: #2c5b88; /* the main button; its text is --cf-act-ink */
+  --cf-act-ink: #ffffff;
+  --cf-act-soft: #b9d0ea;
+  --cf-differs: #efd27e;
+  --cf-ok: #3f7d53;
+  --cf-bad: #b3261e;
+  --cf-bad-ink: #ffffff;
+  --cf-backdrop: rgb(0 0 0 / 0.4);
+  --cf-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --cf-mono: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+  /* Three sizes: small, 1rem and large. */
+  --cf-small: 0.86rem;
+  --cf-large: 1.15rem;
+  --cf-radius: 3px;
+  /* The height of every button, input and select. */
+  --cf-control: 2.15rem;
+  accent-color: var(--cf-act);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cf-page: #161a1e;
+    --cf-surface: #1d2227;
+    --cf-surface-2: #262c33;
+    --cf-hover: #2e363e;
+    --cf-rule: #313940;
+    --cf-field: #76828d;
+    --cf-ink: #dde2e7;
+    --cf-ink-2: #9eabb6;
+    --cf-ink-3: #66727d;
+    --cf-act: #8fb6de;
+    --cf-act-fill: #3a6ea5;
+    --cf-act-ink: #ffffff;
+    --cf-act-soft: #2b4763;
+    --cf-differs: #4d4220;
+    --cf-ok: #6fb886;
+    --cf-bad: #f2847c;
+    --cf-bad-ink: #2a0d0b;
+    --cf-backdrop: rgb(0 0 0 / 0.72);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  font: 400 87.5%/1.4 var(--cf-sans);
+}
+body {
+  margin: 0;
+  background: var(--cf-page);
+  color: var(--cf-ink);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--cf-act);
+  outline-offset: 1px;
+}
+a {
+  color: var(--cf-act);
+}
+h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--cf-large);
+  font-weight: 600;
+}
+p {
+  margin: 0;
+}
+[hidden] {
+  display: none !important;
+}
+/* Mono is for channel names, the query and request text. Everything else is sans. */
+code,
+pre,
+.cf-mono {
+  font-family: var(--cf-mono);
+}
+.cf-small {
+  font-size: var(--cf-small);
+  color: var(--cf-ink-2);
+}
+.cf-error {
+  color: var(--cf-bad);
+}
+/* A message, a list or the toast takes no room while it has nothing in it. */
+:is(p, ul, .cf-toast):empty {
+  display: none;
+}
+/* Text that does not fit is cut with an ellipsis. */
+.cf-entry-name,
+.cf-request,
+.cf-grid :is(th, td),
+.cf-row .cf-mono,
+.cf-details dt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Numbers that change in place keep their width. */
+#cf-count,
+#cf-total,
+cf-side li button {
+  font-variant-numeric: tabular-nums;
+}
+.cf-grow {
+  flex: 1;
+}
+.cf-icon {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+}
+.cf-skip {
+  position: absolute;
+  inset-inline-start: 0.5rem;
+  inset-block-start: -3rem;
+  z-index: 50;
+  padding: 0.4rem 0.7rem;
+  background: var(--cf-surface);
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+}
+.cf-skip:focus {
+  inset-block-start: 0.5rem;
+}
+
+/* Buttons and fields */
+.cf-btn,
+.cf-plain {
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+  background: var(--cf-surface);
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cf-btn:hover:not(:disabled) {
+  background: var(--cf-hover);
+}
+.cf-btn:disabled {
+  color: var(--cf-ink-3);
+  border-color: var(--cf-ink-3);
+  cursor: default;
+}
+.cf-btn.cf-primary:not(:disabled) {
+  background: var(--cf-act-fill);
+  border-color: var(--cf-act-fill);
+  color: var(--cf-act-ink);
+  font-weight: 600;
+}
+.cf-btn.cf-danger:not(:disabled) {
+  background: var(--cf-bad);
+  border-color: var(--cf-bad);
+  color: var(--cf-bad-ink);
+  font-weight: 600;
+}
+/* The same button at a size that fits in a row, a panel or the top strip. */
+.cf-btn.cf-compact {
+  min-block-size: 0;
+  padding: 0.05rem 0.4rem;
+  font-size: var(--cf-small);
+}
+/* A button without a frame: the tabs, the names in the side list, and the icons in the table. */
+.cf-plain {
+  border-color: transparent;
+  background: none;
+  padding: 0.15rem 0.4rem;
+  color: var(--cf-ink-2);
+}
+.cf-plain:hover {
+  background: var(--cf-hover);
+  color: var(--cf-ink);
+}
+/* The one look of "this is on": a shown column, an active filter, the current view. */
+.cf-plain:is([aria-pressed="true"], [aria-current]) {
+  color: var(--cf-act);
+  font-weight: 600;
+}
+input:not([type="checkbox"]),
+select,
+textarea {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+  background: var(--cf-surface);
+  min-inline-size: 0;
+}
+select:disabled {
+  color: var(--cf-ink-3);
+  border-color: var(--cf-ink-3);
+}
+.cf-btn,
+input:not([type="checkbox"]),
+select {
+  min-block-size: var(--cf-control);
+}
+textarea {
+  font-family: var(--cf-mono);
+  resize: vertical;
+}
+.cf-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+.cf-stack {
+  display: grid;
+  gap: 0.55rem;
+}
+.cf-stack label {
+  display: grid;
+  gap: 0.15rem;
+  font-size: var(--cf-small);
+  color: var(--cf-ink-2);
+}
+.cf-stack label > * {
+  font-size: 1rem;
+  color: var(--cf-ink);
+}
+
+/* Tables: the results, the comparison and the list of tags and properties */
+.cf-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  inline-size: 100%;
+}
+.cf-table :is(th, td) {
+  padding: 0.3rem 0.5rem;
+  border-block-end: 1px solid var(--cf-rule);
+  text-align: start;
+}
+.cf-table thead th {
+  background: var(--cf-surface-2);
+  font-size: var(--cf-small);
+  font-weight: 600;
+  color: var(--cf-ink-2);
+  white-space: nowrap;
+}
+.cf-table tbody tr:hover > * {
+  background: var(--cf-hover);
+}
+
+/* Top strip */
+.cf-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1.25rem;
+  padding: 0 1rem;
+  min-block-size: 2.6rem;
+  background: var(--cf-surface);
+  border-block-end: 1px solid var(--cf-rule);
+  color: var(--cf-ink-2);
+}
+.cf-top h1 {
+  margin: 0 -0.9rem 0 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--cf-ink);
+}
+.cf-top b {
+  font-weight: 600;
+  color: var(--cf-ink);
+}
+.cf-views {
+  display: flex;
+  align-self: stretch;
+}
+.cf-views button {
+  padding-inline: 0.75rem;
+  border-radius: 0;
+  border-block-end: 2px solid transparent;
+}
+.cf-views button[aria-current] {
+  border-block-end-color: var(--cf-act);
+  color: var(--cf-ink);
+}
+#cf-status {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+/* The state of the service: a label, a dot and the value, as one item. */
+.cf-status b {
+  font-weight: 400;
+}
+.cf-status b::before {
+  content: "";
+  display: inline-block;
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  margin-inline: 0.15rem 0.3rem;
+  border-radius: 50%;
+  background: var(--cf-ink-3);
+}
+.cf-status[data-state="ok"] b::before {
+  background: var(--cf-ok);
+}
+.cf-status:is([data-state="database"], [data-state="unreachable"]) b {
+  font-weight: 700;
+  color: var(--cf-bad);
+}
+.cf-status:is([data-state="database"], [data-state="unreachable"]) b::before {
+  background: var(--cf-bad);
+}
+.cf-links {
+  display: flex;
+  gap: 0.9rem;
+  margin-inline-start: auto;
+}
+.cf-links a:not(:hover) {
+  text-decoration: none;
+}
+
+/* Popovers are placed by the browser, in the middle of the page. */
+.cf-popover {
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+  background: var(--cf-surface);
+  color: var(--cf-ink);
+  padding: 0.75rem 1rem;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.2);
+  inline-size: min(44rem, calc(100vw - 1rem));
+}
+/* A popover that opens under its button. The script sets where; see `placeUnderButton`. */
+.cf-dropdown {
+  inset: auto;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  inline-size: max-content;
+  max-inline-size: calc(100vw - 1rem);
+}
+.cf-dropdown hr {
+  margin: 0.4rem 0;
+  border: 0;
+  border-block-start: 1px solid var(--cf-rule);
+}
+.cf-menu {
+  padding: 0.3rem;
+}
+.cf-menu:popover-open {
+  display: grid;
+}
+.cf-menu button {
+  padding: 0.35rem 0.7rem;
+  text-align: start;
+  color: var(--cf-ink);
+}
+/* The syntax help: an example in mono on the left, what it means on the right. */
+.cf-syntax {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.45rem 1.25rem;
+  margin: 0 0 0.75rem;
+}
+.cf-syntax dt {
+  font-family: var(--cf-mono);
+}
+.cf-syntax dd {
+  margin: 0;
+  color: var(--cf-ink-2);
+}
+
+/* Search: the list of properties and tags on the left, the results on the right */
+cf-search {
+  display: grid;
+  grid-template-columns: 15rem minmax(0, 1fr);
+  align-items: start;
+}
+cf-side {
+  position: sticky;
+  inset-block-start: 0;
+  max-block-size: 100dvh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 0.75rem 0.5rem 1rem 0.75rem;
+}
+cf-side > p {
+  margin: 0 0.4rem 0.4rem;
+}
+cf-side input {
+  inline-size: 100%;
+  margin-block-end: 0.25rem;
+}
+cf-side h2 {
+  position: sticky;
+  inset-block-start: -0.75rem;
+  margin: 0.5rem 0 0.2rem;
+  padding: 0.4rem;
+  border-block-start: 1px solid var(--cf-rule);
+  background: var(--cf-page);
+  font-size: var(--cf-small);
+  color: var(--cf-ink-2);
+}
+cf-side ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+cf-side li {
+  display: flex;
+  align-items: center;
+  min-block-size: 1.75rem;
+  border-radius: var(--cf-radius);
+}
+cf-side li:hover {
+  background: var(--cf-hover);
+}
+cf-side li button {
+  font-size: var(--cf-small);
+}
+/* The count keeps its width while "count", the mark for counting and the number take turns. */
+cf-side li button:last-child {
+  min-inline-size: 3.6rem;
+  margin-inline-start: 0.25rem;
+}
+cf-side .cf-entry-name {
+  flex: 1;
+  min-inline-size: 0;
+  text-align: start;
+  font-size: 1rem;
+  color: var(--cf-ink);
+}
+cf-side .cf-entry-name[aria-pressed="true"] {
+  color: var(--cf-act);
+}
+
+.cf-pane {
+  min-inline-size: 0;
+  /* At least as tall as the window, so that the rule beside the list runs down the page. */
+  min-block-size: 100dvh;
+  padding: 0.6rem 1rem 1.5rem;
+}
+cf-search .cf-pane {
+  border-inline-start: 1px solid var(--cf-rule);
+}
+.cf-query {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.cf-query input {
+  flex: 1 1 16rem;
+}
+/* The request is there to be looked up, and must not draw the eye more than the count below. */
+.cf-request a {
+  color: inherit;
+}
+.cf-request a:not(:hover, :focus-visible) {
+  text-decoration: none;
+}
+.cf-pager {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.cf-pager button {
+  min-inline-size: var(--cf-control);
+  padding-inline: 0;
+}
+.cf-pager select {
+  font-size: 1rem;
+  color: var(--cf-ink);
+}
+.cf-request {
+  margin-block-start: 0.3rem;
+}
+.cf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.6rem;
+  margin: 0.5rem 0;
+  min-block-size: 2.1rem;
+}
+.cf-toolbar input[type="search"] {
+  inline-size: 16rem;
+}
+.cf-toolbar b {
+  font-weight: 600;
+}
+
+/* Results. The name gets a set share of the width and the other columns share the rest equally.
+   Cells are cut with an ellipsis; the full value is in the tooltip and in the details. */
+.cf-results {
+  /* The box scrolls both ways, so that the header can stay at its top. */
+  container-type: inline-size;
+  overflow: auto;
+  max-block-size: max(20rem, 100dvh - 11rem);
+  scrollbar-width: thin;
+  border: 1px solid var(--cf-rule);
+  background: var(--cf-surface);
+}
+/* The rows of the search before stay until the new ones are there, greyed and out of reach. */
+.cf-results[inert] {
+  opacity: 0.5;
+}
+.cf-results thead th,
+.cf-compare thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+}
+.cf-results > p {
+  padding: 1.25rem 1rem;
+}
+.cf-grid {
+  table-layout: fixed;
+}
+.cf-grid :is(th, td):has(> input) {
+  padding-inline-end: 0;
+  text-overflow: clip;
+}
+/* The button that hides a column shows when the header is pointed at or has the focus. */
+.cf-grid th button:not(:focus-visible) {
+  opacity: 0;
+}
+.cf-grid th:hover button {
+  opacity: 1;
+}
+.cf-row {
+  cursor: pointer;
+}
+.cf-table .cf-row.cf-selected > td {
+  background: var(--cf-act-soft);
+}
+/* A focus ring outside a cell would be cut off, because the cells hide what overflows. */
+.cf-grid :focus-visible {
+  outline-offset: -2px;
+}
+.cf-row td {
+  padding-block: 0;
+}
+.cf-row .cf-name {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.cf-chevron {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+}
+.cf-chevron[aria-expanded="true"] svg {
+  rotate: 90deg;
+}
+.cf-copy {
+  flex: none;
+  line-height: 0;
+}
+.cf-row:not(:hover, :focus-within) .cf-copy {
+  opacity: 0;
+}
+@media (hover: none) {
+  .cf-row .cf-copy {
+    opacity: 1;
+  }
+}
+
+/* An open row and its details read as one block: the same background, a rule above and below. */
+.cf-table .cf-row.cf-open > td,
+.cf-table .cf-details > td {
+  background: var(--cf-surface-2);
+}
+.cf-row.cf-open > td {
+  border-block-start: 1px solid var(--cf-field);
+  border-block-end-color: transparent;
+}
+.cf-details > td {
+  padding: 0;
+  border-block-end-color: var(--cf-field);
+  white-space: normal;
+  overflow: visible;
+}
+/* The details are as wide as the box and stay in view while the table scrolls sideways. */
+.cf-details-body {
+  position: sticky;
+  inset-inline-start: 0;
+  inline-size: 100cqi;
+  padding: 0.25rem 1rem 1rem 4.9rem;
+}
+.cf-details dl {
+  columns: 30rem 2;
+  column-gap: 2.5rem;
+  margin: 0;
+}
+.cf-details .cf-request {
+  margin-block-start: 0.6rem;
+}
+.cf-details dl > div {
+  break-inside: avoid;
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.3rem 0;
+  border-block-end: 1px solid var(--cf-rule);
+}
+.cf-details dt {
+  color: var(--cf-ink-2);
+}
+.cf-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.cf-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.cf-tags span {
+  padding: 0 0.35rem;
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+  font-size: var(--cf-small);
+  color: var(--cf-ink-2);
+}
+
+/* Dialogs */
+dialog {
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+  background: var(--cf-surface);
+  color: var(--cf-ink);
+  padding: 0;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
+  inline-size: min(46rem, calc(100vw - 1.5rem));
+  max-block-size: calc(100dvh - 2rem);
+}
+dialog.cf-wide {
+  inline-size: min(90rem, calc(100vw - 1.5rem));
+}
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  background: var(--cf-backdrop);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.cf-dialog-body {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+}
+.cf-dialog-body h2 {
+  margin: 0;
+}
+.cf-typed input {
+  display: block;
+  inline-size: 100%;
+  margin-block-start: 0.2rem;
+}
+.cf-names {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--cf-small);
+  overflow-wrap: anywhere;
+}
+.cf-login {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.cf-login legend {
+  padding: 0;
+  margin-block-end: 0.3rem;
+}
+.cf-login input {
+  flex: 1 1 10rem;
+}
+.cf-compare {
+  overflow: auto;
+  /* Keeps the scrollbar off the last row. */
+  scrollbar-gutter: stable;
+  padding-block-end: 0.75rem;
+  max-block-size: calc(100dvh - 11rem);
+  border: 1px solid var(--cf-rule);
+}
+.cf-compare :is(th, td) {
+  vertical-align: top;
+  max-inline-size: 22rem;
+  overflow-wrap: anywhere;
+}
+.cf-compare thead th {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--cf-ink);
+}
+.cf-compare tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  background: var(--cf-surface);
+  color: var(--cf-ink-2);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.cf-compare .cf-differs > * {
+  background: var(--cf-differs);
+}
+/* A row that differs is also marked without colour. */
+.cf-compare .cf-differs th {
+  box-shadow: inset 3px 0 0 var(--cf-ink-2);
+  font-weight: 600;
+  color: var(--cf-ink);
+}
+.cf-differing {
+  margin-inline-start: 1rem;
+}
+.cf-compare i {
+  color: var(--cf-ink-2);
+}
+
+cf-manage {
+  display: block;
+}
+/* Manage uses the frame of Search: a toolbar, and tables in the same kind of box. Each table
+   is shown in full, so the page scrolls and not the box. */
+.cf-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-block: 1rem 0.4rem;
+}
+.cf-section-head h2 {
+  margin: 0;
+}
+.cf-section-head + .cf-results {
+  max-block-size: none;
+}
+.cf-definitions td:last-child {
+  text-align: end;
+}
+.cf-definitions th:last-child {
+  inline-size: 8rem;
+}
+.cf-definitions td {
+  padding-block: 0.15rem;
+}
+/* Neutral at rest, so that a long list is not a column of red. */
+.cf-definitions button:is(:hover, :focus-visible) {
+  background: var(--cf-bad);
+  border-color: var(--cf-bad);
+  color: var(--cf-bad-ink);
+}
+
+.cf-toast {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 60;
+  padding: 0.45rem 0.9rem;
+  border-radius: var(--cf-radius);
+  background: var(--cf-ink);
+  color: var(--cf-surface);
+  max-inline-size: calc(100vw - 2rem);
+}
+
+/* Narrow screens: the list of properties and tags goes above the results, in a box that scrolls. */
+@media (width < 760px) {
+  .cf-top {
+    padding: 0.3rem 0.6rem;
+  }
+  .cf-links {
+    margin-inline-start: 0;
+  }
+  cf-search {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  cf-side {
+    position: static;
+    max-block-size: 11rem;
+    border-block-end: 1px solid var(--cf-rule);
+  }
+  .cf-pane {
+    padding-inline: 0.5rem;
+  }
+  cf-search .cf-pane {
+    border-inline-start: 0;
+  }
+  .cf-details-body {
+    padding-inline: 0.75rem;
+  }
+}
