@@ -1,7 +1,7 @@
 
 "use strict";
 
-var ChannelFinder = (function() {
+const ChannelFinder = (function() {
 
 function ChannelFinder(opts) {
     opts = opts || {};
@@ -134,7 +134,7 @@ ChannelFinder.prototype.delete = function(args) {
 ChannelFinder.prototype.apply = function(args) {
     const channels = args.channels || [args.channel];
     if(args.tag || args.property) {
-        var url;
+        let url;
         const ent = {owner:args.owner};
         if(args.tag) {
             url = "/resources/tags/" + args.tag;
@@ -169,7 +169,7 @@ ChannelFinder.prototype.remove = function(args) {
     if(args.tag || args.property) {
         return channels.reduce((P, chan) => {
             return P.then(() => {
-                var url;
+                let url;
                 if(args.tag) {
                     url = "/resources/tags/" + args.tag + "/" + chan;
 
