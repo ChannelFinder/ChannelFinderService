@@ -1,4 +1,4 @@
-package org.phoebus.channelfinder.configuration;
+package org.phoebus.channelfinder.processor.aa;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,8 +15,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.exceptions.ArchiverServiceException;
+import org.phoebus.channelfinder.processor.ChannelProcessor;
+import org.phoebus.channelfinder.processor.ChannelProcessorInfo;
 import org.phoebus.channelfinder.service.external.ArchiverService;
-import org.phoebus.channelfinder.service.model.archiver.ChannelProcessorInfo;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiveAction;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchivePVOptions;
 import org.phoebus.channelfinder.service.model.archiver.aa.ArchiverInfo;

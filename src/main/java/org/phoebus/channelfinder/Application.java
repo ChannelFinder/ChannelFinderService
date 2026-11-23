@@ -21,8 +21,9 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.phoebus.channelfinder.configuration.ChannelProcessor;
 import org.phoebus.channelfinder.configuration.PopulateDBConfiguration;
+import org.phoebus.channelfinder.processor.ChannelPreProcessor;
+import org.phoebus.channelfinder.processor.ChannelProcessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -110,5 +111,18 @@ public class Application implements ApplicationRunner {
               processors.add(notifier);
             });
     return processors;
+  }
+
+  /**
+   * List of {@link ChannelPreProcessor} implementations called before new channels are created or
+   * existing channels are updated
+   *
+   * @return A list of {@link ChannelPreProcessor}s, if any have been registered over SPI.
+   */
+  @Bean
+  public List<ChannelPreProcessor> channelPreProcessors() {
+    List<ChannelPreProcessor> preProcessors = new ArrayList<>();
+    ServiceLoader.load(ChannelPreProcessor.class).stream().forEach(p -> preProcessors.add(p.get()));
+    return preProcessors;
   }
 }
