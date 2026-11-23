@@ -15,53 +15,65 @@ class ActiveChannelPreProcessorTest {
   private final ActiveChannelPreProcessor preProcessor =
       new ActiveChannelPreProcessor("pvStatus", "Active");
 
-  private static Channel channel(String name, String pvStatus) {
+  private static Channel channel(String name, String pvStatus, String hostName) {
     return new Channel(
-        name, "owner", List.of(new Property("pvStatus", "owner", pvStatus)), List.of());
+        name,
+        "owner",
+        List.of(
+            new Property("pvStatus", "owner", pvStatus),
+            new Property("hostName", "owner", hostName)),
+        List.of());
   }
 
   @Test
-  void warnsForExistingActiveChannel() {
+  void warnsWithDiffForExistingActiveChannel() {
     PreProcessResult result =
         preProcessor.preProcess(
-            List.of(new Channel("ch1", "owner")), Map.of("ch1", channel("ch1", "Active")));
+            List.of(channel("ch1", "Active", "ioc-b")),
+            Map.of("ch1", channel("ch1", "Active", "ioc-a")));
 
     Assertions.assertEquals(ActiveChannelPreProcessor.NAME, result.preprocessorName());
-    Assertions.assertEquals(List.of("ch1"), List.copyOf(result.warnings().keySet()));
-    Assertions.assertEquals(1, result.warnings().get("ch1").size());
-    Assertions.assertTrue(result.warnings().get("ch1").get(0).contains("pvStatus=Active"));
+    Assertions.assertEquals(Set.of("ch1"), result.warnings().keySet());
+    String warning = result.warnings().get("ch1").get(0);
+    Assertions.assertTrue(warning.contains("hostName: ioc-a -> ioc-b"), warning);
+  }
+
+  @Test
+  void warnsWithNoChangesForIdenticalActiveChannel() {
+    PreProcessResult result =
+        preProcessor.preProcess(
+            List.of(channel("ch1", "Active", "ioc-a")),
+            Map.of("ch1", channel("ch1", "Active", "ioc-a")));
+
+    String warning = result.warnings().get("ch1").get(0);
+    Assertions.assertTrue(warning.endsWith("changes: none"), warning);
+  }
+
+  @Test
+  void noWarningWhenSettingActiveChannelInactive() {
+    PreProcessResult result =
+        preProcessor.preProcess(
+            List.of(channel("ch1", "Inactive", "ioc-a")),
+            Map.of("ch1", channel("ch1", "Active", "ioc-a")));
+
+    Assertions.assertFalse(result.hasWarnings());
   }
 
   @Test
   void noWarningForExistingInactiveChannel() {
     PreProcessResult result =
         preProcessor.preProcess(
-            List.of(new Channel("ch1", "owner")), Map.of("ch1", channel("ch1", "Inactive")));
+            List.of(channel("ch1", "Active", "ioc-b")),
+            Map.of("ch1", channel("ch1", "Inactive", "ioc-a")));
 
     Assertions.assertFalse(result.hasWarnings());
   }
 
   @Test
   void noWarningForNewChannel() {
-    PreProcessResult result = preProcessor.preProcess(List.of(channel("ch1", "Active")), Map.of());
+    PreProcessResult result =
+        preProcessor.preProcess(List.of(channel("ch1", "Active", "ioc-a")), Map.of());
 
     Assertions.assertFalse(result.hasWarnings());
-  }
-
-  @Test
-  void warnsOnlyForExistingActiveChannelsInBatch() {
-    PreProcessResult result =
-        preProcessor.preProcess(
-            List.of(
-                new Channel("active", "owner"),
-                new Channel("inactive", "owner"),
-                new Channel("new", "owner")),
-            Map.of(
-                "active",
-                channel("active", "Active"),
-                "inactive",
-                channel("inactive", "Inactive")));
-
-    Assertions.assertEquals(Set.of("active"), result.warnings().keySet());
   }
 }
