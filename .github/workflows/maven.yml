@@ -18,9 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up JDK 25
-      uses: actions/setup-java@v6
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
       with:
         java-version: '25'
         distribution: 'temurin'
@@ -30,7 +30,7 @@ jobs:
     - name: Build with Maven
       run: ./mvnw --batch-mode --update-snapshots package
     - run: mkdir staging && cp target/*.jar staging
-    - uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: Package
         path: staging
@@ -40,9 +40,9 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up JDK 25
-      uses: actions/setup-java@v6
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
       with:
         java-version: '25'
         distribution: 'temurin'
@@ -50,7 +50,7 @@ jobs:
     - name: Test with Maven
       run: ./mvnw --batch-mode --fail-at-end test
     - name: Publish Test Report
-      uses: mikepenz/action-junit-report@v6
+      uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
       if: success() || failure() # always run even if the previous step fails
       with:
         report_paths: '**/target/surefire-reports/TEST-*.xml'
@@ -61,9 +61,9 @@ jobs:
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Set up JDK 25
-      uses: actions/setup-java@v6
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
       with:
         java-version: '25'
         distribution: 'temurin'
@@ -76,13 +76,13 @@ jobs:
       env:
         EPICS_PVA_ENABLE_IP6: "false"
     - name: Publish Test Report
-      uses: mikepenz/action-junit-report@v6
+      uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
       if: success() || failure() # always run even if the previous step fails
       with:
         report_paths: '**/target/failsafe-reports/TEST-*.xml'
     - name: Add coverage to PR
       id: jacoco
-      uses: madrapps/jacoco-report@v1.8.0
+      uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920 # v1.8.0
       with:
         paths: |
           ${{ github.workspace }}/**/target/site/jacoco/jacoco.xml
@@ -90,7 +90,7 @@ jobs:
         min-coverage-overall: 40
         min-coverage-changed-files: 60
     - name: Upload Code Coverage Artifacts
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       if: success() || failure() # always run even if the previous step fails
       with:
         name: code-coverage-reports
