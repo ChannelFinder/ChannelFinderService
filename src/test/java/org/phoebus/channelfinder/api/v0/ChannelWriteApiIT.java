@@ -209,6 +209,16 @@ class ChannelWriteApiIT extends ApiTestBase {
   }
 
   @Test
+  void putWithAnotherNameInThePayloadDeletesTheChannelInThePath() {
+    putChannels(sampleChannel("ch1"));
+
+    String ch2 = sampleChannel("ch2").toString();
+    assertEquals(200, cf.put("/resources/channels/ch1", ch2, ApiClient.ADMIN).status());
+
+    assertEquals(List.of("ch2"), names(cf.get("/resources/channels").json()));
+  }
+
+  @Test
   void propertyAndTagOwnersAreResetToTheDefinitionOwners() {
     putChannels(
         withTags(
@@ -285,12 +295,6 @@ class ChannelWriteApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value =
-          "PUT deletes the channel before it writes the new one, so a failed write loses the"
-              + " channel (#168)",
-      withExceptions = AssertionFailedError.class)
   void failedSinglePutKeepsTheExistingChannel() {
     putChannels(sampleChannel("ch1"));
 
@@ -298,7 +302,6 @@ class ChannelWriteApiIT extends ApiTestBase {
         withProperties(channel("ch1", "admin"), property("area", "propOwner", IMMENSE_VALUE))
             .toString();
 
-    // today: returns 500 and the channel is gone
     assertNotEquals(200, cf.put("/resources/channels/ch1", unindexable, ApiClient.ADMIN).status());
     assertEquals("north", propertyValue(read("ch1"), "area"));
   }

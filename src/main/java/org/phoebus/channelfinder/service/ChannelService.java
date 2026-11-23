@@ -87,12 +87,15 @@ public class ChannelService {
     Optional<Channel> existingChannel = channelRepository.findById(channelName);
     if (existingChannel.isPresent()) {
       requireOwner(existingChannel.get());
-      channelRepository.deleteById(channelName);
     }
 
     resetOwnersToExisting(List.of(channel));
 
     Channel created = channelRepository.index(channel);
+    // Indexing replaces a channel of the same name, so only a channel of another name is deleted.
+    if (existingChannel.isPresent() && !channelName.equals(channel.getName())) {
+      channelRepository.deleteById(channelName);
+    }
     channelProcessorService.sendToProcessors(List.of(created));
     return created;
   }
