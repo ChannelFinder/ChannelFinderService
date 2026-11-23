@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.exceptions.BatchWriteException;
 import org.phoebus.channelfinder.exceptions.ChannelValidationException;
 import org.phoebus.channelfinder.exceptions.PropertyNotFoundException;
 import org.phoebus.channelfinder.exceptions.TagNotFoundException;
@@ -177,5 +178,37 @@ class ChannelServiceTest {
     verify(channelRepository, times(1)).deleteAllByIdBestEffort(eq(List.of("ch1", "ch3")));
     verify(channelRepository, never()).deleteAllById(any());
     verify(channelRepository, never()).deleteById(anyString());
+  }
+
+  @Test
+  void createChannels_partlyRefused_sendsTheWrittenChannelsToProcessors() {
+    Channel written = new Channel("ch1", "owner");
+    Channel refused = new Channel("ch2", "owner");
+    when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
+    when(channelRepository.indexAll(any()))
+        .thenThrow(
+            new BatchWriteException(
+                "Failed to index channels {0}", List.of("ch2"), List.of(written)));
+
+    List<Channel> channels = List.of(written, refused);
+
+    assertThrows(BatchWriteException.class, () -> channelService.create(channels));
+    verify(channelProcessorService).sendToProcessors(List.of(written));
+  }
+
+  @Test
+  void updateChannels_partlyRefused_sendsTheWrittenChannelsToProcessors() {
+    Channel written = new Channel("ch1", "owner");
+    Channel refused = new Channel("ch2", "owner");
+    when(authorizationService.isAuthorizedOwner(any(), any(Channel.class))).thenReturn(true);
+    when(channelRepository.saveAll(any()))
+        .thenThrow(
+            new BatchWriteException(
+                "Failed to index channels {0}", List.of("ch2"), List.of(written)));
+
+    List<Channel> channels = List.of(written, refused);
+
+    assertThrows(BatchWriteException.class, () -> channelService.update(channels));
+    verify(channelProcessorService).sendToProcessors(List.of(written));
   }
 }

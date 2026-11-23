@@ -2,6 +2,7 @@ package org.phoebus.channelfinder.web.v0;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.phoebus.channelfinder.exceptions.BatchWriteException;
 import org.phoebus.channelfinder.exceptions.ChannelNotFoundException;
 import org.phoebus.channelfinder.exceptions.ChannelValidationException;
 import org.phoebus.channelfinder.exceptions.PropertyNotFoundException;
@@ -30,6 +31,10 @@ import org.springframework.web.server.ResponseStatusException;
 public class V0ExceptionHandler {
 
   private static final Logger logger = Logger.getLogger(V0ExceptionHandler.class.getName());
+
+  // The status code of a batch write where Elasticsearch refused some or all of the documents. It
+  // is the same as for a single write that Elasticsearch refused.
+  private static final HttpStatus BATCH_WRITE_STATUS = HttpStatus.INTERNAL_SERVER_ERROR;
 
   @ExceptionHandler(ChannelNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -85,6 +90,12 @@ public class V0ExceptionHandler {
   public ResponseStatusException handleMessageNotReadable(HttpMessageNotReadableException ex) {
     logger.log(Level.WARNING, ex.getMessage(), ex);
     return new ResponseStatusException(HttpStatus.BAD_REQUEST, "Malformed request body");
+  }
+
+  @ExceptionHandler(BatchWriteException.class)
+  public ResponseStatusException handleBatchWrite(BatchWriteException ex) {
+    logger.log(Level.SEVERE, ex.getMessage(), ex);
+    return new ResponseStatusException(BATCH_WRITE_STATUS, ex.getMessage());
   }
 
   @ExceptionHandler(RepositoryException.class)

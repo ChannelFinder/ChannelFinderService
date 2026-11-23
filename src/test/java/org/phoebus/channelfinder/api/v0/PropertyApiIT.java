@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder.api.v0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.phoebus.channelfinder.api.v0.ApiJson.array;
 import static org.phoebus.channelfinder.api.v0.ApiJson.channel;
@@ -110,6 +111,19 @@ class PropertyApiIT extends ApiTestBase {
 
     assertEquals(200, cf.get("/resources/properties/area").status());
     assertEquals(List.of(), channelsWith("area=*"));
+  }
+
+  @Test
+  void putWithAChannelThatCannotBeWrittenReportsAnError() {
+    // Longer than the 32766 bytes Elasticsearch accepts for a keyword term.
+    String immenseValue = "x".repeat(40_000);
+
+    ApiClient.Response response =
+        cf.put(
+            "/resources/properties/area", onChannels("area", immenseValue, "ch3"), ApiClient.ADMIN);
+
+    assertNotEquals(200, response.status());
+    assertEquals("Failed to index channels [ch3]", response.json().get("detail").asString());
   }
 
   @Test

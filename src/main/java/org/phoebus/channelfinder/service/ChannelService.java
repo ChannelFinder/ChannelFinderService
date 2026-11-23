@@ -16,6 +16,7 @@ import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.exceptions.BatchWriteException;
 import org.phoebus.channelfinder.exceptions.ChannelNotFoundException;
 import org.phoebus.channelfinder.exceptions.ChannelValidationException;
 import org.phoebus.channelfinder.exceptions.PropertyNotFoundException;
@@ -118,7 +119,13 @@ public class ChannelService {
     validateChannels(channelList);
     resetOwnersToExisting(channelList);
 
-    List<Channel> created = channelRepository.indexAll(channelList);
+    List<Channel> created;
+    try {
+      created = channelRepository.indexAll(channelList);
+    } catch (BatchWriteException e) {
+      channelProcessorService.sendToProcessors(e.getWritten());
+      throw e;
+    }
     channelProcessorService.sendToProcessors(created);
     return created;
   }
@@ -170,9 +177,15 @@ public class ChannelService {
     validateChannels(channelList);
     resetOwnersToExisting(channelList);
 
-    List<Channel> updated =
-        StreamSupport.stream(channelRepository.saveAll(channelList).spliterator(), false)
-            .collect(Collectors.toCollection(ArrayList::new));
+    List<Channel> updated;
+    try {
+      updated =
+          StreamSupport.stream(channelRepository.saveAll(channelList).spliterator(), false)
+              .collect(Collectors.toCollection(ArrayList::new));
+    } catch (BatchWriteException e) {
+      channelProcessorService.sendToProcessors(e.getWritten());
+      throw e;
+    }
     channelProcessorService.sendToProcessors(updated);
     return updated;
   }

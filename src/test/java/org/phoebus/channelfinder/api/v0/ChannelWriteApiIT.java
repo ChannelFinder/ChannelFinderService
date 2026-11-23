@@ -15,10 +15,7 @@ import static org.phoebus.channelfinder.api.v0.ApiJson.withTags;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.ExpectedToFail;
-import org.opentest4j.AssertionFailedError;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -47,6 +44,14 @@ class ChannelWriteApiIT extends ApiTestBase {
   private static String unindexableBatch() {
     return array(
             withProperties(channel("ch1", "admin"), property("area", "propOwner", IMMENSE_VALUE)))
+        .toString();
+  }
+
+  /** A batch with one channel that Elasticsearch accepts, and one that it does not. */
+  private static String partlyUnindexableBatch() {
+    return array(
+            channel("ch1", "admin"),
+            withProperties(channel("ch2", "admin"), property("area", "propOwner", IMMENSE_VALUE)))
         .toString();
   }
 
@@ -307,18 +312,13 @@ class ChannelWriteApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "a failed batch PUT returns 200, because bulk errors are only logged",
-      withExceptions = AssertionFailedError.class)
   void failedBatchPutReportsAnError() {
     putChannels(sampleChannel("ch1"));
 
     ApiClient.Response response =
         cf.put("/resources/channels", unindexableBatch(), ApiClient.ADMIN);
 
-    // today: returns 200 with []
-    // Which error status a failed bulk write returns is not decided yet, only that it is not 200.
+    // The status is 500 today, as for a single write. The test only needs it not to be 200.
     assertNotEquals(200, response.status());
   }
 
@@ -332,19 +332,34 @@ class ChannelWriteApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "a failed batch POST returns 200, because bulk errors are only logged",
-      withExceptions = AssertionFailedError.class)
   void failedBatchPostReportsAnError() {
     putChannels(sampleChannel("ch1"));
 
     ApiClient.Response response =
         cf.post("/resources/channels", unindexableBatch(), ApiClient.ADMIN);
 
-    // today: returns 200 with [] and leaves the channel unchanged
-    // Which error status a failed bulk write returns is not decided yet, only that it is not 200.
+    // The status is 500 today, as for a single write. The test only needs it not to be 200.
     assertNotEquals(200, response.status());
     assertEquals("north", propertyValue(read("ch1"), "area"));
+  }
+
+  @Test
+  void partlyFailedBatchPutWritesTheRestAndNamesTheChannelsThatFailed() {
+    ApiClient.Response response =
+        cf.put("/resources/channels", partlyUnindexableBatch(), ApiClient.ADMIN);
+
+    assertNotEquals(200, response.status());
+    assertEquals("Failed to index channels [ch2]", response.json().get("detail").asString());
+    assertEquals(List.of("ch1"), names(cf.get("/resources/channels").json()));
+  }
+
+  @Test
+  void partlyFailedBatchPostWritesTheRestAndNamesTheChannelsThatFailed() {
+    ApiClient.Response response =
+        cf.post("/resources/channels", partlyUnindexableBatch(), ApiClient.ADMIN);
+
+    assertNotEquals(200, response.status());
+    assertEquals("Failed to index channels [ch2]", response.json().get("detail").asString());
+    assertEquals(List.of("ch1"), names(cf.get("/resources/channels").json()));
   }
 }
