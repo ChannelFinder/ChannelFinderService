@@ -1,10 +1,9 @@
-name: Release docker image
+name: Docker image
 
 on:
-  push:
-    branches: [ "master" ]
-    tags:
-      - '**'
+  workflow_call:
+
+permissions: {}
 
 env:
   REGISTRY: ghcr.io

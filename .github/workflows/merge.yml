@@ -22,3 +22,8 @@ jobs:
       contents: read
       pull-requests: write
     uses: $/.github/workflows/_integration-test.yml
+  build-and-push-image:
+    permissions:
+      contents: read
+      packages: write
+    uses: $/.github/workflows/_docker-image.yml
