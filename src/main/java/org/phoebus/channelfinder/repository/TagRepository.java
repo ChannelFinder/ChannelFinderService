@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -39,6 +38,7 @@ import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Tag;
 import org.phoebus.channelfinder.entity.Tag.OnlyTag;
+import org.phoebus.channelfinder.exceptions.BatchWriteException;
 import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -97,21 +97,21 @@ public class TagRepository implements CrudRepository<Tag, String> {
       // Log errors, if any
       if (result.errors()) {
         logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+        List<String> refused = new ArrayList<>();
         for (BulkResponseItem item : result.items()) {
           if (item.error() != null) {
             logger.log(Level.SEVERE, () -> item.error().reason());
+            refused.add(item.id());
           }
         }
-        // TODO cleanup? or throw exception?
-      } else {
-        return findAllById(tags.stream().map(Tag::getName).toList());
+        throw new BatchWriteException(TextUtil.FAILED_TO_INDEX_TAGS, refused);
       }
+      return findAllById(tags.stream().map(Tag::getName).toList());
     } catch (IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
       logger.log(Level.SEVERE, message, e);
       throw new RepositoryException(message);
     }
-    return Collections.emptyList();
   }
 
   /**
@@ -178,22 +178,22 @@ public class TagRepository implements CrudRepository<Tag, String> {
       // Log errors, if any
       if (result.errors()) {
         logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+        List<String> refused = new ArrayList<>();
         for (BulkResponseItem item : result.items()) {
           if (item.error() != null) {
             logger.log(Level.SEVERE, () -> item.error().reason());
+            refused.add(item.id());
           }
         }
-        // TODO cleanup? or throw exception?
-      } else {
-        return (Iterable<S>)
-            findAllById(StreamSupport.stream(tags.spliterator(), false).map(Tag::getName).toList());
+        throw new BatchWriteException(TextUtil.FAILED_TO_INDEX_TAGS, refused);
       }
+      return (Iterable<S>)
+          findAllById(StreamSupport.stream(tags.spliterator(), false).map(Tag::getName).toList());
     } catch (IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_TAGS, tags);
       logger.log(Level.SEVERE, message, e);
       throw new RepositoryException(message);
     }
-    return null;
   }
 
   /**
