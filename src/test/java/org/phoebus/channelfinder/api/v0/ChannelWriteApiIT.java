@@ -323,16 +323,11 @@ class ChannelWriteApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "a failed batch PUT loses the channel, because PUT deletes before it writes (#168)",
-      withExceptions = AssertionFailedError.class)
   void failedBatchPutKeepsTheExistingChannel() {
     putChannels(sampleChannel("ch1"));
 
     cf.put("/resources/channels", unindexableBatch(), ApiClient.ADMIN);
 
-    // today: the channel is gone
     assertEquals("north", propertyValue(read("ch1"), "area"));
   }
 

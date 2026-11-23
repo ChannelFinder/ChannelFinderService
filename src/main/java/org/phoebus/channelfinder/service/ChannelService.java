@@ -116,7 +116,6 @@ public class ChannelService {
     }
 
     validateChannels(channelList);
-    channelRepository.deleteAll(channelList);
     resetOwnersToExisting(channelList);
 
     List<Channel> created = channelRepository.indexAll(channelList);
