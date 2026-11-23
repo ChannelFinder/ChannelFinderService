@@ -1,0 +1,24 @@
+name: Merge to master
+
+on:
+  push:
+    branches: [ "master" ]
+
+permissions: {}
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    uses: $/.github/workflows/_build.yml
+  test:
+    permissions:
+      checks: write
+      contents: read
+    uses: $/.github/workflows/_test.yml
+  integrationtest:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
+    uses: $/.github/workflows/_integration-test.yml
