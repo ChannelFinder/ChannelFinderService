@@ -1,7 +1,6 @@
 package org.phoebus.channelfinder.api.v0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.phoebus.channelfinder.api.v0.ApiJson.array;
 import static org.phoebus.channelfinder.api.v0.ApiJson.channel;
 import static org.phoebus.channelfinder.api.v0.ApiJson.property;
@@ -186,19 +185,34 @@ class AuthorizationApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "POST checks the owner of the channel in the path and writes the channel in the body",
-      withExceptions = AssertionFailedError.class)
   void userCannotRenameItsChannelOntoAChannelOwnedBySomeoneElse() {
-    // The service checks the owner of userChannel. It then writes userChannel as adminChannel.
     putChannels(channel("userChannel", "user"));
     String adminChannel = channel("adminChannel", "user").toString();
 
-    // today: returns 200, and adminChannel belongs to user and has lost its property
-    assertNotEquals(
-        200, cf.post("/resources/channels/userChannel", adminChannel, ApiClient.USER).status());
+    assertEquals(
+        403, cf.post("/resources/channels/userChannel", adminChannel, ApiClient.USER).status());
     assertAdminChannelIsUnchanged();
+    assertEquals(200, cf.get("/resources/channels/userChannel").status());
+  }
+
+  @Test
+  void userCannotPostAChannelOwnedBySomeoneElseThroughAnotherPath() {
+    String adminChannel = channel("adminChannel", "user").toString();
+
+    assertEquals(
+        403, cf.post("/resources/channels/notThere", adminChannel, ApiClient.USER).status());
+    assertAdminChannelIsUnchanged();
+  }
+
+  @Test
+  void userCanRenameItsChannelOntoAnotherOfItsChannels() {
+    putChannels(channel("userChannel", "user"), channel("otherUserChannel", "user"));
+    String otherUserChannel = channel("otherUserChannel", "user").toString();
+
+    assertEquals(
+        200, cf.post("/resources/channels/userChannel", otherUserChannel, ApiClient.USER).status());
+    assertEquals(404, cf.get("/resources/channels/userChannel").status());
+    assertEquals(200, cf.get("/resources/channels/otherUserChannel").status());
   }
 
   @Test
