@@ -70,7 +70,7 @@ public class TagService {
 
     if (!tag.getChannels().isEmpty()) {
       tag.getChannels().forEach(chan -> chan.addTag(created));
-      Iterable<Channel> chans = channelRepository.saveAll(tag.getChannels());
+      Iterable<Channel> chans = saveKeepingOwners(tag.getChannels());
       List<Channel> chanList = new ArrayList<>();
       for (Channel chan : chans) chanList.add(chan);
       created.setChannels(chanList);
@@ -114,7 +114,7 @@ public class TagService {
     }
 
     if (!channels.isEmpty()) {
-      channelRepository.saveAll(channels.values());
+      saveKeepingOwners(channels.values());
     }
     return tags;
   }
@@ -172,7 +172,7 @@ public class TagService {
       channels.addAll(tag.getChannels());
     }
     if (!channels.isEmpty()) {
-      Iterable<Channel> updatedChannels = channelRepository.saveAll(channels);
+      Iterable<Channel> updatedChannels = saveKeepingOwners(channels);
       updated.setChannels(StreamSupport.stream(updatedChannels.spliterator(), false).toList());
     }
 
@@ -226,7 +226,7 @@ public class TagService {
     tagRepository.saveAll(tags);
 
     if (!channels.isEmpty()) {
-      channelRepository.saveAll(channels.values());
+      saveKeepingOwners(channels.values());
     }
     return tags;
   }
@@ -253,6 +253,13 @@ public class TagService {
             .orElseThrow(() -> new ChannelNotFoundException(channelName));
     channel.removeTag(new Tag(tagName, ""));
     channelRepository.index(channel);
+  }
+
+  // A channel saved without an owner keeps the owner it has, so a tag write never changes who
+  // owns a channel.
+  private Iterable<Channel> saveKeepingOwners(Iterable<Channel> channels) {
+    channels.forEach(channel -> channel.setOwner(null));
+    return channelRepository.saveAll(channels);
   }
 
   private void validateTag(Tag tag) {

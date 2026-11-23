@@ -1,21 +1,24 @@
 package org.phoebus.channelfinder.api.v0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.phoebus.channelfinder.api.v0.ApiJson.array;
 import static org.phoebus.channelfinder.api.v0.ApiJson.channel;
 import static org.phoebus.channelfinder.api.v0.ApiJson.property;
 import static org.phoebus.channelfinder.api.v0.ApiJson.propertyNames;
 import static org.phoebus.channelfinder.api.v0.ApiJson.propertyValue;
 import static org.phoebus.channelfinder.api.v0.ApiJson.tag;
+import static org.phoebus.channelfinder.api.v0.ApiJson.tagNames;
 import static org.phoebus.channelfinder.api.v0.ApiJson.withChannels;
 import static org.phoebus.channelfinder.api.v0.ApiJson.withProperties;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.ExpectedToFail;
-import org.opentest4j.AssertionFailedError;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Tests anonymous reads, authenticated writes and owner enforcement.
@@ -215,24 +218,47 @@ class AuthorizationApiIT extends ApiTestBase {
     assertEquals(200, cf.get("/resources/channels/otherUserChannel").status());
   }
 
-  @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "POST to a property writes the owner of each embedded channel",
-      withExceptions = AssertionFailedError.class)
-  void userCannotChangeTheOwnerOfAChannelThroughItsOwnProperty() {
-    // api.rst lets the owner of userProp add it to any channel. The service checks the owner of
-    // userProp and then writes the embedded channel as it is, owner included.
-    createProperties("user", "userProp");
-    String userProp =
-        withChannels(
-                property("userProp", "user"),
-                withProperties(channel("adminChannel", "user"), property("userProp", "user", "v")))
-            .toString();
+  private ApiClient.Response sendAsUser(String request, JsonNode body) {
+    String[] methodAndPath = request.split(" ");
+    String path = "/resources" + methodAndPath[1];
+    return methodAndPath[0].equals("PUT")
+        ? cf.put(path, body.toString(), ApiClient.USER)
+        : cf.post(path, body.toString(), ApiClient.USER);
+  }
 
-    // today: returns 200, and adminChannel belongs to user
-    cf.post("/resources/properties/userProp", userProp, ApiClient.USER);
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(
+      strings = {
+        "PUT /properties/userProp",
+        "POST /properties/userProp",
+        "PUT /properties",
+        "POST /properties"
+      })
+  void userCannotChangeTheOwnerOfAChannelThroughItsOwnProperty(String request) {
+    // api.rst lets the owner of userProp add it to any channel, so the property is added.
+    createProperties("user", "userProp");
+    ObjectNode userProp =
+        withChannels(
+            property("userProp", "user"),
+            withProperties(channel("adminChannel", "user"), property("userProp", "user", "v")));
+    JsonNode body = request.endsWith("/userProp") ? userProp : array(userProp);
+
+    assertEquals(200, sendAsUser(request, body).status());
     assertAdminChannelIsUnchanged();
+    assertEquals("v", propertyValue(cf.get("/resources/channels/adminChannel").json(), "userProp"));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"PUT /tags/userTag", "POST /tags/userTag", "PUT /tags", "POST /tags"})
+  void userCannotChangeTheOwnerOfAChannelThroughItsOwnTag(String request) {
+    // api.rst lets the owner of userTag add it to any channel, so the tag is added.
+    createTags("user", "userTag");
+    ObjectNode userTag = withChannels(tag("userTag", "user"), channel("adminChannel", "user"));
+    JsonNode body = request.endsWith("/userTag") ? userTag : array(userTag);
+
+    assertEquals(200, sendAsUser(request, body).status());
+    assertAdminChannelIsUnchanged();
+    assertTrue(tagNames(cf.get("/resources/channels/adminChannel").json()).contains("userTag"));
   }
 
   @Test
