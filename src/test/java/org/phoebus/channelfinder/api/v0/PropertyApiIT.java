@@ -137,6 +137,24 @@ class PropertyApiIT extends ApiTestBase {
         names(cf.get("/resources/properties").json()));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"PUT", "POST"})
+  void batchWriteWithAPropertyThatCannotBeWrittenReportsAnError(String method) {
+    // The owner is longer than the 32766 bytes Elasticsearch accepts for a keyword term.
+    String properties =
+        array(property("device", "admin"), property("unit", "x".repeat(40_000))).toString();
+
+    ApiClient.Response response =
+        method.equals("PUT")
+            ? cf.put("/resources/properties", properties, ApiClient.ADMIN)
+            : cf.post("/resources/properties", properties, ApiClient.ADMIN);
+
+    assertNotEquals(200, response.status());
+    assertEquals("Failed to index properties [unit]", response.json().get("detail").asString());
+    assertEquals(
+        List.of("area", "device", "number"), names(cf.get("/resources/properties").json()));
+  }
+
   @Test
   void postWithChannelsMergesAndKeepsTheOtherChannels() {
     ApiClient.Response response =

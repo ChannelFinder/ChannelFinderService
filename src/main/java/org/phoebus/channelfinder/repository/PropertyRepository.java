@@ -38,6 +38,7 @@ import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Property.OnlyNameOwnerProperty;
+import org.phoebus.channelfinder.exceptions.BatchWriteException;
 import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -96,20 +97,21 @@ public class PropertyRepository implements CrudRepository<Property, String> {
       // Log errors, if any
       if (result.errors()) {
         logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+        List<String> refused = new ArrayList<>();
         for (BulkResponseItem item : result.items()) {
           if (item.error() != null) {
             logger.log(Level.SEVERE, () -> item.error().reason());
+            refused.add(item.id());
           }
         }
-      } else {
-        return findAllById(properties.stream().map(Property::getName).toList());
+        throw new BatchWriteException(TextUtil.FAILED_TO_INDEX_PROPERTIES, refused);
       }
+      return findAllById(properties.stream().map(Property::getName).toList());
     } catch (IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_PROPERTIES, properties);
       logger.log(Level.SEVERE, message, e);
       throw new RepositoryException(message);
     }
-    return null;
   }
 
   /**
@@ -184,21 +186,21 @@ public class PropertyRepository implements CrudRepository<Property, String> {
       // Log errors, if any
       if (result.errors()) {
         logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+        List<String> refused = new ArrayList<>();
         for (BulkResponseItem item : result.items()) {
           if (item.error() != null) {
             logger.log(Level.SEVERE, () -> item.error().reason());
+            refused.add(item.id());
           }
         }
-        // TODO cleanup? or throw exception?
-      } else {
-        return (Iterable<S>) findAllById(ids);
+        throw new BatchWriteException(TextUtil.FAILED_TO_INDEX_PROPERTIES, refused);
       }
+      return (Iterable<S>) findAllById(ids);
     } catch (IOException e) {
       String message = MessageFormat.format(TextUtil.FAILED_TO_UPDATE_SAVE_PROPERTIES, properties);
       logger.log(Level.SEVERE, message, e);
       throw new RepositoryException(message);
     }
-    return null;
   }
 
   /**
