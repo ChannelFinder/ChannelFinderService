@@ -76,6 +76,10 @@ public interface IProperty {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "404",
             description = "Property not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
@@ -104,6 +108,10 @@ public interface IProperty {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "500",
             description = "Error while trying to create properties",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
@@ -130,6 +138,10 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
             responseCode = "404",
@@ -167,6 +179,10 @@ public interface IProperty {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "404",
             description = "Property does not exist",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
@@ -201,6 +217,10 @@ public interface IProperty {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "404",
             description = "Property does not exist",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
@@ -223,6 +243,10 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
             responseCode = "404",
@@ -248,6 +272,10 @@ public interface IProperty {
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
             responseCode = "404",

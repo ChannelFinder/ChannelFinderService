@@ -74,10 +74,10 @@ public class V0ExceptionHandler {
   }
 
   @ExceptionHandler(UnauthorizedException.class)
-  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  @ResponseStatus(HttpStatus.FORBIDDEN)
   public ResponseStatusException handleUnauthorized(UnauthorizedException ex) {
     logger.log(Level.WARNING, ex.getMessage(), ex);
-    return new ResponseStatusException(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    return new ResponseStatusException(HttpStatus.FORBIDDEN, ex.getMessage());
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)

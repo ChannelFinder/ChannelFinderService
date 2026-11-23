@@ -70,28 +70,21 @@ class AuthorizationApiIT extends ApiTestBase {
   }
 
   @Test
-  void userWithoutAGroupIsRejectedWith401() {
+  void userWithoutAGroupIsRejectedWith403() {
     assertEquals(
-        401,
+        403,
         cf.put("/resources/channels/ch1", channel("ch1", "guest").toString(), ApiClient.GUEST)
             .status());
     assertEquals(
-        401, cf.put("/resources/tags/t", tag("t", "guest").toString(), ApiClient.GUEST).status());
+        403, cf.put("/resources/tags/t", tag("t", "guest").toString(), ApiClient.GUEST).status());
     assertEquals(
-        401,
+        403,
         cf.put("/resources/properties/p", property("p", "guest").toString(), ApiClient.GUEST)
             .status());
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "a known user who lacks the right gets 401, where HTTP uses 403",
-      withExceptions = AssertionFailedError.class)
   void knownUserWithoutTheRightIsRejectedWith403() {
-    // 401 means that the credentials are missing or wrong. These users are known, so the tests
-    // above and below that expect 401 for them record today's status.
-    // today: both return 401
     assertEquals(
         403,
         cf.put("/resources/channels/ch1", channel("ch1", "guest").toString(), ApiClient.GUEST)
@@ -103,6 +96,11 @@ class AuthorizationApiIT extends ApiTestBase {
                 channel("adminChannel", "user").toString(),
                 ApiClient.USER)
             .status());
+  }
+
+  @Test
+  void userWithoutTheAdminRoleCannotProcessAllChannels() {
+    assertEquals(403, cf.put("/resources/processors/process/all", "", ApiClient.USER).status());
   }
 
   @Test
@@ -135,7 +133,7 @@ class AuthorizationApiIT extends ApiTestBase {
   @Test
   void userCannotCreateAChannelForAnotherOwner() {
     assertEquals(
-        401,
+        403,
         cf.put("/resources/channels/ch1", channel("ch1", "admin").toString(), ApiClient.USER)
             .status());
   }
@@ -145,10 +143,10 @@ class AuthorizationApiIT extends ApiTestBase {
     String takeOver = channel("adminChannel", "user").toString();
 
     assertEquals(
-        401, cf.put("/resources/channels/adminChannel", takeOver, ApiClient.USER).status());
+        403, cf.put("/resources/channels/adminChannel", takeOver, ApiClient.USER).status());
     assertEquals(
-        401, cf.post("/resources/channels/adminChannel", takeOver, ApiClient.USER).status());
-    assertEquals(401, cf.delete("/resources/channels/adminChannel", ApiClient.USER).status());
+        403, cf.post("/resources/channels/adminChannel", takeOver, ApiClient.USER).status());
+    assertEquals(403, cf.delete("/resources/channels/adminChannel", ApiClient.USER).status());
     assertEquals(
         "admin", cf.get("/resources/channels/adminChannel").json().get("owner").asString());
   }
@@ -162,7 +160,7 @@ class AuthorizationApiIT extends ApiTestBase {
                 withProperties(channel("adminChannel", "user"), property("area", "user", "south")))
             .toString();
 
-    assertEquals(401, cf.post("/resources/channels", batch, ApiClient.USER).status());
+    assertEquals(403, cf.post("/resources/channels", batch, ApiClient.USER).status());
     assertAdminChannelIsUnchanged();
     assertEquals(List.of(), propertyNames(cf.get("/resources/channels/userChannel").json()));
   }
@@ -233,17 +231,17 @@ class AuthorizationApiIT extends ApiTestBase {
   @Test
   void userCannotChangeADefinitionOwnedBySomeoneElse() {
     assertEquals(
-        401,
+        403,
         cf.put("/resources/properties/area", property("area", "user").toString(), ApiClient.USER)
             .status());
     assertEquals(
-        401,
+        403,
         cf.put(
                 "/resources/properties/area/adminChannel",
                 property("area", "user", "south").toString(),
                 ApiClient.USER)
             .status());
-    assertEquals(401, cf.delete("/resources/tags/archived", ApiClient.USER).status());
+    assertEquals(403, cf.delete("/resources/tags/archived", ApiClient.USER).status());
   }
 
   @Test

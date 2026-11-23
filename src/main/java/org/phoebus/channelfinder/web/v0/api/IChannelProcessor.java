@@ -69,6 +69,10 @@ public interface IChannelProcessor {
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class)))
       })
   @PutMapping("/process/all")

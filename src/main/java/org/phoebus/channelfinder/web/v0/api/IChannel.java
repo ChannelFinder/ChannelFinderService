@@ -141,6 +141,10 @@ public interface IChannel {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "404",
             description = "Channel, Tag, or property not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
@@ -175,6 +179,10 @@ public interface IChannel {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "404",
             description = "Tag, or property not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
@@ -205,6 +213,10 @@ public interface IChannel {
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
             responseCode = "404",
@@ -240,6 +252,10 @@ public interface IChannel {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "404",
             description = "Channel not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
@@ -264,6 +280,10 @@ public interface IChannel {
             description = "Unauthorized",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
             responseCode = "404",
             description = "Channel not found",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
@@ -286,6 +306,10 @@ public interface IChannel {
         @ApiResponse(
             responseCode = "401",
             description = "Unauthorized",
+            content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
+        @ApiResponse(
+            responseCode = "403",
+            description = "Forbidden",
             content = @Content(schema = @Schema(implementation = ResponseStatusException.class))),
         @ApiResponse(
             responseCode = "500",
