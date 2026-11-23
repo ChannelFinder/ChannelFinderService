@@ -36,8 +36,8 @@
     </developers>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.boot-version>4.0.9</spring.boot-version>
-        <elasticsearch.version>8.18.0</elasticsearch.version>
+        <spring.boot-version>4.1.2</spring.boot-version>
+        <elasticsearch.version>8.19.25</elasticsearch.version>
         <!-- Elasticsearch server started by the ITs; compose.yml and src/test/resources/compose.yml keep their own copy -->
         <elasticsearch.server.version>${elasticsearch.version}</elasticsearch.server.version>
         <skipITs>true</skipITs>
@@ -151,7 +151,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>3.0.3</version>
+            <version>3.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -220,7 +220,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.6.3</version>
+				<version>3.7.0</version>
 				<executions>
 					<execution>
 						<id>enforce-plugin-versions</id>
@@ -242,19 +242,19 @@
             </plugin>
             <plugin>
               <artifactId>maven-resources-plugin</artifactId>
-              <version>3.3.1</version>
+              <version>3.5.0</version>
             </plugin>
             <plugin>
               <artifactId>maven-clean-plugin</artifactId>
-              <version>3.4.0</version>
+              <version>3.5.0</version>
             </plugin>
             <plugin>
               <artifactId>maven-install-plugin</artifactId>
-              <version>3.1.2</version>
+              <version>3.2.0</version>
             </plugin>
             <plugin>
               <artifactId>maven-deploy-plugin</artifactId>
-              <version>3.1.2</version>
+              <version>3.2.0</version>
             </plugin>
             <plugin>
                 <groupId>com.spotify.fmt</groupId>
@@ -305,7 +305,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.9.0</version>
+                <version>3.11.0</version>
                 <executions>
                     <execution>
                         <id>analyze</id>
@@ -396,7 +396,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.14.0</version>
+                <version>3.16.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -406,7 +406,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.5.1</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -456,12 +456,12 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-site-plugin</artifactId>
-                        <version>3.7.1</version>
+                        <version>3.22.0</version>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-project-info-reports-plugin</artifactId>
-                        <version>3.0.0</version>
+                        <version>3.9.0</version>
                     </plugin>
                     <!-- Generate the documentation for the Phoebus -->
                     <plugin>
@@ -492,7 +492,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.1.1</version>
+                        <version>3.12.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -533,7 +533,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.8</version>
+                        <version>1.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>phoebus-releases</serverId>
@@ -544,7 +544,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.0.1</version>
+                        <version>3.2.8</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
