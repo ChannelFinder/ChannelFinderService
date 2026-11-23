@@ -6,6 +6,7 @@ import static org.mockito.Answers.RETURNS_DEEP_STUBS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -27,6 +28,7 @@ import org.phoebus.channelfinder.configuration.ElasticConfig;
 import org.phoebus.channelfinder.configuration.LegacyApiProperties;
 import org.phoebus.channelfinder.entity.Channel;
 import org.phoebus.channelfinder.exceptions.BatchWriteException;
+import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,10 +44,30 @@ class ChannelRepositoryTest {
   private ChannelRepository channelRepository;
 
   @BeforeEach
-  void setUp() {
+  void setUp() throws IOException {
     channelRepository = new ChannelRepository(elasticConfig, client, new LegacyApiProperties());
     ReflectionTestUtils.setField(channelRepository, "chunkSize", CHUNK_SIZE);
     when(elasticConfig.getES_CHANNEL_INDEX()).thenReturn("channelfinder");
+    lenient()
+        .when(client.bulk(any(BulkRequest.class)))
+        .thenThrow(new IOException("connection refused"));
+  }
+
+  @Test
+  void indexAll_bulkRequestFails_throwsRepositoryException() {
+    List<Channel> channels = List.of(new Channel("ch", "owner"));
+
+    assertThrows(RepositoryException.class, () -> channelRepository.indexAll(channels));
+  }
+
+  @Test
+  void saveAll_bulkRequestFails_throwsRepositoryException() throws IOException {
+    List<Channel> channels = List.of(new Channel("ch", "owner"));
+    when(elasticConfig.getES_QUERY_SIZE()).thenReturn(CHUNK_SIZE);
+    when(client.search(any(SearchRequest.class), eq(Channel.class)).hits().hits())
+        .thenReturn(List.of());
+
+    assertThrows(RepositoryException.class, () -> channelRepository.saveAll(channels));
   }
 
   @Test

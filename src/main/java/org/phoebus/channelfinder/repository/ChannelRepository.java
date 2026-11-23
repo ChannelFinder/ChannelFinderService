@@ -181,6 +181,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         logger.log(Level.SEVERE, "Bulk indexing failed", e);
       } catch (ExecutionException | TimeoutException e) {
         logger.log(Level.SEVERE, "Bulk indexing failed", e);
+        throw new RepositoryException("Bulk indexing failed", e);
       }
     }
     requireNoneRefused(refused, allIndexed);
@@ -314,6 +315,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         logger.log(Level.SEVERE, "Bulk saving failed", e);
       } catch (ExecutionException e) {
         logger.log(Level.SEVERE, "Bulk saving failed", e);
+        throw new RepositoryException("Bulk saving failed", e);
       }
     }
     requireNoneRefused(refused, allSaved);
