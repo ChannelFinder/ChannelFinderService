@@ -166,18 +166,23 @@ class AuthorizationApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "PUT checks the owner of the channel in the path and writes the channel in the body",
-      withExceptions = AssertionFailedError.class)
   void userCannotPutAChannelOwnedBySomeoneElseThroughAnotherPath() {
-    // The service checks the owner of notThere, which does not exist. It then writes adminChannel.
     String adminChannel = channel("adminChannel", "user").toString();
 
-    // today: returns 200, and adminChannel belongs to user and has lost its property
-    assertNotEquals(
-        200, cf.put("/resources/channels/notThere", adminChannel, ApiClient.USER).status());
+    assertEquals(
+        403, cf.put("/resources/channels/notThere", adminChannel, ApiClient.USER).status());
     assertAdminChannelIsUnchanged();
+  }
+
+  @Test
+  void userCanPutItsChannelThroughThePathOfAnotherOfItsChannels() {
+    putChannels(channel("userChannel", "user"), channel("otherUserChannel", "user"));
+    String otherUserChannel = channel("otherUserChannel", "user").toString();
+
+    assertEquals(
+        200, cf.put("/resources/channels/userChannel", otherUserChannel, ApiClient.USER).status());
+    assertEquals(404, cf.get("/resources/channels/userChannel").status());
+    assertEquals(200, cf.get("/resources/channels/otherUserChannel").status());
   }
 
   @Test

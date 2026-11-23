@@ -84,6 +84,9 @@ public class ChannelService {
     validateChannel(channel);
     requireOwner(channel);
 
+    if (!channelName.equals(channel.getName())) {
+      channelRepository.findById(channel.getName()).ifPresent(this::requireOwner);
+    }
     Optional<Channel> existingChannel = channelRepository.findById(channelName);
     if (existingChannel.isPresent()) {
       requireOwner(existingChannel.get());
