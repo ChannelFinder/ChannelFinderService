@@ -81,9 +81,6 @@ public class ChannelService {
     requireRole(ROLES.CF_CHANNEL, channelName);
     audit.log(Level.INFO, () -> MessageFormat.format(TextUtil.CREATE_CHANNEL, channel.toLog()));
 
-    validateChannel(channel);
-    requireOwner(channel);
-
     Optional<Channel> existingChannel = channelRepository.findById(channelName);
     if (existingChannel.isPresent()) {
       requireOwner(existingChannel.get());
@@ -92,6 +89,9 @@ public class ChannelService {
 
     validateChannel(channel);
     requireOwner(channel);
+    channelPreProcessorService.preProcess(
+                        List.of(channel),
+                        existingChannel.map(c -> Map.of(c.getName(), c)).orElse(Map.of()));
     resetOwnersToExisting(List.of(channel));
 
     Channel created = channelRepository.index(channel);
@@ -115,6 +115,7 @@ public class ChannelService {
     }
 
     validateChannels(channelList);
+    channelPreProcessorService.preProcess(channelList, existing);
     channelRepository.deleteAll(channelList);
     resetOwnersToExisting(channelList);
 
@@ -129,10 +130,14 @@ public class ChannelService {
     requireOwner(channel);
 
     Optional<Channel> existingChannel = channelRepository.findById(channelName);
+    existingChannel.ifPresent(this::requireOwner);
+    // Before the merge below, which modifies the existing channel in place
+    channelPreProcessorService.preProcess(
+                        List.of(channel),
+                        existingChannel.map(c -> Map.of(c.getName(), c)).orElse(Map.of()));
 
     Channel newChannel;
     if (existingChannel.isPresent()) {
-      requireOwner(existingChannel.get());
       newChannel = existingChannel.get();
       newChannel.setOwner(channel.getOwner());
       newChannel.addProperties(channel.getProperties());
@@ -168,6 +173,7 @@ public class ChannelService {
     }
 
     validateChannels(channelList);
+    channelPreProcessorService.preProcess(channelList, existing);
     resetOwnersToExisting(channelList);
 
     List<Channel> updated = Lists.newArrayList(channelRepository.saveAll(channelList));

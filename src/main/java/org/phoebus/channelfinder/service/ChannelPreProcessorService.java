@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.phoebus.channelfinder.entity.Channel;
+import org.phoebus.channelfinder.exceptions.ChannelPreProcessException;
 import org.phoebus.channelfinder.processor.ChannelPreProcessor;
 import org.phoebus.channelfinder.processor.PreProcessResult;
 import org.springframework.stereotype.Service;
@@ -42,10 +43,10 @@ public class ChannelPreProcessorService {
    * @param existingChannels a map of channels currently stored in the service, keyed by name.
    * @return an aggregated {@link PreProcessResult} combining warnings from all enabled
    *     preprocessors. If no preprocessors run, an empty result is returned.
-   * @throws Exception if any preprocessor throws, aborting the operation.
+   * @throws ChannelPreProcessException if any preprocessor throws, aborting the operation.
    */
-  public PreProcessResult preProcess(List<Channel> channels, Map<String, Channel> existingChannels)
-      throws Exception {
+  public PreProcessResult preProcess(
+      List<Channel> channels, Map<String, Channel> existingChannels) {
     Map<String, List<String>> aggregatedWarnings = new HashMap<>();
 
     for (ChannelPreProcessor processor : preProcessors) {
