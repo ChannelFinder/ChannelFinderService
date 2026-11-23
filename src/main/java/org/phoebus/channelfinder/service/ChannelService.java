@@ -90,6 +90,8 @@ public class ChannelService {
       channelRepository.deleteById(channelName);
     }
 
+    validateChannel(channel);
+    requireOwner(channel);
     resetOwnersToExisting(List.of(channel));
 
     Channel created = channelRepository.index(channel);
