@@ -12,8 +12,7 @@ import org.phoebus.channelfinder.processor.validator.ActiveChannelPreProcessor;
 
 class ActiveChannelPreProcessorTest {
 
-  private final ActiveChannelPreProcessor preProcessor =
-      new ActiveChannelPreProcessor("pvStatus", "Active");
+  private final ActiveChannelPreProcessor preProcessor = new ActiveChannelPreProcessor();
 
   private static Channel channel(String name, String pvStatus, String hostName) {
     return new Channel(

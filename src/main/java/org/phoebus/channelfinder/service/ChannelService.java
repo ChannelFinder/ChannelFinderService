@@ -90,8 +90,7 @@ public class ChannelService {
     validateChannel(channel);
     requireOwner(channel);
     channelPreProcessorService.preProcess(
-                        List.of(channel),
-                        existingChannel.map(c -> Map.of(c.getName(), c)).orElse(Map.of()));
+        List.of(channel), existingChannel.map(c -> Map.of(c.getName(), c)).orElse(Map.of()));
     resetOwnersToExisting(List.of(channel));
 
     Channel created = channelRepository.index(channel);
@@ -133,8 +132,7 @@ public class ChannelService {
     existingChannel.ifPresent(this::requireOwner);
     // Before the merge below, which modifies the existing channel in place
     channelPreProcessorService.preProcess(
-                        List.of(channel),
-                        existingChannel.map(c -> Map.of(c.getName(), c)).orElse(Map.of()));
+        List.of(channel), existingChannel.map(c -> Map.of(c.getName(), c)).orElse(Map.of()));
 
     Channel newChannel;
     if (existingChannel.isPresent()) {

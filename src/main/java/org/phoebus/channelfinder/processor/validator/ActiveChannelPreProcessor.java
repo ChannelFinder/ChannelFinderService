@@ -34,17 +34,14 @@ public class ActiveChannelPreProcessor implements ChannelPreProcessor {
 
   public static final String NAME = "ActiveChannelPreProcessor";
 
-  private final String statusPropertyName;
-  private final String activeValue;
-  private volatile boolean enabled = true;
+  @Value("${preprocessors.active_channel.enabled:true}")
+  private volatile boolean enabled;
 
-  public ActiveChannelPreProcessor(
-      @Value("${preprocessors.active_channel.status_property_name:pvStatus}")
-          String statusPropertyName,
-      @Value("${preprocessors.active_channel.active_value:Active}") String activeValue) {
-    this.statusPropertyName = statusPropertyName;
-    this.activeValue = activeValue;
-  }
+  @Value("${preprocessors.active_channel.status_property_name:pvStatus}")
+  private String statusPropertyName = "pvStatus";
+
+  @Value("${preprocessors.active_channel.active_value:Active}")
+  private String activeValue = "Active";
 
   @Override
   public boolean enabled() {
