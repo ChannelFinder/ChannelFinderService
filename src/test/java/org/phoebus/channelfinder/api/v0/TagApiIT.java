@@ -119,6 +119,37 @@ class TagApiIT extends ApiTestBase {
   @Test
   @Tag("known-defect")
   @ExpectedToFail(
+      value = "a batch with a tag without a name gives 500, although the mistake is the client's",
+      withExceptions = AssertionFailedError.class)
+  void batchWithATagWithoutANameIsRejectedWith400() {
+    String withoutName = "[" + tag("new", "admin") + ",{\"owner\":\"admin\"}]";
+    String withEmptyName = "[" + tag("new", "admin") + ",{\"name\":\"\",\"owner\":\"admin\"}]";
+
+    // today: both return 500
+    assertEquals(400, cf.put("/resources/tags", withoutName, ApiClient.ADMIN).status());
+    assertEquals(400, cf.put("/resources/tags", withEmptyName, ApiClient.ADMIN).status());
+    assertEquals(404, cf.get("/resources/tags/new").status());
+  }
+
+  @Test
+  @Tag("known-defect")
+  @ExpectedToFail(
+      value =
+          "a tag that lists a missing channel gives 404, although the tag in the path is not what"
+              + " is missing",
+      withExceptions = AssertionFailedError.class)
+  void writeWithAMissingChannelIsRejectedWith400() {
+    String body = onChannels("new", "ch1", "missing");
+
+    // today: both return 404
+    assertEquals(400, cf.put("/resources/tags/new", body, ApiClient.ADMIN).status());
+    assertEquals(400, cf.post("/resources/tags/new", body, ApiClient.ADMIN).status());
+    assertEquals(404, cf.get("/resources/tags/new").status());
+  }
+
+  @Test
+  @Tag("known-defect")
+  @ExpectedToFail(
       value =
           "a tag rename leaves the old tag on its channels, because the channels read before the"
               + " delete are written back",

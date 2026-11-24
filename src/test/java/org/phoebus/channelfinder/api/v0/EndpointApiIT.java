@@ -8,7 +8,15 @@ import static org.phoebus.channelfinder.api.v0.ApiJson.withProperties;
 import static org.phoebus.channelfinder.api.v0.ApiJson.withTags;
 
 import java.util.List;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junitpioneer.jupiter.ExpectedToFail;
+import org.opentest4j.AssertionFailedError;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import tools.jackson.databind.JsonNode;
@@ -18,6 +26,54 @@ import tools.jackson.databind.JsonNode;
  * shape of their responses.
  */
 class EndpointApiIT extends ApiTestBase {
+
+  private static final List<String> SINGLE_WRITES =
+      List.of(
+          "PUT /channels/x",
+          "POST /channels/x",
+          "PUT /properties/x",
+          "POST /properties/x",
+          "PUT /tags/x",
+          "POST /tags/x");
+
+  private static final List<String> BATCH_WRITES =
+      List.of(
+          "PUT /channels",
+          "POST /channels",
+          "PUT /properties",
+          "POST /properties",
+          "PUT /tags",
+          "POST /tags");
+
+  static Stream<String> writes() {
+    return Stream.concat(SINGLE_WRITES.stream(), BATCH_WRITES.stream());
+  }
+
+  static Stream<Arguments> singleWritesWithoutANameOrAnOwner() {
+    List<String> bodies =
+        List.of(
+            "{\"owner\":\"admin\"}",
+            "{\"name\":\"\",\"owner\":\"admin\"}",
+            "{\"name\":\"x\"}",
+            "{\"name\":\"x\",\"owner\":\"\"}");
+    return SINGLE_WRITES.stream()
+        .flatMap(request -> bodies.stream().map(body -> Arguments.of(request, body)));
+  }
+
+  static Stream<Arguments> batchWritesOfAChannelWithoutAName() {
+    List<String> items = List.of("{\"owner\":\"admin\"}", "{\"name\":\"\",\"owner\":\"admin\"}");
+    return Stream.of("PUT /channels", "POST /channels")
+        .flatMap(request -> items.stream().map(item -> Arguments.of(request, item)));
+  }
+
+  /** Send a request written as {@code "PUT /channels/x"} under {@code /resources}, as admin. */
+  private ApiClient.Response send(String request, String body) {
+    String[] methodAndPath = request.split(" ");
+    String path = "/resources" + methodAndPath[1];
+    return methodAndPath[0].equals("PUT")
+        ? cf.put(path, body, ApiClient.ADMIN)
+        : cf.post(path, body, ApiClient.ADMIN);
+  }
 
   @Test
   void serviceRootReturnsServiceInfoAsJson() {
@@ -118,11 +174,12 @@ class EndpointApiIT extends ApiTestBase {
     assertEquals(404, cf.get("/resources/tags/missing").status());
   }
 
-  @Test
-  void deletingMissingResourcesReturns404() {
-    assertEquals(404, cf.delete("/resources/channels/missing", ApiClient.ADMIN).status());
-    assertEquals(404, cf.delete("/resources/properties/missing", ApiClient.ADMIN).status());
-    assertEquals(404, cf.delete("/resources/tags/missing", ApiClient.ADMIN).status());
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {ApiClient.ADMIN, ApiClient.USER})
+  void deletingMissingResourcesReturns404(String credentials) {
+    assertEquals(404, cf.delete("/resources/channels/missing", credentials).status());
+    assertEquals(404, cf.delete("/resources/properties/missing", credentials).status());
+    assertEquals(404, cf.delete("/resources/tags/missing", credentials).status());
   }
 
   @Test
@@ -203,7 +260,37 @@ class EndpointApiIT extends ApiTestBase {
   }
 
   @Test
-  void malformedBodyReturns400() {
-    assertEquals(400, cf.put("/resources/channels/ch1", "{not json", ApiClient.ADMIN).status());
+  @Tag("known-defect")
+  @ExpectedToFail(
+      value =
+          "a channel with an undefined tag gives 404, although the channel in the path is not what"
+              + " is missing",
+      withExceptions = AssertionFailedError.class)
+  void writingAChannelWithAnUndefinedTagIsRejectedWith400() {
+    String ch1 = withTags(channel("ch1", "admin"), tag("undefined", "admin")).toString();
+
+    // today: returns 404
+    assertEquals(400, cf.put("/resources/channels/ch1", ch1, ApiClient.ADMIN).status());
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("writes")
+  void malformedBodyReturns400(String request) {
+    assertEquals(400, send(request, "{not json").status());
+  }
+
+  @ParameterizedTest(name = "{0} {1}")
+  @MethodSource("singleWritesWithoutANameOrAnOwner")
+  void writeWithoutANameOrAnOwnerReturns400(String request, String body) {
+    assertEquals(400, send(request, body).status());
+  }
+
+  @ParameterizedTest(name = "{0} {1}")
+  @MethodSource("batchWritesOfAChannelWithoutAName")
+  void batchWithAChannelWithoutANameReturns400AndWritesNothing(String request, String item) {
+    String body = "[" + channel("ch1", "admin") + "," + item + "]";
+
+    assertEquals(400, send(request, body).status());
+    assertEquals(new ApiClient.Response(200, "[]"), cf.get("/resources/channels"));
   }
 }
