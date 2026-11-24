@@ -242,10 +242,8 @@ class PropertyRepositoryIT extends ElasticsearchTestBase {
     Channel createdChannel = channelRepository.index(channel);
     propertyRepository.deleteById(createdProperty.getName());
     // verify the property was deleted as expected
-    Assertions.assertNotEquals(
-        testProperty,
-        propertyRepository.findById(testProperty.getName()),
-        "Failed to delete property");
+    Assertions.assertTrue(
+        propertyRepository.findById(testProperty.getName()).isEmpty(), "Failed to delete property");
 
     Channel foundChannel = channelRepository.findById("testChannel").get();
     // verify the property was deleted from channels as expected

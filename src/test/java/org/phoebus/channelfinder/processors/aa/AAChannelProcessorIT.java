@@ -155,10 +155,7 @@ class AAChannelProcessorIT {
 
   @Test
   void testProcessNoPVs() throws JacksonException {
-    aaChannelProcessor.process(List.of());
-
-    // verify interactions are minimal or none if empty
-    // But since list is empty, process returns 0 early
+    assertEquals(0, aaChannelProcessor.process(List.of()));
   }
 
   @ParameterizedTest
