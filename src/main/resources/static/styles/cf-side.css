@@ -1,0 +1,112 @@
+/* The list of properties and tags on the left of the search. */
+cf-side {
+  padding: 16px 12px;
+  border-inline-end: 1px solid var(--cf-border);
+  background: var(--cf-surface);
+}
+cf-side > p {
+  margin: 8px;
+}
+cf-side header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 20px 8px 6px;
+}
+cf-side :is(h2, summary) {
+  font-size: var(--cf-small);
+  font-weight: 600;
+  color: var(--cf-muted);
+}
+cf-side h2 {
+  margin: 0;
+}
+cf-side header span {
+  color: var(--cf-faint);
+}
+cf-side details {
+  margin-block-start: 16px;
+  border-block-start: 1px solid var(--cf-border);
+}
+cf-side summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 8px 6px;
+  cursor: pointer;
+}
+cf-side summary::-webkit-details-marker {
+  display: none;
+}
+cf-side details[open] summary svg {
+  rotate: 90deg;
+}
+cf-side ul {
+  display: grid;
+  gap: 1px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+cf-side li {
+  display: flex;
+  align-items: center;
+  min-block-size: 28px;
+  border-radius: var(--cf-radius);
+}
+cf-side li:hover {
+  background: var(--cf-hover);
+}
+/* A name that is shown as a column has a tick and the soft accent behind it. */
+cf-side li:has([aria-pressed="true"]) {
+  background: var(--cf-accent-soft);
+}
+cf-side .cf-entry-name {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-inline-size: 0;
+  align-self: stretch;
+  padding-inline: 8px;
+  text-align: start;
+}
+cf-side .cf-entry-name:not([aria-pressed="true"]) {
+  color: var(--cf-text);
+}
+cf-side .cf-entry-name span:first-child {
+  flex: none;
+  display: flex;
+  inline-size: 14px;
+}
+/* The button that counts shows when its row is pointed at or has the focus. Once it has counted,
+   the number stays, as plain text. */
+cf-side li .cf-btn {
+  margin-inline-end: 4px;
+  color: var(--cf-muted);
+}
+@media (hover: hover) {
+  cf-side li:not(:hover, :has(:focus-visible)) .cf-btn:not(.cf-counted) {
+    opacity: 0;
+  }
+}
+cf-side li .cf-counted {
+  border-color: transparent;
+  background: none;
+}
+.cf-plain.cf-more {
+  margin: 6px 0 0;
+  padding-inline: 8px;
+  font-size: var(--cf-small);
+  color: var(--cf-accent-text);
+}
+
+/* Narrow screens: the list goes above the results, in a box that scrolls. */
+@media (width < 760px) {
+  cf-side {
+    max-block-size: 11rem;
+    overflow-y: auto;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--cf-border);
+  }
+}

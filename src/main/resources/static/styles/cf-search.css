@@ -1,0 +1,297 @@
+/* Search: the list of properties and tags on the left, the results on the right */
+cf-search {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+/* The syntax help: an example in mono on the left, what it means on the right. */
+.cf-syntax {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0 0 12px;
+}
+.cf-syntax dt {
+  font-family: var(--cf-mono);
+}
+.cf-syntax dd {
+  margin: 0;
+  color: var(--cf-muted);
+}
+
+.cf-pane {
+  min-inline-size: 0;
+  padding: 16px 24px 24px;
+}
+/* The query box and its button are the main controls of the page, and a size larger. */
+.cf-query {
+  display: flex;
+  gap: 8px;
+}
+.cf-query > * {
+  min-block-size: 38px;
+  border-radius: var(--cf-radius-box);
+}
+.cf-query .cf-field {
+  flex: 1;
+  min-inline-size: 0;
+  gap: 10px;
+  padding-inline: 12px 4px;
+}
+.cf-query .cf-btn {
+  padding-inline: 18px;
+}
+.cf-query .cf-icon {
+  inline-size: 16px;
+  block-size: 16px;
+}
+/* A rule between the button that clears the query and the one that explains it. */
+.cf-query [popovertarget] {
+  position: relative;
+}
+.cf-query :not([hidden]) + [popovertarget]::before {
+  content: "";
+  position: absolute;
+  inset-block: 6px;
+  inset-inline-start: -5px;
+  border-inline-start: 1px solid var(--cf-border);
+}
+/* The request is there to be looked up, and must not draw the eye more than the count below. */
+/* A line about a word of the query that cannot match. */
+#cf-syntax + p {
+  margin-block-start: 6px;
+}
+.cf-request {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-start: 8px;
+}
+.cf-request span {
+  padding-inline: 5px;
+  border-radius: var(--cf-radius-small);
+  background: var(--cf-chip);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.cf-request a {
+  min-inline-size: 0;
+  color: var(--cf-faint);
+}
+.cf-request a:not(:hover, :focus-visible) {
+  text-decoration: none;
+}
+.cf-request .cf-icon-btn {
+  inline-size: 24px;
+  block-size: 24px;
+}
+.cf-pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.cf-pager select {
+  margin-inline: 4px 12px;
+  font-size: 1rem;
+  color: var(--cf-text);
+}
+#cf-range {
+  margin-inline-end: 8px;
+}
+/* The selection and what can be done with it, set off from the count by a rule. */
+.cf-selection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--cf-border);
+}
+.cf-selection b {
+  margin-inline-end: 4px;
+  font-weight: 500;
+  color: var(--cf-accent-text);
+}
+.cf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 12px 0;
+  min-block-size: var(--cf-control);
+}
+#cf-count {
+  color: var(--cf-muted);
+}
+#cf-count b {
+  font-weight: 600;
+  color: var(--cf-text);
+}
+
+/* Results. The name gets a set share of the width and the other columns share the rest equally.
+   Cells are cut with an ellipsis; the full value is in the tooltip and in the details. */
+.cf-results {
+  /* The box scrolls both ways, so that the header can stay at its top. */
+  container-type: inline-size;
+  overflow: auto;
+  max-block-size: max(20rem, 100dvh - 220px);
+  scrollbar-width: thin;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-box);
+}
+/* The rows of the search before stay until the new ones are there, greyed and out of reach. */
+.cf-results[inert] {
+  opacity: 0.5;
+}
+.cf-results thead th,
+.cf-compare thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+}
+.cf-results > p {
+  padding: 24px 16px;
+}
+.cf-grid {
+  table-layout: fixed;
+}
+/* The whole cell around a tick box ticks it. */
+.cf-grid :is(th, td):has(> .cf-tick) {
+  padding: 0;
+  text-overflow: clip;
+}
+.cf-tick {
+  display: grid;
+  place-items: center;
+  block-size: 36px;
+  cursor: pointer;
+}
+.cf-tick input {
+  inline-size: 14px;
+  block-size: 14px;
+  margin: 0;
+  cursor: pointer;
+}
+/* The button that hides a column lies over the end of its header, so that it takes no room
+   from the label. */
+.cf-grid th button {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 2px;
+  inline-size: 20px;
+  block-size: 20px;
+  margin-block: auto;
+  background: var(--cf-surface);
+}
+/* With a pointer, that button and the one that copies a name show when their place is pointed
+   at or has the focus. On a touch screen they are always there. */
+@media (hover: hover) {
+  .cf-grid th:not(:hover) button:not(:focus-visible),
+  .cf-row:not(:hover, :has(:focus-visible)) .cf-copy {
+    opacity: 0;
+  }
+}
+.cf-row {
+  cursor: pointer;
+}
+.cf-table .cf-row.cf-selected > td {
+  background: var(--cf-selected);
+}
+/* A focus ring outside a cell would be cut off, because the cells hide what overflows. */
+.cf-grid :focus-visible:not([type="checkbox"]) {
+  outline-offset: -2px;
+}
+.cf-row td {
+  padding-block: 0;
+}
+.cf-row .cf-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cf-row .cf-mono {
+  font-size: 0.96rem;
+}
+.cf-chevron[aria-expanded="true"] svg {
+  rotate: 90deg;
+}
+
+/* An open row and its details read as one block: the same background, a rule above and below. */
+.cf-table .cf-open > td,
+.cf-table .cf-details > td {
+  background: var(--cf-surface);
+}
+.cf-row.cf-open > td {
+  border-block-end-color: transparent;
+}
+.cf-details > td {
+  padding: 0;
+  border-block-end-color: var(--cf-border-strong);
+  white-space: normal;
+  overflow: visible;
+}
+/* The details are as wide as the box and stay in view while the table scrolls sideways. */
+.cf-details-body {
+  position: sticky;
+  inset-inline-start: 0;
+  inline-size: 100cqi;
+  padding: 4px 16px 16px 74px;
+}
+.cf-details dl {
+  columns: 30rem 2;
+  column-gap: 32px;
+  margin: 0;
+}
+.cf-details dl > div {
+  break-inside: avoid;
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 4px 0;
+  border-block-end: 1px solid var(--cf-border);
+}
+.cf-details dt {
+  color: var(--cf-muted);
+}
+.cf-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.cf-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cf-tags span {
+  padding: 0 6px;
+  border-radius: var(--cf-radius-small);
+  border: 1px solid var(--cf-border-strong);
+  background: var(--cf-chip);
+  font-size: var(--cf-small);
+  line-height: 1.4;
+  color: var(--cf-chip-text);
+}
+/* In a row the tags stay on one line, with the number of those that are left out after them. */
+.cf-row .cf-tags {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+.cf-tags i {
+  flex: none;
+  font-size: var(--cf-small);
+  font-style: normal;
+  color: var(--cf-faint);
+}
+
+@media (width < 760px) {
+  cf-search {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cf-pane {
+    padding-inline: 12px;
+  }
+  .cf-details-body {
+    padding-inline: 12px;
+  }
+}

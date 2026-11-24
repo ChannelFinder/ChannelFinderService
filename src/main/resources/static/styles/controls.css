@@ -1,0 +1,210 @@
+/* Buttons and fields */
+.cf-btn,
+.cf-plain {
+  border: 1px solid var(--cf-border-strong);
+  border-radius: var(--cf-radius);
+  background: var(--cf-bg);
+  padding: 0 12px;
+  color: var(--cf-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cf-btn:hover:not(:disabled, .cf-primary, .cf-danger) {
+  background: var(--cf-hover);
+}
+.cf-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* One per view. */
+.cf-btn.cf-primary {
+  background: var(--cf-primary);
+  border-color: var(--cf-primary);
+  color: #ffffff;
+  font-weight: 500;
+}
+.cf-btn.cf-danger {
+  background: var(--cf-bad);
+  border-color: var(--cf-bad);
+  color: var(--cf-bad-ink);
+  font-weight: 500;
+}
+.cf-btn:is(.cf-primary, .cf-danger):hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+/* The same button at a size that fits in a row, a panel or the top strip. */
+.cf-btn.cf-compact {
+  min-block-size: 0;
+  padding: 0 6px;
+  border-radius: var(--cf-radius-small);
+  font-size: var(--cf-small);
+}
+/* A button without a frame: the tabs, the names in the side list, and the icons in the table. */
+.cf-plain {
+  border-color: transparent;
+  background: none;
+  padding: 2px 6px;
+  color: var(--cf-muted);
+}
+.cf-plain:hover {
+  background: var(--cf-hover);
+  color: var(--cf-text);
+}
+/* The one look of "this is on": a shown column, the current view, the chosen tab. */
+.cf-plain:is([aria-pressed="true"], [aria-current], [aria-selected="true"]) {
+  color: var(--cf-accent-text);
+  font-weight: 500;
+}
+/* A button with only an icon in it. */
+.cf-icon-btn {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  inline-size: 30px;
+  block-size: 30px;
+  min-block-size: 0;
+  padding: 0;
+  color: var(--cf-faint);
+}
+.cf-btn:has(> .cf-icon):not(.cf-icon-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+input:not([type="checkbox"]),
+select,
+textarea {
+  padding: 0 10px;
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+  background: var(--cf-bg);
+  min-inline-size: 0;
+}
+/* One arrow for every select, in a grey that reads on both themes. */
+select {
+  appearance: none;
+  padding-inline-end: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23808089' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+}
+::placeholder {
+  color: var(--cf-faint);
+  opacity: 1;
+}
+select:disabled {
+  opacity: 0.5;
+}
+.cf-btn,
+input:not([type="checkbox"]),
+select {
+  min-block-size: var(--cf-control);
+}
+/* A text field with an icon in front of it and buttons behind it, in one frame. */
+.cf-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-block-size: var(--cf-control);
+  padding-inline: 10px 2px;
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+  background: var(--cf-bg);
+  color: var(--cf-faint);
+  cursor: text;
+}
+.cf-field input:not([type="checkbox"]) {
+  flex: 1;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--cf-text);
+}
+textarea {
+  padding-block: 6px;
+  font-family: var(--cf-mono);
+  resize: vertical;
+}
+.cf-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.cf-stack {
+  display: grid;
+  gap: 12px;
+}
+.cf-stack label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--cf-small);
+  color: var(--cf-muted);
+}
+.cf-stack label > * {
+  font-size: 1rem;
+  color: var(--cf-text);
+}
+
+/* Tables: the results, the comparison and the list of tags and properties. Rows are told apart
+   by a hairline, with no stripes. */
+.cf-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  inline-size: 100%;
+}
+.cf-table :is(th, td) {
+  block-size: 36px;
+  padding: 4px 10px;
+  border-block-end: 1px solid var(--cf-border);
+  text-align: start;
+}
+.cf-table thead th {
+  background: var(--cf-surface);
+  font-size: var(--cf-small);
+  font-weight: 500;
+  color: var(--cf-muted);
+  white-space: nowrap;
+}
+.cf-table :where(tbody tr:hover) > * {
+  background: var(--cf-hover);
+}
+
+/* Popovers are placed by the browser, in the middle of the page. */
+.cf-popover {
+  border: 1px solid var(--cf-border-strong);
+  border-radius: var(--cf-radius-box);
+  background: var(--cf-bg);
+  color: var(--cf-text);
+  padding: 16px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.2);
+  inline-size: min(44rem, calc(100vw - 16px));
+}
+/* A popover that opens under its button. The script sets where; see `placeUnderButton`. */
+.cf-dropdown {
+  inset: auto;
+  margin: 0;
+  padding: 8px 12px;
+  inline-size: max-content;
+  max-inline-size: calc(100vw - 16px);
+}
+.cf-dropdown hr {
+  margin: 8px 0;
+  border: 0;
+  border-block-start: 1px solid var(--cf-border);
+}
+.cf-menu {
+  padding: 4px;
+}
+.cf-menu:popover-open {
+  display: grid;
+}
+.cf-menu button {
+  padding: 4px 12px;
+  text-align: start;
+  color: var(--cf-text);
+}
