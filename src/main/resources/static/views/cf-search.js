@@ -1,7 +1,7 @@
-import { LitElement, html, nothing } from "./vendor/lit-core.min.js";
-import { PATHS, RESULT_WINDOW, resourceUrl } from "./api.js";
-import { queryHint } from "./query.js";
-import { deleteChannels } from "./writes.js";
+import { LitElement, html, nothing } from "../vendor/lit-core.min.js";
+import { PATHS, RESULT_WINDOW, resourceUrl } from "../api/api.js";
+import { queryHint } from "../api/query.js";
+import { deleteChannels } from "../api/writes.js";
 import {
   ICONS,
   PAGE_SIZES,
@@ -11,9 +11,9 @@ import {
   emit,
   formatNumber,
   placeUnderButton,
-} from "./shared.js";
+} from "../shared.js";
 
-/** @typedef {import("./query.js").Channel} Channel */
+/** @typedef {import("../api/query.js").Channel} Channel */
 
 const DELETE_CHANNELS = "delete-channels";
 // More channels than this do not fit side by side.

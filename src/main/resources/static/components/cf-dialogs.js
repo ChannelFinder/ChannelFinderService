@@ -1,9 +1,9 @@
-import { LitElement, html, nothing } from "./vendor/lit-core.min.js";
-import { basicLogin, send, setCredentials } from "./api.js";
-import { EDITS, createChannels, createDefinition, editSelection, nothingToEdit } from "./writes.js";
-import { byName, emit, formatNumber, plural } from "./shared.js";
+import { LitElement, html, nothing } from "../vendor/lit-core.min.js";
+import { basicLogin, send, setCredentials } from "../api/api.js";
+import { EDITS, createChannels, createDefinition, editSelection, nothingToEdit } from "../api/writes.js";
+import { byName, emit, formatNumber, plural } from "../shared.js";
 
-/** @typedef {import("./writes.js").WriteSpec} WriteSpec */
+/** @typedef {import("../api/writes.js").WriteSpec} WriteSpec */
 
 // A dialog names at most this many of the channels that a change touches.
 const NAMES_SHOWN = 10;

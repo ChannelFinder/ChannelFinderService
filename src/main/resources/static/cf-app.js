@@ -1,6 +1,6 @@
 import { LitElement, html, nothing } from "./vendor/lit-core.min.js";
-import { PATHS, RESULT_WINDOW, UNREACHABLE_EVENT, get, resourceUrl, setCredentials } from "./api.js";
-import { toParams } from "./query.js";
+import { PATHS, RESULT_WINDOW, UNREACHABLE_EVENT, get, resourceUrl, setCredentials } from "./api/api.js";
+import { toParams } from "./api/query.js";
 import {
   ICONS,
   PAGE_SIZES,
@@ -10,10 +10,10 @@ import {
   placeUnderButton,
   plural,
 } from "./shared.js";
-import "./cf-search.js";
-import "./cf-side.js";
-import "./cf-manage.js";
-import "./cf-dialogs.js";
+import "./views/cf-search.js";
+import "./components/cf-side.js";
+import "./views/cf-manage.js";
+import "./components/cf-dialogs.js";
 
 const DEFAULT_PAGE_SIZE = 100;
 const TOAST_MS = 2500;

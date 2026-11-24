@@ -1,6 +1,6 @@
-import { LitElement, html, nothing } from "./vendor/lit-core.min.js";
-import { deleteDefinition } from "./writes.js";
-import { ICONS, emit, filtered, plural, renderListsState, renderNameFilter } from "./shared.js";
+import { LitElement, html, nothing } from "../vendor/lit-core.min.js";
+import { deleteDefinition } from "../api/writes.js";
+import { ICONS, emit, filtered, plural, renderListsState, renderNameFilter } from "../shared.js";
 
 // The two kinds of definition: what one is called, and what several are called.
 const NOUNS = { property: ["property", "properties"], tag: ["tag", "tags"] };

@@ -1,6 +1,6 @@
-import { LitElement, html, nothing } from "./vendor/lit-core.min.js";
-import { PATHS, get } from "./api.js";
-import { toParams } from "./query.js";
+import { LitElement, html, nothing } from "../vendor/lit-core.min.js";
+import { PATHS, get } from "../api/api.js";
+import { toParams } from "../api/query.js";
 import {
   ICONS,
   TAG_COLUMN_PREFIX,
@@ -9,7 +9,7 @@ import {
   formatNumber,
   renderListsState,
   renderNameFilter,
-} from "./shared.js";
+} from "../shared.js";
 
 const COUNTING = "…";
 // A longer list shows this many names, and the rest on request.

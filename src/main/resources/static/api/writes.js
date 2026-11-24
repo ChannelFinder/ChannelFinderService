@@ -6,7 +6,7 @@
  */
 import { PATHS, get, getChannels } from "./api.js";
 import { parseChannelLines } from "./query.js";
-import { plural } from "./shared.js";
+import { plural } from "../shared.js";
 
 /**
  * @typedef {import("./query.js").Channel} Channel

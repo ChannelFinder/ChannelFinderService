@@ -1,5 +1,5 @@
 /** Client for the ChannelFinder REST API. */
-import { SERVICE_ROOT } from "./config.js";
+import { SERVICE_ROOT } from "../config.js";
 
 const READ_TIMEOUT_MS = 10_000;
 const WRITE_TIMEOUT_MS = 60_000;
