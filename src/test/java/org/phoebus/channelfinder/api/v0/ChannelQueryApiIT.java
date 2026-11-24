@@ -217,6 +217,11 @@ class ChannelQueryApiIT extends ApiTestBase {
   }
 
   @Test
+  void sizeZeroReturnsNoChannels() {
+    assertEquals(List.of(), query("~size=0"));
+  }
+
+  @Test
   void repeatedSizeTakesTheLargest() {
     // Most HTTP APIs take the first or the last of repeated values. The code takes the largest on
     // purpose.
