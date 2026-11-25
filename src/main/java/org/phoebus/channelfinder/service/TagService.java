@@ -27,6 +27,8 @@ import org.springframework.stereotype.Service;
 public class TagService {
 
   private static final Logger audit = Logger.getLogger(TagService.class.getName() + ".audit");
+
+  @SuppressWarnings("java:S9436")
   private static final Logger logger = Logger.getLogger(TagService.class.getName());
 
   private final TagRepository tagRepository;

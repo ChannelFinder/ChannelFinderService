@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 <meta http-equiv="Content-Type" charset="UTF-8" />
 <title>ChannelFinder Admin</title>
@@ -18,7 +18,7 @@
 <h3>Test query</h5>
 
 <p>
-Channel name pattern with wildcards followed by "tag" or "prop=value".
+<label for="querytxt">Channel name pattern with wildcards followed by "tag" or "prop=value".</label>
 <form method="get" action="#" onsubmit="doQuery(); return false">
 <input type="text" placeholder="eg. *" id="querytxt">
 <input type="submit" value="Execute">
@@ -29,13 +29,13 @@ Channel name pattern with wildcards followed by "tag" or "prop=value".
 </div>
 
 <div class="cf-pane">
-<p>Owner: <input type="text" min="1" placeholder="Owner name" id="ownertxt"> Used when creating channels/tags/properties</p>
+<p><label for="ownertxt">Owner:</label> <input type="text" min="1" placeholder="Owner name" id="ownertxt"> Used when creating channels/tags/properties</p>
 </div>
 
 <div class="cf-pane">
 <h3>Channel Managment</h5>
 
-<p>Channels list</p>
+<p><label for="chanlist">Channels list</label></p>
 <p>
 <textarea cols="60" rows="5" id="chanlist" placeholder="Channel names.  One per line"></textarea>
 <p>
@@ -43,7 +43,7 @@ Channel name pattern with wildcards followed by "tag" or "prop=value".
 <button type="button" onclick="createChannels()">Create Channels</button>
 <button type="button" onclick="deleteChannels()">Delete Channels</button>
 </p>
-<p>Apply Tag/Prop:
+<p><label for="chantagprop">Apply Tag/Prop:</label>
 <input type="text" min="1" placeholder="tag or property name=value" id="chantagprop">
 <button type="button" onclick="tagChannels()">Add</button>
 <button type="button" onclick="untagChannels()">Remove</button>
@@ -54,7 +54,7 @@ Channel name pattern with wildcards followed by "tag" or "prop=value".
 <div class="cf-pane">
 <h3>Tag/Property Managment</h5>
 
-<p>Tag/Prop:
+<p><label for="tagproptxt">Tag/Prop:</label>
 <input type="text" min="1" placeholder="tag or property name" id="tagproptxt">
 <button type="button" onclick="addTagProp('tag')">Create Tag</button>
 <button type="button" onclick="addTagProp('property')">Create Property</button>

@@ -36,7 +36,12 @@ public class ChannelFinderProcessorExecutor extends ThreadPoolTaskExecutor {
         (runnable, executor) -> {
           if (!executor.isShutdown()) {
             executor.getQueue().poll(); // evict oldest (stale) task to make room
-            executor.getQueue().offer(runnable);
+            if (!executor.getQueue().offer(runnable)) {
+              log.log(
+                  Level.WARNING,
+                  "ChannelFinderProcessorExecutor task queue still full — dropped the new update");
+              return;
+            }
             log.log(
                 Level.WARNING,
                 () ->
