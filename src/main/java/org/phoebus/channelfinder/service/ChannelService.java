@@ -33,7 +33,10 @@ import org.springframework.util.MultiValueMap;
 public class ChannelService {
 
   private static final Logger audit = Logger.getLogger(ChannelService.class.getName() + ".audit");
+
+  @SuppressWarnings("java:S9436")
   private static final Logger logger = Logger.getLogger(ChannelService.class.getName());
+
   private static final String BATCH_OPERATION_SUBJECT = "channels batch";
 
   private final ChannelRepository channelRepository;

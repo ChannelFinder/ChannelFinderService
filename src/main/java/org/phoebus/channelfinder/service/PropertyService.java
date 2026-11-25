@@ -28,6 +28,8 @@ import org.springframework.stereotype.Service;
 public class PropertyService {
 
   private static final Logger audit = Logger.getLogger(PropertyService.class.getName() + ".audit");
+
+  @SuppressWarnings("java:S9436")
   private static final Logger logger = Logger.getLogger(PropertyService.class.getName());
 
   private final PropertyRepository propertyRepository;
