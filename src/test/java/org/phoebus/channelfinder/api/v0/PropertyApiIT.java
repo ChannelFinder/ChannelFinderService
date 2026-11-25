@@ -12,7 +12,12 @@ import static org.phoebus.channelfinder.api.v0.ApiJson.withProperties;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.junitpioneer.jupiter.ExpectedToFail;
+import org.opentest4j.AssertionFailedError;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import tools.jackson.databind.JsonNode;
@@ -139,6 +144,36 @@ class PropertyApiIT extends ApiTestBase {
 
     assertEquals(200, cf.post("/resources/properties", properties, ApiClient.ADMIN).status());
     assertEquals("admin", cf.get("/resources/properties/area").json().get("owner").asString());
+  }
+
+  @Test
+  @Tag("known-defect")
+  @ExpectedToFail(
+      value =
+          "a batch with a property without a name gives 500, although the mistake is the client's",
+      withExceptions = AssertionFailedError.class)
+  void batchWithAPropertyWithoutANameIsRejectedWith400() {
+    String withoutName = "[" + property("new", "admin") + ",{\"owner\":\"admin\"}]";
+    String withEmptyName = "[" + property("new", "admin") + ",{\"name\":\"\",\"owner\":\"admin\"}]";
+
+    // today: both return 500
+    assertEquals(400, cf.put("/resources/properties", withoutName, ApiClient.ADMIN).status());
+    assertEquals(400, cf.put("/resources/properties", withEmptyName, ApiClient.ADMIN).status());
+    assertEquals(404, cf.get("/resources/properties/new").status());
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"PUT", "POST"})
+  void writeWithAMissingChannelReturns400AndWritesNothing(String method) {
+    String body = onChannels("new", "north", "ch1", "missing");
+
+    ApiClient.Response response =
+        method.equals("PUT")
+            ? cf.put("/resources/properties/new", body, ApiClient.ADMIN)
+            : cf.post("/resources/properties/new", body, ApiClient.ADMIN);
+
+    assertEquals(400, response.status());
+    assertEquals(404, cf.get("/resources/properties/new").status());
   }
 
   @Test

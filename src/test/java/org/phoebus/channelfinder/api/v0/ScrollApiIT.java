@@ -60,6 +60,22 @@ class ScrollApiIT extends ApiTestBase {
   }
 
   @Test
+  void idNeedNotBeTheNameOfAChannel() {
+    // The id is the name to continue after, so any name works, and no id is unknown.
+    JsonNode page = scroll("/ch25?~size=2");
+
+    assertEquals(List.of("ch3", "ch4"), names(page.get("channels")));
+  }
+
+  @Test
+  void sizeZeroReturnsNoChannelsAndANullId() {
+    JsonNode page = scroll("?~size=0");
+
+    assertEquals(List.of(), names(page.get("channels")));
+    assertTrue(page.get("id").isNull());
+  }
+
+  @Test
   void scrollAcceptsTheChannelQueryLanguage() {
     JsonNode first = scroll("?area=north&~size=2");
     JsonNode second = scroll("/" + first.get("id").asString() + "?area=north&~size=2");
