@@ -64,6 +64,28 @@
                 <artifactId>testcontainers</artifactId>
                 <version>1.21.4</version>
             </dependency>
+            <!-- The mvnpm poms give version ranges, so the Lit packages are pinned here. The import map in
+                 static/index.html has the same versions in its paths. -->
+            <dependency>
+                <groupId>org.mvnpm</groupId>
+                <artifactId>lit</artifactId>
+                <version>3.3.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mvnpm</groupId>
+                <artifactId>lit-html</artifactId>
+                <version>3.3.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mvnpm</groupId>
+                <artifactId>lit-element</artifactId>
+                <version>4.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mvnpm.at.lit</groupId>
+                <artifactId>reactive-element</artifactId>
+                <version>2.1.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -310,6 +332,24 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <!-- Lit for the web UI. Spring Boot serves it from META-INF/resources/_static/. -->
+        <dependency>
+            <groupId>org.mvnpm</groupId>
+            <artifactId>lit</artifactId>
+            <scope>runtime</scope>
+            <exclusions>
+                <!-- Only used outside the browser -->
+                <exclusion>
+                    <groupId>org.mvnpm.at.lit-labs</groupId>
+                    <artifactId>ssr-dom-shim</artifactId>
+                </exclusion>
+                <!-- TypeScript types only -->
+                <exclusion>
+                    <groupId>org.mvnpm.at.types</groupId>
+                    <artifactId>trusted-types</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>

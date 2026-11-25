@@ -1,4 +1,4 @@
-import { LitElement, html, nothing } from "../vendor/lit-core.min.js";
+import { LitElement, html, nothing } from "lit";
 import { basicLogin, send, setCredentials } from "../api/api.js";
 import { EDITS, createChannels, createDefinition, editSelection, nothingToEdit } from "../api/writes.js";
 import { byName, emit, formatNumber, plural } from "../shared.js";

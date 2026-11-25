@@ -1,4 +1,4 @@
-import { LitElement, html, nothing } from "../vendor/lit-core.min.js";
+import { LitElement, html, nothing } from "lit";
 import { PATHS, RESULT_WINDOW, resourceUrl } from "../api/api.js";
 import { queryHint } from "../api/query.js";
 import { deleteChannels } from "../api/writes.js";

@@ -1,4 +1,4 @@
-import { LitElement, html, nothing } from "../vendor/lit-core.min.js";
+import { LitElement, html, nothing } from "lit";
 import { deleteDefinition } from "../api/writes.js";
 import { ICONS, emit, filtered, plural, renderListsState, renderNameFilter } from "../shared.js";
 

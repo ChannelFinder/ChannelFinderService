@@ -16,6 +16,20 @@
     <link rel="stylesheet" href="styles/cf-search.css" />
     <link rel="stylesheet" href="styles/cf-dialogs.css" />
     <link rel="stylesheet" href="styles/cf-manage.css" />
+    <!-- Lit comes from the org.mvnpm jars. The versions in these paths have to match pom.xml. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "./_static/lit/3.3.3/index.js",
+          "lit/": "./_static/lit/3.3.3/",
+          "lit-html": "./_static/lit-html/3.3.3/lit-html.js",
+          "lit-html/": "./_static/lit-html/3.3.3/",
+          "lit-element/": "./_static/lit-element/4.2.2/",
+          "@lit/reactive-element": "./_static/reactive-element/2.1.2/reactive-element.js",
+          "@lit/reactive-element/": "./_static/reactive-element/2.1.2/"
+        }
+      }
+    </script>
     <script type="module" src="cf-app.js"></script>
   </head>
   <body>

@@ -1,4 +1,4 @@
-import { LitElement, html, nothing } from "./vendor/lit-core.min.js";
+import { LitElement, html, nothing } from "lit";
 import { PATHS, RESULT_WINDOW, UNREACHABLE_EVENT, get, resourceUrl, setCredentials } from "./api/api.js";
 import { toParams } from "./api/query.js";
 import {

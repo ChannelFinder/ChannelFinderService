@@ -1,5 +1,5 @@
 /** Names and helpers that more than one view uses. */
-import { html, svg } from "./vendor/lit-core.min.js";
+import { html, svg } from "lit";
 
 export const PAGE_SIZES = [50, 100, 250, 500, 1000];
 // A column of the results is a property name, the list of all tags, or one tag.
