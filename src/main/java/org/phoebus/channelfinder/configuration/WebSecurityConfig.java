@@ -38,6 +38,7 @@ public class WebSecurityConfig {
   private List<String> corsAllowedOrigins;
 
   @Bean
+  @SuppressWarnings("java:S4502")
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     // CSRF disabled: application is a stateless REST API using HTTP Basic auth.
     // No session or cookie-based authentication is used, so CSRF attacks are not applicable.
