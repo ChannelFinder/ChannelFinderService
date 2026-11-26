@@ -64,6 +64,28 @@
                 <artifactId>testcontainers</artifactId>
                 <version>1.21.4</version>
             </dependency>
+            <!-- The mvnpm poms give version ranges, so the Lit packages are pinned here. The import map in
+                 static/index.html has the same versions in its paths. -->
+            <dependency>
+                <groupId>org.mvnpm</groupId>
+                <artifactId>lit</artifactId>
+                <version>3.3.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mvnpm</groupId>
+                <artifactId>lit-html</artifactId>
+                <version>3.3.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mvnpm</groupId>
+                <artifactId>lit-element</artifactId>
+                <version>4.2.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mvnpm.at.lit</groupId>
+                <artifactId>reactive-element</artifactId>
+                <version>2.1.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -311,6 +333,24 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Lit for the web UI. Spring Boot serves it from META-INF/resources/_static/. -->
+        <dependency>
+            <groupId>org.mvnpm</groupId>
+            <artifactId>lit</artifactId>
+            <scope>runtime</scope>
+            <exclusions>
+                <!-- Only used outside the browser -->
+                <exclusion>
+                    <groupId>org.mvnpm.at.lit-labs</groupId>
+                    <artifactId>ssr-dom-shim</artifactId>
+                </exclusion>
+                <!-- TypeScript types only -->
+                <exclusion>
+                    <groupId>org.mvnpm.at.types</groupId>
+                    <artifactId>trusted-types</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
     <build>
         <!-- read properties from the pom file and add them to the application.properties -->
@@ -523,6 +563,10 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
+                    <!-- Needs Playwright, which only the integrationtest-webui profile adds. -->
+                    <testExcludes>
+                        <testExclude>**/WebUiIT.java</testExclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -676,6 +720,31 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- profile for the browser test of the web UI. Playwright is a download of more than
+             200 MB, and it downloads the browsers the first time the test runs, so neither is
+             part of an ordinary build. -->
+        <profile>
+            <id>integrationtest-webui</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.microsoft.playwright</groupId>
+                    <artifactId>playwright</artifactId>
+                    <version>1.65.1</version>
+                    <scope>test</scope>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <testExcludes combine.self="override" />
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

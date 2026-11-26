@@ -1,0 +1,74 @@
+/* Manage: one column in the middle of the page, with the properties and the tags as two tabs. */
+cf-manage {
+  display: block;
+}
+.cf-manage {
+  max-inline-size: 1120px;
+  margin-inline: auto;
+  padding-block-start: 32px;
+}
+.cf-manage > header,
+.cf-tabbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px 12px;
+}
+.cf-manage > header {
+  justify-content: space-between;
+  margin-block-end: 24px;
+}
+.cf-manage h2 {
+  margin-block-end: 4px;
+  font-size: 1.54rem;
+}
+.cf-tabbar {
+  margin-block-end: 16px;
+  border-block-end: 1px solid var(--cf-border);
+}
+.cf-tabbar .cf-views {
+  margin-inline-end: auto;
+  min-block-size: 40px;
+}
+.cf-tabbar > :not(.cf-views) {
+  margin-block-end: 6px;
+}
+.cf-tabbar .cf-field {
+  inline-size: 240px;
+}
+.cf-manage > p {
+  margin-block-end: 8px;
+}
+/* Each list is shown in full, so the page scrolls and not the box. */
+.cf-manage .cf-results {
+  max-block-size: none;
+}
+.cf-manage .cf-results > p {
+  padding: 10px 16px;
+  background: var(--cf-surface);
+  color: var(--cf-faint);
+}
+.cf-definitions :is(th, td) {
+  block-size: 40px;
+  padding-inline: 16px;
+}
+.cf-definitions td:first-child {
+  font-weight: 500;
+}
+.cf-definitions td:nth-child(2) {
+  color: var(--cf-muted);
+}
+.cf-definitions :is(th, td):last-child {
+  inline-size: 56px;
+  padding: 0;
+  text-align: center;
+  text-overflow: clip;
+}
+/* The button that deletes is faint at rest, so that a long list is not a column of red. */
+.cf-definitions tr:hover button {
+  color: var(--cf-text);
+}
+.cf-definitions td button:is(:hover, :focus-visible) {
+  background: var(--cf-bad);
+  color: var(--cf-bad-ink);
+}

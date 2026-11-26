@@ -1,72 +1,42 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta http-equiv="Content-Type" charset="UTF-8" />
-<title>ChannelFinder Admin</title>
-<link rel="stylesheet" type="text/css" href="cfmanage.css">
-<script src="cf.js"></script>
-<script src="cfmanage.js"></script>
-</head>
-<body>
-
-<div class="cf-pane">
-<h3>Service Info</h5>
-<p id="servinfo">Querying...</p>
-</div>
-
-<div class="cf-pane">
-<h3>Test query</h5>
-
-<p>
-<label for="querytxt">Channel name pattern with wildcards followed by "tag" or "prop=value".</label>
-<form method="get" action="#" onsubmit="doQuery(); return false">
-<input type="text" placeholder="eg. *" id="querytxt">
-<input type="submit" value="Execute">
-</form>
-</p>
-
-<p><ul class="cf-list" id="queryresult"></ul></p>
-</div>
-
-<div class="cf-pane">
-<p><label for="ownertxt">Owner:</label> <input type="text" min="1" placeholder="Owner name" id="ownertxt"> Used when creating channels/tags/properties</p>
-</div>
-
-<div class="cf-pane">
-<h3>Channel Managment</h5>
-
-<p><label for="chanlist">Channels list</label></p>
-<p>
-<textarea cols="60" rows="5" id="chanlist" placeholder="Channel names.  One per line"></textarea>
-<p>
-</p>
-<button type="button" onclick="createChannels()">Create Channels</button>
-<button type="button" onclick="deleteChannels()">Delete Channels</button>
-</p>
-<p><label for="chantagprop">Apply Tag/Prop:</label>
-<input type="text" min="1" placeholder="tag or property name=value" id="chantagprop">
-<button type="button" onclick="tagChannels()">Add</button>
-<button type="button" onclick="untagChannels()">Remove</button>
-</p>
-<p class="cf-error" id="chanerr"></p>
-</div>
-
-<div class="cf-pane">
-<h3>Tag/Property Managment</h5>
-
-<p><label for="tagproptxt">Tag/Prop:</label>
-<input type="text" min="1" placeholder="tag or property name" id="tagproptxt">
-<button type="button" onclick="addTagProp('tag')">Create Tag</button>
-<button type="button" onclick="addTagProp('property')">Create Property</button>
-<p class="cf-error" id="tagproperr"></p>
-</p>
-
-<p>Tags:</p>
-<p><ul class="cf-list" id="taglist"></ul></p>
-
-<p>Properties:</p>
-<p><ul class="cf-list" id="proplist"></ul></p>
-</div>
-
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>ChannelFinder</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round'%3E%3Crect width='24' height='24' rx='5' fill='%232563eb' stroke='none'/%3E%3Ccircle cx='11' cy='11' r='5'/%3E%3Cpath d='m18.5 18.5-3.9-3.9'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="styles/base.css" />
+    <link rel="stylesheet" href="styles/controls.css" />
+    <link rel="stylesheet" href="styles/cf-app.css" />
+    <link rel="stylesheet" href="styles/cf-side.css" />
+    <link rel="stylesheet" href="styles/cf-search.css" />
+    <link rel="stylesheet" href="styles/cf-dialogs.css" />
+    <link rel="stylesheet" href="styles/cf-manage.css" />
+    <!-- Lit comes from the org.mvnpm jars. The versions in these paths have to match pom.xml. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "lit": "./_static/lit/3.3.3/index.js",
+          "lit/": "./_static/lit/3.3.3/",
+          "lit-html": "./_static/lit-html/3.3.3/lit-html.js",
+          "lit-html/": "./_static/lit-html/3.3.3/",
+          "lit-element/": "./_static/lit-element/4.2.2/",
+          "@lit/reactive-element": "./_static/reactive-element/2.1.2/reactive-element.js",
+          "@lit/reactive-element/": "./_static/reactive-element/2.1.2/"
+        }
+      }
+    </script>
+    <script type="module" src="cf-app.js"></script>
+  </head>
+  <body>
+    <cf-app></cf-app>
+    <noscript
+      >This page needs JavaScript. The REST API is described at
+      <a href="swagger-ui/index.html">swagger-ui/index.html</a>.</noscript
+    >
+  </body>
 </html>

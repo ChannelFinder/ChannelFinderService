@@ -1,0 +1,134 @@
+/* The page: the top strip, the layout under it and the toast. */
+cf-app {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvh;
+}
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top strip */
+.cf-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 24px;
+  padding: 0 20px;
+  min-block-size: 52px;
+  border-block-end: 1px solid var(--cf-border);
+  color: var(--cf-muted);
+}
+.cf-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.cf-brand span {
+  color: var(--cf-faint);
+}
+.cf-top h1 {
+  margin: 0;
+  font-size: 1.077rem;
+  font-weight: 600;
+  color: var(--cf-text);
+}
+.cf-top b {
+  font-weight: 500;
+  color: var(--cf-text);
+}
+.cf-views {
+  display: flex;
+  align-self: stretch;
+  gap: 4px;
+}
+/* The whole height of the strip can be clicked. The current view is underlined. */
+.cf-views button {
+  padding-inline: 10px;
+  border: 0;
+  border-radius: 0;
+}
+.cf-views button:is([aria-current], [aria-selected="true"]) {
+  box-shadow: inset 0 -2px 0 var(--cf-accent);
+  color: var(--cf-text);
+}
+/* The state of the service sits on the right, where it is found but does not compete with the
+   views: a dot, the state, and the number of channels. */
+#cf-status {
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+  font-size: var(--cf-small);
+}
+#cf-status > span::before {
+  content: "·";
+  margin-inline: 2px 8px;
+  color: var(--cf-faint);
+}
+.cf-status::before {
+  content: "";
+  display: inline-block;
+  inline-size: 6px;
+  block-size: 6px;
+  margin-inline-end: 8px;
+  border-radius: 50%;
+  background: var(--cf-faint);
+  vertical-align: middle;
+}
+.cf-status[data-state="ok"]::before {
+  background: var(--cf-ok);
+}
+.cf-status:is([data-state="database"], [data-state="unreachable"]) {
+  font-weight: 600;
+  color: var(--cf-bad);
+}
+.cf-status:is([data-state="database"], [data-state="unreachable"])::before {
+  background: var(--cf-bad);
+}
+.cf-links {
+  display: flex;
+  gap: 16px;
+  padding-inline-start: 24px;
+  border-inline-start: 1px solid var(--cf-border);
+}
+.cf-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--cf-muted);
+}
+.cf-links .cf-icon {
+  inline-size: 12px;
+  block-size: 12px;
+}
+.cf-links a:not(:hover) {
+  text-decoration: none;
+}
+
+.cf-toast {
+  position: fixed;
+  inset-block-start: 12px;
+  inset-inline-start: 50%;
+  translate: -50% 0;
+  z-index: 60;
+  padding: 6px 12px;
+  border-radius: var(--cf-radius);
+  background: var(--cf-text);
+  color: var(--cf-bg);
+  max-inline-size: calc(100vw - 32px);
+}
+
+@media (width < 760px) {
+  .cf-top {
+    padding: 4px 12px;
+  }
+  #cf-status {
+    margin-inline-start: 0;
+  }
+  .cf-links {
+    padding-inline-start: 0;
+    border: 0;
+  }
+}

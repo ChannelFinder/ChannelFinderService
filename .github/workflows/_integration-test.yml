@@ -23,7 +23,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Integration Test with Maven
-      run: ./mvnw clean verify --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false
+      run: ./mvnw clean verify -Pintegrationtest-webui --batch-mode --fail-at-end -Djacoco.skip=false -DskipITs=false
       env:
         EPICS_PVA_ENABLE_IP6: "false"
     - name: Publish Test Report

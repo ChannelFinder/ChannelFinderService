@@ -1,0 +1,181 @@
+/* Neutral greys and one accent. Colour is kept for interaction, destructive actions and failures. */
+
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  src: url("../fonts/atkinson-hyperlegible-next-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Atkinson Hyperlegible Mono";
+  src: url("../fonts/atkinson-hyperlegible-mono-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light dark;
+  --cf-bg: #ffffff;
+  --cf-surface: #fafafa; /* the side list, table headers and footers */
+  --cf-hover: #f0f0f2;
+  --cf-selected: #f3f7ff;
+  --cf-border: #e7e7ea;
+  --cf-border-strong: #d4d4d8; /* buttons */
+  --cf-field: #8c8c94; /* inputs and selects, at least 3:1 on every surface */
+  --cf-text: #18181b;
+  --cf-muted: #52525b;
+  --cf-faint: #6b6b75; /* hints and icons, still at least 4.5:1 */
+  --cf-accent: #2563eb;
+  --cf-accent-text: #1d4ed8;
+  --cf-accent-soft: #eef3fe;
+  --cf-primary: #2563eb; /* the main button; its text is white */
+  --cf-chip: #f1f1f3;
+  --cf-chip-text: #3f3f46;
+  --cf-differs: #fbeab5;
+  --cf-ok: #16a34a;
+  --cf-bad: #c62828;
+  --cf-bad-ink: #ffffff;
+  --cf-bad-soft: #fdecea;
+  --cf-backdrop: rgb(0 0 0 / 0.4);
+  --cf-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --cf-mono: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+  /* Three sizes: small, 1rem and large. */
+  --cf-small: 0.923rem;
+  --cf-large: 1.23rem;
+  /* Corners: chips and small buttons, controls, and boxes. */
+  --cf-radius-small: 4px;
+  --cf-radius: 6px;
+  --cf-radius-box: 8px;
+  /* The height of a button, an input and a select. */
+  --cf-control: 32px;
+  accent-color: var(--cf-primary);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cf-bg: #0f1115;
+    --cf-surface: #14171c;
+    --cf-hover: #1a1e25;
+    --cf-selected: #141b2a;
+    --cf-border: #24282f;
+    --cf-border-strong: #323740;
+    --cf-field: #6b717b;
+    --cf-text: #e6e8eb;
+    --cf-muted: #a3a9b2;
+    --cf-faint: #8b929c;
+    --cf-accent: #5b9bff;
+    --cf-accent-text: #8fb8ff;
+    --cf-accent-soft: #172238;
+    --cf-primary: #2f6ad6;
+    --cf-chip: #1c2027;
+    --cf-chip-text: #c3c8cf;
+    --cf-differs: #3d3518;
+    --cf-ok: #4ade80;
+    --cf-bad: #f2847c;
+    --cf-bad-ink: #2a0d0b;
+    --cf-bad-soft: #3b1513;
+    --cf-backdrop: rgb(0 0 0 / 0.72);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  /* 13px on 20px where the browser's own size is the usual 16px. */
+  font: 400 81.25%/1.54 var(--cf-sans);
+}
+body {
+  margin: 0;
+  background: var(--cf-bg);
+  color: var(--cf-text);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+:focus-visible,
+.cf-field:has(input:focus-visible) {
+  outline: 2px solid var(--cf-accent);
+  outline-offset: 1px;
+}
+a {
+  color: var(--cf-accent-text);
+}
+h2 {
+  margin: 0 0 8px;
+  font-size: var(--cf-large);
+  font-weight: 600;
+}
+p {
+  margin: 0;
+}
+[hidden] {
+  display: none !important;
+}
+/* Mono is for channel names, the query and request text. Everything else is sans. */
+code,
+pre,
+.cf-mono {
+  font-family: var(--cf-mono);
+}
+.cf-small {
+  font-size: var(--cf-small);
+  color: var(--cf-muted);
+}
+.cf-error {
+  padding: 8px 12px;
+  border-radius: var(--cf-radius);
+  background: var(--cf-bad-soft);
+  color: var(--cf-bad);
+}
+/* A message, a list or the toast takes no room while it has nothing in it. */
+:is(p, ul, .cf-toast):empty {
+  display: none;
+}
+/* Text that does not fit is cut with an ellipsis. */
+.cf-entry-name span,
+.cf-request a,
+.cf-grid :is(th, td),
+.cf-row :is(.cf-mono, .cf-tags span),
+.cf-details dt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Numbers that change in place keep their width. */
+#cf-count,
+#cf-range,
+#cf-total,
+.cf-selection,
+cf-side li .cf-btn {
+  font-variant-numeric: tabular-nums;
+}
+.cf-grow {
+  flex: 1;
+}
+.cf-icon {
+  flex: none;
+  inline-size: 14px;
+  block-size: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.cf-skip {
+  position: absolute;
+  inset-inline-start: 8px;
+  inset-block-start: -48px;
+  z-index: 50;
+  padding: 4px 12px;
+  background: var(--cf-bg);
+  border: 1px solid var(--cf-field);
+  border-radius: var(--cf-radius);
+}
+.cf-skip:focus {
+  inset-block-start: 8px;
+}

@@ -1,0 +1,107 @@
+/* Dialogs */
+dialog {
+  border: 1px solid var(--cf-border-strong);
+  border-radius: var(--cf-radius-box);
+  background: var(--cf-bg);
+  color: var(--cf-text);
+  padding: 0;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.3);
+  inline-size: min(46rem, calc(100vw - 24px));
+  max-block-size: calc(100dvh - 32px);
+}
+dialog.cf-wide {
+  inline-size: min(90rem, calc(100vw - 24px));
+}
+dialog:modal {
+  overscroll-behavior: contain;
+}
+dialog::backdrop {
+  background: var(--cf-backdrop);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.cf-dialog-body {
+  display: grid;
+  gap: 12px;
+  padding: 20px 24px;
+}
+.cf-dialog-body h2 {
+  margin: 0;
+}
+.cf-typed input {
+  display: block;
+  inline-size: 100%;
+  margin-block-start: 4px;
+}
+.cf-names {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--cf-small);
+  overflow-wrap: anywhere;
+}
+/* The login comes last in a form, under a rule: first what the change is, then who makes it. */
+.cf-login {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 12px 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--cf-border);
+}
+/* Floated, so that it sits under the rule and not in it. */
+.cf-login legend {
+  float: inline-start;
+  inline-size: 100%;
+  padding: 0;
+}
+.cf-login b {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--cf-text);
+}
+.cf-login input {
+  flex: 1 1 10rem;
+}
+.cf-compare {
+  overflow: auto;
+  /* Keeps the scrollbar off the last row. */
+  scrollbar-gutter: stable;
+  padding-block-end: 12px;
+  max-block-size: calc(100dvh - 190px);
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius-box);
+}
+.cf-compare :is(th, td) {
+  vertical-align: top;
+  max-inline-size: 22rem;
+  overflow-wrap: anywhere;
+}
+.cf-compare thead th {
+  font-size: 0.96rem;
+  font-weight: 400;
+  color: var(--cf-text);
+}
+.cf-compare tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  background: var(--cf-surface);
+  color: var(--cf-muted);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.cf-compare .cf-differs > * {
+  background: var(--cf-differs);
+}
+/* A row that differs is also marked without colour. */
+.cf-compare .cf-differs th {
+  font-weight: 600;
+  color: var(--cf-text);
+}
+.cf-differing {
+  margin-inline-start: 16px;
+}
+.cf-compare i {
+  color: var(--cf-muted);
+}
