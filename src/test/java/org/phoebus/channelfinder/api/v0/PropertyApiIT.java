@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder.api.v0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.phoebus.channelfinder.api.v0.ApiJson.array;
 import static org.phoebus.channelfinder.api.v0.ApiJson.channel;
@@ -113,6 +114,19 @@ class PropertyApiIT extends ApiTestBase {
   }
 
   @Test
+  void putWithAChannelThatCannotBeWrittenReportsAnError() {
+    // Longer than the 32766 bytes Elasticsearch accepts for a keyword term.
+    String immenseValue = "x".repeat(40_000);
+
+    ApiClient.Response response =
+        cf.put(
+            "/resources/properties/area", onChannels("area", immenseValue, "ch3"), ApiClient.ADMIN);
+
+    assertNotEquals(200, response.status());
+    assertEquals("Failed to index channels [ch3]", response.json().get("detail").asString());
+  }
+
+  @Test
   void batchPutCreatesEachDefinition() {
     String properties =
         array(property("hostName", "admin"), property("iocName", "admin")).toString();
@@ -121,6 +135,24 @@ class PropertyApiIT extends ApiTestBase {
     assertEquals(
         List.of("area", "hostName", "iocName", "number"),
         names(cf.get("/resources/properties").json()));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"PUT", "POST"})
+  void batchWriteWithAPropertyThatCannotBeWrittenReportsAnError(String method) {
+    // The owner is longer than the 32766 bytes Elasticsearch accepts for a keyword term.
+    String properties =
+        array(property("device", "admin"), property("unit", "x".repeat(40_000))).toString();
+
+    ApiClient.Response response =
+        method.equals("PUT")
+            ? cf.put("/resources/properties", properties, ApiClient.ADMIN)
+            : cf.post("/resources/properties", properties, ApiClient.ADMIN);
+
+    assertNotEquals(200, response.status());
+    assertEquals("Failed to index properties [unit]", response.json().get("detail").asString());
+    assertEquals(
+        List.of("area", "device", "number"), names(cf.get("/resources/properties").json()));
   }
 
   @Test

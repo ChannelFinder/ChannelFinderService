@@ -59,6 +59,7 @@ import org.phoebus.channelfinder.entity.Property;
 import org.phoebus.channelfinder.entity.Scroll;
 import org.phoebus.channelfinder.entity.SearchResult;
 import org.phoebus.channelfinder.entity.Tag;
+import org.phoebus.channelfinder.exceptions.BatchWriteException;
 import org.phoebus.channelfinder.exceptions.ChannelValidationException;
 import org.phoebus.channelfinder.exceptions.RepositoryException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -140,6 +141,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    */
   public List<Channel> indexAll(List<Channel> channels) {
     List<Future<List<Channel>>> futures = new ArrayList<>();
+    List<String> refused = Collections.synchronizedList(new ArrayList<>());
 
     for (int i = 0; i < channels.size(); i += chunkSize) {
       List<Channel> chunk = channels.stream().skip(i).limit(chunkSize).toList();
@@ -162,24 +164,12 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 BulkResponse result;
                 try {
                   result = client.bulk(br.build());
-                  // Log errors, if any
-                  if (result.errors()) {
-                    logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-                    for (BulkResponseItem item : result.items()) {
-                      if (item.error() != null) {
-                        logger.log(Level.SEVERE, () -> item.error().reason());
-                      }
-                    }
-                    // TODO cleanup? or throw exception?
-                  } else {
-                    return chunk;
-                  }
                 } catch (IOException e) {
                   String message = MessageFormat.format(TextUtil.FAILED_TO_INDEX_CHANNELS, chunk);
                   logger.log(Level.SEVERE, message, e);
                   throw new RepositoryException(message, e);
                 }
-                return Collections.emptyList();
+                return writtenOf(chunk, result, refused);
               }));
     }
     List<Channel> allIndexed = new ArrayList<>();
@@ -191,8 +181,10 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         logger.log(Level.SEVERE, "Bulk indexing failed", e);
       } catch (ExecutionException | TimeoutException e) {
         logger.log(Level.SEVERE, "Bulk indexing failed", e);
+        throw new RepositoryException("Bulk indexing failed", e);
       }
     }
+    requireNoneRefused(refused, allIndexed);
     return allIndexed;
   }
 
@@ -248,6 +240,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   @Override
   public <S extends Channel> Iterable<S> saveAll(Iterable<S> channels) {
     List<Future<List<Channel>>> futures = new ArrayList<>();
+    List<String> refused = Collections.synchronizedList(new ArrayList<>());
     Set<Channel> channelList =
         StreamSupport.stream(channels.spliterator(), false)
             .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -264,6 +257,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
           executor.submit(
               () -> {
                 BulkRequest.Builder br = new BulkRequest.Builder();
+                List<Channel> documents = new ArrayList<>();
                 for (Channel channel : chunk) {
                   if (existingChannels.containsKey(channel.getName())) {
                     // merge with existing channel
@@ -272,6 +266,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                       updatedChannel.setOwner(channel.getOwner());
                     updatedChannel.addProperties(channel.getProperties());
                     updatedChannel.addTags(channel.getTags());
+                    documents.add(updatedChannel);
                     br.operations(
                         op ->
                             op.index(
@@ -283,6 +278,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                                                 updatedChannel,
                                                 new JacksonJsonpMapper(objectMapper)))));
                   } else {
+                    documents.add(channel);
                     br.operations(
                         op ->
                             op.index(
@@ -297,16 +293,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                 BulkResponse result;
                 try {
                   result = client.bulk(br.refresh(Refresh.WaitFor).build());
-                  // Log errors, if any
-                  if (result.errors()) {
-                    logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
-                    for (BulkResponseItem item : result.items()) {
-                      if (item.error() != null) {
-                        logger.log(Level.SEVERE, () -> item.error().reason());
-                      }
-                    }
-                    // TODO cleanup? or throw exception?
-                  } else {
+                  if (!result.errors()) {
                     return findAllById(ids);
                   }
                 } catch (IOException e) {
@@ -315,7 +302,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
                   logger.log(Level.SEVERE, message, e);
                   throw new RepositoryException(message, e);
                 }
-                return Collections.emptyList();
+                return writtenOf(documents, result, refused);
               }));
     }
 
@@ -328,9 +315,38 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
         logger.log(Level.SEVERE, "Bulk saving failed", e);
       } catch (ExecutionException e) {
         logger.log(Level.SEVERE, "Bulk saving failed", e);
+        throw new RepositoryException("Bulk saving failed", e);
       }
     }
+    requireNoneRefused(refused, allSaved);
     return (Iterable<S>) allSaved;
+  }
+
+  /**
+   * Returns the channels that Elasticsearch wrote, and adds the names of those it refused to {@code
+   * refused}.
+   */
+  private static List<Channel> writtenOf(
+      List<Channel> sent, BulkResponse result, List<String> refused) {
+    if (!result.errors()) {
+      return sent;
+    }
+    logger.log(Level.SEVERE, TextUtil.BULK_HAD_ERRORS);
+    Set<String> refusedHere = new HashSet<>();
+    for (BulkResponseItem item : result.items()) {
+      if (item.error() != null) {
+        logger.log(Level.SEVERE, () -> item.error().reason());
+        refusedHere.add(item.id());
+        refused.add(item.id());
+      }
+    }
+    return sent.stream().filter(c -> !refusedHere.contains(c.getName())).toList();
+  }
+
+  private static void requireNoneRefused(List<String> refused, List<Channel> written) {
+    if (!refused.isEmpty()) {
+      throw new BatchWriteException(TextUtil.FAILED_TO_INDEX_CHANNELS, refused, written);
+    }
   }
 
   /**

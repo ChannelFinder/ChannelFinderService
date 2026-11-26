@@ -1,6 +1,7 @@
 package org.phoebus.channelfinder.api.v0;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.phoebus.channelfinder.api.v0.ApiJson.array;
 import static org.phoebus.channelfinder.api.v0.ApiJson.channel;
 import static org.phoebus.channelfinder.api.v0.ApiJson.names;
@@ -13,6 +14,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junitpioneer.jupiter.ExpectedToFail;
 import org.opentest4j.AssertionFailedError;
 import tools.jackson.databind.node.ObjectNode;
@@ -89,6 +92,22 @@ class TagApiIT extends ApiTestBase {
     assertEquals(200, cf.put("/resources/tags", tags, ApiClient.ADMIN).status());
     assertEquals(
         List.of("alarm", "archived", "beam", "vacuum"), names(cf.get("/resources/tags").json()));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"PUT", "POST"})
+  void batchWriteWithATagThatCannotBeWrittenReportsAnError(String method) {
+    // The owner is longer than the 32766 bytes Elasticsearch accepts for a keyword term.
+    String tags = array(tag("alarm", "admin"), tag("vacuum", "x".repeat(40_000))).toString();
+
+    ApiClient.Response response =
+        method.equals("PUT")
+            ? cf.put("/resources/tags", tags, ApiClient.ADMIN)
+            : cf.post("/resources/tags", tags, ApiClient.ADMIN);
+
+    assertNotEquals(200, response.status());
+    assertEquals("Failed to index tags [vacuum]", response.json().get("detail").asString());
+    assertEquals(List.of("alarm", "archived", "beam"), names(cf.get("/resources/tags").json()));
   }
 
   @Test
