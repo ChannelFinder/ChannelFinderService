@@ -11,10 +11,7 @@ import static org.phoebus.channelfinder.api.v0.ApiJson.withProperties;
 import static org.phoebus.channelfinder.api.v0.ApiJson.withTags;
 
 import java.util.List;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junitpioneer.jupiter.ExpectedToFail;
-import org.opentest4j.AssertionFailedError;
 import org.springframework.test.context.TestPropertySource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
@@ -93,68 +90,106 @@ class QuerySizeApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "listing the properties returns only the first page of definitions",
-      withExceptions = AssertionFailedError.class)
+  void renamingAPropertyOnMoreThanOnePageRenamesItEverywhere() {
+    createProperties("admin", "area");
+    createTags("admin", "archived");
+    putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
+    String renamed = property("zone", "admin").toString();
+
+    ApiClient.Response response = cf.post("/resources/properties/area", renamed, ApiClient.ADMIN);
+
+    assertEquals(200, response.status());
+    // Unlike GET, the POST response lists only the channels in the payload.
+    assertEquals(List.of(), names(response.json().get("channels")));
+    assertEquals("7", cf.get("/resources/channels/count?zone=north").body());
+    assertEquals("0", cf.get("/resources/channels/count?area=*").body());
+  }
+
+  @Test
+  void renamingATagOnMoreThanOnePageRenamesItEverywhere() {
+    createProperties("admin", "area");
+    createTags("admin", "archived");
+    putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
+    String renamed = tag("saved", "admin").toString();
+
+    ApiClient.Response response = cf.post("/resources/tags/archived", renamed, ApiClient.ADMIN);
+
+    assertEquals(200, response.status());
+    assertEquals(
+        names(cf.get("/resources/tags/saved").json().get("channels")),
+        names(response.json().get("channels")));
+    assertEquals("7", cf.get("/resources/channels/count?~tag=saved").body());
+    assertEquals("0", cf.get("/resources/channels/count?~tag=archived").body());
+  }
+
+  @Test
+  void postingATagWithoutARenameAnswersWithOnePageAndKeepsEveryChannel() {
+    createProperties("admin", "area");
+    createTags("admin", "archived");
+    putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
+    String unchanged = tag("archived", "admin").toString();
+
+    ApiClient.Response response = cf.post("/resources/tags/archived", unchanged, ApiClient.ADMIN);
+
+    assertEquals(200, response.status());
+    assertEquals(
+        names(cf.get("/resources/tags/archived").json().get("channels")),
+        names(response.json().get("channels")));
+    assertEquals("7", cf.get("/resources/channels/count?~tag=archived").body());
+  }
+
+  @Test
   void listingTheDefinitionsReturnsEveryDefinition() {
-    // api.rst says the list holds all properties. PropertyRepository.findAll reads one page. The
-    // channel check in aChannelUsingADefinitionPastTheQuerySizeIsAccepted uses the same read, so
-    // one fix makes both tests pass.
     createProperties("admin", "p1", "p2", "p3", "p4", "p5", "p6");
 
-    // today: returns p1 to p5
     assertEquals(
         List.of("p1", "p2", "p3", "p4", "p5", "p6"), names(cf.get("/resources/properties").json()));
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value =
-          "deleting a property that is on more than one page of channels fails after the first"
-              + " page",
-      withExceptions = AssertionFailedError.class)
+  void listingTheTagsReturnsEveryTag() {
+    createTags("admin", "t1", "t2", "t3", "t4", "t5", "t6");
+
+    assertEquals(
+        List.of("t1", "t2", "t3", "t4", "t5", "t6"), names(cf.get("/resources/tags").json()));
+  }
+
+  @Test
   void deletingAPropertyOnMoreThanOnePageRemovesItEverywhere() {
     createProperties("admin", "area");
     createTags("admin", "archived");
     putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
 
-    // today: returns 500, and ch6 and ch7 keep the property
     assertEquals(200, cf.delete("/resources/properties/area", ApiClient.ADMIN).status());
     assertEquals(404, cf.get("/resources/properties/area").status());
     assertEquals(List.of(), names(cf.get("/resources/channels?area=*").json()));
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "deleting a tag that is on more than one page of channels fails after the first page",
-      withExceptions = AssertionFailedError.class)
   void deletingATagOnMoreThanOnePageRemovesItEverywhere() {
     createProperties("admin", "area");
     createTags("admin", "archived");
     putSevenChannelsWith(property("area", "admin", "north"), tag("archived", "admin"));
 
-    // today: returns 500, and ch6 and ch7 keep the tag
     assertEquals(200, cf.delete("/resources/tags/archived", ApiClient.ADMIN).status());
     assertEquals(404, cf.get("/resources/tags/archived").status());
     assertEquals(List.of(), names(cf.get("/resources/channels?~tag=archived").json()));
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value = "channel writes are checked against only the first page of property definitions",
-      withExceptions = AssertionFailedError.class)
   void aChannelUsingADefinitionPastTheQuerySizeIsAccepted() {
-    // The check reads the definitions with PropertyRepository.findAll, as the listing in
-    // listingTheDefinitionsReturnsEveryDefinition does. One fix makes both tests pass.
     createProperties("admin", "p1", "p2", "p3", "p4", "p5", "p6");
     String usesP6 =
         withProperties(channel("ch1", "admin"), property("p6", "admin", "v")).toString();
 
-    // today: returns 404, as if p6 did not exist
     assertEquals(200, cf.put("/resources/channels/ch1", usesP6, ApiClient.ADMIN).status());
+  }
+
+  @Test
+  void aChannelUsingATagPastTheQuerySizeIsAccepted() {
+    createTags("admin", "t1", "t2", "t3", "t4", "t5", "t6");
+    String usesT6 = withTags(channel("ch1", "admin"), tag("t6", "admin")).toString();
+
+    assertEquals(200, cf.put("/resources/channels/ch1", usesT6, ApiClient.ADMIN).status());
   }
 }

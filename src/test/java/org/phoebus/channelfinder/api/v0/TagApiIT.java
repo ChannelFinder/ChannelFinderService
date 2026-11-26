@@ -148,12 +148,6 @@ class TagApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value =
-          "a tag rename leaves the old tag on its channels, because the channels read before the"
-              + " delete are written back",
-      withExceptions = AssertionFailedError.class)
   void postWithANewNameRenamesTheTagEverywhere() {
     assertEquals(
         200,
@@ -162,7 +156,6 @@ class TagApiIT extends ApiTestBase {
 
     assertEquals(404, cf.get("/resources/tags/archived").status());
     assertEquals(List.of("ch1", "ch2"), channelsWith("saved"));
-    // today: ch1 and ch2 keep the old tag
     assertEquals(List.of(), channelsWith("archived"));
   }
 

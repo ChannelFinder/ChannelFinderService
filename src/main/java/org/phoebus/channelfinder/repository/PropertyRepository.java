@@ -3,6 +3,7 @@ package org.phoebus.channelfinder.repository;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldSort;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.SortOptions;
@@ -26,6 +27,7 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -267,14 +269,23 @@ public class PropertyRepository implements CrudRepository<Property, String> {
   @Override
   public Iterable<Property> findAll() {
     try {
-      SearchRequest.Builder searchBuilder =
-          new SearchRequest.Builder()
-              .index(esService.getES_PROPERTY_INDEX())
-              .query(new MatchAllQuery.Builder().build()._toQuery())
-              .size(esService.getES_QUERY_SIZE())
-              .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-      SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
-      return response.hits().hits().stream().map(Hit::source).toList();
+      List<Property> properties = new ArrayList<>();
+      List<Property> page;
+      do {
+        SearchRequest.Builder searchBuilder =
+            new SearchRequest.Builder()
+                .index(esService.getES_PROPERTY_INDEX())
+                .query(new MatchAllQuery.Builder().build()._toQuery())
+                .size(esService.getES_QUERY_SIZE())
+                .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+        if (!properties.isEmpty()) {
+          searchBuilder.searchAfter(FieldValue.of(properties.getLast().getName()));
+        }
+        SearchResponse<Property> response = client.search(searchBuilder.build(), Property.class);
+        page = response.hits().hits().stream().map(Hit::source).toList();
+        properties.addAll(page);
+      } while (page.size() == esService.getES_QUERY_SIZE());
+      return properties;
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_PROPERTIES, e);
       throw new RepositoryException(TextUtil.FAILED_TO_FIND_ALL_PROPERTIES);
@@ -340,11 +351,11 @@ public class PropertyRepository implements CrudRepository<Property, String> {
       }
 
       // Remove the Property from Channels
-      BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
       MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
       params.add(propertyName, "*");
       List<Channel> channels = channelRepository.search(params).channels();
       while (channels.size() > 0) {
+        BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
         for (Channel channel : channels) {
           channel.removeProperty(
               channel.getProperties().stream()

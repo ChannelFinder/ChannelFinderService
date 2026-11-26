@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ObjectNode;
 
@@ -82,6 +84,20 @@ class ScrollApiIT extends ApiTestBase {
 
     assertEquals(List.of("ch1", "ch3"), names(first.get("channels")));
     assertEquals(List.of("ch4", "ch5"), names(second.get("channels")));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ValueSource(strings = {"~size=-1", "~from=-1"})
+  void negativeSizeOrFromIsRejectedWith400(String query) {
+    assertEquals(400, cf.get("/resources/scroll?" + query).status());
+  }
+
+  @Test
+  void fromCannotBeCombinedWithAScrollId() {
+    ApiClient.Response response = cf.get("/resources/scroll/ch2?~from=1");
+
+    assertEquals(400, response.status());
+    assertTrue(response.body().contains("~from cannot be combined with a scroll id"));
   }
 
   @Test

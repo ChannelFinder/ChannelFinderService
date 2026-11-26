@@ -3,6 +3,7 @@ package org.phoebus.channelfinder.repository;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldSort;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.SortOptions;
@@ -26,6 +27,7 @@ import co.elastic.clients.json.jackson.JacksonJsonpMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -258,14 +260,23 @@ public class TagRepository implements CrudRepository<Tag, String> {
   @Override
   public Iterable<Tag> findAll() {
     try {
-      SearchRequest.Builder searchBuilder =
-          new Builder()
-              .index(esService.getES_TAG_INDEX())
-              .query(new MatchAllQuery.Builder().build()._toQuery())
-              .size(esService.getES_QUERY_SIZE())
-              .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
-      SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
-      return response.hits().hits().stream().map(Hit::source).toList();
+      List<Tag> tags = new ArrayList<>();
+      List<Tag> page;
+      do {
+        SearchRequest.Builder searchBuilder =
+            new Builder()
+                .index(esService.getES_TAG_INDEX())
+                .query(new MatchAllQuery.Builder().build()._toQuery())
+                .size(esService.getES_QUERY_SIZE())
+                .sort(SortOptions.of(s -> s.field(FieldSort.of(f -> f.field("name")))));
+        if (!tags.isEmpty()) {
+          searchBuilder.searchAfter(FieldValue.of(tags.getLast().getName()));
+        }
+        SearchResponse<Tag> response = client.search(searchBuilder.build(), Tag.class);
+        page = response.hits().hits().stream().map(Hit::source).toList();
+        tags.addAll(page);
+      } while (page.size() == esService.getES_QUERY_SIZE());
+      return tags;
     } catch (ElasticsearchException | IOException e) {
       logger.log(Level.SEVERE, TextUtil.FAILED_TO_FIND_ALL_TAGS, e);
       throw new RepositoryException(TextUtil.FAILED_TO_FIND_ALL_TAGS);
@@ -327,12 +338,11 @@ public class TagRepository implements CrudRepository<Tag, String> {
       if (response.result().equals(Result.Deleted)) {
         logger.log(Level.CONFIG, () -> MessageFormat.format(TextUtil.DELETE_TAG, tagName));
       }
-      BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
       MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
       params.add("~tag", tagName);
       List<Channel> channels = channelRepository.search(params).channels();
       while (!channels.isEmpty()) {
-
+        BulkRequest.Builder br = new BulkRequest.Builder().refresh(Refresh.True);
         for (Channel channel : channels) {
           // Or
           channel.removeTag(

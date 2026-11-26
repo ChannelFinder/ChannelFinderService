@@ -11,8 +11,9 @@ import org.springframework.stereotype.Component;
  * legacy-API URLs (e.g. {@code ChannelFinder/resources/channels}). Multi-service deployments
  * typically use different roots per service to distinguish paths at a shared reverse proxy.
  *
- * <p>The value is normalized on startup: leading and trailing slashes are stripped, and an empty or
- * blank value reverts to the default {@code ChannelFinder}.
+ * <p>The value is normalized on startup: surrounding whitespace and leading and trailing slashes
+ * are stripped. An empty value serves the endpoints directly under {@code /}. The controllers map
+ * the normalized value.
  */
 @Component
 @ConfigurationProperties(prefix = "channelfinder.legacy")
@@ -24,7 +25,7 @@ public class LegacyApiProperties {
 
   @PostConstruct
   void normalize() {
-    if (serviceRoot == null || serviceRoot.isBlank()) {
+    if (serviceRoot == null) {
       serviceRoot = DEFAULT_ROOT;
       return;
     }
@@ -32,9 +33,6 @@ public class LegacyApiProperties {
     while (serviceRoot.startsWith("/")) serviceRoot = serviceRoot.substring(1);
     while (serviceRoot.endsWith("/"))
       serviceRoot = serviceRoot.substring(0, serviceRoot.length() - 1);
-    if (serviceRoot.isBlank()) {
-      serviceRoot = DEFAULT_ROOT;
-    }
   }
 
   public String getServiceRoot() {

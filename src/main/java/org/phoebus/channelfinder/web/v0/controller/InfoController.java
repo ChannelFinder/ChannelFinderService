@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @EnableAutoConfiguration
-@RequestMapping("${channelfinder.legacy.service-root:ChannelFinder}")
+@RequestMapping("#{@legacyApiProperties.serviceRoot}")
 public class InfoController implements IInfo {
 
   private final InfoService infoService;

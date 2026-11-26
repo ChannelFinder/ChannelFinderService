@@ -143,13 +143,14 @@ public class TagService {
     Optional<Tag> existingTag = tagRepository.findById(tagName, true);
 
     Tag newTag;
+    String oldName = null;
     if (existingTag.isPresent()) {
       requireOwner(existingTag.get());
       channels = existingTag.get().getChannels();
       newTag = existingTag.get();
       newTag.setOwner(tag.getOwner());
       if (!tag.getName().equalsIgnoreCase(existingTag.get().getName())) {
-        tagRepository.deleteById(existingTag.get().getName());
+        oldName = existingTag.get().getName();
         newTag.setName(tag.getName());
       }
     } else {
@@ -157,9 +158,14 @@ public class TagService {
     }
 
     Tag updated = tagRepository.save(newTag);
+    if (oldName != null) {
+      renameOnChannels(oldName, updated);
+      tagRepository.deleteById(oldName);
+    }
 
     if (!channels.isEmpty()) {
-      channels.forEach(chan -> chan.addTag(updated));
+      // saveAll merges these tags into the stored channels, which no longer carry the old name
+      channels.forEach(chan -> chan.setTags(List.of(updated)));
     }
     if (!tag.getChannels().isEmpty()) {
       tag.getChannels().forEach(c -> c.addTag(updated));
@@ -171,6 +177,23 @@ public class TagService {
     }
 
     return updated;
+  }
+
+  /**
+   * Replace the old tag with the renamed one on every channel, one page at a time. A renamed
+   * channel no longer matches the search, and the next page starts after the last name on this one,
+   * so no channel is skipped or renamed twice.
+   */
+  private void renameOnChannels(String oldName, Tag renamed) {
+    List<Channel> page = channelRepository.findByTag(oldName, null);
+    while (!page.isEmpty()) {
+      for (Channel channel : page) {
+        channel.removeTag(new Tag(oldName, ""));
+        channel.addTag(renamed);
+      }
+      channelRepository.indexAll(page);
+      page = channelRepository.findByTag(oldName, page.getLast().getName());
+    }
   }
 
   public Iterable<Tag> update(Iterable<Tag> tags) {

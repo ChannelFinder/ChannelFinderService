@@ -535,6 +535,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
     Integer finalSize = builtQuery.size;
     Integer finalFrom = builtQuery.from;
 
+    requireNonNegativePaging(builtQuery, searchParameters);
     if (builtQuery.size + builtQuery.from > esService.getES_MAX_RESULT_WINDOW_SIZE()) {
       String message =
           MessageFormat.format(
@@ -569,6 +570,16 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
           MessageFormat.format(TextUtil.SEARCH_FAILED_CAUSE, searchParameters, e.getMessage());
       logger.log(Level.SEVERE, message, e);
       throw new RepositoryException(message, e);
+    }
+  }
+
+  private static void requireNonNegativePaging(
+      BuiltQuery builtQuery, MultiValueMap<String, String> searchParameters) {
+    if (builtQuery.size < 0 || builtQuery.from < 0) {
+      String message =
+          MessageFormat.format(
+              TextUtil.SEARCH_FAILED_CAUSE, searchParameters, "~size and ~from cannot be negative");
+      throw new ChannelValidationException(message);
     }
   }
 
@@ -681,10 +692,16 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   }
 
   private static int parseCountParameter(Map.Entry<String, List<String>> parameter, int size) {
-    Optional<String> maxSize =
-        parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
-    if (maxSize.isPresent()) {
-      size = Integer.parseInt(maxSize.get());
+    try {
+      Optional<String> maxSize =
+          parameter.getValue().stream().max(Comparator.comparing(Integer::valueOf));
+      if (maxSize.isPresent()) {
+        size = Integer.parseInt(maxSize.get());
+      }
+    } catch (NumberFormatException _) {
+      throw new ChannelValidationException(
+          MessageFormat.format(
+              TextUtil.SEARCH_FAILED_CAUSE, parameter, parameter.getKey() + " is not a number"));
     }
     return size;
   }
@@ -786,6 +803,41 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
   }
 
   /**
+   * Find one page of the channels that have the given property, sorted by name.
+   *
+   * @param propertyName channel search property name
+   * @param searchAfter name of the last channel on the previous page, or {@code null} for the first
+   *     page
+   * @return the channels on the page
+   */
+  public List<Channel> findByProperty(String propertyName, String searchAfter) {
+    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+    params.add(propertyName, "*");
+    return searchPage(params, searchAfter);
+  }
+
+  /**
+   * Find one page of the channels that have the given tag, sorted by name.
+   *
+   * @param tagName channel search tag
+   * @param searchAfter name of the last channel on the previous page, or {@code null} for the first
+   *     page
+   * @return the channels on the page
+   */
+  public List<Channel> findByTag(String tagName, String searchAfter) {
+    MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+    params.add("~tag", tagName);
+    return searchPage(params, searchAfter);
+  }
+
+  private List<Channel> searchPage(MultiValueMap<String, String> params, String searchAfter) {
+    if (searchAfter != null) {
+      params.add("~search_after", searchAfter);
+    }
+    return search(params).channels();
+  }
+
+  /**
    * Scroll-paginated search. Returns a page of channels and the ID to pass as scrollId on the next
    * call to advance the cursor. Accepts the same query parameters as {@link #search}.
    *
@@ -795,6 +847,16 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
    */
   public Scroll scroll(String scrollId, MultiValueMap<String, String> searchParameters) {
     BuiltQuery builtQuery = getBuiltQuery(searchParameters);
+    requireNonNegativePaging(builtQuery, searchParameters);
+    boolean hasScrollId = scrollId != null && !scrollId.isEmpty();
+    if (hasScrollId && builtQuery.from > 0) {
+      String message =
+          MessageFormat.format(
+              TextUtil.SEARCH_FAILED_CAUSE,
+              searchParameters,
+              "~from cannot be combined with a scroll id");
+      throw new ChannelValidationException(message);
+    }
     try {
       SearchRequest.Builder builder =
           new SearchRequest.Builder()
@@ -803,7 +865,7 @@ public class ChannelRepository implements CrudRepository<Channel, String> {
               .from(builtQuery.from)
               .size(builtQuery.size)
               .sort(SortOptions.of(o -> o.field(FieldSort.of(f -> f.field("name")))));
-      if (scrollId != null && !scrollId.isEmpty()) {
+      if (hasScrollId) {
         builder.searchAfter(FieldValue.of(scrollId));
       }
       SearchResponse<Channel> response = client.search(builder.build(), Channel.class);

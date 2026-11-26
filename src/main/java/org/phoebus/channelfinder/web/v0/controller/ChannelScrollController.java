@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @EnableAutoConfiguration
-@RequestMapping("${channelfinder.legacy.service-root:ChannelFinder}/resources/scroll")
+@RequestMapping("#{@legacyApiProperties.serviceRoot}/resources/scroll")
 public class ChannelScrollController implements IChannelScroll {
 
   private final ChannelScrollService channelScrollService;
