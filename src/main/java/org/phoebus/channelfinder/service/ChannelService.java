@@ -84,6 +84,9 @@ public class ChannelService {
     validateChannel(channel);
     requireOwner(channel);
 
+    if (!channelName.equals(channel.getName())) {
+      channelRepository.findById(channel.getName()).ifPresent(this::requireOwner);
+    }
     Optional<Channel> existingChannel = channelRepository.findById(channelName);
     if (existingChannel.isPresent()) {
       requireOwner(existingChannel.get());
@@ -135,11 +138,13 @@ public class ChannelService {
       newChannel.setOwner(channel.getOwner());
       newChannel.addProperties(channel.getProperties());
       newChannel.addTags(channel.getTags());
-      if (!channel.getName().equalsIgnoreCase(existingChannel.get().getName())) {
+      if (!channel.getName().equals(existingChannel.get().getName())) {
+        channelRepository.findById(channel.getName()).ifPresent(this::requireOwner);
         channelRepository.deleteById(existingChannel.get().getName());
         newChannel.setName(channel.getName());
       }
     } else {
+      channelRepository.findById(channel.getName()).ifPresent(this::requireOwner);
       newChannel = channel;
     }
 

@@ -72,7 +72,7 @@ public class PropertyService {
     Property created = propertyRepository.index(property);
 
     if (!property.getChannels().isEmpty()) {
-      Iterable<Channel> chans = channelRepository.saveAll(property.getChannels());
+      Iterable<Channel> chans = saveKeepingOwners(property.getChannels());
       List<Channel> chanList = new ArrayList<>();
       for (Channel chan : chans) chanList.add(chan);
       created.setChannels(chanList);
@@ -100,7 +100,7 @@ public class PropertyService {
     }
 
     if (!channels.isEmpty()) {
-      channelRepository.saveAll(channels.values());
+      saveKeepingOwners(channels.values());
     }
     return properties;
   }
@@ -173,7 +173,7 @@ public class PropertyService {
 
   private List<Channel> saveAndRetainProperty(Iterable<Channel> channels, String propertyName) {
     List<Channel> result = new ArrayList<>();
-    for (Channel chan : channelRepository.saveAll(channels)) {
+    for (Channel chan : saveKeepingOwners(channels)) {
       chan.setTags(new ArrayList<>());
       chan.setProperties(
           Collections.singletonList(
@@ -206,7 +206,7 @@ public class PropertyService {
     propertyRepository.saveAll(properties);
 
     if (!channels.isEmpty()) {
-      channelRepository.saveAll(channels.values());
+      saveKeepingOwners(channels.values());
     }
     return properties;
   }
@@ -284,6 +284,13 @@ public class PropertyService {
       }
     }
     if (!toUpdate.isEmpty()) channelRepository.saveAll(toUpdate);
+  }
+
+  // A channel saved without an owner keeps the owner it has, so a property write never changes who
+  // owns a channel.
+  private Iterable<Channel> saveKeepingOwners(Iterable<Channel> channels) {
+    channels.forEach(channel -> channel.setOwner(null));
+    return channelRepository.saveAll(channels);
   }
 
   private void mergeChannelsIntoMap(Iterable<Channel> channels, Map<String, Channel> target) {

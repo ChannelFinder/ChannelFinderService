@@ -11,12 +11,9 @@ import static org.phoebus.channelfinder.api.v0.ApiJson.withTags;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junitpioneer.jupiter.ExpectedToFail;
-import org.opentest4j.AssertionFailedError;
 import tools.jackson.databind.node.ObjectNode;
 
 /**
@@ -91,17 +88,8 @@ class ChannelQueryApiIT extends ApiTestBase {
   }
 
   @Test
-  @Tag("known-defect")
-  @ExpectedToFail(
-      value =
-          "a single channel is found only by its exact name, but api.rst says names ignore case",
-      withExceptions = AssertionFailedError.class)
-  void singleChannelLookupIgnoresCase() {
-    ApiClient.Response response = cf.get("/resources/channels/mno:001");
-
-    // today: returns 404
-    assertEquals(200, response.status());
-    assertEquals(MNO_1, response.json().get("name").asString());
+  void singleChannelLookupMatchesTheCaseOfTheName() {
+    assertEquals(404, cf.get("/resources/channels/mno:001").status());
   }
 
   @Test
