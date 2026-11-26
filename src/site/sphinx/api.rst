@@ -11,7 +11,9 @@ The service exposes directory entries.
 Each directory entry consists of a channel name, an arbitrary set of properties (name-value pairs), and an arbitrary set of tags (names).
 Each of these elements has an owner group, which can be set by the user that created the element.
 All names and values are strings.
-Channel names, tags, property names, and owner (group) names are all case insensitive.
+Channel names are case sensitive, as record names are in Channel Access and pvAccess, so ``abc`` and ``ABC`` are two channels.
+Tags, property names, and owner (group) names are case insensitive.
+A search for channels ignores case, so ``~name=abc`` finds both.
 
 
 Service Type

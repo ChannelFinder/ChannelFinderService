@@ -184,15 +184,34 @@ class ChannelWriteApiIT extends ApiTestBase {
   }
 
   @Test
-  void postThatOnlyChangesTheCaseOfTheNameDoesNotRename() {
-    // api.rst documents that names ignore case, so CH1 is the same channel and nothing is
-    // renamed. It is still worth a test, because the request looks like a rename.
+  void postThatOnlyChangesTheCaseOfTheNameRenames() {
     putChannels(sampleChannel("ch1"));
 
     assertEquals(
         200,
         cf.post("/resources/channels/ch1", channel("CH1", "admin").toString(), ApiClient.ADMIN)
             .status());
+
+    assertEquals(List.of("CH1"), names(cf.get("/resources/channels").json()));
+  }
+
+  @Test
+  void putOfANameThatDiffersOnlyInCaseWritesAnotherChannel() {
+    putChannels(sampleChannel("ch1"));
+
+    assertEquals(
+        200,
+        cf.put("/resources/channels/CH1", sampleChannel("CH1").toString(), ApiClient.ADMIN)
+            .status());
+
+    assertEquals(List.of("CH1", "ch1"), names(cf.get("/resources/channels").json()));
+  }
+
+  @Test
+  void deleteOfANameThatDiffersOnlyInCaseLeavesTheChannel() {
+    putChannels(sampleChannel("ch1"));
+
+    assertEquals(404, cf.delete("/resources/channels/CH1", ApiClient.ADMIN).status());
 
     assertEquals(List.of("ch1"), names(cf.get("/resources/channels").json()));
   }

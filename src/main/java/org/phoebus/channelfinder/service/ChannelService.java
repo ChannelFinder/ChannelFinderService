@@ -138,7 +138,7 @@ public class ChannelService {
       newChannel.setOwner(channel.getOwner());
       newChannel.addProperties(channel.getProperties());
       newChannel.addTags(channel.getTags());
-      if (!channel.getName().equalsIgnoreCase(existingChannel.get().getName())) {
+      if (!channel.getName().equals(existingChannel.get().getName())) {
         channelRepository.findById(channel.getName()).ifPresent(this::requireOwner);
         channelRepository.deleteById(existingChannel.get().getName());
         newChannel.setName(channel.getName());
